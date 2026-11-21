@@ -8,13 +8,17 @@ const shuffled = entries => {
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];}
   return a;
 };
-function newGame(){
+const levels=['Easy','Medium','Hard','Hell'];
+const target=g=>g.players.length===4?5:6;
+const standings=g=>g.players.map((p,i)=>({p,i,points:score(p)})).sort((a,b)=>b.points-a.points||b.i-a.i);
+function newGame(opponents=['Medium']){
   const merchants=shuffled(MERCHANTS.map(c=>({...c,pile:zeros()})));
   const orders=shuffled(POINTS);
-  const players=[3,4].map(n=>({bag:[n,0,0,0],hand:[
+  const starts=[[3,0,0,0],[4,0,0,0],[4,0,0,0],[3,1,0,0]];
+  const players=starts.slice(0,1+opponents.length).map((bag,i)=>({bag,level:i?opponents[i-1]:null,hand:[
     {cost:zeros(),gain:[2,0,0,0],up:0},{cost:zeros(),gain:zeros(),up:2}
   ],used:[],won:[],gold:0,silver:0}));
-  return {players,market:merchants.splice(0,6),orders:orders.splice(0,5),merchants,deck:orders,gold:4,silver:4,turn:0,round:1,over:false,log:[]};
+  return {players,market:merchants.splice(0,6),orders:orders.splice(0,5),merchants,deck:orders,gold:players.length*2,silver:players.length*2,turn:0,round:1,over:false,log:[]};
 }
 function bonus(g,i){return i===0&&g.gold?'gold':i===(g.gold?1:0)&&g.silver?'silver':null;}
 function score(p){return sum(p.won.map(c=>c.vp))+3*p.gold+p.silver+sum(p.bag.slice(1));}
@@ -64,8 +68,8 @@ function apply(g,a){
     if(g.merchants.length)g.market.push(g.merchants.pop());msg='상인 영입 · 시장 '+(a.i+1)+'번째 카드';
   }
   g.log.unshift({round:g.round,who:g.turn,msg});g.log.length=Math.min(40,g.log.length);
-  g.turn=1-g.turn;
-  if(!g.turn){g.over=g.players.some(p=>p.won.length>=6);if(!g.over)g.round++;}
+  g.turn=(g.turn+1)%g.players.length;
+  if(!g.turn){g.over=g.players.some(p=>p.won.length>=target(g));if(!g.over)g.round++;}
   return true;
 }
 function playOptions(p){
@@ -98,13 +102,13 @@ function fitBag(raw,g){
     bag[index]--;drop[index]++;
   }return {bag,drop};
 }
-function medium(g){
+function medium(g,depthLimit=4,width=12){
   const p=g.players[g.turn];
   const orders=g.orders.map((c,i)=>({kind:'order',i,value:c.vp+({gold:3,silver:1}[bonus(g,i)]||0)}))
     .filter(a=>effect(p,a,g)).sort((a,b)=>b.value-a.value);
   if(orders.length)return orders[0];
   let beam=[{p,first:null}],best=null,bestValue=-Infinity;
-  for(let depth=0;depth<4;depth++){
+  for(let depth=0;depth<depthLimit;depth++){
     const next=new Map();
     for(const node of beam){
       const q=node.p, moves=playOptions(q);
@@ -125,7 +129,7 @@ function medium(g){
         if(!next.has(key)||next.get(key).value<value)next.set(key,{p:{bag,hand,used},first,value});
       }
     }
-    beam=[...next.values()].sort((a,b)=>b.value-a.value).slice(0,12);
+    beam=[...next.values()].sort((a,b)=>b.value-a.value).slice(0,width);
     if(bestValue>40)break;
   }return best;
 }
