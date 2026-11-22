@@ -27,8 +27,11 @@ async function run(){
    if(a.kind==='rest')await p.locator('#rest').tap();
    else{
     await p.locator('[data-site="'+a.i+'"]').tap();await p.locator('[data-option="'+a.option+'"]').tap();
-    while(await p.locator('[data-pack]').count())await p.locator('[data-pack]').first().tap();
-    while(await p.locator('[data-drop]:enabled').count())await p.locator('[data-drop]:enabled').first().tap();
+    if(await p.locator('dialog[open] [data-drop]').count()){
+     const remaining=parseInt(await p.locator('dialog[open] #body p').first().innerText(),10);
+     assert(Number.isInteger(remaining)&&remaining>0);
+     for(let k=0;k<remaining;k++)await p.locator('dialog[open] [data-drop]:enabled').first().tap();
+    }
    }
    await h.waitForFunction(n=>online.count>n,state.n);if(j%25===0)console.log('edition',edition,'moves',state.n);
   }
