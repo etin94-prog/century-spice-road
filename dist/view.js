@@ -45,13 +45,13 @@ function render(){
   el('mode').textContent='센추리 Ⅰ  /  '+g.players.length+'인 대국';
   el('rival').innerHTML=g.players.map((ai,i)=>{
     if(i===mySeat())return '';
-    const order=ai.won[ai.won.length-1];
+    const order=(!online||g.over)&&ai.won.at(-1);
     const orderLabel=(order?'최근 주문 '+order.vp+'점 · ':'')+'달성한 주문 '+ai.won.length+'장';
     const role=online&&!onlineAI(i)?(awaySeat(i)?'AI 대행':'온라인'):levelOf(ai);
     return '<button class="rival" data-seat="'+i+'">'+
-      '<span class="rivalhead"><b>'+seatName(i)+'</b><small>'+role+'</small><b>'+score(ai)+'점</b></span>'+
+      '<span class="rivalhead"><b>'+seatName(i)+'</b><small>'+role+'</small><b>'+(online&&!g.over?'':score(ai)+'점')+'</b></span>'+
       '<span class="seatStock">'+chips(ai.bag,true)+'</span>'+
-      '<span class="seatDecks"><span class="orderStack" title="'+orderLabel+'" aria-label="'+orderLabel+'"><i class="orderMini '+(order?'filled':'')+'">'+(order?order.vp+'점':'')+'</i>주문 '+ai.won.length+'장</span>'+
+      '<span class="seatDecks"><span class="orderStack" title="'+orderLabel+'" aria-label="'+orderLabel+'"><i class="orderMini '+(ai.won.length?'filled':'')+'">'+(order?order.vp+'점':'')+'</i>주문 '+ai.won.length+'장</span>'+
       '<span class="handStack" aria-label="상인 손패 '+ai.hand.length+'장"><i class="cardBack"></i>손패 '+ai.hand.length+'</span></span></button>';
   }).join('');
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));
@@ -139,7 +139,7 @@ function schedule(){
     const publicBoard={players:g.players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     const fallback=()=>{stopAI();advance(chooseMove(publicBoard));};
     try{
-      worker=new Worker('ai-worker.js');
+      worker=new Worker('ai-worker.js?v=mobile-beta-26');
       worker.onmessage=({data})=>{stopAI();advance(data);};
       worker.onerror=fallback;
       worker.postMessage(publicBoard);
@@ -281,7 +281,7 @@ function openSetup(){
 el('latestMove').onclick=el('history').onclick=()=>{modal('대국 기록','<div id="log"></div>',true);renderHistory();};
 el('reset').onclick=()=>{if(online){modal('새 친구 대국','<p>현재 방은 초대 링크로 다시 들어올 수 있습니다.</p><button class="primary" id="createRoom">새 초대방 만들기</button>');el('createRoom').onclick=createOnline;}else openSetup();};el('setupTop').onclick=openSetup;
 el('modal').addEventListener('close',()=>{if(!el('modal').open&&el('modal').dataset.observe!=='true')schedule();});
-el('guide').onclick=()=>modal('게임 안내','<p><b>목표</b> · 주문을 달성해 가장 많은 점수를 모으세요. 2~3인전은 6장, 4인전은 5장을 누군가 모으면 그 라운드까지 진행합니다.</p><p><b>테이블 조작</b> · 카드는 한 번 눌러 선택합니다. 끌어 놓으려면 길게 누른 뒤 손가락을 움직여 상단에 나타나는 영역에 놓으세요. 각 시장은 좌우로 넘길 수 있습니다. 상대 상단을 누르면 보유한 카드를 볼 수 있습니다.</p><p><b>첫 수</b> · 손패의 생산 카드를 눌러 강황 2개를 얻거나, 상인 시장에서 첫 카드를 무료로 영입해 보세요.</p><p><b>한 차례에 한 행동</b> · 손패 사용, 상인 영입, 주문 달성, 휴식 중 하나를 선택합니다. 손패를 사용한 뒤에는 휴식으로 다시 가져옵니다.</p><p><b>향신료</b> · 강황 → 사프란 → 카다멈 → 계피 순으로 승급합니다. 교환은 비용이 허락하는 만큼 반복할 수 있습니다.</p><p><b>점수</b> · 주문, 금화(3점), 은화(1점), 남은 강황 이외의 향신료(각 1점)를 더합니다. 동점이면 후순위가 승리합니다.</p>');
+el('guide').onclick=()=>modal('게임 안내','<p><b>목표</b> · 주문을 달성해 가장 많은 점수를 모으세요. 2~3인전은 6장, 4인전은 5장을 누군가 모으면 그 라운드까지 진행합니다.</p><p><b>테이블 조작</b> · 카드는 한 번 눌러 선택합니다. 끌어 놓으려면 길게 누른 뒤 손가락을 움직여 상단에 나타나는 영역에 놓으세요. 각 시장은 좌우로 넘길 수 있습니다. 초대방에서 상대 상단을 누르면 사용한 카드와 손패·주문 장수를 볼 수 있습니다.</p><p><b>첫 수</b> · 손패의 생산 카드를 눌러 강황 2개를 얻거나, 상인 시장에서 첫 카드를 무료로 영입해 보세요. 주문 카드의 재료를 모두 모으면 그 카드를 한 번 눌러 달성하세요.</p><p><b>한 차례에 한 행동</b> · 손패 사용, 상인 영입, 주문 달성, 휴식 중 하나를 선택합니다. 손패를 사용한 뒤에는 휴식으로 다시 가져옵니다.</p><p><b>향신료</b> · 강황 → 사프란 → 카다멈 → 계피 순으로 승급합니다. 교환은 비용이 허락하는 만큼 반복할 수 있습니다.</p><p><b>점수</b> · 주문, 금화(3점), 은화(1점), 남은 강황 이외의 향신료(각 1점)를 더합니다. 동점이면 후순위가 승리합니다.</p>');
 function landscape(){
   const cv=el('land'),ctx=cv.getContext('2d');cv.width=1000;cv.height=200;
   const grad=ctx.createLinearGradient(0,0,1000,120);grad.addColorStop(0,'#174746');grad.addColorStop(.55,'#527675');grad.addColorStop(1,'#e3ad72');ctx.fillStyle=grad;ctx.fillRect(0,0,1000,200);

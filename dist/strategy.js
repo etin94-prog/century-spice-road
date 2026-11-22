@@ -80,12 +80,16 @@ function expert(g,hell){
         const net=c.vp+coinPoints(g,i),after=add(q.bag,c.cost,-1);
         const terminal=last||p.won.length+1===finish;
         const lead=score(p)-sum(p.bag.slice(1))+net+sum(after.slice(1))-rivalScore;
-        const risk=depth>race[i]?(hell?9:4):0;
+        const risk=depth>race[i]?(hell?14:4):0;
         let value=net+worth(after)*.38+node.investment+10-depth*2.6-risk;
         if(hell){
+          // An opponent who can deliver now may remove this order before our next turn.
+          if(depth===0&&race[i]===0)value+=net*.45;
           // Keeping a productive card ready can save an entire rest after delivery.
           const readyPower=q.hand.reduce((v,c)=>v+(!sum(c.cost)?worth(c.gain):c.up||Math.min(4,worth(c.gain)-worth(c.cost))),0);
           value+=Math.min(12,readyPower)*.27;
+          // A nearby delivery frees the caravan and starts the next scoring cycle sooner.
+          value+=net/(depth+1)*.75;
         }
         if(terminal)value+=lead>=0?14:-5;
         if(last)value=net+sum(after.slice(1));
@@ -115,7 +119,7 @@ function expert(g,hell){
             missing+=Math.max(0,-delta)*(1+t*.55);
             surplus+=Math.max(0,delta)*(t+1);
           }
-          const risk=depth>=race[i]?(hell?5:2):0;
+          const risk=depth>=race[i]?(hell?9:2):0;
           pursuit=Math.max(pursuit,(c.vp+coinPoints(g,i))*.64-1.55*missing+surplus*.26-risk);
         });
         const position=pursuit+worth(bag)*.21+investment+hand.length*.20;

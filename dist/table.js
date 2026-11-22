@@ -10,12 +10,16 @@ function inspectSeat(i){
   const groups=[['손패',p.hand],['사용한 카드',p.used],['달성한 주문',p.won]];
   const own=i===mySeat(),canPlay=own&&myTurn()&&!g.over;
   const zones=groups.map(([label,cards],group)=>{
+    if(online&&!own&&!g.over&&group!==1){
+      return '<section><h3>'+label+' · '+cards.length+'장</h3><p class="meta">뒷면으로 보관 중</p></section>';
+    }
     const tiles=cards.map((c,index)=>own&&group===0
       ? card('collection',c,index,!canPlay)
       : '<div class="card">'+face(c,'')+'</div>').join('');
     return '<section><h3>'+label+' · '+cards.length+'장</h3>'+(tiles?'<div class="collectionGrid">'+tiles+'</div>':'<p class="meta">아직 없습니다.</p>')+'</section>';
   }).join('');
-  modal(seatName(i)+'의 카드','<div id="collection" data-seat-index="'+i+'"><p>'+chips(p.bag,true)+' · '+score(p)+'점</p>'+zones+'</div>',true);
+  const points=own||!online||g.over?' · '+score(p)+'점':'';
+  modal(seatName(i)+'의 카드','<div id="collection" data-seat-index="'+i+'"><p>'+chips(p.bag,true)+points+'</p>'+zones+'</div>',true);
   el('collection').querySelectorAll('[data-hand-index]').forEach(button=>{
     button.onclick=()=>playHandCard(+button.dataset.handIndex);
   });
@@ -385,7 +389,11 @@ function endGesture(e,x,y){
   }
   const confirm=s.card.isConnected&&s.zone&&inside(s.zone,x,y);
   if(s.ghost){if(e.cancelable)e.preventDefault();suppressClick=true;setTimeout(()=>suppressClick=false,350);}
-  clearGesture();if(confirm)start(s.kind,s.i);
+  clearGesture();
+  if(confirm){
+    if(s.kind==='play')playHandCard(s.i);
+    else start(s.kind,s.i);
+  }
 }
 document.addEventListener('click',e=>{if(suppressClick&&e.target.closest('[data-kind]')){e.preventDefault();e.stopImmediatePropagation();}},true);
 document.addEventListener('touchstart',e=>{if(e.touches.length!==1){clearGesture();return;}const t=e.touches[0];beginGesture(e,t.clientX,t.clientY);},{passive:true});
