@@ -30,9 +30,21 @@ function captureMove(actor,a,animate=true){
   const p=g.players[actor];
   const c=a.kind==='buy'?g.market[a.i]:a.kind==='order'?g.orders[a.i]:a.kind==='play'?p.hand[a.i]:p.used[p.used.length-1];
   const source=!animate?null:actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
-  return {c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
+  const selected=animate&&actor===mySeat()&&el('modal').open
+    ? el('body').querySelector('.detailFace')||el('collection')?.querySelector('[data-hand-index="'+a.i+'"]'):null;
+  return {c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
-function animateMove(actor,a,{c,rect,artwork}){
+// Sample a shallow arc; the browser interpolates transforms between these points.
+function flightFrames(from,to,width,height,startScale,endScale,lift){
+  return Array.from({length:13},(_,i)=>{
+    const t=i/12,bend=Math.sin(Math.PI*t);
+    const x=from[0]+(to[0]-from[0])*t-width/2;
+    const y=from[1]+(to[1]-from[1])*t-height/2-lift*bend;
+    const scale=startScale+(endScale-startScale)*t;
+    return {transform:'translate3d('+x+'px,'+y+'px,0) rotate('+(-4*bend)+'deg) scale('+scale+')'};
+  });
+}
+function animateMove(actor,a,{c,rect,artwork,before}){
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
   let end=visibleRect(dest);
@@ -55,13 +67,41 @@ function animateMove(actor,a,{c,rect,artwork}){
   document.body.append(node);
   const center=(r,defaultY)=>r?[r.left+r.width/2,r.top+r.height/2]:[innerWidth/2,defaultY];
   const from=center(rect,innerHeight/2),to=center(end,actor===mySeat()?innerHeight-32:40);
-  const move=(x,y,scale,angle)=>'translate('+(x-width/2)+'px,'+(y-height/2)+'px) rotate('+angle+'deg) scale('+scale+')';
-  const anim=node.animate([
-    {transform:move(...from,1,0),opacity:1},
-    {offset:.42,transform:move((from[0]+to[0])/2,(from[1]+to[1])/2-12,1.04,-4),opacity:1},
-    {transform:move(...to,actor===mySeat()?.64:.32,0),opacity:.55}
-  ],{duration:640,easing:'ease-in-out'});
+  const playing=a.kind==='play';
+  const table=center(visibleRect(el('merchants')),innerHeight*.48);
+  const landing=playing?table:to;
+  const frames=flightFrames(from,landing,width,height,1,playing?.95:.62,22);
+  if(playing){
+    frames.forEach((frame,i)=>frame.offset=.42*i/12);
+    frames.push({...frames[12],offset:.76});
+    flightFrames(table,to,width,height,.95,.32,12).slice(1).forEach((frame,i)=>{
+      frames.push({...frame,offset:.76+.24*(i+1)/12});
+    });
+  }
+  frames[0].opacity=1;frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
+  const anim=node.animate(frames,{duration:playing?1250:880,easing:'ease-in-out'});
   anim.onfinish=()=>node.remove();anim.oncancel=()=>node.remove();
+
+  // Animate only resources the player actually keeps after paying and returning excess.
+  g.players[actor].bag.forEach((count,t)=>{
+    const gain=count-before[t];
+    if(gain<=0)return;
+    const stock=actor===mySeat()?el('bag').children[t]:dest;
+    const target=center(visibleRect(stock)||end,actor===mySeat()?innerHeight-32:40);
+    const token=document.createElement('span');
+    token.className='spiceFlight';token.setAttribute('aria-hidden','true');
+    token.innerHTML=cube(t)+' +'+gain;
+    document.body.append(token);
+    const origin=playing?table:from;
+    const path=flightFrames([origin[0]+t*6,origin[1]],target,token.offsetWidth,token.offsetHeight,1.1,.85,24);
+    path[0].opacity=0;path[1].opacity=1;path[path.length-1].opacity=1;
+    const flight=token.animate(path,{duration:520,delay:(playing?510:220)+t*55,easing:'ease-in-out',fill:'both'});
+    flight.onfinish=()=>{
+      token.remove();
+      if(stock?.isConnected)stock.animate([{filter:'brightness(1.35)'},{filter:'none'}],{duration:260});
+    };
+    flight.oncancel=()=>token.remove();
+  });
 }
 
 // A short swipe remains native scrolling. Holding lifts a card and reveals

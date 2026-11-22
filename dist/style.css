@@ -97,3 +97,4 @@ dialog:has(#confirm)::backdrop{background:transparent}
 .mast #latestMove{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left;color:#f5ddb1;padding-inline:8px;font-weight:400}
 .mast #latestMove span{white-space:nowrap}
 @media(max-width:520px){.mast{flex-wrap:wrap}.mast #latestMove{order:1;flex:0 0 100%;min-height:22px;height:22px;padding-block:0;border:0}.mast .wordmark{margin-right:auto}}
+.spiceFlight{position:fixed;top:0;left:0;z-index:21;pointer-events:none;display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border:1px solid #eac785;border-radius:8px;background:#1e3028;color:#fff4d3;font:bold 14px/1.15 system-ui;box-shadow:0 2px 6px #0006}
