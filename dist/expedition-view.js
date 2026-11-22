@@ -140,7 +140,17 @@ function editRoute(i,previous){
 function discard(a,bag,limit){
   const left=bag.slice(),paid=[];
   function draw(){modal('반납할 재료 선택','<p>'+ (total(left)-limit)+'개 남음</p><div class="actions">'+left.map((n,i)=>'<button data-drop="'+i+'" '+(!n?'disabled':'')+'>'+info.goods[i]+' '+n+'</button>').join('')+'</div>');
-    el('body').querySelectorAll('[data-drop]').forEach(b=>b.onclick=()=>{const k=+b.dataset.drop;left[k]--;paid.push(k);if(total(left)===limit)advance({...a,discard:paid});else draw();});}
+    el('body').querySelectorAll('[data-drop]').forEach(b=>b.onclick=()=>{
+      if(!myTurn())return;
+      const k=+b.dataset.drop;
+      if(total(left)===limit+1){
+        const buttons=[...el('body').querySelectorAll('[data-drop]:enabled')];
+        buttons.forEach(button=>button.disabled=true);
+        Promise.resolve(advance({...a,discard:[...paid,k]})).finally(()=>{
+          buttons.forEach(button=>button.disabled=false);
+        });
+      }else{left[k]--;paid.push(k);draw();}
+    });}
   draw();
 }
 function captureMove(who,a,animate=true){
@@ -151,7 +161,7 @@ function captureMove(who,a,animate=true){
 function recordMove(){}
 function advance(a,remote=false,sub=false){
   if(!remote&&g.turn===mySeat()&&edition===2&&nextPriority)a={...a,priority:nextPriority.slice()};
-  if(online&&!remote){submitOnline(a);return;}
+  if(online&&!remote)return submitOnline(a);
   const who=g.turn,m=captureMove(who,a);if(!apply(g,a))return;
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
   close();save();flightActor=who;render();playMotion(who,a,m);

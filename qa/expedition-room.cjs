@@ -22,7 +22,8 @@ async function run(){
    for(const p of pages)await p.waitForFunction(n=>online.count===n&&!review.open,state.n);
    const boards=await Promise.all(pages.map(p=>p.evaluate(()=>JSON.stringify(g))));
    assert(boards.every(x=>x===boards[0]));
-   const p=pages[state.turn],a=await p.evaluate(()=>chooseMove(g,'Medium'));
+   const p=pages[state.turn];await p.waitForFunction(()=>myTurn());
+   const a=await p.evaluate(()=>chooseMove(g,'Medium'));
    if(a.kind==='rest')await p.locator('#rest').tap();
    else{
     await p.locator('[data-site="'+a.i+'"]').tap();await p.locator('[data-option="'+a.option+'"]').tap();
