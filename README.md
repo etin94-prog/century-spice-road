@@ -2,11 +2,11 @@
 
 휴대폰에서 AI 1~3명과 플레이하는 한국어 보드게임입니다. 상대마다 Easy, Medium, Hard, Hell을 선택할 수 있습니다.
 
-[휴대폰에서 게임 열기](https://spice-road-duel-sumin.happy-spool-6962.chatgpt.site/)
+[휴대폰에서 게임 열기](https://etin94-prog.github.io/century-spice-road/)
 
 ![모바일 접속 QR 코드](mobile-qr.png)
 
-비공개 배포본은 사이트 소유 계정으로 로그인해 이용합니다. 대국은 플레이한 브라우저에 자동 저장됩니다.
+공개 GitHub Pages에서 로그인 없이 플레이할 수 있습니다. 대국은 플레이한 브라우저에 자동 저장됩니다.
 
 ## 로컬 실행
 
