@@ -85,6 +85,7 @@ function render(){
   refreshTurn();
 }
 function refreshTurn(){
+  markStockChanges();
   const activeSeat=reviewActor??flightActor??(g.over||(online&&!online.ready)?-1:g.turn);
   const goal=target(g);
   el('status').innerHTML='<span>라운드 '+g.round+(g.players.some(q=>q.won.length>=goal)&&!g.over?' · 마지막 라운드':'')+'</span><b class="turn">'+(g.over&&activeSeat<0?'대국 종료':online&&!online.ready?'친구 입장 대기':activeSeat!==mySeat()?seatName(activeSeat)+' 차례':'나의 차례')+'</b>';
@@ -124,7 +125,7 @@ function recordMove(action,motion,actor){
 function inspectMove(index){
   const entry=g.log[index];
   const {label,flow}=moveFlow(entry.action,entry);
-  modal(entry.round+'R · '+seatName(entry.who)+' · '+label,'<div class="detailFace">'+face(entry.card,label)+'</div><p>'+flow+'</p><p class="preview">보유 향신료<br>'+chips(entry.before,true)+' → '+chips(entry.after,true)+'</p>',true);
+  modal(entry.round+'R · '+seatName(entry.who)+' · '+label,'<div class="detailFace">'+face(entry.card,label)+'</div><p>'+flow+'</p>'+stockChangeSummary(entry.before,entry.after,entry.action.drop),true);
 }
 function stopAI(){
   clearTimeout(timer);

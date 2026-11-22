@@ -54,13 +54,34 @@ function showFlightTurn(actor,duration){
   turnTimer=setTimeout(()=>{flightActor=null;render();if(g.over&&!review.open)results();},duration);
 }
 
+function stockChangeSummary(before,after,drop){
+  const rows=after.map((count,t)=>{
+    const delta=count-before[t];
+    if(!delta)return '';
+    return '<span class="changeRow">'+cube(t)+'<span>'+names[t]+'</span><span>'+before[t]+' → '+count+'</span><b class="'+(delta>0?'gain':'loss')+'">'+(delta>0?'+':'−')+Math.abs(delta)+'</b></span>';
+  }).join('');
+  const returned=drop&&sum(drop)?'<span class="returned">반납 '+chips(drop)+'</span>':'';
+  return '<span class="changeList">'+(rows||'보유 수량 변화 없음')+returned+'</span>';
+}
+let displayedStock=null;
+function markStockChanges(){
+  document.querySelectorAll('[data-change]').forEach(node=>node.removeAttribute('data-change'));
+  if(!displayedStock)return;
+  const {actor,before,after}=displayedStock;
+  const cells=actor===mySeat()?el('bag').children:document.querySelectorAll('[data-seat="'+actor+'"] .seatStock .chip');
+  after.forEach((count,t)=>{
+    const delta=count-before[t];
+    if(delta&&cells[t])cells[t].dataset.change=(delta>0?'+':'−')+Math.abs(delta);
+  });
+}
 function showPlayedCard(entry){
   if(review.open){reviewQueue.push(entry);return;}
   const {actor,c,rect,substitute}=entry;
   const card=review.querySelector('button');
   const player=seatName(actor)+(substitute?' · AI 대행':'');
-  card.innerHTML=face(c,player+' · 사용');
-  card.setAttribute('aria-label',player+' · '+type(c)+' 카드. 누르면 닫기');
+  card.innerHTML=face(c,player+' · 사용')+stockChangeSummary(entry.before,entry.after,entry.drop);
+  displayedStock=entry;
+  card.setAttribute('aria-label',player+' · '+type(c)+' 카드. '+card.querySelector('.changeList').innerText+'. 누르면 닫기');
   reviewActor=actor;refreshTurn();
   review.showModal();
   const end=card.getBoundingClientRect();
@@ -75,7 +96,7 @@ function showPlayedCard(entry){
 function dismissPlayedCard(){
   if(!review.open)return;
   clearTimeout(reviewTimer);
-  review.close();reviewActor=null;refreshTurn();
+  review.close();reviewActor=null;displayedStock=null;refreshTurn();
   if(reviewQueue.length){showPlayedCard(reviewQueue.shift());return;}
   if(g.over)results();else if(online)scheduleRoomAI();else schedule();
 }
@@ -87,7 +108,7 @@ review.onpointerup=review.onpointercancel=()=>{clearTimeout(reviewTimer);reviewT
 function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute}){
   actionSound(a.kind);
   const playing=a.kind==='play';
-  if(playing)showPlayedCard({actor,c,rect,substitute});
+  if(playing)showPlayedCard({actor,c,rect,substitute,before,after:g.players[actor].bag.slice(),drop:a.drop});
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
   const stack=actor!==mySeat()?dest?.querySelector(a.kind==='order'?'.orderMini':'.cardBack'):null;
