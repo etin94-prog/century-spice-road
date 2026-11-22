@@ -8,8 +8,17 @@ function face(c,label){
 function inspectSeat(i){
   const p=g.players[i];
   const groups=[['손패',p.hand],['사용한 카드',p.used],['달성한 주문',p.won]];
-  const zones=groups.map(([label,cards])=>'<section><h3>'+label+' · '+cards.length+'장</h3>'+(cards.length?'<div class="row">'+cards.map(c=>'<div class="card">'+face(c,label)+'</div>').join('')+'</div>':'<p class="meta">아직 없습니다.</p>')+'</section>').join('');
-  modal(seatName(i)+'의 카드','<p>'+chips(p.bag,true)+' · '+score(p)+'점</p>'+zones,true);
+  const own=i===mySeat(),canPlay=own&&myTurn()&&!g.over;
+  const zones=groups.map(([label,cards],group)=>{
+    const tiles=cards.map((c,index)=>own&&group===0
+      ? '<button class="card" data-hand-index="'+index+'" '+(canPlay?'':'disabled')+'>'+face(c,'')+'</button>'
+      : '<div class="card">'+face(c,'')+'</div>').join('');
+    return '<section><h3>'+label+' · '+cards.length+'장</h3>'+(tiles?'<div class="collectionGrid">'+tiles+'</div>':'<p class="meta">아직 없습니다.</p>')+'</section>';
+  }).join('');
+  modal(seatName(i)+'의 카드','<div id="collection" data-seat-index="'+i+'"><p>'+chips(p.bag,true)+' · '+score(p)+'점</p>'+zones+'</div>',true);
+  el('collection').querySelectorAll('[data-hand-index]').forEach(button=>{
+    button.onclick=()=>playFromCollection(+button.dataset.handIndex);
+  });
 }
 function visibleRect(node){
   if(!node)return null;
@@ -117,12 +126,17 @@ function moveFlow(a,motion){
 }
 function showOpponentMove(actor,a,motion){
   hideAction();
-  const c=motion.c,p=g.players[actor],stage=el('actionStage');
-  const {label,flow}=moveFlow(a,motion);
-  stage.innerHTML='<div class="stageCard">'+face(c,a.kind==='rest'?'회수한 카드':label)+'</div><div><b>'+seatName(actor)+(motion.substitute?' · AI 대행':'')+' · '+label+'</b><div class="stageFlow">'+flow+'</div><small>보유 '+chips(motion.before,true)+' → '+chips(p.bag,true)+'</small></div>';
+  const stage=el('actionStage'),{label,flow}=moveFlow(a,motion);
+  stage.innerHTML='<span aria-hidden="true" class="moveArt '+artOf(motion.c)+'"></span><div><b>'+seatName(actor)+(motion.substitute?' · AI 대행':'')+' · '+label+'</b><div class="stageFlow">'+flow+'</div></div>';
   stage.hidden=false;
+  const seat=visibleRect(document.querySelector('[data-seat="'+actor+'"]'));
+  const left=seat?seat.left+(seat.width-stage.offsetWidth)/2:(innerWidth-stage.offsetWidth)/2;
+  const top=seat?seat.bottom+4:8;
+  stage.style.left=Math.max(8,Math.min(innerWidth-stage.offsetWidth-8,left))+'px';
+  stage.style.top=Math.max(8,Math.min(innerHeight-stage.offsetHeight-8,top))+'px';
   stageTimer=setTimeout(hideAction,2000);
 }
+window.addEventListener('resize',hideAction);
 const fullButton=document.getElementById('fullscreen');
 const nativeFull=()=>document.fullscreenElement||document.webkitFullscreenElement;
 function updateFullLabel(){

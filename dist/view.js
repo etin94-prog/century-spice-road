@@ -20,10 +20,18 @@ function coinToken(coin){
   return '<span class="coin '+coin+'" role="img" aria-label="'+coinName[coin]+'점" title="'+coinName[coin]+'점">'+(coin==='gold'?'3':'1')+'</span>';
 }
 function card(kind,c,i){
+  if(kind==='buy'){
+    const trade=sum(c.cost)>0;
+    const recipe=c.up?'↑ '+c.up:trade?chips(c.cost)+' → '+chips(c.gain):chips(c.gain);
+    const resources=bag=>bag.map((n,t)=>n?names[t]+' '+n+'개':'').filter(Boolean).join(' ');
+    const effectLabel=c.up?'최대 '+c.up+'단계 승급':(trade?resources(c.cost)+' 지불, ':'')+resources(c.gain)+' 획득';
+    const pile=sum(c.pile)?'<span class="marketPile">+ '+chips(c.pile)+'</span>':'';
+    return '<button class="card merchantTile" data-kind="buy" data-i="'+i+'" aria-label="영입 비용 '+i+'개, '+effectLabel+(pile?', 쌓인 자원 '+resources(c.pile):'')+'"><span class="illustration '+artOf(c)+'"></span><span class="marketPrice">'+i+'</span>'+pile+'<span class="marketRecipe">'+recipe+'</span></button>';
+  }
   const reward=kind==='order'&&bonus(g,i);
-  const label=kind==='order'?(reward?coinToken(reward):''):kind==='buy'?(i?'비용 '+i+'개':'무료 영입'):'내 손패';
+  const label=kind==='order'?(reward?coinToken(reward):''):'내 손패';
   const ready=kind==='order'&&covers(g.players[mySeat()].bag,c.cost);
-  return '<button class="card'+(ready?' affordable':'')+'" data-kind="'+kind+'" data-i="'+i+'">'+face(c,ready?label+'<span class="canOrder">달성 가능</span>':label)+(kind==='buy'&&sum(c.pile)?'<small class="pile">쌓인 자원 '+chips(c.pile)+'</small>':'')+'</button>';
+  return '<button class="card'+(ready?' affordable':'')+'" data-kind="'+kind+'" data-i="'+i+'">'+face(c,ready?label+'<span class="canOrder">달성 가능</span>':label)+'</button>';
 }
 function render(){
   clearGesture();
@@ -51,6 +59,7 @@ function render(){
     const c=(kind==='order'?g.orders:kind==='buy'?g.market:p.hand)[i];
     modal(kind==='order'?'주문 살펴보기':'상인 살펴보기','<div class="detailFace">'+face(c,kind==='order'?'':type(c))+'</div><p>'+(kind==='order'?'필요한 향신료 '+chips(c.cost):'카드 효과 '+desc(c))+'</p>',true);
   });
+  if(el('modal').open&&el('collection'))inspectSeat(+el('collection').dataset.seatIndex);
   if(el('log'))renderHistory();
   el('handHint').hidden=!!g.log.length||!myTurn()||g.over;
   if(g.over){el('status').innerHTML+='<button id="results">결과 보기</button>';el('results').onclick=results;}
@@ -103,6 +112,16 @@ function schedule(){
       worker.postMessage(publicBoard);
     }catch{fallback();}
   },el('actionStage').hidden?950:2100);
+}
+function playFromCollection(i){
+  if(!myTurn()||g.over)return;
+  const p=g.players[mySeat()],c=p.hand[i];
+  if(!c)return;
+  const action={kind:'play',i,n:1};
+  const bag=c.up?null:effect(p,action,g);
+  const repeatable=sum(c.cost)>0&&effect(p,{...action,n:2},g);
+  if(bag&&sum(bag)<=10&&!repeatable){advance(action);return;}
+  start('play',i);
 }
 function start(kind,i){
   if(g.over||!myTurn())return;
