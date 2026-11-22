@@ -9,7 +9,7 @@ function inspectSeat(i){
   const p=g.players[i];
   const groups=[['손패',p.hand],['사용한 카드',p.used],['달성한 주문',p.won]];
   const zones=groups.map(([label,cards])=>'<section><h3>'+label+' · '+cards.length+'장</h3>'+(cards.length?'<div class="row">'+cards.map(c=>'<div class="card">'+face(c,label)+'</div>').join('')+'</div>':'<p class="meta">아직 없습니다.</p>')+'</section>').join('');
-  modal(seatName(i)+'의 카드','<p>'+chips(p.bag,true)+' · '+score(p)+'점</p>'+zones);
+  modal(seatName(i)+'의 카드','<p>'+chips(p.bag,true)+' · '+score(p)+'점</p>'+zones,true);
 }
 function visibleRect(node){
   if(!node)return null;
@@ -17,10 +17,10 @@ function visibleRect(node){
   if(r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)return null;
   return r;
 }
-function captureMove(actor,a){
+function captureMove(actor,a,animate=true){
   const p=g.players[actor];
   const c=a.kind==='buy'?g.market[a.i]:a.kind==='order'?g.orders[a.i]:a.kind==='play'?p.hand[a.i]:p.used[p.used.length-1];
-  const source=actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
+  const source=!animate?null:actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
   return {c,rect:visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
 function animateMove(actor,a,{c,rect}){
@@ -53,7 +53,7 @@ function clearGesture(){
 function beginGesture(e,x,y){
   clearGesture();
   const card=e.target.closest('button[data-kind]');
-  if(!card||card.disabled||el('modal').open)return;
+  if(!card||card.disabled||el('modal').open||!myTurn()||g.over)return;
   const s={card,x,y,kind:card.dataset.kind,i:+card.dataset.i};gesture=s;
   s.timer=setTimeout(()=>{
     s.ghost=card.cloneNode(true);s.ghost.removeAttribute('data-kind');s.ghost.removeAttribute('data-i');s.ghost.classList.add('lifted');s.ghost.setAttribute('aria-hidden','true');
@@ -73,7 +73,7 @@ function trackGesture(e,x,y){
 }
 function endGesture(e,x,y){
   const s=gesture;if(!s)return;
-  const confirm=s.zone&&inside(s.zone,x,y);
+  const confirm=s.card.isConnected&&s.zone&&inside(s.zone,x,y);
   if(s.ghost){if(e.cancelable)e.preventDefault();suppressClick=true;setTimeout(()=>suppressClick=false,350);}
   clearGesture();if(confirm)start(s.kind,s.i);
 }
@@ -87,14 +87,14 @@ document.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')trackGest
 document.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')endGesture(e,e.clientX,e.clientY);});
 document.addEventListener('contextmenu',e=>{if(gesture)e.preventDefault();});
 window.addEventListener('blur',clearGesture);
+window.addEventListener('resize',clearGesture);
 let stageTimer;
 function hideAction(){
   clearTimeout(stageTimer);
   document.getElementById('actionStage').hidden=true;
 }
-function showOpponentMove(actor,a,motion){
-  hideAction();
-  const c=motion.c,p=g.players[actor],stage=el('actionStage');
+function moveFlow(a,motion){
+  const c=motion.c??motion.card;
   let label,flow;
   if(a.kind==='rest'){label='휴식';flow='사용 더미 '+motion.used+'장 → 손패';}
   if(a.kind==='buy'){
@@ -109,6 +109,12 @@ function showOpponentMove(actor,a,motion){
     else {const n=a.n||1;flow=sum(c.cost)?chips(c.cost.map(x=>x*n))+' → '+chips(c.gain.map(x=>x*n)):chips(c.gain)+' 획득';}
   }
   if(a.drop&&sum(a.drop))flow+=' · '+chips(a.drop)+' 반납';
+  return {label,flow};
+}
+function showOpponentMove(actor,a,motion){
+  hideAction();
+  const c=motion.c,p=g.players[actor],stage=el('actionStage');
+  const {label,flow}=moveFlow(a,motion);
   stage.innerHTML='<div class="stageCard">'+face(c,a.kind==='rest'?'회수한 카드':label)+'</div><div><b>'+seatName(actor)+(motion.substitute?' · AI 대행':'')+' · '+label+'</b><div class="stageFlow">'+flow+'</div><small>보유 '+chips(motion.before,true)+' → '+chips(p.bag,true)+'</small></div>';
   stage.hidden=false;
   stageTimer=setTimeout(hideAction,2000);

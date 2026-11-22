@@ -108,7 +108,9 @@ function syncRoom(room){
     if(animate){
       const before=g.turn;advance(action,true,row.substitute===true);if(g.turn===before)throw Error('행동 기록이 규칙과 일치하지 않습니다.');
     }else{
+      const actor=g.turn,motion=captureMove(actor,action,false);
       if(!apply(g,action))throw Error('행동 기록이 규칙과 일치하지 않습니다.');
+      recordMove(action,motion,actor);
       if(row.substitute)g.log[0].msg='AI 대행 · '+g.log[0].msg;
     }
     online.count++;
