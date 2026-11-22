@@ -53,7 +53,9 @@ function showPlayedCard(entry){
   if(review.open){reviewQueue.push(entry);return;}
   const {actor,c,rect,substitute}=entry;
   const card=review.querySelector('button');
-  card.innerHTML=face(c,seatName(actor)+(substitute?' · AI 대행':'')+' · 사용');
+  const player=seatName(actor)+(substitute?' · AI 대행':'');
+  card.innerHTML=face(c,player+' · 사용');
+  card.setAttribute('aria-label',player+' · '+type(c)+' 카드. 누르면 닫기');
   review.showModal();
   const end=card.getBoundingClientRect();
   const arrival=rect&&!matchMedia('(prefers-reduced-motion: reduce)').matches?380:0;
