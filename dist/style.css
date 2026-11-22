@@ -134,3 +134,6 @@ button[data-kind]{touch-action:manipulation}
 #playedCard::backdrop{background:transparent}
 #playedCard .card{width:min(150px,37vw);height:min(196px,62dvh);min-height:0;box-shadow:0 5px 20px #10271988}
 #playedCard .cardtext{padding:18px 9px 9px}
+.caravan.activeTurn,#rival .rival.activeTurn{outline:3px solid #ffbf46;outline-offset:-3px;box-shadow:inset 0 0 0 4px #755119}
+.orderMini.filled{width:24px;font-size:10px}
+@media(orientation:landscape) and (max-width:650px){#rival .seatDecks{gap:4px;font-size:11px}}

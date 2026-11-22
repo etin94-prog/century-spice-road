@@ -44,14 +44,17 @@ function render(){
   const p=g.players[mySeat()],goal=target(g);
   el('mode').textContent='센추리 Ⅰ  /  '+g.players.length+'인 대국';
   el('status').innerHTML='<span>라운드 '+g.round+(g.players.some(q=>q.won.length>=goal)&&!g.over?' · 마지막 라운드':'')+'</span><b class="turn">'+(g.over?'대국 종료':online&&!online.ready?'친구 입장 대기':g.turn!==mySeat()?seatName(g.turn)+' 차례':'나의 차례')+'</b>';
+  const activeSeat=g.over||(online&&!online.ready)?-1:g.turn;
+  document.querySelector('.caravan').classList.toggle('activeTurn',activeSeat===mySeat());
   el('rival').innerHTML=g.players.map((ai,i)=>{
     if(i===mySeat())return '';
     const order=ai.won[ai.won.length-1];
+    const orderLabel=(order?'최근 주문 '+order.vp+'점 · ':'')+'달성한 주문 '+ai.won.length+'장';
     const role=online&&!onlineAI(i)?(awaySeat(i)?'AI 대행':'온라인'):levelOf(ai);
-    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'">'+
+    return '<button class="rival '+(activeSeat===i?'thinking activeTurn':'')+'" data-seat="'+i+'">'+
       '<span class="rivalhead"><b>'+seatName(i)+'</b><small>'+role+'</small><b>'+score(ai)+'점</b></span>'+
       '<span class="seatStock">'+chips(ai.bag,true)+'</span>'+
-      '<span class="seatDecks"><span class="orderStack" aria-label="달성한 주문 '+ai.won.length+'장"><i class="orderMini '+(order?'filled':'')+'">'+(order?order.vp:'')+'</i>주문 '+ai.won.length+'</span>'+
+      '<span class="seatDecks"><span class="orderStack" title="'+orderLabel+'" aria-label="'+orderLabel+'"><i class="orderMini '+(order?'filled':'')+'">'+(order?order.vp+'점':'')+'</i>주문 '+ai.won.length+'장</span>'+
       '<span class="handStack" aria-label="상인 손패 '+ai.hand.length+'장"><i class="cardBack"></i>손패 '+ai.hand.length+'</span></span></button>';
   }).join('');
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));

@@ -124,22 +124,25 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
   }
   // Animate only resources the player actually keeps after paying and returning excess.
   g.players[actor].bag.forEach((count,t)=>{
-    const gain=count-before[t];
-    if(gain<=0)return;
+    const delta=count-before[t];
+    if(!delta)return;
+    const gaining=delta>0;
     const stock=actor===mySeat()?el('bag').children[t]:dest?.querySelectorAll('.seatStock .chip')[t];
     const target=center(visibleRect(stock)||end,actor===mySeat()?innerHeight-32:40);
     const token=document.createElement('span');
     token.className='spiceFlight';token.setAttribute('aria-hidden','true');
-    token.innerHTML=cube(t)+' +'+gain;
+    token.innerHTML=cube(t)+(gaining?' +':' −')+Math.abs(delta);
     layer.append(token);
     const origin=playing?table:from;
-    const path=flightFrames([origin[0]+t*6,origin[1]],target,token.offsetWidth,token.offsetHeight,1.1,.85,24);
+    const cardPoint=[origin[0]+t*6,origin[1]];
+    const delay=(playing?400:180)+t*55;
+    const path=flightFrames(gaining?cardPoint:target,gaining?target:cardPoint,token.offsetWidth,token.offsetHeight,1.1,.85,24);
+    const amount=stock?.querySelector('b')||stock;
+    amount?.animate([{transform:'scale(1)'},{transform:gaining?'scale(1.4)':'scale(.65)',offset:.45},{transform:'scale(1)'}],
+      {duration:490,delay:gaining?delay+400:delay,easing:'ease-in-out'});
     path[0].opacity=0;path[1].opacity=1;path[path.length-1].opacity=1;
-    const flight=token.animate(path,{duration:520,delay:(playing?510:220)+t*55,easing:'ease-in-out',fill:'both'});
-    flight.onfinish=()=>{
-      token.remove();
-      if(stock?.isConnected)stock.animate([{filter:'brightness(1.35)'},{filter:'none'}],{duration:260});
-    };
+    const flight=token.animate(path,{duration:520,delay,easing:'ease-in-out',fill:'both'});
+    flight.onfinish=()=>token.remove();
     flight.oncancel=()=>token.remove();
   });
 }
