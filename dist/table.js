@@ -48,7 +48,12 @@ function flightFrames(from,to,width,height,startScale,endScale,lift){
 }
 const reviewQueue=[];
 const review=document.getElementById('playedCard');
-let reviewTimer;
+let reviewTimer,reviewActor=null,flightActor=null,turnTimer;
+function showFlightTurn(actor,duration){
+  clearTimeout(turnTimer);flightActor=actor;
+  turnTimer=setTimeout(()=>{flightActor=null;render();if(g.over&&!review.open)results();},duration);
+}
+
 function showPlayedCard(entry){
   if(review.open){reviewQueue.push(entry);return;}
   const {actor,c,rect,substitute}=entry;
@@ -56,20 +61,21 @@ function showPlayedCard(entry){
   const player=seatName(actor)+(substitute?' · AI 대행':'');
   card.innerHTML=face(c,player+' · 사용');
   card.setAttribute('aria-label',player+' · '+type(c)+' 카드. 누르면 닫기');
+  reviewActor=actor;refreshTurn();
   review.showModal();
   const end=card.getBoundingClientRect();
-  const arrival=rect&&!matchMedia('(prefers-reduced-motion: reduce)').matches?380:0;
+  const arrival=rect&&!matchMedia('(prefers-reduced-motion: reduce)').matches?pace(380):0;
   if(arrival){
     const dx=rect.left+rect.width/2-end.left-end.width/2;
     const dy=rect.top+rect.height/2-end.top-end.height/2;
     card.animate([{transform:'translate('+dx+'px,'+dy+'px) scale('+Math.min(1,rect.width/end.width)+') rotate(-4deg)'},{transform:'none'}],{duration:arrival,easing:'ease-out'});
   }
-  reviewTimer=setTimeout(dismissPlayedCard,arrival+3000);
+  reviewTimer=setTimeout(dismissPlayedCard,arrival+pace(3000));
 }
 function dismissPlayedCard(){
   if(!review.open)return;
   clearTimeout(reviewTimer);
-  review.close();
+  review.close();reviewActor=null;refreshTurn();
   if(reviewQueue.length){showPlayedCard(reviewQueue.shift());return;}
   if(g.over)results();else if(online)scheduleRoomAI();else schedule();
 }
@@ -79,6 +85,7 @@ review.oncancel=e=>{e.preventDefault();dismissPlayedCard();};
 review.onpointerdown=()=>clearTimeout(reviewTimer);
 review.onpointerup=review.onpointercancel=()=>{clearTimeout(reviewTimer);reviewTimer=setTimeout(dismissPlayedCard,350);};
 function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute}){
+  actionSound(a.kind);
   const playing=a.kind==='play';
   if(playing)showPlayedCard({actor,c,rect,substitute});
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -91,6 +98,7 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     else end=visibleRect(el('handTitle'))||visibleRect(el('myTable'))||end;
   }
   if(!playing&&!rect&&!end)return;
+  if(!playing){showFlightTurn(actor,pace(950));refreshTurn();}
   const layer=el('flightLayer');
   const center=(r,defaultY)=>r?[r.left+r.width/2,r.top+r.height/2]:[innerWidth/2,defaultY];
   const from=center(rect,innerHeight/2),to=center(end,actor===mySeat()?innerHeight-32:40);
@@ -110,16 +118,16 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
       Array.from(row.children).slice(a.i).forEach((card,j)=>{
         const old=following[j],next=card.getBoundingClientRect();
         const frames=old?[{transform:'translate('+(old.left-next.left)+'px,'+(old.top-next.top)+'px)'},{transform:'none'}]:[{opacity:0},{opacity:1}];
-        card.animate(frames,{delay:180,duration:320,fill:'backwards',easing:'ease-out'});
+        card.animate(frames,{delay:pace(180),duration:pace(320),fill:'backwards',easing:'ease-out'});
       });
     }
     const frames=flightFrames(from,to,width,height,1,.62,22);
     frames[0].opacity=1;frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
     node.style.transform=frames[0].transform;
-    const anim=node.animate(frames,{fill:'both',duration:950,easing:'ease-in-out'});
+    const anim=node.animate(frames,{fill:'both',duration:pace(950),easing:'ease-in-out'});
     anim.onfinish=()=>{
       node.remove();
-      if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:240});
+      if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:pace(240)});
     };anim.oncancel=()=>node.remove();
   }
   // Animate only resources the player actually keeps after paying and returning excess.
@@ -139,9 +147,9 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     const path=flightFrames(gaining?cardPoint:target,gaining?target:cardPoint,token.offsetWidth,token.offsetHeight,1.1,.85,24);
     const amount=stock?.querySelector('b')||stock;
     amount?.animate([{transform:'scale(1)'},{transform:gaining?'scale(1.4)':'scale(.65)',offset:.45},{transform:'scale(1)'}],
-      {duration:490,delay:gaining?delay+400:delay,easing:'ease-in-out'});
+      {duration:pace(490),delay:pace(gaining?delay+400:delay),easing:'ease-in-out'});
     path[0].opacity=0;path[1].opacity=1;path[path.length-1].opacity=1;
-    const flight=token.animate(path,{duration:520,delay,easing:'ease-in-out',fill:'both'});
+    const flight=token.animate(path,{duration:pace(520),delay:pace(delay),easing:'ease-in-out',fill:'both'});
     flight.onfinish=()=>token.remove();
     flight.oncancel=()=>token.remove();
   });

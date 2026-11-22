@@ -238,7 +238,7 @@ function scheduleRoomAI(){
       move.i??=0;
       await submitOnline(move,true,levelUsed);
     }
-  },(substitute?8500:850)+online.seat*350);
+  },(substitute?8500:pace(950))+online.seat*350);
 }
 function drawLobby(){
   const box=el('lobbySeats'),humans=online.people||1;

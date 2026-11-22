@@ -5,7 +5,7 @@ try{g=JSON.parse(localStorage.getItem(key));}catch{}
 const firstVisit=!g?.players;
 if(firstVisit)g=newGame();
 const mySeat=()=>online?.seat??0;
-const myTurn=()=>g.turn===mySeat()&&(!online||online.ready&&online.connected&&!online.pending);
+const myTurn=()=>flightActor===null&&g.turn===mySeat()&&(!online||online.ready&&online.connected&&!online.pending);
 const seatName=i=>i===mySeat()?'나':online?(onlineAI(i)?'AI '+(i+1):'친구 '+(i+1)):'상단 '+i;
 const levelOf=p=>levels.includes(p.level)?p.level:'Medium';
 let worker=null;
@@ -43,15 +43,12 @@ function render(){
   clearGesture();
   const p=g.players[mySeat()],goal=target(g);
   el('mode').textContent='센추리 Ⅰ  /  '+g.players.length+'인 대국';
-  el('status').innerHTML='<span>라운드 '+g.round+(g.players.some(q=>q.won.length>=goal)&&!g.over?' · 마지막 라운드':'')+'</span><b class="turn">'+(g.over?'대국 종료':online&&!online.ready?'친구 입장 대기':g.turn!==mySeat()?seatName(g.turn)+' 차례':'나의 차례')+'</b>';
-  const activeSeat=g.over||(online&&!online.ready)?-1:g.turn;
-  document.querySelector('.caravan').classList.toggle('activeTurn',activeSeat===mySeat());
   el('rival').innerHTML=g.players.map((ai,i)=>{
     if(i===mySeat())return '';
     const order=ai.won[ai.won.length-1];
     const orderLabel=(order?'최근 주문 '+order.vp+'점 · ':'')+'달성한 주문 '+ai.won.length+'장';
     const role=online&&!onlineAI(i)?(awaySeat(i)?'AI 대행':'온라인'):levelOf(ai);
-    return '<button class="rival '+(activeSeat===i?'thinking activeTurn':'')+'" data-seat="'+i+'">'+
+    return '<button class="rival" data-seat="'+i+'">'+
       '<span class="rivalhead"><b>'+seatName(i)+'</b><small>'+role+'</small><b>'+score(ai)+'점</b></span>'+
       '<span class="seatStock">'+chips(ai.bag,true)+'</span>'+
       '<span class="seatDecks"><span class="orderStack" title="'+orderLabel+'" aria-label="'+orderLabel+'"><i class="orderMini '+(order?'filled':'')+'">'+(order?order.vp+'점':'')+'</i>주문 '+ai.won.length+'장</span>'+
@@ -85,7 +82,18 @@ function render(){
   el('latestMove').setAttribute('aria-label',latest+' 대국 기록 열기');
   if(el('log'))renderHistory();
   el('handHint').hidden=!!g.log.length||!myTurn()||g.over;
-  if(g.over){el('status').innerHTML+='<button id="results">결과 보기</button>';el('results').onclick=results;}
+  refreshTurn();
+}
+function refreshTurn(){
+  const activeSeat=reviewActor??flightActor??(g.over||(online&&!online.ready)?-1:g.turn);
+  const goal=target(g);
+  el('status').innerHTML='<span>라운드 '+g.round+(g.players.some(q=>q.won.length>=goal)&&!g.over?' · 마지막 라운드':'')+'</span><b class="turn">'+(g.over&&activeSeat<0?'대국 종료':online&&!online.ready?'친구 입장 대기':activeSeat!==mySeat()?seatName(activeSeat)+' 차례':'나의 차례')+'</b>';
+  document.querySelector('.caravan').classList.toggle('activeTurn',activeSeat===mySeat());
+  el('rival').querySelectorAll('[data-seat]').forEach(seat=>{
+    seat.classList.toggle('activeTurn',+seat.dataset.seat===activeSeat);
+    seat.classList.toggle('thinking',+seat.dataset.seat===activeSeat);
+  });
+  if(g.over&&activeSeat<0){el('status').innerHTML+='<button id="results">결과 보기</button>';el('results').onclick=results;}
 }
 function renderHistory(){
   el('log').innerHTML=g.log.map((x,i)=>'<p>'+(x.action?'<button class="logMove" data-log="'+i+'">':'')+x.round+'R · '+seatName(x.who)+' · '+x.msg+(x.card?' &nbsp; '+(x.card.vp?chips(x.card.cost):desc(x.card)):'')+(x.action?' · 상세</button>':'')+'</p>').join('')||'<p>아직 진행한 행동이 없습니다.</p>';
@@ -101,13 +109,14 @@ function advance(a,remote=false,substitute=false){
   const actor=g.turn,human=actor===mySeat();
   const motion=captureMove(actor,a);
   if(!apply(g,a))return;
+  clearTimeout(turnTimer);flightActor=null;
   if(substitute)g.log[0].msg='AI 대행 · '+g.log[0].msg;
   motion.substitute=substitute;
   recordMove(a,motion,actor);
   if(human)close();
   save();render();
   animateMove(actor,a,motion);
-  if(!review.open){if(g.over)results();else schedule();}
+  if(!review.open){if(!g.over)schedule();else if(flightActor===null)results();}
 }
 function recordMove(action,motion,actor){
   Object.assign(g.log[0],{action,card:motion.c,used:motion.used,coin:motion.coin,before:motion.before,after:g.players[actor].bag.slice()});
@@ -133,7 +142,7 @@ function schedule(){
       worker.onerror=fallback;
       worker.postMessage(publicBoard);
     }catch{fallback();}
-  },g.log.length?1650:950);
+  },pace(g.log.length?1650:950));
 }
 function playHandCard(i){
   if(!myTurn()||g.over)return;
@@ -260,7 +269,7 @@ function openSetup(){
     el('body').querySelectorAll('[data-count]').forEach(b=>b.onclick=()=>{count=+b.dataset.count;draw();});
     selected.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>{selected[j]=e.target.value;el('info'+j).textContent=descriptions[selected[j]];});
     el('friend').onclick=createOnline;
-    el('new').onclick=()=>{stopAI();g=newGame(selected.slice(0,count-1));save();close();render();};
+    el('new').onclick=()=>{stopAI();clearTimeout(turnTimer);flightActor=null;g=newGame(selected.slice(0,count-1));save();close();render();};
   }
   draw();
 }
