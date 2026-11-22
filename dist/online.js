@@ -32,7 +32,7 @@ function roomMenu(){
   const url=location.href;
   const invite={title:'센추리 친구 대전',text:'센추리 한 판 같이 해요! 아래 링크로 입장하세요.',url};
   modal(online.ready?'온라인 '+g.players.length+'인 대전':'친구 초대','<div id="lobbySeats"></div><p>함께 할 친구에게 이 방의 링크를 보내세요. 같은 브라우저로 다시 열면 자기 자리로 돌아옵니다.</p><input id="invite" readonly aria-label="친구 초대 링크" style="width:100%"><div class="inviteActions"><button id="copyInvite">초대 링크 복사</button><button class="primary" id="shareInvite">공유</button></div><div id="shareFallback" hidden><p>이 브라우저에서는 공유창을 열 수 없습니다.</p><a id="mailInvite">메일로 초대하기</a></div><button id="solo">AI 대국으로</button>');
-  if(online.group==='tables')drawLobby();
+  if(online.group==='tables'||online.ready)drawLobby();
   el('invite').value=url;
   el('mailInvite').href='mailto:?subject='+encodeURIComponent(invite.title)+'&body='+encodeURIComponent(invite.text+'\n'+url);
   el('copyInvite').onclick=async()=>{
@@ -90,6 +90,8 @@ function syncRoom(room){
       return;
     }
   }
+  const changedSettings=JSON.stringify(online.settings)!==JSON.stringify(room.subSettings);
+  online.settings=room.subSettings;
   const presenceChanged=JSON.stringify(online.presence)!==JSON.stringify(room.presence);
   online.presence=room.presence;
   const first=!online.initialized,wasReady=online.ready;
@@ -112,11 +114,12 @@ function syncRoom(room){
     online.count++;
   }
   if(first||!wasReady||presenceChanged)render();
+  if(changedSettings&&el('lobbySeats')&&online.ready)drawLobby();
   if(first&&g.over)results();
   el('save').textContent='온라인 방 · '+(online.seat+1)+'번 좌석';
   scheduleRoomAI();
 }
-async function submitOnline(action,computer=false){
+async function submitOnline(action,computer=false,levelUsed=null){
   if(online.pending||g.over||!(computer?canRunRoomAI():myTurn())||!apply(structuredClone(g),action))return;
   online.pending=true;
   if(!computer&&el('confirm'))el('confirm').disabled=true;
@@ -125,7 +128,7 @@ async function submitOnline(action,computer=false){
     const turnRef=roomRef(s,id,'moves/t'+n);
     const row={n,action:JSON.stringify(action)};
     if(computer){
-      if(!onlineAI(g.turn))row.substitute=true;
+      if(!onlineAI(g.turn)){row.substitute=true;row.subLevel=levelUsed??substituteLevel(g.turn);}
       // All connected seats may offer the same AI turn. Replay only the server winner.
       await s.runTransaction(turnRef,current=>current===null?row:undefined,{applyLocally:false});
     }else await s.set(turnRef,row);
@@ -179,7 +182,35 @@ function awaySeat(i){
   const presence=online?.presence?.[i];
   return !!presence?.changed&&!presence.connections;
 }
-function substituteLevel(i){return online?.config?.substitutes?.[i]??'Medium';}
+function substituteLevel(i){
+  const setting=online.settings?.[i];
+  if(setting)return online.count>=setting.from?setting.level:setting.previous;
+  return online.config?.substitutes?.[i]??'Medium';
+}
+function matchSettings(box){
+  const count=online.config?.humans??2;
+  box.innerHTML='<h3>사람 좌석별 대행 AI</h3><p>변경한 난이도는 다음 대행 차례부터 적용됩니다.</p>';
+  for(let i=0;i<count;i++){
+    const level=online.settings?.[i]?.level??substituteLevel(i);
+    const label=(i+1)+'번 '+(i?'친구':'방장');
+    if(online.seat!==0||g.over){box.insertAdjacentHTML('beforeend','<p>'+label+' · '+level+'</p>');continue;}
+    const id='matchSub'+i;
+    box.insertAdjacentHTML('beforeend','<div class="seat"><label for="'+id+'">'+label+'</label><select id="'+id+'">'+levels.map(l=>'<option '+(level===l?'selected':'')+'>'+l+'</option>').join('')+'</select></div>');
+    el(id).onchange=async e=>{
+      const input=e.target,revision=online.count;
+      const from=revision+(g.turn===i&&awaySeat(i)?1:0);
+      const value={revision,from,previous:substituteLevel(i),level:input.value};
+      input.disabled=true;
+      try{
+        await roomService.set(roomRef(roomService,online.id,'subSettings/'+i),value);
+        if(el('matchHint'))el('matchHint').textContent=label+' · '+value.level+' 저장됨';
+      }catch{
+        if(el('lobbySeats')){drawLobby();el('matchHint').textContent='저장되지 않았습니다. 현재 차례를 확인하고 다시 선택하세요.';}
+      }
+    };
+  }
+  box.insertAdjacentHTML('beforeend','<small id="matchHint" role="status"></small>');
+}
 function canRunRoomAI(){
   return online?.ready&&online.connected&&!g.over&&g.turn!==online.seat&&(onlineAI(g.turn)||awaySeat(g.turn));
 }
@@ -190,7 +221,8 @@ function scheduleRoomAI(){
   const substitute=!onlineAI(g.turn);
   setTimeout(async()=>{
     if(online.aiJob!==job||revision!==online.count||!canRunRoomAI())return;
-    const players=g.players.map((p,i)=>substitute&&i===g.turn?{...p,level:substituteLevel(i)}:p);
+    const levelUsed=substitute?substituteLevel(g.turn):null;
+    const players=g.players.map((p,i)=>substitute&&i===g.turn?{...p,level:levelUsed}:p);
     const board={players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     let move;
     try{
@@ -202,13 +234,13 @@ function scheduleRoomAI(){
     }catch{move=chooseMove(board);}
     if(online.aiJob===job&&revision===online.count&&canRunRoomAI()){
       move.i??=0;
-      await submitOnline(move,true);
+      await submitOnline(move,true,levelUsed);
     }
   },(substitute?8500:850)+online.seat*350);
 }
 function drawLobby(){
   const box=el('lobbySeats'),humans=online.people||1;
-  if(online.ready){box.textContent='사람 '+online.config.humans+'명 · AI '+(online.config.total-online.config.humans)+'명 · 대행 AI '+Array.from({length:online.config.humans},(_,i)=>(i+1)+'번 '+substituteLevel(i)).join(', ');return;}
+  if(online.ready){matchSettings(box);return;}
   online.total=Math.max(humans,online.total);
   box.innerHTML='<p><b>참가한 사람 '+humans+'/4명</b> · 내 좌석 '+(online.seat+1)+'번</p>';
   if(online.seat){box.innerHTML+='<p>방장이 인원과 AI 난이도를 정하고 시작합니다.</p>';return;}
