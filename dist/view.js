@@ -110,6 +110,7 @@ function advance(a,remote=false,substitute=false){
   const actor=g.turn,human=actor===mySeat();
   const motion=captureMove(actor,a);
   if(!apply(g,a))return;
+  handOrigin=null;
   clearTimeout(turnTimer);flightActor=null;
   if(substitute)g.log[0].msg='AI 대행 · '+g.log[0].msg;
   motion.substitute=substitute;
@@ -145,10 +146,13 @@ function schedule(){
     }catch{fallback();}
   },pace(g.log.length?1650:950));
 }
+let handOrigin=null;
 function playHandCard(i){
   if(!myTurn()||g.over)return;
   const p=g.players[mySeat()],c=p.hand[i];
   if(!c)return;
+  const source=el('modal').open?el('collection')?.querySelector('[data-hand-index="'+i+'"]'):el('hand').children[i];
+  handOrigin={card:c,rect:visibleRect(source)};
   const action={kind:'play',i,n:1};
   const bag=c.up?null:effect(p,action,g);
   const repeatable=sum(c.cost)>0&&effect(p,{...action,n:2},g);

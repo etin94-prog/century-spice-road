@@ -23,18 +23,18 @@ function inspectSeat(i){
 function visibleRect(node){
   if(!node)return null;
   const r=node.getBoundingClientRect();
-  if(r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)return null;
+  if(!r.width||!r.height||r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)return null;
   return r;
 }
 function captureMove(actor,a,animate=true){
   const p=g.players[actor];
   const c=a.kind==='buy'?g.market[a.i]:a.kind==='order'?g.orders[a.i]:a.kind==='play'?p.hand[a.i]:p.used[p.used.length-1];
   const source=!animate?null:actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
-  const selected=animate&&a.kind==='play'&&actor===mySeat()&&el('modal').open
-    ? el('body').querySelector('.detailFace')||el('collection')?.querySelector('[data-hand-index="'+a.i+'"]'):null;
+  const selected=animate&&a.kind==='play'&&actor===mySeat()?el('collection')?.querySelector('[data-hand-index="'+a.i+'"]'):null;
+  const handSource=animate&&a.kind==='play'&&actor===mySeat()&&handOrigin?.card===c?handOrigin.rect:null;
   const marketSource=source?.matches('.marketmat .card')?source:null;
   const following=marketSource?Array.from(marketSource.parentElement.children).slice(a.i+1).map(card=>card.getBoundingClientRect()):[];
-  return {restCards:animate&&a.kind==='rest'?p.used.slice():null,marketSource,following,c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
+  return {restCards:animate&&a.kind==='rest'?p.used.slice():null,marketSource,following,c,artwork:source?.matches('.card')?source.innerHTML:null,rect:handSource||visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
 // Sample a shallow arc; the browser interpolates transforms between these points.
 function flightFrames(from,to,width,height,startScale,endScale,lift){
@@ -201,7 +201,7 @@ function showPlayedCard(entry){
   card.setAttribute('aria-label',player+' · '+type(c)+' 카드. '+card.querySelector('.changeList').innerText+'. 누르면 닫기');
   reviewActor=actor;refreshTurn();
   review.showModal();
-  const end=card.getBoundingClientRect();
+  const end=review.querySelector('.playAnchor').getBoundingClientRect();
   const arrival=rect&&!matchMedia('(prefers-reduced-motion: reduce)').matches?pace(380):0;
   if(arrival){
     const dx=rect.left+rect.width/2-end.left-end.width/2;
@@ -214,6 +214,7 @@ function showPlayedCard(entry){
 function dismissPlayedCard(){
   if(!review.open)return;
   clearTimeout(reviewTimer);
+  review.querySelector('button').getAnimations().forEach(animation=>animation.cancel());
   review.querySelector('.conversionLayer')?.remove();
   review.close();review.classList.remove('restReview');reviewActor=null;displayedStock=null;refreshTurn();
   if(reviewQueue.length){showPlayedCard(reviewQueue.shift());return;}
