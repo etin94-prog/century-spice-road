@@ -110,12 +110,17 @@ function syncRoom(room){
   scheduleRoomAI();
 }
 async function submitOnline(action,computer=false){
-  if(online.pending||g.over||!(computer?ownsAITurn():myTurn())||!apply(structuredClone(g),action))return;
+  if(online.pending||g.over||!(computer?canRunRoomAI():myTurn())||!apply(structuredClone(g),action))return;
   online.pending=true;
   if(!computer&&el('confirm'))el('confirm').disabled=true;
   const s=roomService,id=online.id,n=online.count;
   try{
-    await s.set(roomRef(s,id,'moves/t'+n),{n,action:JSON.stringify(action)});
+    const turnRef=roomRef(s,id,'moves/t'+n);
+    const row={n,action:JSON.stringify(action)};
+    if(computer){
+      // All connected seats may offer the same AI turn. Replay only the server winner.
+      await s.runTransaction(turnRef,current=>current===null?row:undefined,{applyLocally:false});
+    }else await s.set(turnRef,row);
     const snap=await s.get(roomRef(s,id));online.pending=false;syncRoom(snap.val());
   }catch(e){
     online.pending=false;
@@ -143,12 +148,12 @@ async function joinSeat(s,id){
   throw Error('네 자리가 모두 찼습니다.');
 }
 function onlineAI(i){return Boolean(online?.config&&i>=online.config.humans);}
-function ownsAITurn(){return online?.ready&&online.seat===0&&onlineAI(g.turn)&&!g.over;}
+function canRunRoomAI(){return online?.ready&&onlineAI(g.turn)&&!g.over;}
 function scheduleRoomAI(){
-  if(!ownsAITurn()||online.pending||online.aiJob===online.count)return;
+  if(!canRunRoomAI()||online.pending||online.aiJob===online.count)return;
   const revision=online.count;online.aiJob=revision;
   setTimeout(async()=>{
-    if(revision!==online.count||!ownsAITurn())return;
+    if(revision!==online.count||!canRunRoomAI())return;
     const board={players:g.players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     let move;
     try{
@@ -158,11 +163,11 @@ function scheduleRoomAI(){
         ai.onerror=e=>{ai.terminate();reject(e);};ai.postMessage(board);
       });
     }catch{move=chooseMove(board);}
-    if(revision===online.count&&ownsAITurn()){
+    if(revision===online.count&&canRunRoomAI()){
       move.i??=0;
       await submitOnline(move,true);
     }
-  },850);
+  },850+online.seat*350);
 }
 function drawLobby(){
   const box=el('lobbySeats'),humans=online.people||1;
@@ -171,7 +176,7 @@ function drawLobby(){
   box.innerHTML='<p><b>참가한 사람 '+humans+'/4명</b> · 내 좌석 '+(online.seat+1)+'번</p>';
   if(online.seat){box.innerHTML+='<p>방장이 인원과 AI 난이도를 정하고 시작합니다.</p>';return;}
   const total=online.total;
-  box.innerHTML+='<label>전체 인원 <select id="roomTotal">'+[2,3,4].filter(n=>n>=humans).map(n=>'<option value="'+n+'" '+(n===total?'selected':'')+'>'+n+'인</option>').join('')+'</select></label><p>시작할 때 빈 자리를 AI로 채웁니다. AI의 차례는 방장의 게임 화면에서 진행됩니다.</p>';
+  box.innerHTML+='<label>전체 인원 <select id="roomTotal">'+[2,3,4].filter(n=>n>=humans).map(n=>'<option value="'+n+'" '+(n===total?'selected':'')+'>'+n+'인</option>').join('')+'</select></label><p>시작할 때 빈 자리를 AI로 채웁니다. 참가자 한 명이 방을 열고 있으면 AI 차례가 진행됩니다.</p>';
   for(let i=Math.max(2,humans);i<total;i++){
     box.innerHTML+='<div class="seat"><label for="roomLevel'+i+'">'+(i+1)+'번 좌석 AI</label><select id="roomLevel'+i+'">'+levels.map(l=>'<option '+(online.levels[i]===l?'selected':'')+'>'+l+'</option>').join('')+'</select></div>';
   }
