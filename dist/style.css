@@ -94,3 +94,6 @@ dialog:has(#confirm){width:min(430px,94vw);max-height:92dvh}
 dialog:has(#confirm)::backdrop{background:transparent}
 .actionConfirm{position:static;background:none;padding:0}
 .dropzone{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:90vw;padding:12px 18px}
+.mast #latestMove{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left;color:#f5ddb1;padding-inline:8px;font-weight:400}
+.mast #latestMove span{white-space:nowrap}
+@media(max-width:520px){.mast{flex-wrap:wrap}.mast #latestMove{order:1;flex:0 0 100%;min-height:22px;height:22px;padding-block:0;border:0}.mast .wordmark{margin-right:auto}}

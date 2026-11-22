@@ -69,6 +69,12 @@ function render(){
     modal(kind==='order'?'주문 살펴보기':'상인 살펴보기','<div class="detailFace">'+face(c,kind==='order'?'':type(c))+'</div><p>'+(kind==='order'?'필요한 향신료 '+chips(c.cost):'카드 효과 '+desc(c))+'</p>',true);
   });
   if(el('modal').open&&el('collection'))inspectSeat(+el('collection').dataset.seatIndex);
+  const entry=g.log[0];
+  const latest=entry?seatName(entry.who)+(entry.msg.startsWith('AI 대행')?' · AI 대행':'')+' · '+(entry.action?moveFlow(entry.action,entry).flow:entry.msg):'아직 진행한 행동이 없습니다.';
+  const line=el('latestMove').firstElementChild;
+  if(line.textContent!==latest)line.textContent=latest;
+  el('latestMove').title=latest;
+  el('latestMove').setAttribute('aria-label',latest+' 대국 기록 열기');
   if(el('log'))renderHistory();
   el('handHint').hidden=!!g.log.length||!myTurn()||g.over;
   if(g.over){el('status').innerHTML+='<button id="results">결과 보기</button>';el('results').onclick=results;}
@@ -78,7 +84,7 @@ function renderHistory(){
   el('log').querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>inspectMove(+b.dataset.log));
 
 }
-function modal(title,body,observe=false){hideAction();el('modal').dataset.observe=String(observe);if(!observe)stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
+function modal(title,body,observe=false){el('modal').dataset.observe=String(observe);if(!observe)stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
 const close=()=>el('modal').close();
 el('close').onclick=close;
 el('myTable').onclick=()=>inspectSeat(mySeat());
@@ -93,7 +99,6 @@ function advance(a,remote=false,substitute=false){
   if(human)close();
   save();render();
   animateMove(actor,a,motion);
-  showMove(actor,a,motion);
   if(g.over)results();else schedule();
 }
 function recordMove(action,motion,actor){
@@ -120,7 +125,7 @@ function schedule(){
       worker.onerror=fallback;
       worker.postMessage(publicBoard);
     }catch{fallback();}
-  },el('actionStage').hidden?950:2100);
+  },g.log.length?1650:950);
 }
 function playHandCard(i){
   if(!myTurn()||g.over)return;
@@ -246,7 +251,7 @@ function openSetup(){
   }
   draw();
 }
-el('history').onclick=()=>{modal('대국 기록','<div id="log"></div>',true);renderHistory();};
+el('latestMove').onclick=el('history').onclick=()=>{modal('대국 기록','<div id="log"></div>',true);renderHistory();};
 el('reset').onclick=()=>{if(online){modal('새 친구 대국','<p>현재 방은 초대 링크로 다시 들어올 수 있습니다.</p><button class="primary" id="createRoom">새 초대방 만들기</button>');el('createRoom').onclick=createOnline;}else openSetup();};el('setupTop').onclick=openSetup;
 el('modal').addEventListener('close',()=>{if(!el('modal').open&&el('modal').dataset.observe!=='true')schedule();});
 el('guide').onclick=()=>modal('게임 안내','<p><b>목표</b> · 주문을 달성해 가장 많은 점수를 모으세요. 2~3인전은 6장, 4인전은 5장을 누군가 모으면 그 라운드까지 진행합니다.</p><p><b>테이블 조작</b> · 카드를 누르거나 길게 잡아 표시된 곳에 놓고 행동을 확정하세요. 각 시장은 좌우로 넘길 수 있습니다. 상대 상단을 누르면 보유한 카드를 볼 수 있습니다.</p><p><b>첫 수</b> · 손패의 생산 카드를 눌러 강황 2개를 얻거나, 상인 시장에서 첫 카드를 무료로 영입해 보세요.</p><p><b>한 차례에 한 행동</b> · 손패 사용, 상인 영입, 주문 달성, 휴식 중 하나를 선택합니다. 손패를 사용한 뒤에는 휴식으로 다시 가져옵니다.</p><p><b>향신료</b> · 강황 → 사프란 → 카다멈 → 계피 순으로 승급합니다. 교환은 비용이 허락하는 만큼 반복할 수 있습니다.</p><p><b>점수</b> · 주문, 금화(3점), 은화(1점), 남은 강황 이외의 향신료(각 1점)를 더합니다. 동점이면 후순위가 승리합니다.</p>');

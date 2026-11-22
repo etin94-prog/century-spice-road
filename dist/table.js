@@ -30,12 +30,17 @@ function captureMove(actor,a,animate=true){
   const p=g.players[actor];
   const c=a.kind==='buy'?g.market[a.i]:a.kind==='order'?g.orders[a.i]:a.kind==='play'?p.hand[a.i]:p.used[p.used.length-1];
   const source=!animate?null:actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
-  return {c,rect:visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
+  return {c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
-function animateMove(actor,a,{c,rect}){
+function animateMove(actor,a,{c,rect,artwork}){
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
-  const end=visibleRect(dest);
+  let end=visibleRect(dest);
+  if(actor===mySeat()&&a.kind==='buy'){
+    const last=visibleRect(el('hand').lastElementChild);
+    if(last&&end&&last.right<=end.right+1&&last.left>=end.left-1)end=last;
+    else end=visibleRect(el('handTitle'))||visibleRect(el('myTable'))||end;
+  }
   if(a.kind==='buy'||a.kind==='order'){
     const row=el(a.kind==='buy'?'merchants':'orders');
     if(row.children.length===(a.kind==='buy'?6:5))
@@ -43,12 +48,19 @@ function animateMove(actor,a,{c,rect}){
   }
   if(!rect&&!end)return;
   const node=document.createElement('div');node.className='card flying';
-  node.innerHTML=face(c,seatName(actor)+' · '+({buy:'영입',play:'사용',rest:'회수',order:'주문 달성'}[a.kind]));
+  node.setAttribute('aria-hidden','true');
+  node.innerHTML=artwork||face(c,'');
+  const width=rect?Math.min(140,rect.width):82,height=rect?Math.min(160,rect.height):106;
+  Object.assign(node.style,{width:width+'px',height:height+'px',minHeight:'0',transformOrigin:'center'});
   document.body.append(node);
-  const point=(r,fallback)=>r?[Math.max(0,Math.min(innerWidth-96,r.left+(r.width-96)/2)),Math.max(0,Math.min(innerHeight-96,r.top))]:fallback;
-  const from=point(rect,[innerWidth/2-48,12]),to=point(end,[innerWidth/2-48,actor!==mySeat()?4:innerHeight-96]);
-  const move=(v,scale,angle)=>'translate('+v[0]+'px,'+v[1]+'px) rotate('+angle+'deg) scale('+scale+')';
-  const anim=node.animate([{transform:move(from,.78,-5),opacity:.7},{offset:.42,transform:move([(from[0]+to[0])/2,(from[1]+to[1])/2-12],1.08,2),opacity:1},{transform:move(to,.65,0),opacity:.2}],{duration:700,easing:'ease-in-out'});
+  const center=(r,defaultY)=>r?[r.left+r.width/2,r.top+r.height/2]:[innerWidth/2,defaultY];
+  const from=center(rect,innerHeight/2),to=center(end,actor===mySeat()?innerHeight-32:40);
+  const move=(x,y,scale,angle)=>'translate('+(x-width/2)+'px,'+(y-height/2)+'px) rotate('+angle+'deg) scale('+scale+')';
+  const anim=node.animate([
+    {transform:move(...from,1,0),opacity:1},
+    {offset:.42,transform:move((from[0]+to[0])/2,(from[1]+to[1])/2-12,1.04,-4),opacity:1},
+    {transform:move(...to,actor===mySeat()?.64:.32,0),opacity:.55}
+  ],{duration:640,easing:'ease-in-out'});
   anim.onfinish=()=>node.remove();anim.oncancel=()=>node.remove();
 }
 
@@ -101,11 +113,6 @@ document.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')endGesture(
 document.addEventListener('contextmenu',e=>{if(gesture)e.preventDefault();});
 window.addEventListener('blur',clearGesture);
 window.addEventListener('resize',clearGesture);
-let stageTimer;
-function hideAction(){
-  clearTimeout(stageTimer);
-  document.getElementById('actionStage').hidden=true;
-}
 function moveFlow(a,motion){
   const c=motion.c??motion.card;
   const spices=bag=>bag.map((n,t)=>n?names[t]+' '+n+'개':'').filter(Boolean).join(', ');
@@ -134,20 +141,6 @@ function moveFlow(a,motion){
   if(a.drop&&sum(a.drop))flow+=' '+spices(a.drop)+'를 반납했어요.';
   return {label,flow};
 }
-function showMove(actor,a,motion){
-  hideAction();
-  const stage=el('actionStage'),{label,flow}=moveFlow(a,motion);
-  stage.innerHTML='<span aria-hidden="true" class="moveArt '+artOf(motion.c)+'"></span><div><b>'+seatName(actor)+(motion.substitute?' · AI 대행':'')+' · '+label+'</b><div class="stageFlow">'+flow+'</div></div>';
-  stage.hidden=false;
-  const seat=actor===mySeat()?motion.rect:visibleRect(document.querySelector('[data-seat="'+actor+'"]'));
-  const left=seat?seat.left+(seat.width-stage.offsetWidth)/2:(innerWidth-stage.offsetWidth)/2;
-  let top=seat?seat.bottom+4:8;
-  if(seat&&top+stage.offsetHeight>innerHeight-8)top=seat.top-stage.offsetHeight-4;
-  stage.style.left=Math.max(8,Math.min(innerWidth-stage.offsetWidth-8,left))+'px';
-  stage.style.top=Math.max(8,Math.min(innerHeight-stage.offsetHeight-8,top))+'px';
-  stageTimer=setTimeout(hideAction,3600);
-}
-window.addEventListener('resize',hideAction);
 const fullButton=document.getElementById('fullscreen');
 const nativeFull=()=>document.fullscreenElement||document.webkitFullscreenElement;
 function updateFullLabel(){
