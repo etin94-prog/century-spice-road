@@ -65,14 +65,32 @@ function stockChangeSummary(before,after,drop){
 }
 let displayedStock=null;
 function markStockChanges(){
-  document.querySelectorAll('[data-change]').forEach(node=>node.removeAttribute('data-change'));
+  document.querySelectorAll('[data-change]').forEach(node=>{
+    const amount=node.querySelector('.stockCount');
+    if(amount&&node.dataset.finalCount!==undefined)amount.textContent=node.dataset.finalCount;
+    delete node.dataset.change;delete node.dataset.finalCount;
+  });
   if(!displayedStock)return;
   const {actor,before,after}=displayedStock;
   const cells=actor===mySeat()?el('bag').children:document.querySelectorAll('[data-seat="'+actor+'"] .seatStock .chip');
   after.forEach((count,t)=>{
     const delta=count-before[t];
-    if(delta&&cells[t])cells[t].dataset.change=(delta>0?'+':'−')+Math.abs(delta);
+    const cell=cells[t];
+    if(!delta||!cell)return;
+    cell.dataset.change=(delta>0?'+':'−')+Math.abs(delta);
+    const amount=cell.querySelector('.stockCount');
+    if(amount&&displayedStock.pendingSpices?.has(t)){
+      cell.dataset.finalCount=amount.textContent;
+      amount.textContent=before[t];
+    }
   });
+}
+function settleSpice(entry,t,delay){
+  if(!entry.pendingSpices.has(t))return;
+  entry.stockTimers.push(setTimeout(()=>{
+    if(displayedStock!==entry)return;
+    entry.pendingSpices.delete(t);markStockChanges();
+  },delay));
 }
 function animateConversion(entry,cardRect,arrival){
   const {actor,c,action}=entry;
@@ -82,7 +100,7 @@ function animateConversion(entry,cardRect,arrival){
   const cells=actor===mySeat()?el('bag').children:document.querySelectorAll('[data-seat="'+actor+'"] .seatStock .chip');
   const seat=actor===mySeat()?el('myTable'):document.querySelector('[data-seat="'+actor+'"]');
   if(c.up){
-    animateUpgrade(action.steps,cells,seat,center,layer,arrival);
+    animateUpgrade(entry,cells,seat,center,layer,arrival);
     return;
   }
   const n=action.n||1,paid=c.cost.map(x=>x*n),made=c.gain.map(x=>x*n);
@@ -90,7 +108,7 @@ function animateConversion(entry,cardRect,arrival){
   function travel(t,count,inbound){
     if(!count)return;
     const rect=visibleRect(cells[t])||visibleRect(seat);
-    if(!rect)return;
+    if(!rect){settleSpice(entry,t,0);return;}
     const stock=[rect.left+rect.width/2,rect.top+rect.height/2];
     const point=[center[0]+(t-1.5)*12,center[1]];
     const token=document.createElement('span');token.className='spiceFlight';
@@ -98,6 +116,8 @@ function animateConversion(entry,cardRect,arrival){
     const path=flightFrames(inbound?stock:point,inbound?point:stock,token.offsetWidth,token.offsetHeight,1,1,18);
     path[0].opacity=0;path[1].opacity=1;path.at(-2).opacity=1;path.at(-1).opacity=0;
     const delay=arrival+pace((inbound?35:1180)+t*25);
+    const netGain=entry.after[t]>entry.before[t];
+    if(inbound!==netGain)settleSpice(entry,t,delay+(inbound?0:pace(415)));
     token.animate(path,{delay,duration:pace(415),fill:'both',easing:'ease-in-out'});
     const amount=cells[t]?.querySelector('b')||cells[t];
     amount?.animate([{transform:'scale(1)'},{transform:inbound?'scale(.65)':'scale(1.4)'},{transform:'scale(1)'}],
@@ -105,6 +125,7 @@ function animateConversion(entry,cardRect,arrival){
   }
   for(let t=0;t<4;t++){
     // Returned output never enters stock. Spending and returns from existing stock are distinct.
+    if(!paid[t]&&entry.after[t]<entry.before[t])settleSpice(entry,t,arrival+pace(35));
     travel(t,paid[t],true);
     travel(t,Math.max(0,made[t]-(action.drop?.[t]||0)),false);
   }
@@ -117,7 +138,8 @@ function animateConversion(entry,cardRect,arrival){
   });
 }
 // Each path follows one physical cube, including a cube upgraded more than once.
-function animateUpgrade(steps,cells,seat,center,layer,arrival){
+function animateUpgrade(entry,cells,seat,center,layer,arrival){
+  const steps=entry.action.steps;
   const paths=[];
   steps.forEach((from,i)=>{
     let path=paths.find(p=>p.types.at(-1)===from);
@@ -126,6 +148,9 @@ function animateUpgrade(steps,cells,seat,center,layer,arrival){
     path.changes.push(.31+.36*(i+.5)/steps.length);
   });
   const duration=pace(1900);
+  entry.after.forEach((count,t)=>{
+    if(count!==entry.before[t])settleSpice(entry,t,arrival+duration*(count>entry.before[t]?1:0));
+  });
   const point=t=>{
     const rect=visibleRect(cells[t])||visibleRect(seat);
     return rect?[rect.left+rect.width/2,rect.top+rect.height/2]:center;
@@ -197,6 +222,10 @@ function showPlayedCard(entry){
   const card=review.querySelector('button');
   const player=seatName(actor)+(substitute?' · AI 대행':'');
   card.innerHTML=face(c,player+' · 사용')+stockChangeSummary(entry.before,entry.after,entry.drop);
+  const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  entry.pendingSpices=new Set();
+  entry.stockTimers=[];
+  if(!reduceMotion)entry.after.forEach((n,t)=>{if(n!==entry.before[t])entry.pendingSpices.add(t);});
   displayedStock=entry;
   card.setAttribute('aria-label',player+' · '+type(c)+' 카드. '+card.querySelector('.changeList').innerText+'. 누르면 닫기');
   reviewActor=actor;refreshTurn();
@@ -216,6 +245,7 @@ function dismissPlayedCard(){
   clearTimeout(reviewTimer);
   review.querySelector('button').getAnimations().forEach(animation=>animation.cancel());
   review.querySelector('.conversionLayer')?.remove();
+  displayedStock?.stockTimers.forEach(clearTimeout);
   review.close();review.classList.remove('restReview');reviewActor=null;displayedStock=null;refreshTurn();
   if(reviewQueue.length){showPlayedCard(reviewQueue.shift());return;}
   if(g.over)results();else if(online)scheduleRoomAI();else schedule();

@@ -12,7 +12,7 @@ let worker=null;
 
 function save(){if(online)return;try{localStorage.setItem(key,JSON.stringify(g));el('save').textContent='이 기기에 자동 저장됨';}catch{el('save').textContent='저장 공간 사용 불가';}}
 const cube=t=>'<i aria-hidden="true" class="cube s'+t+'"></i>';
-const chips=(bag,all=false)=>'<span class="chips">'+bag.map((n,t)=>n||all?'<span class="chip" aria-label="'+names[t]+' '+n+'개" title="'+names[t]+'">'+cube(t)+n+'</span>':'').join('')+'</span>';
+const chips=(bag,all=false)=>'<span class="chips">'+bag.map((n,t)=>n||all?'<span class="chip" aria-label="'+names[t]+' '+n+'개" title="'+names[t]+'">'+cube(t)+'<span class="stockCount">'+n+'</span></span>':'').join('')+'</span>';
 const type=c=>c.up?'승급':sum(c.cost)?'교환':'생산';
 const desc=c=>c.up?'최대 '+c.up+'단계':sum(c.cost)?chips(c.cost)+' → '+chips(c.gain):chips(c.gain)+' 획득';
 const coinName={gold:'금화 +3',silver:'은화 +1'};
@@ -56,7 +56,7 @@ function render(){
   }).join('');
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));
   el('myScore').textContent=score(p)+'점 · 주문 '+p.won.length+'/'+goal+'장';
-  el('bag').innerHTML=p.bag.map((n,t)=>'<div class="stock"><b>'+cube(t)+n+'</b><small>'+names[t]+'</small></div>').join('');
+  el('bag').innerHTML=p.bag.map((n,t)=>'<div class="stock"><b>'+cube(t)+'<span class="stockCount">'+n+'</span></b><small>'+names[t]+'</small></div>').join('');
   el('handTitle').textContent='손패 '+p.hand.length+'장';
   el('hand').innerHTML=p.hand.map((c,i)=>card('play',c,i)).join('')||'<p>휴식하면 사용한 카드를 모두 회수합니다.</p>';
   el('rest').textContent='휴식 · '+p.used.length+'장 회수';el('rest').disabled=!!(g.over||!myTurn()||!p.used.length);
