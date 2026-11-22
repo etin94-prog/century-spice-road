@@ -120,10 +120,10 @@ function beginGesture(e,x,y){
   s.timer=setTimeout(()=>{s.held=true;},310);
 }
 function liftGesture(s){
-    s.ghost=s.card.cloneNode(true);s.ghost.removeAttribute('data-kind');s.ghost.removeAttribute('data-i');s.ghost.classList.add('lifted');s.ghost.setAttribute('aria-hidden','true');
-    s.zone=document.createElement('div');s.zone.className='dropzone';s.zone.textContent={buy:'여기에 놓아 손패로 가져오기',play:'여기에 놓아 카드 사용',order:'여기에 놓아 주문 달성'}[s.kind];
-    s.zone.style.top='max(8px, env(safe-area-inset-top))';
-    document.body.append(s.ghost,s.zone);
+  s.ghost=s.card.cloneNode(true);s.ghost.removeAttribute('data-kind');s.ghost.removeAttribute('data-i');s.ghost.classList.add('lifted');s.ghost.setAttribute('aria-hidden','true');
+  s.zone=document.createElement('div');s.zone.className='dropzone';s.zone.textContent={buy:'여기에 놓아 손패로 가져오기',play:'여기에 놓아 카드 사용',order:'여기에 놓아 주문 달성'}[s.kind];
+  s.zone.style.top='max(8px, env(safe-area-inset-top))';
+  document.body.append(s.ghost,s.zone);
 }
 function inside(zone,x,y){const r=zone.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;}
 function trackGesture(e,x,y){
