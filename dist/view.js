@@ -5,7 +5,7 @@ try{g=JSON.parse(localStorage.getItem(key));}catch{}
 const firstVisit=!g?.players;
 if(firstVisit)g=newGame();
 const mySeat=()=>online?.seat??0;
-const myTurn=()=>g.turn===mySeat()&&(!online||online.ready&&!online.pending);
+const myTurn=()=>g.turn===mySeat()&&(!online||online.ready&&online.connected&&!online.pending);
 const seatName=i=>i===mySeat()?'나':online?(onlineAI(i)?'AI '+(i+1):'친구 '+(i+1)):'상단 '+i;
 const levelOf=p=>levels.includes(p.level)?p.level:'Medium';
 let worker=null;
@@ -27,7 +27,7 @@ function render(){
   el('rival').innerHTML=g.players.map((ai,i)=>{
     if(i===mySeat())return '';
     const last=g.log.find(x=>x.who===i);
-    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'"><span class="rivalhead"><b>'+seatName(i)+'</b><small>'+(online&&!onlineAI(i)?'온라인':levelOf(ai))+'</small></span><span>'+chips(ai.bag,true)+'</span><span class="seatArt '+(last?.card?artOf(last.card):'back')+'"></span><small>손패 '+ai.hand.length+' · 사용 '+ai.used.length+' · 주문 '+ai.won.length+'</small><small>'+score(ai)+'점 · '+(last?.msg||'첫 교역 대기')+'</small></button>';
+    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'"><span class="rivalhead"><b>'+seatName(i)+'</b><small>'+(online&&!onlineAI(i)?(awaySeat(i)?'자리 비움 · AI 대행':'온라인'):levelOf(ai))+'</small></span><span>'+chips(ai.bag,true)+'</span><span class="seatArt '+(last?.card?artOf(last.card):'back')+'"></span><small>손패 '+ai.hand.length+' · 사용 '+ai.used.length+' · 주문 '+ai.won.length+'</small><small>'+score(ai)+'점 · '+(last?.msg||'첫 교역 대기')+'</small></button>';
   }).join('');
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));
   el('myScore').textContent=score(p)+'점 · 주문 '+p.won.length+'/'+goal+'장';
@@ -47,11 +47,13 @@ function modal(title,body){hideAction();stopAI();el('title').textContent=title;e
 const close=()=>el('modal').close();
 el('close').onclick=close;
 el('myTable').onclick=()=>inspectSeat(mySeat());
-function advance(a,remote=false){
+function advance(a,remote=false,substitute=false){
   if(online&&!remote){submitOnline(a);return;}
   const actor=g.turn,human=actor===mySeat();
   const motion=captureMove(actor,a);
   if(!apply(g,a))return;
+  if(substitute)g.log[0].msg='AI 대행 · '+g.log[0].msg;
+  motion.substitute=substitute;
   if(motion.c&&a.kind!=='rest')g.log[0].card=motion.c;
   if(human)close();
   save();render();

@@ -109,7 +109,7 @@ function showOpponentMove(actor,a,motion){
     else {const n=a.n||1;flow=sum(c.cost)?chips(c.cost.map(x=>x*n))+' → '+chips(c.gain.map(x=>x*n)):chips(c.gain)+' 획득';}
   }
   if(a.drop&&sum(a.drop))flow+=' · '+chips(a.drop)+' 반납';
-  stage.innerHTML='<div class="stageCard">'+face(c,a.kind==='rest'?'회수한 카드':label)+'</div><div><b>'+seatName(actor)+' · '+label+'</b><div class="stageFlow">'+flow+'</div><small>보유 '+chips(motion.before,true)+' → '+chips(p.bag,true)+'</small></div>';
+  stage.innerHTML='<div class="stageCard">'+face(c,a.kind==='rest'?'회수한 카드':label)+'</div><div><b>'+seatName(actor)+(motion.substitute?' · AI 대행':'')+' · '+label+'</b><div class="stageFlow">'+flow+'</div><small>보유 '+chips(motion.before,true)+' → '+chips(p.bag,true)+'</small></div>';
   stage.hidden=false;
   stageTimer=setTimeout(hideAction,2000);
 }

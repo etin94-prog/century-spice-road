@@ -73,6 +73,7 @@ async function enterOnline(id){
       if(!guest)await s.set(guestRef,s.uid);
       online.seat=1;
     }
+    trackPresence(s,id);
     online.unsubscribe=s.onValue(roomRef(s,id),snap=>{
       if(!online.pending){try{syncRoom(snap.val());}catch(e){roomError(e);}}
     },roomError);
@@ -89,6 +90,8 @@ function syncRoom(room){
       return;
     }
   }
+  const presenceChanged=JSON.stringify(online.presence)!==JSON.stringify(room.presence);
+  online.presence=room.presence;
   const first=!online.initialized,wasReady=online.ready;
   if(first){const roles=room.config?Array.from({length:room.config.total-1},(_,j)=>j+1<room.config.humans?'친구':room.config['level'+(j+1)]):['친구'];g=seededGame(room.seed,roles);online.initialized=true;}
   online.ready=Boolean(room.config||room.guest);
@@ -101,11 +104,15 @@ function syncRoom(room){
     // Recompute the board locally. No HTML, score, or board state from a peer is rendered.
     const animate=!first&&online.count===last-1;
     if(animate){
-      const before=g.turn;advance(action,true);if(g.turn===before)throw Error('행동 기록이 규칙과 일치하지 않습니다.');
-    }else if(!apply(g,action))throw Error('행동 기록이 규칙과 일치하지 않습니다.');
+      const before=g.turn;advance(action,true,row.substitute===true);if(g.turn===before)throw Error('행동 기록이 규칙과 일치하지 않습니다.');
+    }else{
+      if(!apply(g,action))throw Error('행동 기록이 규칙과 일치하지 않습니다.');
+      if(row.substitute)g.log[0].msg='AI 대행 · '+g.log[0].msg;
+    }
     online.count++;
   }
-  if(first||!wasReady){render();if(g.over)results();}
+  if(first||!wasReady||presenceChanged)render();
+  if(first&&g.over)results();
   el('save').textContent='온라인 방 · '+(online.seat+1)+'번 좌석';
   scheduleRoomAI();
 }
@@ -118,6 +125,7 @@ async function submitOnline(action,computer=false){
     const turnRef=roomRef(s,id,'moves/t'+n);
     const row={n,action:JSON.stringify(action)};
     if(computer){
+      if(!onlineAI(g.turn))row.substitute=true;
       // All connected seats may offer the same AI turn. Replay only the server winner.
       await s.runTransaction(turnRef,current=>current===null?row:undefined,{applyLocally:false});
     }else await s.set(turnRef,row);
@@ -126,7 +134,7 @@ async function submitOnline(action,computer=false){
     online.pending=false;
     try{
       const snap=await s.get(roomRef(s,id));
-      if(snap.child('moves/t'+n).exists()){syncRoom(snap.val());return;}
+      if(computer||snap.child('moves/t'+n).exists()){online.aiJob=null;syncRoom(snap.val());return;}
     }catch{}
     roomError(e);
   }
@@ -148,13 +156,41 @@ async function joinSeat(s,id){
   throw Error('네 자리가 모두 찼습니다.');
 }
 function onlineAI(i){return Boolean(online?.config&&i>=online.config.humans);}
-function canRunRoomAI(){return online?.ready&&onlineAI(g.turn)&&!g.over;}
+function trackPresence(s,id){
+  const seat=roomRef(s,id,'presence/'+online.seat);
+  const path='connections/'+crypto.randomUUID();
+  let generation=0;
+  s.onValue(s.ref(s.database,'.info/connected'),async snap=>{
+    const current=++generation;
+    online.connected=false;
+    if(!snap.val()){if(online.initialized)render();return;}
+
+    try{
+      await s.onDisconnect(seat).update({[path]:null,changed:s.serverTimestamp()});
+      if(generation!==current)return;
+      await s.update(seat,{[path]:true,changed:s.serverTimestamp()});
+      if(generation!==current)return;
+      online.connected=true;
+      if(online.initialized){render();scheduleRoomAI();}
+    }catch(e){if(generation===current)roomError(e);}
+  },roomError);
+}
+function awaySeat(i){
+  const presence=online?.presence?.[i];
+  return !!presence?.changed&&!presence.connections;
+}
+function canRunRoomAI(){
+  return online?.ready&&online.connected&&!g.over&&g.turn!==online.seat&&(onlineAI(g.turn)||awaySeat(g.turn));
+}
 function scheduleRoomAI(){
-  if(!canRunRoomAI()||online.pending||online.aiJob===online.count)return;
-  const revision=online.count;online.aiJob=revision;
+  if(!canRunRoomAI()){online.aiJob=null;return;}
+  if(online.pending||online.aiJob?.revision===online.count)return;
+  const revision=online.count,job={revision};online.aiJob=job;
+  const substitute=!onlineAI(g.turn);
   setTimeout(async()=>{
-    if(revision!==online.count||!canRunRoomAI())return;
-    const board={players:g.players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
+    if(online.aiJob!==job||revision!==online.count||!canRunRoomAI())return;
+    const players=g.players.map((p,i)=>substitute&&i===g.turn?{...p,level:'Medium'}:p);
+    const board={players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     let move;
     try{
       move=await new Promise((resolve,reject)=>{
@@ -163,11 +199,11 @@ function scheduleRoomAI(){
         ai.onerror=e=>{ai.terminate();reject(e);};ai.postMessage(board);
       });
     }catch{move=chooseMove(board);}
-    if(revision===online.count&&canRunRoomAI()){
+    if(online.aiJob===job&&revision===online.count&&canRunRoomAI()){
       move.i??=0;
       await submitOnline(move,true);
     }
-  },850+online.seat*350);
+  },(substitute?8500:850)+online.seat*350);
 }
 function drawLobby(){
   const box=el('lobbySeats'),humans=online.people||1;
@@ -176,7 +212,7 @@ function drawLobby(){
   box.innerHTML='<p><b>참가한 사람 '+humans+'/4명</b> · 내 좌석 '+(online.seat+1)+'번</p>';
   if(online.seat){box.innerHTML+='<p>방장이 인원과 AI 난이도를 정하고 시작합니다.</p>';return;}
   const total=online.total;
-  box.innerHTML+='<label>전체 인원 <select id="roomTotal">'+[2,3,4].filter(n=>n>=humans).map(n=>'<option value="'+n+'" '+(n===total?'selected':'')+'>'+n+'인</option>').join('')+'</select></label><p>시작할 때 빈 자리를 AI로 채웁니다. 참가자 한 명이 방을 열고 있으면 AI 차례가 진행됩니다.</p>';
+  box.innerHTML+='<label>전체 인원 <select id="roomTotal">'+[2,3,4].filter(n=>n>=humans).map(n=>'<option value="'+n+'" '+(n===total?'selected':'')+'>'+n+'인</option>').join('')+'</select></label><p>시작할 때 빈 자리를 AI로 채웁니다. 연결이 끊긴 사람의 차례는 잠시 기다린 뒤 Medium AI가 대행합니다.</p>';
   for(let i=Math.max(2,humans);i<total;i++){
     box.innerHTML+='<div class="seat"><label for="roomLevel'+i+'">'+(i+1)+'번 좌석 AI</label><select id="roomLevel'+i+'">'+levels.map(l=>'<option '+(online.levels[i]===l?'selected':'')+'>'+l+'</option>').join('')+'</select></div>';
   }
