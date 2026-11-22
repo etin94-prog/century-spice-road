@@ -51,7 +51,7 @@ const review=document.getElementById('playedCard');
 let reviewTimer,reviewActor=null,flightActor=null,turnTimer;
 function showFlightTurn(actor,duration){
   clearTimeout(turnTimer);flightActor=actor;
-  turnTimer=setTimeout(()=>{flightActor=null;render();if(g.over&&!review.open)results();},duration);
+  turnTimer=setTimeout(()=>{flightActor=null;render();if(g.over&&!review.open)results();else if(online)scheduleRoomAI();},duration);
 }
 
 function stockChangeSummary(before,after,drop){
@@ -185,7 +185,7 @@ review.oncancel=e=>{e.preventDefault();dismissPlayedCard();};
 // A tap held across the timeout must finish on the review surface.
 review.onpointerdown=()=>clearTimeout(reviewTimer);
 review.onpointerup=review.onpointercancel=()=>{clearTimeout(reviewTimer);reviewTimer=setTimeout(dismissPlayedCard,350);};
-function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute}){
+function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute,coin}){
   actionSound(a.kind);
   if(a.kind==='play'){
     showPlayedCard({actor,c,rect,substitute,before,after:g.players[actor].bag.slice(),drop:a.drop,action:a});
@@ -201,7 +201,9 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     else end=visibleRect(el('handTitle'))||visibleRect(el('myTable'))||end;
   }
   if(!rect&&!end)return;
-  showFlightTurn(actor,pace(950));refreshTurn();
+  const order=a.kind==='order';
+  const collectAfter=order?670:0,travelTime=order?830:950;
+  showFlightTurn(actor,pace(collectAfter+travelTime));refreshTurn();
   const layer=el('flightLayer');
   const center=(r,defaultY)=>r?[r.left+r.width/2,r.top+r.height/2]:[innerWidth/2,defaultY];
   const from=center(rect,innerHeight/2),to=center(end,actor===mySeat()?innerHeight-32:40);
@@ -219,13 +221,25 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     Array.from(row.children).slice(a.i).forEach((card,j)=>{
       const old=following[j],next=card.getBoundingClientRect();
       const frames=old?[{transform:'translate('+(old.left-next.left)+'px,'+(old.top-next.top)+'px)'},{transform:'none'}]:[{opacity:0},{opacity:1}];
-      card.animate(frames,{delay:pace(180),duration:pace(320),fill:'backwards',easing:'ease-out'});
+      card.animate(frames,{delay:pace(collectAfter+180),duration:pace(320),fill:'backwards',easing:'ease-out'});
     });
   }
   const frames=flightFrames(from,to,width,height,1,.62,22);
   frames[0].opacity=1;frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
   node.style.transform=frames[0].transform;
-  const anim=node.animate(frames,{fill:'both',duration:pace(950),easing:'ease-in-out'});
+  const timing={fill:'both',delay:pace(collectAfter),duration:pace(travelTime),easing:'ease-in-out'};
+  const anim=node.animate(frames,timing);
+  if(order&&coin){
+    const badge=node.querySelector('.coin');
+    const start=center(visibleRect(badge)||rect,from[1]);
+    if(badge)badge.style.visibility='hidden';
+    const reward=document.createElement('span');reward.className='orderReward';
+    reward.innerHTML=coinToken(coin);layer.append(reward);
+    const points=flightFrames(start,to,reward.offsetWidth,reward.offsetHeight,1,.8,34);
+    points[0].opacity=1;points.at(-2).opacity=1;points.at(-1).opacity=0;
+    const collect=reward.animate(points,timing);
+    collect.onfinish=collect.oncancel=()=>reward.remove();
+  }
   anim.onfinish=()=>{
     node.remove();
     if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:pace(240)});
@@ -243,7 +257,7 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     layer.append(token);
     const origin=from;
     const cardPoint=[origin[0]+t*6,origin[1]];
-    const delay=180+t*55;
+    const delay=order?30+t*35:180+t*55;
     const path=flightFrames(gaining?cardPoint:target,gaining?target:cardPoint,token.offsetWidth,token.offsetHeight,1.1,.85,24);
     const amount=stock?.querySelector('b')||stock;
     amount?.animate([{transform:'scale(1)'},{transform:gaining?'scale(1.4)':'scale(.65)',offset:.45},{transform:'scale(1)'}],
