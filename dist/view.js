@@ -4,11 +4,13 @@ let g,draft=null,timer;
 try{g=JSON.parse(localStorage.getItem(key));}catch{}
 const firstVisit=!g?.players;
 if(firstVisit)g=newGame();
-const seatName=i=>i?'상단 '+i:'나';
+const mySeat=()=>online?.seat??0;
+const myTurn=()=>g.turn===mySeat()&&(!online||online.ready&&!online.pending);
+const seatName=i=>i===mySeat()?'나':online?'친구':'상단 '+i;
 const levelOf=p=>levels.includes(p.level)?p.level:'Medium';
 let worker=null;
 
-function save(){try{localStorage.setItem(key,JSON.stringify(g));el('save').textContent='이 기기에 자동 저장됨';}catch{el('save').textContent='저장 공간 사용 불가';}}
+function save(){if(online)return;try{localStorage.setItem(key,JSON.stringify(g));el('save').textContent='이 기기에 자동 저장됨';}catch{el('save').textContent='저장 공간 사용 불가';}}
 const cube=t=>'<i aria-hidden="true" class="cube s'+t+'"></i>';
 const chips=(bag,all=false)=>'<span class="chips">'+bag.map((n,t)=>n||all?'<span class="chip" aria-label="'+names[t]+' '+n+'개" title="'+names[t]+'">'+cube(t)+n+'</span>':'').join('')+'</span>';
 const type=c=>c.up?'승급':sum(c.cost)?'교환':'생산';
@@ -19,40 +21,42 @@ function card(kind,c,i){
   return '<button class="card" data-kind="'+kind+'" data-i="'+i+'">'+face(c,label)+(kind==='buy'&&sum(c.pile)?'<small class="pile">쌓인 자원 '+chips(c.pile)+'</small>':'')+'</button>';
 }
 function render(){
-  const p=g.players[0],goal=target(g);
+  const p=g.players[mySeat()],goal=target(g);
   el('mode').textContent='센추리 Ⅰ  /  '+g.players.length+'인 대국';
-  el('status').innerHTML='<span>라운드 '+g.round+(g.players.some(q=>q.won.length>=goal)&&!g.over?' · 마지막 라운드':'')+'</span><b class="turn">'+(g.over?'대국 종료':g.turn?seatName(g.turn)+' 생각 중…':'나의 차례')+'</b>';
-  el('rival').innerHTML=g.players.slice(1).map((ai,j)=>{
-    const i=j+1,last=g.log.find(x=>x.who===i);
-    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'"><span class="rivalhead"><b>'+seatName(i)+'</b><small>'+levelOf(ai)+'</small></span><span>'+chips(ai.bag,true)+'</span><span class="seatArt '+(last?.card?artOf(last.card):'back')+'"></span><small>손패 '+ai.hand.length+' · 사용 '+ai.used.length+' · 주문 '+ai.won.length+'</small><small>'+score(ai)+'점 · '+(last?.msg||'첫 교역 대기')+'</small></button>';
+  el('status').innerHTML='<span>라운드 '+g.round+(g.players.some(q=>q.won.length>=goal)&&!g.over?' · 마지막 라운드':'')+'</span><b class="turn">'+(g.over?'대국 종료':online&&!online.ready?'친구 입장 대기':g.turn!==mySeat()?seatName(g.turn)+' 차례':'나의 차례')+'</b>';
+  el('rival').innerHTML=g.players.map((ai,i)=>{
+    if(i===mySeat())return '';
+    const last=g.log.find(x=>x.who===i);
+    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'"><span class="rivalhead"><b>'+seatName(i)+'</b><small>'+(online?'온라인':levelOf(ai))+'</small></span><span>'+chips(ai.bag,true)+'</span><span class="seatArt '+(last?.card?artOf(last.card):'back')+'"></span><small>손패 '+ai.hand.length+' · 사용 '+ai.used.length+' · 주문 '+ai.won.length+'</small><small>'+score(ai)+'점 · '+(last?.msg||'첫 교역 대기')+'</small></button>';
   }).join('');
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));
   el('myScore').textContent=score(p)+'점 · 주문 '+p.won.length+'/'+goal+'장';
   el('bag').innerHTML=p.bag.map((n,t)=>'<div class="stock"><b>'+cube(t)+n+'</b><small>'+names[t]+'</small></div>').join('');
   el('handTitle').textContent='손패 '+p.hand.length+'장';
   el('hand').innerHTML=p.hand.map((c,i)=>card('play',c,i)).join('')||'<p>휴식하면 사용한 카드를 모두 회수합니다.</p>';
-  el('rest').textContent='휴식 · '+p.used.length+'장 회수';el('rest').disabled=!!(g.over||g.turn||!p.used.length);
+  el('rest').textContent='휴식 · '+p.used.length+'장 회수';el('rest').disabled=!!(g.over||!myTurn()||!p.used.length);
   el('orders').innerHTML=g.orders.map((c,i)=>card('order',c,i)).join('');
   el('merchants').innerHTML=g.market.map((c,i)=>card('buy',c,i)).join('');
   el('orderDeck').textContent='남은 주문 '+g.deck.length+'장';
   el('merchantDeck').textContent='남은 상인 '+g.merchants.length+'장';
-  document.querySelectorAll('[data-kind]').forEach(b=>{b.disabled=!!(g.turn||g.over);b.onclick=()=>start(b.dataset.kind,+b.dataset.i);});
+  document.querySelectorAll('[data-kind]').forEach(b=>{b.disabled=!!(!myTurn()||g.over);b.onclick=()=>start(b.dataset.kind,+b.dataset.i);});
   el('log').innerHTML=g.log.map(x=>'<p>'+x.round+'R · '+seatName(x.who)+' · '+x.msg+(x.card?' &nbsp; '+(x.card.vp?chips(x.card.cost):desc(x.card)):'')+'</p>').join('')||'<p>아직 진행한 행동이 없습니다.</p>';
   if(g.over){el('status').innerHTML+='<button id="results">결과 보기</button>';el('results').onclick=results;}
 }
 function modal(title,body){hideAction();stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
 const close=()=>el('modal').close();
 el('close').onclick=close;
-el('myTable').onclick=()=>inspectSeat(0);
-function advance(a){
-  const actor=g.turn,human=actor===0;
+el('myTable').onclick=()=>inspectSeat(mySeat());
+function advance(a,remote=false){
+  if(online&&!remote){submitOnline(a);return;}
+  const actor=g.turn,human=actor===mySeat();
   const motion=captureMove(actor,a);
   if(!apply(g,a))return;
   if(motion.c&&a.kind!=='rest')g.log[0].card=motion.c;
   if(human)close();
   save();render();
   animateMove(actor,a,motion);
-  if(actor)showOpponentMove(actor,a,motion);
+  if(!human)showOpponentMove(actor,a,motion);
   if(g.over)results();else schedule();
 }
 function stopAI(){
@@ -61,7 +65,7 @@ function stopAI(){
 }
 function schedule(){
   stopAI();
-  if(g.over||!g.turn||el('modal').open)return;
+  if(online||g.over||!g.turn||el('modal').open)return;
   timer=setTimeout(()=>{
     const publicBoard={players:g.players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     const fallback=()=>{stopAI();advance(chooseMove(publicBoard));};
@@ -74,12 +78,12 @@ function schedule(){
   },el('actionStage').hidden?950:2100);
 }
 function start(kind,i){
-  if(g.over||g.turn)return;
+  if(g.over||!myTurn())return;
   draft={kind,i,pay:[],steps:[],n:1,drop:zeros()};editor();
 }
 function picks(list,fn){return '<div class="choices">'+list.map(([id,label,disabled])=>'<button data-pick="'+fn+'" data-val="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>').join('')+'</div>';}
 function editor(){
-  const a=draft,p=g.players[0],c=(a.kind==='play'?p.hand:a.kind==='buy'?g.market:g.orders)[a.i];
+  const a=draft,p=g.players[mySeat()],c=(a.kind==='play'?p.hand:a.kind==='buy'?g.market:g.orders)[a.i];
   let title='',body='',label='',bag=p.bag.slice();
   if(a.kind==='rest'){title='휴식';body='<p>사용한 상인 카드 '+p.used.length+'장을 모두 손으로 가져옵니다.</p>';label='휴식하기';}
   if(a.kind==='order'){
@@ -127,19 +131,21 @@ function editor(){
 el('rest').onclick=()=>start('rest',0);
 function results(){
   const ranks=standings(g);
-  const rows=ranks.map(({p,i,points},j)=>'<article class="ranking"><b>'+(j+1)+'위 · '+seatName(i)+(i?' ('+levelOf(p)+')':'')+' · '+points+'점</b><p>주문 '+sum(p.won.map(c=>c.vp))+' · 금화 '+3*p.gold+' · 은화 '+p.silver+' · 향신료 '+sum(p.bag.slice(1))+'</p></article>').join('');
-  modal(ranks[0].i===0?'나의 승리':seatName(ranks[0].i)+' 승리',rows+'<p>동점이면 차례가 더 늦은 대상단이 앞섭니다.</p><button class="primary" id="again">다음 대국 설정</button>');
-  el('again').onclick=openSetup;
+  const rows=ranks.map(({p,i,points},j)=>'<article class="ranking"><b>'+(j+1)+'위 · '+seatName(i)+(!online&&i?' ('+levelOf(p)+')':'')+' · '+points+'점</b><p>주문 '+sum(p.won.map(c=>c.vp))+' · 금화 '+3*p.gold+' · 은화 '+p.silver+' · 향신료 '+sum(p.bag.slice(1))+'</p></article>').join('');
+  modal(ranks[0].i===mySeat()?'나의 승리':seatName(ranks[0].i)+' 승리',rows+'<p>동점이면 차례가 더 늦은 대상단이 앞섭니다.</p><button class="primary" id="again">다음 대국 설정</button>');
+  if(online){el('again').textContent='새 친구 대국 만들기';el('again').onclick=createOnline;}else el('again').onclick=openSetup;
 }
 const descriptions={Easy:'가까운 주문부터 준비합니다.',Medium:'생산·교환·휴식을 연결해 주문을 준비합니다.',Hard:'여러 경로의 점수와 시장 선점 가능성을 비교합니다.',Hell:'상대의 다음 수와 종국의 점수 차까지 계산합니다.'};
 function openSetup(){
+  if(online){roomMenu();return;}
   let count=g.players.length;
   const selected=Array.from({length:3},(_,j)=>g.players[j+1]?levelOf(g.players[j+1]):'Medium');
   function draw(){
     const seats=selected.slice(0,count-1).map((level,j)=>'<div class="seat"><label for="level'+j+'">'+seatName(j+1)+'</label><select id="level'+j+'">'+levels.map(l=>'<option '+(l===level?'selected':'')+'>'+l+'</option>').join('')+'</select><small id="info'+j+'">'+descriptions[level]+'</small></div>').join('');
-    modal('대국 설정','<p>나를 포함한 참가 인원</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'" class="'+(count===n?'active':'')+'">'+n+'인</button>').join('')+'</div>'+seats+'<p>'+count+'인전 · 주문 '+(count===4?5:6)+'장 달성 시 마지막 라운드</p>'+(g.log.length&&!g.over?'<small>시작하면 진행 중인 대국을 교체합니다.</small>':'')+'<button class="primary" id="new">대국 시작</button>');
+    modal('대국 설정','<p>나를 포함한 참가 인원</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'" class="'+(count===n?'active':'')+'">'+n+'인</button>').join('')+'</div>'+seats+'<p>'+count+'인전 · 주문 '+(count===4?5:6)+'장 달성 시 마지막 라운드</p>'+(g.log.length&&!g.over?'<small>시작하면 진행 중인 대국을 교체합니다.</small>':'')+'<button class="primary" id="new">AI 대국 시작</button><button class="primary" id="friend">친구와 2인 대전</button>');
     el('body').querySelectorAll('[data-count]').forEach(b=>b.onclick=()=>{count=+b.dataset.count;draw();});
     selected.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>{selected[j]=e.target.value;el('info'+j).textContent=descriptions[selected[j]];});
+    el('friend').onclick=createOnline;
     el('new').onclick=()=>{stopAI();g=newGame(selected.slice(0,count-1));save();close();render();};
   }
   draw();
@@ -158,4 +164,4 @@ function landscape(){
   ridge(148,'#8c795b',.5);ridge(172,'#4e6257',3);
   const shade=ctx.createLinearGradient(0,0,680,0);shade.addColorStop(0,'#163f3ffc');shade.addColorStop(1,'#163f3f00');ctx.fillStyle=shade;ctx.fillRect(0,0,680,200);
 }
-landscape();save();render();if(firstVisit)openSetup();else if(g.over)results();else schedule();
+landscape();save();render();if(roomIdFromUrl())enterOnline(roomIdFromUrl());else if(firstVisit)openSetup();else if(g.over)results();else schedule();

@@ -20,12 +20,12 @@ function visibleRect(node){
 function captureMove(actor,a){
   const p=g.players[actor];
   const c=a.kind==='buy'?g.market[a.i]:a.kind==='order'?g.orders[a.i]:a.kind==='play'?p.hand[a.i]:p.used[p.used.length-1];
-  const source=actor&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
+  const source=actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
   return {c,rect:visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
 function animateMove(actor,a,{c,rect}){
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const dest=actor?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
+  const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
   const end=visibleRect(dest);
   if(a.kind==='buy'||a.kind==='order'){
     const row=el(a.kind==='buy'?'merchants':'orders');
@@ -37,7 +37,7 @@ function animateMove(actor,a,{c,rect}){
   node.innerHTML=face(c,seatName(actor)+' · '+({buy:'영입',play:'사용',rest:'회수',order:'주문 달성'}[a.kind]));
   document.body.append(node);
   const point=(r,fallback)=>r?[Math.max(0,Math.min(innerWidth-96,r.left+(r.width-96)/2)),Math.max(0,Math.min(innerHeight-96,r.top))]:fallback;
-  const from=point(rect,[innerWidth/2-48,12]),to=point(end,[innerWidth/2-48,actor?4:innerHeight-96]);
+  const from=point(rect,[innerWidth/2-48,12]),to=point(end,[innerWidth/2-48,actor!==mySeat()?4:innerHeight-96]);
   const move=(v,scale,angle)=>'translate('+v[0]+'px,'+v[1]+'px) rotate('+angle+'deg) scale('+scale+')';
   const anim=node.animate([{transform:move(from,.78,-5),opacity:.7},{offset:.42,transform:move([(from[0]+to[0])/2,(from[1]+to[1])/2-12],1.08,2),opacity:1},{transform:move(to,.65,0),opacity:.2}],{duration:700,easing:'ease-in-out'});
   anim.onfinish=()=>node.remove();anim.oncancel=()=>node.remove();

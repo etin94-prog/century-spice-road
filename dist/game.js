@@ -3,17 +3,17 @@ const zeros = () => [0,0,0,0];
 const sum = a => a.reduce((x,y) => x+y,0);
 const add = (a,b,k=1) => a.map((v,i) => v+k*b[i]);
 const covers = (a,b) => a.every((v,i) => v>=b[i]);
-const shuffled = entries => {
+const shuffled = (entries,random=Math.random) => {
   const a = entries.slice();
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];}
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];}
   return a;
 };
 const levels=['Easy','Medium','Hard','Hell'];
 const target=g=>g.players.length===4?5:6;
 const standings=g=>g.players.map((p,i)=>({p,i,points:score(p)})).sort((a,b)=>b.points-a.points||b.i-a.i);
-function newGame(opponents=['Medium']){
-  const merchants=shuffled(MERCHANTS.map(c=>({...c,pile:zeros()})));
-  const orders=shuffled(POINTS);
+function newGame(opponents=['Medium'],random=Math.random){
+  const merchants=shuffled(MERCHANTS.map(c=>({...c,pile:zeros()})),random);
+  const orders=shuffled(POINTS,random);
   const starts=[[3,0,0,0],[4,0,0,0],[4,0,0,0],[3,1,0,0]];
   const players=starts.slice(0,1+opponents.length).map((bag,i)=>({bag,level:i?opponents[i-1]:null,hand:[
     {cost:zeros(),gain:[2,0,0,0],up:0},{cost:zeros(),gain:zeros(),up:2}
