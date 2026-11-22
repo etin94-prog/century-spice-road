@@ -126,3 +126,6 @@ button[data-kind]{touch-action:manipulation}
  main{grid-template-rows:70px minmax(0,1fr)}
  main>#rival{grid-template-columns:none;grid-template-rows:minmax(0,1fr)}
 }
+#flightLayer{position:fixed;inset:0;z-index:21;contain:strict;overflow:hidden;pointer-events:none;background:transparent}
+#flightLayer .flying,#flightLayer .spiceFlight{position:absolute;top:0;left:0;margin:0;pointer-events:none;will-change:transform}
+.marketmat .card{-webkit-tap-highlight-color:transparent}

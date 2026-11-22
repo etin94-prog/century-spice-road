@@ -32,7 +32,9 @@ function captureMove(actor,a,animate=true){
   const source=!animate?null:actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
   const selected=animate&&a.kind==='play'&&actor===mySeat()&&el('modal').open
     ? el('body').querySelector('.detailFace')||el('collection')?.querySelector('[data-hand-index="'+a.i+'"]'):null;
-  return {c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
+  const marketSource=source?.matches('.marketmat .card')?source:null;
+  const following=marketSource?Array.from(marketSource.parentElement.children).slice(a.i+1).map(card=>card.getBoundingClientRect()):[];
+  return {marketSource,following,c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
 // Sample a shallow arc; the browser interpolates transforms between these points.
 function flightFrames(from,to,width,height,startScale,endScale,lift){
@@ -44,7 +46,7 @@ function flightFrames(from,to,width,height,startScale,endScale,lift){
     return {transform:'translate3d('+x+'px,'+y+'px,0) rotate('+(-4*bend)+'deg) scale('+scale+')'};
   });
 }
-function animateMove(actor,a,{c,rect,artwork,before}){
+function animateMove(actor,a,{c,rect,artwork,before,marketSource,following}){
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
   const stack=actor!==mySeat()?dest?.querySelector(a.kind==='order'?'.orderMini':'.cardBack'):null;
@@ -54,18 +56,25 @@ function animateMove(actor,a,{c,rect,artwork,before}){
     if(last&&end&&last.right<=end.right+1&&last.left>=end.left-1)end=last;
     else end=visibleRect(el('handTitle'))||visibleRect(el('myTable'))||end;
   }
-  if(a.kind==='buy'||a.kind==='order'){
-    const row=el(a.kind==='buy'?'merchants':'orders');
-    if(row.children.length===(a.kind==='buy'?6:5))
-      row.lastElementChild.animate([{transform:'translateX(18px) rotate(4deg)',opacity:.3},{transform:'none',opacity:1}],{duration:450});
-  }
   if(!rect&&!end)return;
-  const node=document.createElement('div');node.className='card flying';
-  node.setAttribute('aria-hidden','true');
-  node.innerHTML=artwork||face(c,'');
-  const width=rect?Math.min(140,rect.width):82,height=rect?Math.min(160,rect.height):106;
+  const layer=el('flightLayer');
+  // render() has detached the selected card. Carry its original face and dimensions.
+  const node=marketSource||document.createElement('div');
+  node.classList.add('card','flying');
+  node.removeAttribute('data-kind');node.removeAttribute('data-i');
+  node.tabIndex=-1;node.setAttribute('aria-hidden','true');
+  if(!marketSource)node.innerHTML=artwork||face(c,'');
+  const width=rect?rect.width:82,height=rect?rect.height:106;
   Object.assign(node.style,{width:width+'px',height:height+'px',minHeight:'0',transformOrigin:'center'});
-  document.body.append(node);
+  layer.append(node);
+  if(marketSource){
+    const row=el(a.kind==='buy'?'merchants':'orders');
+    Array.from(row.children).slice(a.i).forEach((card,j)=>{
+      const old=following[j],next=card.getBoundingClientRect();
+      const frames=old?[{transform:'translate('+(old.left-next.left)+'px,'+(old.top-next.top)+'px)'},{transform:'none'}]:[{opacity:0},{opacity:1}];
+      card.animate(frames,{delay:180,duration:320,fill:'backwards',easing:'ease-out'});
+    });
+  }
   const center=(r,defaultY)=>r?[r.left+r.width/2,r.top+r.height/2]:[innerWidth/2,defaultY];
   const from=center(rect,innerHeight/2),to=center(end,actor===mySeat()?innerHeight-32:40);
   const playing=a.kind==='play';
@@ -80,7 +89,8 @@ function animateMove(actor,a,{c,rect,artwork,before}){
       {transform:laid+' scale(.36)',offset:1,opacity:0});
   }
   frames[0].opacity=1;if(!playing)frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
-  const anim=node.animate(frames,{duration:playing?1020:950,easing:'ease-in-out'});
+  node.style.transform=frames[0].transform;
+  const anim=node.animate(frames,{fill:'both',duration:playing?1020:950,easing:'ease-in-out'});
   anim.onfinish=()=>{
     node.remove();
     if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:240});
@@ -95,7 +105,7 @@ function animateMove(actor,a,{c,rect,artwork,before}){
     const token=document.createElement('span');
     token.className='spiceFlight';token.setAttribute('aria-hidden','true');
     token.innerHTML=cube(t)+' +'+gain;
-    document.body.append(token);
+    layer.append(token);
     const origin=playing?table:from;
     const path=flightFrames([origin[0]+t*6,origin[1]],target,token.offsetWidth,token.offsetHeight,1.1,.85,24);
     path[0].opacity=0;path[1].opacity=1;path[path.length-1].opacity=1;
