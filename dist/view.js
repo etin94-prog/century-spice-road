@@ -93,7 +93,7 @@ function advance(a,remote=false,substitute=false){
   if(human)close();
   save();render();
   animateMove(actor,a,motion);
-  if(!human)showOpponentMove(actor,a,motion);
+  showMove(actor,a,motion);
   if(g.over)results();else schedule();
 }
 function recordMove(action,motion,actor){

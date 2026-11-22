@@ -108,33 +108,44 @@ function hideAction(){
 }
 function moveFlow(a,motion){
   const c=motion.c??motion.card;
+  const spices=bag=>bag.map((n,t)=>n?names[t]+' '+n+'개':'').filter(Boolean).join(', ');
   let label,flow;
-  if(a.kind==='rest'){label='휴식';flow='사용 더미 '+motion.used+'장 → 손패';}
+  if(a.kind==='rest'){label='휴식';flow='사용한 카드 '+motion.used+'장을 손패로 가져왔어요.';}
   if(a.kind==='buy'){
     label='상인 영입';
-    flow=a.pay.length?'시장에 '+a.pay.map(t=>cube(t)+names[t]).join(' · ')+' 지불':'첫 상인 무료 영입';
-    if(sum(c.pile))flow+=' · '+chips(c.pile)+' 회수';
+    const paid=zeros();
+    a.pay.forEach(t=>paid[t]++);
+    flow=a.pay.length?spices(paid)+'를 내고 상인을 영입했어요.':'상인을 무료로 영입했어요.';
+    if(sum(c.pile))flow+=' 카드에 쌓인 '+spices(c.pile)+'도 받았어요.';
   }
-  if(a.kind==='order'){label=c.vp+'점 주문 달성';flow=chips(c.cost)+' 지불'+(motion.coin?' · '+coinName[motion.coin]+'점':'');}
+  if(a.kind==='order'){
+    label='주문 달성';
+    flow=spices(c.cost)+'를 내고 '+c.vp+'점 주문을 달성했어요.';
+    if(motion.coin)flow+=' '+(motion.coin==='gold'?'금화 1개(+3점)':'은화 1개(+1점)')+'도 받았어요.';
+  }
   if(a.kind==='play'){
     label=type(c);
-    if(c.up)flow=a.steps.map(t=>cube(t)+names[t]+' → '+cube(t+1)+names[t+1]).join(' · ');
-    else {const n=a.n||1;flow=sum(c.cost)?chips(c.cost.map(x=>x*n))+' → '+chips(c.gain.map(x=>x*n)):chips(c.gain)+' 획득';}
+    if(c.up)flow=a.steps.map(t=>names[t]+' → '+names[t+1]).join(', ')+' 순서로 승급했어요.';
+    else {
+      const n=a.n||1;
+      flow=sum(c.cost)?spices(c.cost.map(x=>x*n))+'를 내고 '+spices(c.gain.map(x=>x*n))+'를 받았어요.':spices(c.gain)+'를 얻었어요.';
+    }
   }
-  if(a.drop&&sum(a.drop))flow+=' · '+chips(a.drop)+' 반납';
+  if(a.drop&&sum(a.drop))flow+=' '+spices(a.drop)+'를 반납했어요.';
   return {label,flow};
 }
-function showOpponentMove(actor,a,motion){
+function showMove(actor,a,motion){
   hideAction();
   const stage=el('actionStage'),{label,flow}=moveFlow(a,motion);
   stage.innerHTML='<span aria-hidden="true" class="moveArt '+artOf(motion.c)+'"></span><div><b>'+seatName(actor)+(motion.substitute?' · AI 대행':'')+' · '+label+'</b><div class="stageFlow">'+flow+'</div></div>';
   stage.hidden=false;
-  const seat=visibleRect(document.querySelector('[data-seat="'+actor+'"]'));
+  const seat=actor===mySeat()?motion.rect:visibleRect(document.querySelector('[data-seat="'+actor+'"]'));
   const left=seat?seat.left+(seat.width-stage.offsetWidth)/2:(innerWidth-stage.offsetWidth)/2;
-  const top=seat?seat.bottom+4:8;
+  let top=seat?seat.bottom+4:8;
+  if(seat&&top+stage.offsetHeight>innerHeight-8)top=seat.top-stage.offsetHeight-4;
   stage.style.left=Math.max(8,Math.min(innerWidth-stage.offsetWidth-8,left))+'px';
   stage.style.top=Math.max(8,Math.min(innerHeight-stage.offsetHeight-8,top))+'px';
-  stageTimer=setTimeout(hideAction,2000);
+  stageTimer=setTimeout(hideAction,3600);
 }
 window.addEventListener('resize',hideAction);
 const fullButton=document.getElementById('fullscreen');
