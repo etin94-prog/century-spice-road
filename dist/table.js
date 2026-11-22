@@ -117,19 +117,22 @@ function beginGesture(e,x,y){
   const card=e.target.closest('button[data-kind]');
   if(!card||card.disabled||el('modal').open||!myTurn()||g.over)return;
   const s={card,x,y,kind:card.dataset.kind,i:+card.dataset.i};gesture=s;
-  s.timer=setTimeout(()=>{
-    s.ghost=card.cloneNode(true);s.ghost.removeAttribute('data-kind');s.ghost.removeAttribute('data-i');s.ghost.classList.add('lifted');s.ghost.setAttribute('aria-hidden','true');
+  s.timer=setTimeout(()=>{s.held=true;},310);
+}
+function liftGesture(s){
+    s.ghost=s.card.cloneNode(true);s.ghost.removeAttribute('data-kind');s.ghost.removeAttribute('data-i');s.ghost.classList.add('lifted');s.ghost.setAttribute('aria-hidden','true');
     s.zone=document.createElement('div');s.zone.className='dropzone';s.zone.textContent={buy:'여기에 놓아 손패로 가져오기',play:'여기에 놓아 카드 사용',order:'여기에 놓아 주문 달성'}[s.kind];
-    // Keep the target on the opposite half of the screen from the finger.
-    const edge=s.y>innerHeight*.5?'top':'bottom';
-    s.zone.style[edge]='max(16px, env(safe-area-inset-'+edge+'))';
-    document.body.append(s.ghost,s.zone);trackGesture(null,s.x,s.y);
-  },310);
+    s.zone.style.top='max(8px, env(safe-area-inset-top))';
+    document.body.append(s.ghost,s.zone);
 }
 function inside(zone,x,y){const r=zone.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;}
 function trackGesture(e,x,y){
   const s=gesture;if(!s)return;
-  if(!s.ghost){if(Math.hypot(x-s.x,y-s.y)>9)clearGesture();return;}
+  if(!s.ghost){
+    if(Math.hypot(x-s.x,y-s.y)<=9)return;
+    if(!s.held){clearGesture();return;}
+    liftGesture(s);
+  }
   if(e?.cancelable)e.preventDefault();
   const left=Math.max(4,Math.min(innerWidth-s.ghost.offsetWidth-4,x-45));
   const top=Math.max(4,Math.min(innerHeight-s.ghost.offsetHeight-4,y-s.ghost.offsetHeight-12));
@@ -138,6 +141,12 @@ function trackGesture(e,x,y){
 }
 function endGesture(e,x,y){
   const s=gesture;if(!s)return;
+  if(s.held&&!s.ghost&&s.card.isConnected){
+    if(e.cancelable)e.preventDefault();
+    clearGesture();s.card.click();
+    suppressClick=true;setTimeout(()=>suppressClick=false,350);
+    return;
+  }
   const confirm=s.card.isConnected&&s.zone&&inside(s.zone,x,y);
   if(s.ghost){if(e.cancelable)e.preventDefault();suppressClick=true;setTimeout(()=>suppressClick=false,350);}
   clearGesture();if(confirm)start(s.kind,s.i);
