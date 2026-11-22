@@ -137,3 +137,6 @@ button[data-kind]{touch-action:manipulation}
 .caravan.activeTurn,#rival .rival.activeTurn{outline:3px solid #ffbf46;outline-offset:-3px;box-shadow:inset 0 0 0 4px #755119}
 .orderMini.filled{width:24px;font-size:10px}
 @media(orientation:landscape) and (max-width:650px){#rival .seatDecks{gap:4px;font-size:11px}}
+.upgradePair{display:inline-flex;align-items:center;vertical-align:middle;gap:9px}
+.upgradePair .cube{width:17px;height:17px}
+.choices [data-pick="steps"]{min-height:44px;padding-inline:12px}

@@ -184,6 +184,10 @@ function finishForcedReturn(action,bag){
   if(excess>0&&remaining.filter(n=>n>0).length===1)
     action.drop[remaining.findIndex(n=>n>0)]+=excess;
 }
+function upgradePair(t){
+  const label=names[t]+'에서 '+names[t+1]+'으로 승급';
+  return '<span class="upgradePair" role="img" aria-label="'+label+'" title="'+label+'">'+cube(t)+'<span aria-hidden="true">→</span>'+cube(t+1)+'</span>';
+}
 function picks(list,fn){return '<div class="choices">'+list.map(([id,label,disabled])=>'<button data-pick="'+fn+'" data-val="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>').join('')+'</div>';}
 function editor(){
   const a=draft,p=g.players[mySeat()],c=(a.kind==='play'?p.hand:a.kind==='buy'?g.market:g.orders)[a.i];
@@ -207,7 +211,8 @@ function editor(){
     if(c.up){
       a.steps.forEach(t=>{bag[t]--;bag[t+1]++;});
       body+='<p>승급할 향신료를 선택하세요. ('+a.steps.length+'/'+c.up+')</p>';
-      if(a.steps.length<c.up)body+=picks(names.slice(0,3).map((n,t)=>[t,n+' → '+names[t+1],!bag[t]]),'steps');
+      if(a.steps.length)body+='<p>선택한 승급 · '+a.steps.map(upgradePair).join(' · ')+'</p>';
+      if(a.steps.length<c.up)body+=picks(names.slice(0,3).map((_,t)=>[t,upgradePair(t),!bag[t]]),'steps');
     }else if(sum(c.cost)){
       body+='<p>교환 횟수</p>'+picks(Array.from({length:Math.max(1,Math.min(...c.cost.map((x,t)=>x?Math.floor(bag[t]/x):Infinity)))},(_,j)=>[j+1,(a.n===j+1?'✓ ':'')+(j+1)+'회',!covers(bag,c.cost)]),'n');
       if(!covers(bag,c.cost))body+='<p>교환에 필요한 향신료가 부족합니다.</p>';
