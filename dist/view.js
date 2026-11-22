@@ -134,7 +134,42 @@ function playHandCard(i){
 }
 function start(kind,i){
   if(g.over||!myTurn())return;
-  draft={kind,i,pay:[],steps:[],n:1,drop:zeros()};editor();
+  draft={kind,i,pay:[],steps:[],n:1,drop:zeros()};
+  const p=g.players[mySeat()];
+  if(kind==='order'){
+    const cost=g.orders[i].cost;
+    if(covers(p.bag,cost)){advance(draft);return;}
+    const missing=cost.map((n,t)=>n>p.bag[t]?names[t]+' '+(n-p.bag[t]):'').filter(Boolean);
+    el('status').querySelector('.turn').textContent=missing.join(' · ')+' 부족';
+    return;
+  }
+  if(kind==='buy'){
+    if(sum(p.bag)<i){
+      el('status').querySelector('.turn').textContent='영입 비용 '+(i-sum(p.bag))+'개 부족';
+      return;
+    }
+    finishForcedPayment(draft,p.bag);
+    const bag=effect(p,draft,g);
+    if(bag){
+      finishForcedReturn(draft,bag);
+      if(sum(bag)-sum(draft.drop)<=10){advance(draft);return;}
+    }
+  }
+  editor();
+}
+function finishForcedPayment(action,bag){
+  const remaining=bag.slice();
+  action.pay.forEach(t=>remaining[t]--);
+  if(remaining.filter(n=>n>0).length===1){
+    const t=remaining.findIndex(n=>n>0);
+    while(action.pay.length<action.i)action.pay.push(t);
+  }
+}
+function finishForcedReturn(action,bag){
+  const remaining=add(bag,action.drop,-1);
+  const excess=sum(remaining)-10;
+  if(excess>0&&remaining.filter(n=>n>0).length===1)
+    action.drop[remaining.findIndex(n=>n>0)]+=excess;
 }
 function picks(list,fn){return '<div class="choices">'+list.map(([id,label,disabled])=>'<button data-pick="'+fn+'" data-val="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>').join('')+'</div>';}
 function editor(){
@@ -178,7 +213,13 @@ function editor(){
   body+='<div class="actionConfirm"><button class="primary" id="confirm" '+(!raw||sum(raw)-sum(a.drop)>10?'disabled':'')+'>'+label+'</button></div>';
   modal(title,(a.kind==='rest'?'':'<div class="detailFace">'+face(c,'선택한 카드')+'</div>')+body);
   el('body').querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{
-    const field=b.dataset.pick,t=+b.dataset.val;if(field==='drop')a.drop[t]++;else{a.drop=zeros();if(field==='n')a.n=t;else a[field].push(t);}editor();
+    const field=b.dataset.pick,t=+b.dataset.val;if(field==='drop')a.drop[t]++;else{a.drop=zeros();if(field==='n')a.n=t;else a[field].push(t);}
+    if(a.kind==='buy'){
+      finishForcedPayment(a,p.bag);
+      const bag=effect(p,a,g);
+      if(bag)finishForcedReturn(a,bag);
+    }
+    editor();
   });
   if(el('undo'))el('undo').onclick=()=>start(a.kind,a.i);
   el('confirm').onclick=()=>advance(a);
