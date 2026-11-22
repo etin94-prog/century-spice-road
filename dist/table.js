@@ -34,7 +34,7 @@ function captureMove(actor,a,animate=true){
     ? el('body').querySelector('.detailFace')||el('collection')?.querySelector('[data-hand-index="'+a.i+'"]'):null;
   const marketSource=source?.matches('.marketmat .card')?source:null;
   const following=marketSource?Array.from(marketSource.parentElement.children).slice(a.i+1).map(card=>card.getBoundingClientRect()):[];
-  return {marketSource,following,c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
+  return {restCards:animate&&a.kind==='rest'?p.used.slice():null,marketSource,following,c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
 // Sample a shallow arc; the browser interpolates transforms between these points.
 function flightFrames(from,to,width,height,startScale,endScale,lift){
@@ -152,8 +152,47 @@ function animateUpgrade(steps,cells,seat,center,layer,arrival){
     });
   });
 }
+function showRest(entry){
+  const {actor,restCards,rect,substitute}=entry;
+  const count=restCards.length,who=seatName(actor)+(substitute?' · AI 대행':'');
+  const button=review.querySelector('button');
+  button.textContent=who+' · 휴식 · '+count+'장 회수';
+  button.setAttribute('aria-label',button.textContent+'. 누르면 닫기');
+  review.classList.add('restReview');
+  reviewActor=actor;refreshTurn();review.showModal();
+  const layer=document.createElement('div');layer.className='conversionLayer';review.append(layer);
+  const stack=actor===mySeat()?el('handTitle'):document.querySelector('[data-seat="'+actor+'"] .cardBack');
+  const center=[innerWidth/2,innerHeight/2];
+  const point=(r,fallback)=>r?[r.left+r.width/2,r.top+r.height/2]:fallback;
+  const to=point(visibleRect(stack),[center[0],actor===mySeat()?innerHeight-24:24]);
+  const from=point(rect,to);
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const total=pace(1850),spread=count===1?0:Math.min(30,150/(count-1));
+  restCards.forEach((c,i)=>{
+    const tile=document.createElement('div');tile.className='restTile';
+    tile.innerHTML='<span class="restFlip"><span class="restFront '+artOf(c)+'"></span><span class="restBack"></span></span>';
+    layer.append(tile);
+    const pile=[center[0]+(i-(count-1)/2)*spread,center[1]];
+    const w=tile.offsetWidth,h=tile.offsetHeight;
+    const gather=flightFrames(from,pile,w,h,.38,1,14);
+    const collect=flightFrames(pile,to,w,h,1,.3,14);
+    const timing={duration:total,fill:'both',delay:pace(250*i/Math.max(1,count-1))};
+    if(reduced){
+      tile.style.transform=gather.at(-1).transform;
+      tile.firstChild.style.transform='rotateY(180deg)';
+    }else{
+      const frames=gather.map((frame,j)=>({...frame,offset:.23*j/12}));
+      collect.forEach((frame,j)=>frames.push({...frame,offset:.68+.32*j/12}));
+      frames[0].opacity=0;frames[1].opacity=1;frames.at(-2).opacity=1;frames.at(-1).opacity=0;
+      tile.animate(frames,timing);
+      tile.firstChild.animate([{transform:'rotateY(0deg)',offset:0},{transform:'rotateY(0deg)',offset:.24},{transform:'rotateY(180deg)',offset:.47},{transform:'rotateY(180deg)',offset:1}],timing);
+    }
+  });
+  reviewTimer=setTimeout(dismissPlayedCard,total+(count>1?pace(250):0));
+}
 function showPlayedCard(entry){
   if(review.open){reviewQueue.push(entry);return;}
+  if(entry.restCards){showRest(entry);return;}
   const {actor,c,rect,substitute}=entry;
   const card=review.querySelector('button');
   const player=seatName(actor)+(substitute?' · AI 대행':'');
@@ -176,7 +215,7 @@ function dismissPlayedCard(){
   if(!review.open)return;
   clearTimeout(reviewTimer);
   review.querySelector('.conversionLayer')?.remove();
-  review.close();reviewActor=null;displayedStock=null;refreshTurn();
+  review.close();review.classList.remove('restReview');reviewActor=null;displayedStock=null;refreshTurn();
   if(reviewQueue.length){showPlayedCard(reviewQueue.shift());return;}
   if(g.over)results();else if(online)scheduleRoomAI();else schedule();
 }
@@ -185,8 +224,9 @@ review.oncancel=e=>{e.preventDefault();dismissPlayedCard();};
 // A tap held across the timeout must finish on the review surface.
 review.onpointerdown=()=>clearTimeout(reviewTimer);
 review.onpointerup=review.onpointercancel=()=>{clearTimeout(reviewTimer);reviewTimer=setTimeout(dismissPlayedCard,350);};
-function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute,coin}){
+function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute,coin,restCards}){
   actionSound(a.kind);
+  if(a.kind==='rest'){showPlayedCard({actor,restCards,rect,substitute});return;}
   if(a.kind==='play'){
     showPlayedCard({actor,c,rect,substitute,before,after:g.players[actor].bag.slice(),drop:a.drop,action:a});
     return;

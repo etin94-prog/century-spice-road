@@ -163,3 +163,9 @@ button[data-kind]{touch-action:manipulation}
 .upgradePiece{position:absolute;top:0;left:0;display:grid;place-items:center;width:30px;height:30px;border:1px solid #e7c885;border-radius:50%;background:#193029;box-shadow:0 2px 5px #19271a80}
 .upgradePiece .cube{grid-area:1/1;width:18px;height:18px;outline:1px solid #fff9}
 #flightLayer .orderReward{position:absolute;top:0;left:0;display:inline-flex;pointer-events:none;will-change:transform}
+#playedCard.restReview button.card{align-self:center;transform:translateY(64px);width:auto;height:auto;min-height:28px;padding:4px 10px;background:#1b352d;color:#fff2ce;border:1px solid #b89a59;display:block;font-size:14px}
+.restTile{position:absolute;top:0;left:0;width:62px;height:86px;perspective:450px}
+.restFlip,.restFront,.restBack{position:absolute;inset:0;border-radius:6px}
+.restFlip{transform-style:preserve-3d}
+.restFront,.restBack{backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid #d8bd85;background-size:cover;background-position:center;box-shadow:0 1px 5px #17292180}
+.restBack{transform:rotateY(180deg);background:repeating-linear-gradient(45deg,#21473e 0 5px,#637e63 5px 6px);outline:1px solid #dcc895;outline-offset:-6px}
