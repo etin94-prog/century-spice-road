@@ -160,3 +160,5 @@ button[data-kind]{touch-action:manipulation}
 .conversionLayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .conversionLayer .spiceFlight{position:absolute;top:0;left:0}
 .conversionStage{position:absolute;transform:translate(-50%,-50%);background:#162f28f5;border:1px solid #e9c783;color:#fff7df;border-radius:8px;padding:5px 8px;font-weight:700;white-space:nowrap}
+.upgradePiece{position:absolute;top:0;left:0;display:grid;place-items:center;width:30px;height:30px;border:1px solid #e7c885;border-radius:50%;background:#193029;box-shadow:0 2px 5px #19271a80}
+.upgradePiece .cube{grid-area:1/1;width:18px;height:18px;outline:1px solid #fff9}

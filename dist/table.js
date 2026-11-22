@@ -76,23 +76,17 @@ function markStockChanges(){
 }
 function animateConversion(entry,cardRect,arrival){
   const {actor,c,action}=entry;
-  const paid=zeros(),made=zeros(),stages=[];
-  if(c.up){
-    for(const t of action.steps){
-      if(made[t])made[t]--;else paid[t]++;
-      made[t+1]++;
-      stages.push(upgradePair(t));
-    }
-  }else{
-    const n=action.n||1;
-    for(let t=0;t<4;t++){paid[t]=c.cost[t]*n;made[t]=c.gain[t]*n;}
-    stages.push((sum(paid)?chips(paid)+' → ':'')+chips(made));
-  }
   const layer=document.createElement('div');
   layer.className='conversionLayer';layer.setAttribute('aria-hidden','true');review.append(layer);
   const center=[cardRect.left+cardRect.width/2,cardRect.top+cardRect.height*.36];
   const cells=actor===mySeat()?el('bag').children:document.querySelectorAll('[data-seat="'+actor+'"] .seatStock .chip');
   const seat=actor===mySeat()?el('myTable'):document.querySelector('[data-seat="'+actor+'"]');
+  if(c.up){
+    animateUpgrade(action.steps,cells,seat,center,layer,arrival);
+    return;
+  }
+  const n=action.n||1,paid=c.cost.map(x=>x*n),made=c.gain.map(x=>x*n);
+  const stages=[(sum(paid)?chips(paid)+' → ':'')+chips(made)];
   function travel(t,count,inbound){
     if(!count)return;
     const rect=visibleRect(cells[t])||visibleRect(seat);
@@ -120,6 +114,42 @@ function animateConversion(entry,cardRect,arrival){
     stage.innerHTML=html;stage.style.left=center[0]+'px';stage.style.top=center[1]+'px';layer.append(stage);
     stage.animate([{opacity:0,transform:'translate(-50%,-50%) scale(.82)'},{opacity:1,offset:.16,transform:'translate(-50%,-50%) scale(1)'},{opacity:1,offset:.88},{opacity:0}],
       {delay:arrival+pace(start+i*span),duration:pace(span),fill:'both'});
+  });
+}
+// Each path follows one physical cube, including a cube upgraded more than once.
+function animateUpgrade(steps,cells,seat,center,layer,arrival){
+  const paths=[];
+  steps.forEach((from,i)=>{
+    let path=paths.find(p=>p.types.at(-1)===from);
+    if(!path){path={types:[from],changes:[]};paths.push(path);}
+    path.types.push(from+1);
+    path.changes.push(.31+.36*(i+.5)/steps.length);
+  });
+  const duration=pace(1900);
+  const point=t=>{
+    const rect=visibleRect(cells[t])||visibleRect(seat);
+    return rect?[rect.left+rect.width/2,rect.top+rect.height/2]:center;
+  };
+  paths.forEach(({types,changes},i)=>{
+    const piece=document.createElement('span');piece.className='upgradePiece';
+    piece.innerHTML=types.map(cube).join('');layer.append(piece);
+    const x=center[0]+(i-(paths.length-1)/2)*34,y=center[1];
+    const size=piece.offsetWidth;
+    const inward=flightFrames(point(types[0]),[x,y],size,size,.68,1,15);
+    const outward=flightFrames([x,y],point(types.at(-1)),size,size,1,.68,15);
+    const frames=[...inward.map((frame,j)=>({...frame,offset:.21*j/12})),
+      ...outward.map((frame,j)=>({...frame,offset:.79+.21*j/12}))];
+    frames[0].opacity=0;frames[1].opacity=1;frames.at(-2).opacity=1;frames.at(-1).opacity=0;
+    const timing={delay:arrival,duration,fill:'both'};
+    piece.animate(frames,timing);
+    Array.from(piece.children).forEach((symbol,j)=>{
+      const start=j?changes[j-1]:0,end=j<changes.length?changes[j]:1;
+      const faces=[{offset:0,opacity:j?0:1}];
+      if(j)faces.push({offset:start-.035,opacity:0},{offset:start+.035,opacity:1});
+      if(end<1)faces.push({offset:end-.035,opacity:1},{offset:end+.035,opacity:0});
+      faces.push({offset:1,opacity:end===1?1:0});
+      symbol.animate(faces,timing);
+    });
   });
 }
 function showPlayedCard(entry){
