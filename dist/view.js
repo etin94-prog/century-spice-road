@@ -46,8 +46,13 @@ function render(){
   el('status').innerHTML='<span>라운드 '+g.round+(g.players.some(q=>q.won.length>=goal)&&!g.over?' · 마지막 라운드':'')+'</span><b class="turn">'+(g.over?'대국 종료':online&&!online.ready?'친구 입장 대기':g.turn!==mySeat()?seatName(g.turn)+' 차례':'나의 차례')+'</b>';
   el('rival').innerHTML=g.players.map((ai,i)=>{
     if(i===mySeat())return '';
-    const last=g.log.find(x=>x.who===i);
-    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'"><span class="rivalhead"><b>'+seatName(i)+'</b><span class="seatScore">'+score(ai)+'점</span><small>'+(online&&!onlineAI(i)?(awaySeat(i)?'자리 비움 · AI 대행':'온라인'):levelOf(ai))+'</small></span><span>'+chips(ai.bag,true)+'</span><span class="seatArt '+(last?.card?artOf(last.card):'back')+'"></span><small>손패 '+ai.hand.length+' · 사용 '+ai.used.length+' · 주문 '+ai.won.length+'</small><small>'+score(ai)+'점 · '+(last?.msg||'첫 교역 대기')+'</small></button>';
+    const order=ai.won[ai.won.length-1];
+    const role=online&&!onlineAI(i)?(awaySeat(i)?'AI 대행':'온라인'):levelOf(ai);
+    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'">'+
+      '<span class="rivalhead"><b>'+seatName(i)+'</b><small>'+role+'</small><b>'+score(ai)+'점</b></span>'+
+      '<span class="seatStock">'+chips(ai.bag,true)+'</span>'+
+      '<span class="seatDecks"><span class="orderStack" aria-label="달성한 주문 '+ai.won.length+'장"><i class="orderMini '+(order?'filled':'')+'">'+(order?order.vp:'')+'</i>주문 '+ai.won.length+'</span>'+
+      '<span class="handStack" aria-label="상인 손패 '+ai.hand.length+'장"><i class="cardBack"></i>손패 '+ai.hand.length+'</span></span></button>';
   }).join('');
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));
   el('myScore').textContent=score(p)+'점 · 주문 '+p.won.length+'/'+goal+'장';

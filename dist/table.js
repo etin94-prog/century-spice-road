@@ -47,7 +47,8 @@ function flightFrames(from,to,width,height,startScale,endScale,lift){
 function animateMove(actor,a,{c,rect,artwork,before}){
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
-  let end=visibleRect(dest);
+  const stack=actor!==mySeat()?dest?.querySelector(a.kind==='order'?'.orderMini':'.cardBack'):null;
+  let end=visibleRect(stack)||visibleRect(dest);
   if(actor===mySeat()&&a.kind==='buy'){
     const last=visibleRect(el('hand').lastElementChild);
     if(last&&end&&last.right<=end.right+1&&last.left>=end.left-1)end=last;
@@ -73,20 +74,23 @@ function animateMove(actor,a,{c,rect,artwork,before}){
   const frames=flightFrames(from,landing,width,height,1,playing?.95:.62,22);
   if(playing){
     frames.forEach((frame,i)=>frame.offset=.42*i/12);
-    frames.push({...frames[12],offset:.76});
-    flightFrames(table,to,width,height,.95,.32,12).slice(1).forEach((frame,i)=>{
-      frames.push({...frame,offset:.76+.24*(i+1)/12});
-    });
+    const laid=frames[12].transform;
+    frames.push({transform:laid+' scaleY(.89)',offset:.56,opacity:1},
+      {transform:laid+' scale(.72,.67)',offset:.85,opacity:.34},
+      {transform:laid+' scale(.36)',offset:1,opacity:0});
   }
-  frames[0].opacity=1;frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
-  const anim=node.animate(frames,{duration:playing?1250:880,easing:'ease-in-out'});
-  anim.onfinish=()=>node.remove();anim.oncancel=()=>node.remove();
+  frames[0].opacity=1;if(!playing)frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
+  const anim=node.animate(frames,{duration:playing?1020:950,easing:'ease-in-out'});
+  anim.onfinish=()=>{
+    node.remove();
+    if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:240});
+  };anim.oncancel=()=>node.remove();
 
   // Animate only resources the player actually keeps after paying and returning excess.
   g.players[actor].bag.forEach((count,t)=>{
     const gain=count-before[t];
     if(gain<=0)return;
-    const stock=actor===mySeat()?el('bag').children[t]:dest;
+    const stock=actor===mySeat()?el('bag').children[t]:dest?.querySelectorAll('.seatStock .chip')[t];
     const target=center(visibleRect(stock)||end,actor===mySeat()?innerHeight-32:40);
     const token=document.createElement('span');
     token.className='spiceFlight';token.setAttribute('aria-hidden','true');

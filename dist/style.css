@@ -99,3 +99,30 @@ dialog:has(#confirm)::backdrop{background:transparent}
 @media(max-width:520px){.mast{flex-wrap:wrap}.mast #latestMove{order:1;flex:0 0 100%;min-height:22px;height:22px;padding-block:0;border:0}.mast .wordmark{margin-right:auto}}
 .spiceFlight{position:fixed;top:0;left:0;z-index:21;pointer-events:none;display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border:1px solid #eac785;border-radius:8px;background:#1e3028;color:#fff4d3;font:bold 14px/1.15 system-ui;box-shadow:0 2px 6px #0006}
 button[data-kind]{touch-action:manipulation}
+.mast #status{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:0;padding:2px 4px;font-size:12px;line-height:1.15;white-space:nowrap}
+.mast #status span{font-size:11px}
+.mast #status .turn{font-size:13px}
+#rival .rival{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;padding:5px 7px}
+#rival .rivalhead{display:flex;align-items:baseline;gap:4px;flex-wrap:nowrap}
+#rival .rivalhead b:last-child{margin-left:auto}
+#rival .rival>.seatStock,#rival .rival>.seatDecks{display:flex}
+.seatDecks{align-items:center;gap:8px;color:#394e43;font-size:12px;white-space:nowrap}
+.orderStack,.handStack{display:inline-flex;align-items:center;gap:4px}
+.orderMini,.cardBack{box-sizing:border-box;display:inline-grid;place-items:center;width:16px;height:22px;border:1px solid #a28751;border-radius:3px;font:700 10px Georgia;color:white;text-shadow:0 1px 2px #000}
+.orderMini{border-style:dashed}.orderMini.filled{border-style:solid;background:linear-gradient(#26342544,#26342588),url(art/order.webp) center/cover}
+.cardBack{box-shadow:2px 1px #aea07d;background:repeating-linear-gradient(45deg,#21473e 0 3px,#637e63 3px 4px);outline:1px solid #f4e3b0;outline-offset:-3px}
+@media(orientation:landscape) and (max-height:660px){
+ main{grid-template-rows:auto minmax(0,1fr)}
+ main>#rival{grid-area:1/1;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);max-height:none;overflow:visible;gap:4px}
+ main>.caravan{grid-area:1/2/3/3}
+ #rival .rival{min-width:0;width:100%;padding:3px 5px}
+ #rival .rivalhead,#rival .seatStock{font-size:12px}
+ #rival .rivalhead small{font-size:10px}
+ #rival .chips{display:flex;flex-wrap:nowrap;gap:4px}
+ #rival .chip{gap:2px}#rival .cube{width:9px;height:9px}
+}
+#rival .rival > span.seatStock:not(.rivalhead),#rival .rival > span.seatDecks:not(.rivalhead){display:flex}
+@media(orientation:landscape) and (max-height:660px){
+ main{grid-template-rows:70px minmax(0,1fr)}
+ main>#rival{grid-template-columns:none;grid-template-rows:minmax(0,1fr)}
+}
