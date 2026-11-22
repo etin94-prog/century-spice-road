@@ -157,3 +157,6 @@ button[data-kind]{touch-action:manipulation}
 .stock[data-change]::after,.seatStock .chip[data-change]::after{content:attr(data-change);position:absolute;z-index:1;right:0;top:0;padding:1px 3px;border-radius:4px;color:#143c26;background:#cef0cb;font:bold 11px/1.15 system-ui}
 .seatStock .chip[data-change]::after{top:-7px;right:-3px;font-size:9px}
 [data-change^="−"]::after{background:#ffdbbf!important;color:#633411!important}
+.conversionLayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.conversionLayer .spiceFlight{position:absolute;top:0;left:0}
+.conversionStage{position:absolute;transform:translate(-50%,-50%);background:#162f28f5;border:1px solid #e9c783;color:#fff7df;border-radius:8px;padding:5px 8px;font-weight:700;white-space:nowrap}

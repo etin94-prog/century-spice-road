@@ -74,6 +74,54 @@ function markStockChanges(){
     if(delta&&cells[t])cells[t].dataset.change=(delta>0?'+':'−')+Math.abs(delta);
   });
 }
+function animateConversion(entry,cardRect,arrival){
+  const {actor,c,action}=entry;
+  const paid=zeros(),made=zeros(),stages=[];
+  if(c.up){
+    for(const t of action.steps){
+      if(made[t])made[t]--;else paid[t]++;
+      made[t+1]++;
+      stages.push(upgradePair(t));
+    }
+  }else{
+    const n=action.n||1;
+    for(let t=0;t<4;t++){paid[t]=c.cost[t]*n;made[t]=c.gain[t]*n;}
+    stages.push((sum(paid)?chips(paid)+' → ':'')+chips(made));
+  }
+  const layer=document.createElement('div');
+  layer.className='conversionLayer';layer.setAttribute('aria-hidden','true');review.append(layer);
+  const center=[cardRect.left+cardRect.width/2,cardRect.top+cardRect.height*.36];
+  const cells=actor===mySeat()?el('bag').children:document.querySelectorAll('[data-seat="'+actor+'"] .seatStock .chip');
+  const seat=actor===mySeat()?el('myTable'):document.querySelector('[data-seat="'+actor+'"]');
+  function travel(t,count,inbound){
+    if(!count)return;
+    const rect=visibleRect(cells[t])||visibleRect(seat);
+    if(!rect)return;
+    const stock=[rect.left+rect.width/2,rect.top+rect.height/2];
+    const point=[center[0]+(t-1.5)*12,center[1]];
+    const token=document.createElement('span');token.className='spiceFlight';
+    token.innerHTML=cube(t)+(inbound?' −':' +')+count;layer.append(token);
+    const path=flightFrames(inbound?stock:point,inbound?point:stock,token.offsetWidth,token.offsetHeight,1,1,18);
+    path[0].opacity=0;path[1].opacity=1;path.at(-2).opacity=1;path.at(-1).opacity=0;
+    const delay=arrival+pace((inbound?35:1180)+t*25);
+    token.animate(path,{delay,duration:pace(415),fill:'both',easing:'ease-in-out'});
+    const amount=cells[t]?.querySelector('b')||cells[t];
+    amount?.animate([{transform:'scale(1)'},{transform:inbound?'scale(.65)':'scale(1.4)'},{transform:'scale(1)'}],
+      {delay:delay+(inbound?0:pace(330)),duration:pace(250)});
+  }
+  for(let t=0;t<4;t++){
+    // Returned output never enters stock. Spending and returns from existing stock are distinct.
+    travel(t,paid[t],true);
+    travel(t,Math.max(0,made[t]-(action.drop?.[t]||0)),false);
+  }
+  const start=sum(paid)?520:100,span=(1160-start)/stages.length;
+  stages.forEach((html,i)=>{
+    const stage=document.createElement('span');stage.className='conversionStage';
+    stage.innerHTML=html;stage.style.left=center[0]+'px';stage.style.top=center[1]+'px';layer.append(stage);
+    stage.animate([{opacity:0,transform:'translate(-50%,-50%) scale(.82)'},{opacity:1,offset:.16,transform:'translate(-50%,-50%) scale(1)'},{opacity:1,offset:.88},{opacity:0}],
+      {delay:arrival+pace(start+i*span),duration:pace(span),fill:'both'});
+  });
+}
 function showPlayedCard(entry){
   if(review.open){reviewQueue.push(entry);return;}
   const {actor,c,rect,substitute}=entry;
@@ -91,11 +139,13 @@ function showPlayedCard(entry){
     const dy=rect.top+rect.height/2-end.top-end.height/2;
     card.animate([{transform:'translate('+dx+'px,'+dy+'px) scale('+Math.min(1,rect.width/end.width)+') rotate(-4deg)'},{transform:'none'}],{duration:arrival,easing:'ease-out'});
   }
-  reviewTimer=setTimeout(dismissPlayedCard,arrival+pace(3000));
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)animateConversion(entry,end,arrival);
+  reviewTimer=setTimeout(dismissPlayedCard,arrival+pace(2000));
 }
 function dismissPlayedCard(){
   if(!review.open)return;
   clearTimeout(reviewTimer);
+  review.querySelector('.conversionLayer')?.remove();
   review.close();reviewActor=null;displayedStock=null;refreshTurn();
   if(reviewQueue.length){showPlayedCard(reviewQueue.shift());return;}
   if(g.over)results();else if(online)scheduleRoomAI();else schedule();
@@ -107,8 +157,10 @@ review.onpointerdown=()=>clearTimeout(reviewTimer);
 review.onpointerup=review.onpointercancel=()=>{clearTimeout(reviewTimer);reviewTimer=setTimeout(dismissPlayedCard,350);};
 function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute}){
   actionSound(a.kind);
-  const playing=a.kind==='play';
-  if(playing)showPlayedCard({actor,c,rect,substitute,before,after:g.players[actor].bag.slice(),drop:a.drop});
+  if(a.kind==='play'){
+    showPlayedCard({actor,c,rect,substitute,before,after:g.players[actor].bag.slice(),drop:a.drop,action:a});
+    return;
+  }
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
   const stack=actor!==mySeat()?dest?.querySelector(a.kind==='order'?'.orderMini':'.cardBack'):null;
@@ -118,39 +170,36 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     if(last&&end&&last.right<=end.right+1&&last.left>=end.left-1)end=last;
     else end=visibleRect(el('handTitle'))||visibleRect(el('myTable'))||end;
   }
-  if(!playing&&!rect&&!end)return;
-  if(!playing){showFlightTurn(actor,pace(950));refreshTurn();}
+  if(!rect&&!end)return;
+  showFlightTurn(actor,pace(950));refreshTurn();
   const layer=el('flightLayer');
   const center=(r,defaultY)=>r?[r.left+r.width/2,r.top+r.height/2]:[innerWidth/2,defaultY];
   const from=center(rect,innerHeight/2),to=center(end,actor===mySeat()?innerHeight-32:40);
-  const table=[innerWidth/2,innerHeight/2];
-  if(!playing){
-    // render() has detached the selected card. Carry its original face and dimensions.
-    const node=marketSource||document.createElement('div');
-    node.classList.add('card','flying');
-    node.removeAttribute('data-kind');node.removeAttribute('data-i');
-    node.tabIndex=-1;node.setAttribute('aria-hidden','true');
-    if(!marketSource)node.innerHTML=artwork||face(c,'');
-    const width=rect?rect.width:82,height=rect?rect.height:106;
-    Object.assign(node.style,{width:width+'px',height:height+'px',minHeight:'0',transformOrigin:'center'});
-    layer.append(node);
-    if(marketSource){
-      const row=el(a.kind==='buy'?'merchants':'orders');
-      Array.from(row.children).slice(a.i).forEach((card,j)=>{
-        const old=following[j],next=card.getBoundingClientRect();
-        const frames=old?[{transform:'translate('+(old.left-next.left)+'px,'+(old.top-next.top)+'px)'},{transform:'none'}]:[{opacity:0},{opacity:1}];
-        card.animate(frames,{delay:pace(180),duration:pace(320),fill:'backwards',easing:'ease-out'});
-      });
-    }
-    const frames=flightFrames(from,to,width,height,1,.62,22);
-    frames[0].opacity=1;frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
-    node.style.transform=frames[0].transform;
-    const anim=node.animate(frames,{fill:'both',duration:pace(950),easing:'ease-in-out'});
-    anim.onfinish=()=>{
-      node.remove();
-      if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:pace(240)});
-    };anim.oncancel=()=>node.remove();
+  // render() has detached the selected card. Carry its original face and dimensions.
+  const node=marketSource||document.createElement('div');
+  node.classList.add('card','flying');
+  node.removeAttribute('data-kind');node.removeAttribute('data-i');
+  node.tabIndex=-1;node.setAttribute('aria-hidden','true');
+  if(!marketSource)node.innerHTML=artwork||face(c,'');
+  const width=rect?rect.width:82,height=rect?rect.height:106;
+  Object.assign(node.style,{width:width+'px',height:height+'px',minHeight:'0',transformOrigin:'center'});
+  layer.append(node);
+  if(marketSource){
+    const row=el(a.kind==='buy'?'merchants':'orders');
+    Array.from(row.children).slice(a.i).forEach((card,j)=>{
+      const old=following[j],next=card.getBoundingClientRect();
+      const frames=old?[{transform:'translate('+(old.left-next.left)+'px,'+(old.top-next.top)+'px)'},{transform:'none'}]:[{opacity:0},{opacity:1}];
+      card.animate(frames,{delay:pace(180),duration:pace(320),fill:'backwards',easing:'ease-out'});
+    });
   }
+  const frames=flightFrames(from,to,width,height,1,.62,22);
+  frames[0].opacity=1;frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
+  node.style.transform=frames[0].transform;
+  const anim=node.animate(frames,{fill:'both',duration:pace(950),easing:'ease-in-out'});
+  anim.onfinish=()=>{
+    node.remove();
+    if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:pace(240)});
+  };anim.oncancel=()=>node.remove();
   // Animate only resources the player actually keeps after paying and returning excess.
   g.players[actor].bag.forEach((count,t)=>{
     const delta=count-before[t];
@@ -162,9 +211,9 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     token.className='spiceFlight';token.setAttribute('aria-hidden','true');
     token.innerHTML=cube(t)+(gaining?' +':' −')+Math.abs(delta);
     layer.append(token);
-    const origin=playing?table:from;
+    const origin=from;
     const cardPoint=[origin[0]+t*6,origin[1]];
-    const delay=(playing?400:180)+t*55;
+    const delay=180+t*55;
     const path=flightFrames(gaining?cardPoint:target,gaining?target:cardPoint,token.offsetWidth,token.offsetHeight,1.1,.85,24);
     const amount=stock?.querySelector('b')||stock;
     amount?.animate([{transform:'scale(1)'},{transform:gaining?'scale(1.4)':'scale(.65)',offset:.45},{transform:'scale(1)'}],
