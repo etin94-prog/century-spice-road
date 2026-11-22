@@ -54,7 +54,8 @@ function roomMenu(){
 async function createOnline(){
   if(openingRoom)return;openingRoom=true;stopAI();
   try{
-    const s=await firebaseService(),id=crypto.randomUUID().replaceAll('-','');
+    const s=await firebaseService(),uuid=crypto.randomUUID().replaceAll('-','');
+    const id=g.edition?'ce00000'+g.edition+uuid.slice(8):uuid;
     await s.set(roomRef(s,id,'','tables'),{host:s.uid,seed:crypto.getRandomValues(new Uint32Array(1))[0],format:2});
     const url=new URL(location.href);url.searchParams.delete('room');url.searchParams.set('table',id);location.assign(url.href);
   }catch(e){openingRoom=false;roomError(e);}
@@ -102,11 +103,11 @@ function syncRoom(room){
   while(online.count<last){
     const row=moves['t'+online.count];if(!row||row.n!==online.count)throw Error('행동 기록을 다시 동기화해야 합니다.');
     const action=JSON.parse(row.action);
-    if(!action||!['buy','order','play','rest'].includes(action.kind)||!Number.isInteger(action.i)||action.i<0)throw Error('유효하지 않은 행동 기록입니다.');
+    if(!action||(!g.edition&&!['buy','order','play','rest'].includes(action.kind))||!Number.isInteger(action.i)||action.i<0)throw Error('유효하지 않은 행동 기록입니다.');
     // Recompute the board locally. No HTML, score, or board state from a peer is rendered.
     const animate=!first&&online.count===last-1;
     if(animate){
-      const before=g.turn;advance(action,true,row.substitute===true);if(g.turn===before)throw Error('행동 기록이 규칙과 일치하지 않습니다.');
+      const before=g.turn,departing=Boolean(g.departures);advance(action,true,row.substitute===true);if(g.turn===before&&!(departing&&!g.departures))throw Error('행동 기록이 규칙과 일치하지 않습니다.');
     }else{
       const actor=g.turn,motion=captureMove(actor,action,false);
       if(!apply(g,action))throw Error('행동 기록이 규칙과 일치하지 않습니다.');
@@ -225,11 +226,11 @@ function scheduleRoomAI(){
     if(online.aiJob!==job||revision!==online.count||!canRunRoomAI())return;
     const levelUsed=substitute?substituteLevel(g.turn):null;
     const players=g.players.map((p,i)=>substitute&&i===g.turn?{...p,level:levelUsed}:p);
-    const board={players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
+    const board=g.edition?{...g,players}:{players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     let move;
     try{
       move=await new Promise((resolve,reject)=>{
-        const ai=new Worker('ai-worker.js?v=mobile-beta-26');
+        const ai=new Worker(g.edition?'expedition-worker.js':'ai-worker.js?v=mobile-beta-26');
         ai.onmessage=e=>{ai.terminate();resolve(e.data);};
         ai.onerror=e=>{ai.terminate();reject(e);};ai.postMessage(board);
       });

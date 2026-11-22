@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check rules and replay 2–4 player games
         run: node qa/rules.cjs
+      - name: Replay Eastern Wonders and A New World
+        run: node qa/expeditions.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
