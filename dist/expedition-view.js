@@ -26,7 +26,13 @@ function modal(title,body){el('title').textContent=title;el('body').innerHTML=bo
 function close(){el('modal').close();draft=null;}
 el('close').onclick=close;
 function save(){if(!online)try{localStorage.setItem(storageKey,JSON.stringify(g));}catch{}}
-function inventory(i){const p=g.players[i];modal(seatName(i)+'의 보유 현황','<p>'+wordBag(p.bag)+'</p><p>납품 '+p.won.length+'건 · '+expScore(g,p)+'점</p><p>'+(edition===2?'교역소 '+p.tracks.join(' / ')+' · 적재 한도 '+capacity(p):'정착민 '+p.ready+' / '+p.crew+' · 탐험 '+p.explored.length+'곳')+'</p><p>보너스 · '+(p.bonus.map(bonusLabel).join(', ')||'없음')+'</p>'+p.won.map(c=>'<p>'+c[1]+'점 · '+goods(unitBag(c[0]))+(edition===3?' · '+benefitNames[c[2]]:'')+'</p>').join(''));}
+let nextPriority=null;
+function inventory(i){
+  const p=g.players[i],own=i===mySeat(),hide=edition===2&&!own&&!g.over;
+  const order=nextPriority||p.priority||[0,1,2,3];
+  modal(seatName(i)+'의 보유 현황','<p>'+wordBag(p.bag)+'</p><p>납품 '+p.won.length+'건'+(hide?'':' · '+expScore(g,p)+'점')+'</p><p>'+(edition===2?'교역소 '+p.tracks.join(' / ')+' · 적재 한도 '+capacity(p):'정착민 '+p.ready+' / '+p.crew+' · 탐험 '+p.explored.length+'곳')+'</p><p>보너스 · '+(p.bonus.map(bonusLabel).join(', ')||'없음')+'</p>'+(own&&edition===2&&!g.over?'<p>통행료로 선창이 넘치면 앞 재료부터 반납합니다. 다음 내 행동부터 적용됩니다.</p><div class="actions">'+order.map(t=>'<button data-priority="'+t+'">'+info.goods[t]+' ↑</button>').join('')+'</div>':'')+(hide?'':p.won.map(c=>'<p>'+c[1]+'점 · '+goods(unitBag(c[0]))+(edition===3?' · '+cardBenefit(c):'')+'</p>').join('')));
+  el('body').querySelectorAll('[data-priority]').forEach(b=>b.onclick=()=>{const k=+b.dataset.priority;nextPriority=[k,...order.filter(t=>t!==k)];inventory(i);});
+}
 function siteFace(t,i){
   if(t.order)return '<strong>'+siteName(t,i)+' · '+t.order[1]+'점</strong>'+goods(unitBag(t.order[0]))+(edition===3?'<small>'+benefitNames[t.order[2]]+'</small>':'');
   if(t.port)return '<strong>폐쇄 항구</strong>';
@@ -51,11 +57,36 @@ function render(){
   el('myTitle').textContent=edition===2?'나의 선창':'나의 정착지';
   el('inventory').innerHTML=p.bag.map((n,i)=>'<span><i class="cube s'+i+'"></i> '+info.goods[i]+' '+n+'</span>').join('');
   el('personal').innerHTML='<b>'+(g.over?'대국 종료':seatName(active)+'의 차례')+'</b><br>'+expScore(g,p)+'점 · '+(edition===2?'교역소 '+total(p.tracks)+'곳':'정착민 '+p.ready+'/'+p.crew+'명')+' · 납품 '+p.won.length+'/'+info.goal+'<br>'+(g.departures?'시작할 섬과 화물을 선택하세요.':edition===2?'목적지 섬이나 항구를 누르세요.':'일할 장소 또는 요새를 누르세요.')+(edition===3&&g.deck.length?'<p>다음 승점 카드 · '+g.deck.at(-1)[1]+'점<br>'+goods(unitBag(g.deck.at(-1)[0]))+'</p>':'');
+  el('workerPool').hidden=edition!==3;
+  el('workerPool').textContent='♟ '+p.ready+'명 · 끌어 배치';
   el('rest').hidden=edition!==3;el('rest').disabled=!myTurn()||p.ready===p.crew;
   el('ledger').textContent=g.over?'최종 결과':'내 보유 현황';
-  el('save').textContent=online?'초대방 · '+(mySeat()+1)+'번 좌석':'이 기기에 자동 저장됨';
+  el('save').textContent=online?(online.connected?'초대방':'다시 연결 중')+' · '+(mySeat()+1)+'번 좌석':'이 기기에 자동 저장됨';
 }
-function piece(i,text){return '<span class="piece" style="--seat:'+colors[i]+'">'+text+(edition===2?i+1:'')+'</span>';}
+let dragging=null,suppressTap=false;
+document.addEventListener('pointerdown',e=>{
+  const source=e.target.closest('#workerPool,.piece[data-owner]');
+  if(!source||!myTurn()||el('modal').open)return;
+  if(source.id!=='workerPool'&&(edition!==2||+source.dataset.owner!==mySeat()))return;
+  dragging={id:e.pointerId,x:e.clientX,y:e.clientY,source};source.setPointerCapture(e.pointerId);
+});
+document.addEventListener('pointermove',e=>{
+  if(dragging?.id!==e.pointerId)return;
+  if(!dragging.ghost&&Math.hypot(e.clientX-dragging.x,e.clientY-dragging.y)>7){
+    const ghost=document.createElement('span');ghost.className='dragPiece';ghost.textContent=edition===2?'⛵':'♟';document.body.append(ghost);dragging.ghost=ghost;
+  }
+  if(!dragging.ghost)return;
+  dragging.ghost.style.left=e.clientX+'px';dragging.ghost.style.top=e.clientY+'px';
+  dragging.target?.classList.remove('route');dragging.target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-site]');dragging.target?.classList.add('route');
+});
+function endDrag(e){
+  if(dragging?.id!==e.pointerId)return;
+  const {ghost,target}=dragging;dragging=null;ghost?.remove();target?.classList.remove('route');
+  if(ghost&&e.type==='pointerup'&&myTurn()){suppressTap=true;setTimeout(()=>suppressTap=false,350);if(target)openSite(+target.dataset.site);}
+}
+document.addEventListener('pointerup',endDrag);document.addEventListener('pointercancel',endDrag);
+document.addEventListener('click',e=>{if(suppressTap){e.preventDefault();e.stopImmediatePropagation();}},true);
+function piece(i,text){return '<span class="piece" data-owner="'+i+'" style="--seat:'+colors[i]+'">'+text+(edition===2?i+1:'')+'</span>';}
 function optionsLabel(c,t){
   let label=actNames[c.kind];
   if(c.kind==='depart')return wordBag(c.bag);
@@ -119,6 +150,7 @@ function captureMove(who,a,animate=true){
 }
 function recordMove(){}
 function advance(a,remote=false,sub=false){
+  if(!remote&&g.turn===mySeat()&&edition===2&&nextPriority)a={...a,priority:nextPriority.slice()};
   if(online&&!remote){submitOnline(a);return;}
   const who=g.turn,m=captureMove(who,a);if(!apply(g,a))return;
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
@@ -147,7 +179,9 @@ function playMotion(who,a,m){
   }
   fly('motionTile '+(edition===2?'seaFace':'landFace'),seatName(who)+' · '+g.log[0].msg,[site,center,center,seat],[0,.12,.88,1],2600);
   g.players[who].bag.forEach((n,i)=>{const delta=n-m.before[i];if(!delta)return;
-    const mid=[center[0]+(i-1.5)*43,center[1]+38];const home=[seat[0]+(i-1.5)*13,seat[1]];
+    const mid=[center[0]+(i-1.5)*43,center[1]+38];
+    const cell=who===mySeat()?el('inventory').children[i]:el('seats').children[who].querySelector('.goods').children[i];
+    const home=point(cell);
     fly('motionCube','<i class="cube s'+i+'"></i> '+(delta>0?'+':'')+delta,delta>0?[mid,mid,home,home]:[home,mid,mid,mid],delta>0?[0,.58,.90,1]:[0,.34,.75,1],2500);
   });
   motionTimer=setTimeout(finishMotion,pace(2600));
@@ -156,7 +190,7 @@ document.addEventListener('click',e=>{if(flightActor!==null&&!el('modal').open){
 function stopAI(){clearTimeout(timer);if(worker){worker.terminate();worker=null;}}
 function schedule(){
   stopAI();if(online||g.over||!g.turn||flightActor!==null||el('modal').open)return;
-  timer=setTimeout(()=>{worker=new Worker('expedition-worker.js');worker.onmessage=e=>{stopAI();advance(e.data);};
+  timer=setTimeout(()=>{worker=new Worker('expedition-worker.js?v=voyage-2');worker.onmessage=e=>{stopAI();advance(e.data);};
     worker.onerror=()=>{stopAI();advance(chooseMove(g));};worker.postMessage(g);},pace(650));
 }
 function results(){modal('최종 순위',expRanks(g).map((r,j)=>'<p class="rank"><b>'+(j+1)+'위 · '+seatName(r.i)+' · '+r.points+'점</b>　납품 '+g.players[r.i].won.length+'건</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
@@ -171,6 +205,24 @@ el('setupTop').onclick=setup;el('ledger').onclick=()=>g.over?results():inventory
 el('rest').onclick=()=>{if(myTurn())advance({edition,kind:'rest',i:0});};
 el('guide').onclick=()=>modal(info.name,series()+'<p>'+(edition===2?'섬을 눌러 항로를 확인하세요. 첫 이동은 무료입니다. 수확으로 생강을 모으고 교역소를 건설해 재료를 교환하세요. 항구의 요구 재료를 납품하세요. 누군가 4건을 납품하면 해당 라운드 후 종료합니다.':'장소를 눌러 정착민을 보내세요. 자기 일꾼이 있는 장소에는 들어갈 수 없습니다. 다른 사람의 일꾼보다 한 명 더 보내면 상대 일꾼이 돌아갑니다. 요새에서 주문과 보너스를 받고 필요하면 일꾼을 회수하세요. 8번째 주문이 나온 라운드에 종료합니다.')+'</p>');
 el('latestMove').onclick=()=>modal('대국 기록',g.log.map(x=>'<p>'+x.round+'R · '+seatName(x.who)+' · '+x.msg+'</p>').join('')||'<p>아직 기록이 없습니다.</p>');
-el('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{document.body.classList.toggle('boardOnly');}};
+function updateFull(){
+  const full=document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('boardOnly');
+  el('fullscreen').textContent=full?'전체화면 종료':'전체화면';el('fullscreen').setAttribute('aria-pressed',String(!!full));
+}
+el('fullscreen').onclick=async()=>{
+  const root=document.documentElement;
+  if(document.body.classList.contains('boardOnly'))document.body.classList.remove('boardOnly');
+  else try{
+    if(document.fullscreenElement||document.webkitFullscreenElement)await (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+    else{await (root.requestFullscreen||root.webkitRequestFullscreen).call(root);try{await screen.orientation.lock('landscape');}catch{}}
+  }catch{document.body.classList.add('boardOnly');}updateFull();
+};
+document.addEventListener('fullscreenchange',updateFull);document.addEventListener('webkitfullscreenchange',updateFull);
+el('workerPool').onclick=()=>{
+  if(!myTurn())return;
+  const sites=g.tiles.map((t,i)=>actionsAt(g,i).length?'<button data-work="'+i+'">'+siteName(t,i)+' · '+workerCost(g.players[g.turn],t)+'명</button>':'').join('');
+  modal('일할 장소 선택','<div class="actions">'+sites+'</div>'+(sites?'':'<p>배치할 수 있는 장소가 없습니다. 일꾼을 회수하세요.</p>'));
+  el('body').querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>openSite(+b.dataset.work));
+};
 el('modal').addEventListener('close',()=>{if(!el('modal').open)schedule();});
 render();if(tableId)enterOnline(tableId);else if(fresh)setup();else if(g.over)results();else schedule();

@@ -230,7 +230,7 @@ function scheduleRoomAI(){
     let move;
     try{
       move=await new Promise((resolve,reject)=>{
-        const ai=new Worker(g.edition?'expedition-worker.js':'ai-worker.js?v=mobile-beta-26');
+        const ai=new Worker(g.edition?'expedition-worker.js?v=voyage-2':'ai-worker.js?v=mobile-beta-26');
         ai.onmessage=e=>{ai.terminate();resolve(e.data);};
         ai.onerror=e=>{ai.terminate();reject(e);};ai.postMessage(board);
       });

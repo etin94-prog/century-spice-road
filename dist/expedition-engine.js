@@ -149,10 +149,12 @@ const expRanks=g=>g.players.map((p,i)=>({i,points:expScore(g,p)})).sort((a,b)=>b
 const actNames={depart:'출항 준비',sail:'항해만',trade:'교역',harvest:'수확',build:'교역소 건설',order:'납품',rest:'일꾼 회수',bonus:'보너스 획득',upgrade:'승급',produce:'생산'};
 function apply(g,a){
   if(!a||g.over||a.edition!==g.edition||!Number.isInteger(a.i))return false;
+  if(a.priority&&(!Array.isArray(a.priority)||a.priority.length!==4||new Set(a.priority).size!==4||!a.priority.every(t=>[0,1,2,3].includes(t))))return false;
   const actor=g.turn,p=g.players[actor],t=g.tiles[a.i];let points=0;
   if(g.departures){
     if(a.kind!=='depart'||!t||t.port||!Number.isInteger(a.option)||a.option<0||a.option>=g.departures.length)return false;
     const pack=g.departures.splice(a.option,1)[0];p.boat=a.i;p.bag=unitBag(cargoes[pack]);
+    if(a.priority)p.priority=a.priority.slice();
     g.log.unshift({who:actor,round:0,site:a.i,kind:'depart',msg:'출항지 선택'});
     if(actor===0)delete g.departures;else g.turn--;
     return true;
@@ -167,7 +169,9 @@ function apply(g,a){
     if(g.edition===2){
       const ar=seaArrival(g,a.i,a);
       ar.drops.forEach((site,j)=>g.tiles[site].pile[ar.paid[j]]++);
-      ar.others.forEach((j,k)=>{const q=g.players[j];q.bag[ar.paid[k+ar.drops.length]]++;q.bag=trimBag(q.bag,capacity(q));});
+      ar.others.forEach((j,k)=>{const q=g.players[j];q.bag[ar.paid[k+ar.drops.length]]++;
+        if(total(q.bag)>capacity(q)){const discard=(q.priority||[0,1,2,3]).find(t=>q.bag[t]>0);q.bag[discard]--;}
+      });
       if(a.collect!==false)t.pile=blank();p.boat=a.i;
       if(choice.build){t.owners.push(actor);p.tracks[t.suit]++;
         if(choice.prize){const k=bonTypes.indexOf(choice.prize);p.bonus.push(choice.prize==='points'?2+g.stocks[k]:choice.prize);g.stocks[k]--;}
@@ -191,6 +195,7 @@ function apply(g,a){
     }
     p.bag=bag;
   }
+  if(a.priority)p.priority=a.priority.slice();
   g.log.unshift({who:actor,round:g.round,site:a.i,kind:a.kind,msg:actNames[a.kind]+(points?' · '+points+'점':'')});g.log.length=Math.min(40,g.log.length);
   g.turn=(actor+1)%g.players.length;
   if(!g.turn){g.over=g.players.some(q=>q.won.length>=expeditionInfo[g.edition].goal);if(!g.over)g.round++;}
