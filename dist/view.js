@@ -16,10 +16,14 @@ const chips=(bag,all=false)=>'<span class="chips">'+bag.map((n,t)=>n||all?'<span
 const type=c=>c.up?'승급':sum(c.cost)?'교환':'생산';
 const desc=c=>c.up?'최대 '+c.up+'단계':sum(c.cost)?chips(c.cost)+' → '+chips(c.gain):chips(c.gain)+' 획득';
 const coinName={gold:'금화 +3',silver:'은화 +1'};
+function coinToken(coin){
+  return '<span class="coin '+coin+'" role="img" aria-label="'+coinName[coin]+'점" title="'+coinName[coin]+'점">'+(coin==='gold'?'3':'1')+'</span>';
+}
 function card(kind,c,i){
-  const label=kind==='order'?(coinName[bonus(g,i)]||'주문서'):kind==='buy'?(i?'비용 '+i+'개':'무료 영입'):'내 손패';
+  const reward=kind==='order'&&bonus(g,i);
+  const label=kind==='order'?(reward?coinToken(reward):''):kind==='buy'?(i?'비용 '+i+'개':'무료 영입'):'내 손패';
   const ready=kind==='order'&&covers(g.players[mySeat()].bag,c.cost);
-  return '<button class="card'+(ready?' affordable':'')+'" data-kind="'+kind+'" data-i="'+i+'">'+face(c,ready?'달성 가능 · '+label:label)+(kind==='buy'&&sum(c.pile)?'<small class="pile">쌓인 자원 '+chips(c.pile)+'</small>':'')+'</button>';
+  return '<button class="card'+(ready?' affordable':'')+'" data-kind="'+kind+'" data-i="'+i+'">'+face(c,ready?label+'<span class="canOrder">달성 가능</span>':label)+(kind==='buy'&&sum(c.pile)?'<small class="pile">쌓인 자원 '+chips(c.pile)+'</small>':'')+'</button>';
 }
 function render(){
   clearGesture();
@@ -45,12 +49,16 @@ function render(){
     const kind=b.dataset.kind,i=+b.dataset.i;
     if(myTurn()&&!g.over){start(kind,i);return;}
     const c=(kind==='order'?g.orders:kind==='buy'?g.market:p.hand)[i];
-    modal(kind==='order'?'주문 살펴보기':'상인 살펴보기','<div class="detailFace">'+face(c,kind==='order'?'주문서':type(c))+'</div><p>'+(kind==='order'?'필요한 향신료 '+chips(c.cost):'카드 효과 '+desc(c))+'</p>',true);
+    modal(kind==='order'?'주문 살펴보기':'상인 살펴보기','<div class="detailFace">'+face(c,kind==='order'?'':type(c))+'</div><p>'+(kind==='order'?'필요한 향신료 '+chips(c.cost):'카드 효과 '+desc(c))+'</p>',true);
   });
-  el('log').innerHTML=g.log.map((x,i)=>'<p>'+(x.action?'<button class="logMove" data-log="'+i+'">':'')+x.round+'R · '+seatName(x.who)+' · '+x.msg+(x.card?' &nbsp; '+(x.card.vp?chips(x.card.cost):desc(x.card)):'')+(x.action?' · 상세</button>':'')+'</p>').join('')||'<p>아직 진행한 행동이 없습니다.</p>';
-  el('log').querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>inspectMove(+b.dataset.log));
+  if(el('log'))renderHistory();
   el('handHint').hidden=!!g.log.length||!myTurn()||g.over;
   if(g.over){el('status').innerHTML+='<button id="results">결과 보기</button>';el('results').onclick=results;}
+}
+function renderHistory(){
+  el('log').innerHTML=g.log.map((x,i)=>'<p>'+(x.action?'<button class="logMove" data-log="'+i+'">':'')+x.round+'R · '+seatName(x.who)+' · '+x.msg+(x.card?' &nbsp; '+(x.card.vp?chips(x.card.cost):desc(x.card)):'')+(x.action?' · 상세</button>':'')+'</p>').join('')||'<p>아직 진행한 행동이 없습니다.</p>';
+  el('log').querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>inspectMove(+b.dataset.log));
+
 }
 function modal(title,body,observe=false){hideAction();el('modal').dataset.observe=String(observe);if(!observe)stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
 const close=()=>el('modal').close();
@@ -169,7 +177,8 @@ function openSetup(){
   }
   draw();
 }
-el('reset').onclick=openSetup;el('setupTop').onclick=openSetup;
+el('history').onclick=()=>{modal('대국 기록','<div id="log"></div>',true);renderHistory();};
+el('reset').onclick=()=>{if(online){modal('새 친구 대국','<p>현재 방은 초대 링크로 다시 들어올 수 있습니다.</p><button class="primary" id="createRoom">새 초대방 만들기</button>');el('createRoom').onclick=createOnline;}else openSetup();};el('setupTop').onclick=openSetup;
 el('modal').addEventListener('close',()=>{if(!el('modal').open&&el('modal').dataset.observe!=='true')schedule();});
 el('guide').onclick=()=>modal('게임 안내','<p><b>목표</b> · 주문을 달성해 가장 많은 점수를 모으세요. 2~3인전은 6장, 4인전은 5장을 누군가 모으면 그 라운드까지 진행합니다.</p><p><b>테이블 조작</b> · 카드를 누르거나 길게 잡아 표시된 곳에 놓고 행동을 확정하세요. 각 시장은 좌우로 넘길 수 있습니다. 상대 상단을 누르면 보유한 카드를 볼 수 있습니다.</p><p><b>첫 수</b> · 손패의 생산 카드를 눌러 강황 2개를 얻거나, 상인 시장에서 첫 카드를 무료로 영입해 보세요.</p><p><b>한 차례에 한 행동</b> · 손패 사용, 상인 영입, 주문 달성, 휴식 중 하나를 선택합니다. 손패를 사용한 뒤에는 휴식으로 다시 가져옵니다.</p><p><b>향신료</b> · 강황 → 사프란 → 카다멈 → 계피 순으로 승급합니다. 교환은 비용이 허락하는 만큼 반복할 수 있습니다.</p><p><b>점수</b> · 주문, 금화(3점), 은화(1점), 남은 강황 이외의 향신료(각 1점)를 더합니다. 동점이면 후순위가 승리합니다.</p>');
 function landscape(){

@@ -24,3 +24,55 @@ body{height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding-in
   .detailFace{float:left;width:126px;margin:4px 16px 8px 0}
   .actionConfirm{clear:both}
 }
+
+/* Compact toolbar and illustrated playing cards */
+.mast{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:3px;padding:2px 8px}
+.mast .wordmark{font:italic 700 clamp(16px,3vw,23px) Georgia,serif;letter-spacing:-.04em}
+.mast button{min-height:32px;padding:2px 7px;border-color:transparent;border-radius:4px;white-space:nowrap;font-size:13px}
+.mast button:focus-visible,.mast button:hover{border-color:#bcaa7f}
+.saveStatus{display:block;font-size:12px;color:#f0dfa6;padding:4px}
+.order{background-image:url(art/order.webp)}
+.produce{background-image:url(art/produce.webp)}
+.trade{background-image:url(art/trade.webp)}
+.upgrade{background-image:url(art/upgrade.webp)}
+.card,.detailFace,.stageCard{position:relative;isolation:isolate;overflow:hidden}
+.card .illustration,.detailFace .illustration,.stageCard .illustration{position:absolute;inset:0;height:100%;border:0;background-size:cover;background-position:center 40%;z-index:-1}
+.card,.detailFace,.stageCard{display:flex;flex-direction:column;justify-content:flex-end;min-height:134px}
+.card .cardtext,.detailFace .cardtext,.stageCard .cardtext{width:100%;color:#fff7de;background:linear-gradient(transparent,#14271cf5 28%);padding:12px 5px 4px;gap:1px;text-shadow:0 1px 2px #172219}
+.cardtext .cube{outline:1px solid #f7eaca88}
+.stageCard{min-height:66px}.detailFace{min-height:152px}
+.illustration small:has(.coin),.illustration small:has(.canOrder){background:none;padding:0;display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.coin{display:inline-grid;place-items:center;width:26px;height:26px;font:bold 18px Georgia,serif;border-radius:50%;border:3px double #765421;color:#503310;background:radial-gradient(circle at 32% 22%,#fff5ba,#ecc45b 48%,#c39237 74%,#fff0a5);box-shadow:0 1px 3px #241603b3}
+.coin.silver{color:#243744;border-color:#657786;background:radial-gradient(circle at 32% 22%,#fff,#d6e4e9 48%,#9aa9b9 74%,#f5faff)}
+.canOrder{padding:1px 3px;color:white;background:#23583e;border-radius:3px}
+@media(max-width:480px){.mast{gap:1px;padding-inline:4px}.mast button{font-size:12px;padding-inline:3px}.mast .wordmark{margin-right:auto}.marketmat .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.marketmat .card{min-width:0;min-height:122px}}
+@media(orientation:landscape) and (max-height:660px){
+  main{grid-template-columns:minmax(0,2.6fr) minmax(158px,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .saveStatus{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);padding:0}
+  .marketmat{display:grid;grid-template-rows:auto minmax(94px,1fr) auto minmax(104px,1fr);padding:3px 6px 5px}
+  .marketmat .head{margin:0;min-height:21px}
+  .marketmat .row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;overflow:visible;padding:1px 0 3px}
+  .marketmat .card{min-width:0;min-height:0}
+  .marketmat .cardtext,.caravan .cardtext{padding:11px 3px 3px}
+  .marketmat .recipe{line-height:1.15;font-size:13px}
+  .marketmat .chip{gap:2px}.marketmat .chips{gap:1px 4px}
+  .marketmat .cube{width:10px;height:10px}
+  .marketmat .pile{font-size:11px;padding:1px 2px}
+  .marketmat .illustration,.caravan .illustration{height:100%}
+  .caravan .card{min-height:102px}
+}
+@media(orientation:landscape) and (max-height:360px){
+  .marketmat{grid-template-rows:auto minmax(74px,1fr) auto minmax(80px,1fr)}
+  #rival{max-height:44px}
+  .marketmat .recipe{font-size:12px}
+}
+@media(orientation:landscape) and (max-height:660px){
+  .turnRow{grid-column:1/-1;display:flex;align-items:center;gap:10px;min-width:0}
+  #status{gap:12px;white-space:nowrap}
+  #rival{flex:1;justify-content:flex-end}
+  #rival .rival{flex:0 1 auto;min-height:32px}
+  .caravan .head:first-child{align-items:baseline;flex-wrap:wrap;gap:0 8px}
+  .caravan h2{font-size:16px;white-space:nowrap}
+  #myScore{font-size:13px;white-space:nowrap}
+  #myTable,#rest{min-height:32px}
+}

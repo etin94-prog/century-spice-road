@@ -3,7 +3,7 @@ const artOf=c=>c.vp?'order':c.up?'upgrade':sum(c.cost)?'trade':'produce';
 function face(c,label){
   const art=artOf(c);
   const name=c.vp?c.vp+'점':type(c);
-  return '<span class="illustration '+art+'"><small>'+label+'</small></span><span class="cardtext"><strong>'+name+'</strong><span class="recipe">'+(c.vp?chips(c.cost):desc(c))+'</span></span>';
+  return '<span class="illustration '+art+'">'+(label?'<small>'+label+'</small>':'')+'</span><span class="cardtext"><strong>'+name+'</strong><span class="recipe">'+(c.vp?chips(c.cost):desc(c))+'</span></span>';
 }
 function inspectSeat(i){
   const p=g.players[i];
