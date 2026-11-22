@@ -6,7 +6,7 @@ const firstVisit=!g?.players;
 if(firstVisit)g=newGame();
 const mySeat=()=>online?.seat??0;
 const myTurn=()=>g.turn===mySeat()&&(!online||online.ready&&!online.pending);
-const seatName=i=>i===mySeat()?'나':online?'친구':'상단 '+i;
+const seatName=i=>i===mySeat()?'나':online?(onlineAI(i)?'AI '+(i+1):'친구 '+(i+1)):'상단 '+i;
 const levelOf=p=>levels.includes(p.level)?p.level:'Medium';
 let worker=null;
 
@@ -27,7 +27,7 @@ function render(){
   el('rival').innerHTML=g.players.map((ai,i)=>{
     if(i===mySeat())return '';
     const last=g.log.find(x=>x.who===i);
-    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'"><span class="rivalhead"><b>'+seatName(i)+'</b><small>'+(online?'온라인':levelOf(ai))+'</small></span><span>'+chips(ai.bag,true)+'</span><span class="seatArt '+(last?.card?artOf(last.card):'back')+'"></span><small>손패 '+ai.hand.length+' · 사용 '+ai.used.length+' · 주문 '+ai.won.length+'</small><small>'+score(ai)+'점 · '+(last?.msg||'첫 교역 대기')+'</small></button>';
+    return '<button class="rival '+(g.turn===i?'thinking':'')+'" data-seat="'+i+'"><span class="rivalhead"><b>'+seatName(i)+'</b><small>'+(online&&!onlineAI(i)?'온라인':levelOf(ai))+'</small></span><span>'+chips(ai.bag,true)+'</span><span class="seatArt '+(last?.card?artOf(last.card):'back')+'"></span><small>손패 '+ai.hand.length+' · 사용 '+ai.used.length+' · 주문 '+ai.won.length+'</small><small>'+score(ai)+'점 · '+(last?.msg||'첫 교역 대기')+'</small></button>';
   }).join('');
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));
   el('myScore').textContent=score(p)+'점 · 주문 '+p.won.length+'/'+goal+'장';
@@ -131,7 +131,7 @@ function editor(){
 el('rest').onclick=()=>start('rest',0);
 function results(){
   const ranks=standings(g);
-  const rows=ranks.map(({p,i,points},j)=>'<article class="ranking"><b>'+(j+1)+'위 · '+seatName(i)+(!online&&i?' ('+levelOf(p)+')':'')+' · '+points+'점</b><p>주문 '+sum(p.won.map(c=>c.vp))+' · 금화 '+3*p.gold+' · 은화 '+p.silver+' · 향신료 '+sum(p.bag.slice(1))+'</p></article>').join('');
+  const rows=ranks.map(({p,i,points},j)=>'<article class="ranking"><b>'+(j+1)+'위 · '+seatName(i)+(i&&(!online||onlineAI(i))?' ('+levelOf(p)+')':'')+' · '+points+'점</b><p>주문 '+sum(p.won.map(c=>c.vp))+' · 금화 '+3*p.gold+' · 은화 '+p.silver+' · 향신료 '+sum(p.bag.slice(1))+'</p></article>').join('');
   modal(ranks[0].i===mySeat()?'나의 승리':seatName(ranks[0].i)+' 승리',rows+'<p>동점이면 차례가 더 늦은 대상단이 앞섭니다.</p><button class="primary" id="again">다음 대국 설정</button>');
   if(online){el('again').textContent='새 친구 대국 만들기';el('again').onclick=createOnline;}else el('again').onclick=openSetup;
 }
@@ -142,7 +142,7 @@ function openSetup(){
   const selected=Array.from({length:3},(_,j)=>g.players[j+1]?levelOf(g.players[j+1]):'Medium');
   function draw(){
     const seats=selected.slice(0,count-1).map((level,j)=>'<div class="seat"><label for="level'+j+'">'+seatName(j+1)+'</label><select id="level'+j+'">'+levels.map(l=>'<option '+(l===level?'selected':'')+'>'+l+'</option>').join('')+'</select><small id="info'+j+'">'+descriptions[level]+'</small></div>').join('');
-    modal('대국 설정','<p>나를 포함한 참가 인원</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'" class="'+(count===n?'active':'')+'">'+n+'인</button>').join('')+'</div>'+seats+'<p>'+count+'인전 · 주문 '+(count===4?5:6)+'장 달성 시 마지막 라운드</p>'+(g.log.length&&!g.over?'<small>시작하면 진행 중인 대국을 교체합니다.</small>':'')+'<button class="primary" id="new">AI 대국 시작</button><button class="primary" id="friend">친구와 2인 대전</button>');
+    modal('대국 설정','<p>나를 포함한 참가 인원</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'" class="'+(count===n?'active':'')+'">'+n+'인</button>').join('')+'</div>'+seats+'<p>'+count+'인전 · 주문 '+(count===4?5:6)+'장 달성 시 마지막 라운드</p>'+(g.log.length&&!g.over?'<small>시작하면 진행 중인 대국을 교체합니다.</small>':'')+'<button class="primary" id="new">AI 대국 시작</button><button class="primary" id="friend">친구 초대 대전</button>');
     el('body').querySelectorAll('[data-count]').forEach(b=>b.onclick=()=>{count=+b.dataset.count;draw();});
     selected.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>{selected[j]=e.target.value;el('info'+j).textContent=descriptions[selected[j]];});
     el('friend').onclick=createOnline;

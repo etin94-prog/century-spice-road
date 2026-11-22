@@ -1,21 +1,112 @@
 {
-  "rules":{
-    "rooms":{"$room":{
-      ".read":"auth != null && (data.child('host').val() === auth.uid || data.child('guest').val() === auth.uid)",
-      ".write":"auth != null && !data.exists() && newData.child('host').val() === auth.uid && !newData.hasChild('guest') && !newData.hasChild('moves')",
-      ".validate":"newData.hasChildren(['host','seed','format'])",
-      "host":{".read":"auth != null",".validate":"newData.isString()"},
-      "format":{".validate":"newData.val() === 1"},
-      "seed":{".validate":"newData.isNumber() && newData.val() >= 0 && newData.val() <= 4294967295"},
-      "guest":{".read":"auth != null",".write":"auth != null && !data.exists() && data.parent().hasChild('host') && data.parent().child('host').val() !== auth.uid && newData.val() === auth.uid"},
-      "moves":{"$step":{
-        ".write":"auth != null && !data.exists() && newData.exists() && data.parent().parent().hasChild('guest') && $step === ('t' + newData.child('n').val()) && (newData.child('n').val() === 0 || data.parent().hasChild('t' + (newData.child('n').val() - 1))) && ((newData.child('n').val() % 2 === 0 && auth.uid === data.parent().parent().child('host').val()) || (newData.child('n').val() % 2 === 1 && auth.uid === data.parent().parent().child('guest').val()))",
-        ".validate":"newData.hasChildren(['n','action'])",
-        "n":{".validate":"newData.isNumber() && newData.val() >= 0 && newData.val() < 10000"},
-        "action":{".validate":"newData.isString() && newData.val().length <= 512"},
-        "$other":{".validate":false}
-      }},
-      "$other":{".validate":false}
-    }}
+  "rules": {
+    "rooms": {
+      "$room": {
+        ".read": "auth != null && (data.child('host').val() === auth.uid || data.child('guest').val() === auth.uid)",
+        ".write": "auth != null && !data.exists() && newData.child('host').val() === auth.uid && !newData.hasChild('guest') && !newData.hasChild('moves')",
+        ".validate": "newData.hasChildren(['host','seed','format'])",
+        "host": {
+          ".read": "auth != null",
+          ".validate": "newData.isString()"
+        },
+        "format": {
+          ".validate": "newData.val() === 1"
+        },
+        "seed": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4294967295"
+        },
+        "guest": {
+          ".read": "auth != null",
+          ".write": "auth != null && !data.exists() && data.parent().hasChild('host') && data.parent().child('host').val() !== auth.uid && newData.val() === auth.uid"
+        },
+        "moves": {
+          "$step": {
+            ".write": "auth != null && !data.exists() && newData.exists() && data.parent().parent().hasChild('guest') && $step === ('t' + newData.child('n').val()) && (newData.child('n').val() === 0 || data.parent().hasChild('t' + (newData.child('n').val() - 1))) && ((newData.child('n').val() % 2 === 0 && auth.uid === data.parent().parent().child('host').val()) || (newData.child('n').val() % 2 === 1 && auth.uid === data.parent().parent().child('guest').val()))",
+            ".validate": "newData.hasChildren(['n','action'])",
+            "n": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 10000"
+            },
+            "action": {
+              ".validate": "newData.isString() && newData.val().length <= 512"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "tables": {
+      "$room": {
+        ".read": "auth != null && (root.child('tables').child($room).child('host').val() === auth.uid || root.child('tables').child($room).child('seats/1').val() === auth.uid || root.child('tables').child($room).child('seats/2').val() === auth.uid || root.child('tables').child($room).child('seats/3').val() === auth.uid)",
+        ".write": "auth != null && !data.exists() && newData.child('host').val() === auth.uid && !newData.hasChild('moves') && !newData.hasChild('seats') && !newData.hasChild('config')",
+        ".validate": "newData.hasChildren(['host','format','seed']) && (!newData.hasChild('seats/2') || newData.child('seats/1').val() !== newData.child('seats/2').val()) && (!newData.hasChild('seats/3') || newData.child('seats/1').val() !== newData.child('seats/3').val()) && (!newData.hasChild('seats/3') || newData.child('seats/2').val() !== newData.child('seats/3').val())",
+        "host": {
+          ".read": "auth != null",
+          ".validate": "newData.isString()"
+        },
+        "format": {
+          ".validate": "newData.val() === 2"
+        },
+        "seed": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4294967295"
+        },
+        "seats": {
+          ".read": "auth != null",
+          "1": {
+            ".write": "auth != null && !data.exists() && root.child('tables').child($room).hasChild('host') && !root.child('tables').child($room).child('config').exists() && !(root.child('tables').child($room).child('host').val() === auth.uid || root.child('tables').child($room).child('seats/1').val() === auth.uid || root.child('tables').child($room).child('seats/2').val() === auth.uid || root.child('tables').child($room).child('seats/3').val() === auth.uid) && true && newData.val() === auth.uid"
+          },
+          "2": {
+            ".write": "auth != null && !data.exists() && root.child('tables').child($room).hasChild('host') && !root.child('tables').child($room).child('config').exists() && !(root.child('tables').child($room).child('host').val() === auth.uid || root.child('tables').child($room).child('seats/1').val() === auth.uid || root.child('tables').child($room).child('seats/2').val() === auth.uid || root.child('tables').child($room).child('seats/3').val() === auth.uid) && root.child('tables').child($room).hasChild('seats/1') && newData.val() === auth.uid"
+          },
+          "3": {
+            ".write": "auth != null && !data.exists() && root.child('tables').child($room).hasChild('host') && !root.child('tables').child($room).child('config').exists() && !(root.child('tables').child($room).child('host').val() === auth.uid || root.child('tables').child($room).child('seats/1').val() === auth.uid || root.child('tables').child($room).child('seats/2').val() === auth.uid || root.child('tables').child($room).child('seats/3').val() === auth.uid) && root.child('tables').child($room).hasChild('seats/2') && newData.val() === auth.uid"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "config": {
+          ".write": "auth != null && root.child('tables').child($room).child('host').val() === auth.uid && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['humans','total']) && newData.child('total').val() >= newData.child('humans').val() && newData.child('humans').val() === (data.parent().hasChild('seats/3') ? 4 : data.parent().hasChild('seats/2') ? 3 : data.parent().hasChild('seats/1') ? 2 : 1) && (newData.child('total').val() < 3 || newData.child('humans').val() >= 3 || newData.hasChild('level2')) && (newData.child('total').val() < 4 || newData.child('humans').val() >= 4 || newData.hasChild('level3'))",
+          "humans": {
+            ".validate": "newData.val() === 2 || newData.val() === 3 || newData.val() === 4"
+          },
+          "total": {
+            ".validate": "newData.val() === 2 || newData.val() === 3 || newData.val() === 4"
+          },
+          "level2": {
+            ".validate": "newData.parent().child('humans').val() <= 2 && newData.parent().child('total').val() > 2 && (newData.val() === 'Easy' || newData.val() === 'Medium' || newData.val() === 'Hard' || newData.val() === 'Hell')"
+          },
+          "level3": {
+            ".validate": "newData.parent().child('humans').val() <= 3 && newData.parent().child('total').val() > 3 && (newData.val() === 'Easy' || newData.val() === 'Medium' || newData.val() === 'Hard' || newData.val() === 'Hell')"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "moves": {
+          "$step": {
+            ".write": "auth != null && !data.exists() && newData.exists() && root.child('tables').child($room).child('config').exists() && $step === ('t' + newData.child('n').val()) && (newData.child('n').val() === 0 || data.parent().hasChild('t' + (newData.child('n').val() - 1))) && ((((newData.child('n').val() % root.child('tables').child($room).child('config').child('total').val()) === 0 || (newData.child('n').val() % root.child('tables').child($room).child('config').child('total').val()) >= root.child('tables').child($room).child('config').child('humans').val()) && root.child('tables').child($room).child('host').val() === auth.uid) || ((newData.child('n').val() % root.child('tables').child($room).child('config').child('total').val()) > 0 && (newData.child('n').val() % root.child('tables').child($room).child('config').child('total').val()) < root.child('tables').child($room).child('config').child('humans').val() && root.child('tables').child($room).child('seats').child('' + (newData.child('n').val() % root.child('tables').child($room).child('config').child('total').val())).val() === auth.uid))",
+            ".validate": "newData.hasChildren(['n','action'])",
+            "n": {
+              ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() < 10000"
+            },
+            "action": {
+              ".validate": "newData.isString() && newData.val().length <= 512"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
   }
 }
