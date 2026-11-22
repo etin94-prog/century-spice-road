@@ -19,14 +19,20 @@ const coinName={gold:'금화 +3',silver:'은화 +1'};
 function coinToken(coin){
   return '<span class="coin '+coin+'" role="img" aria-label="'+coinName[coin]+'점" title="'+coinName[coin]+'점">'+(coin==='gold'?'3':'1')+'</span>';
 }
-function card(kind,c,i){
-  if(kind==='buy'){
+function card(kind,c,i,disabled=false){
+  if(kind!=='order'){
     const trade=sum(c.cost)>0;
     const recipe=c.up?'↑ '+c.up:trade?chips(c.cost)+' → '+chips(c.gain):chips(c.gain);
     const resources=bag=>bag.map((n,t)=>n?names[t]+' '+n+'개':'').filter(Boolean).join(' ');
     const effectLabel=c.up?'최대 '+c.up+'단계 승급':(trade?resources(c.cost)+' 지불, ':'')+resources(c.gain)+' 획득';
+    const artwork='<span class="illustration '+artOf(c)+'"></span>';
+    const symbols='<span class="marketRecipe">'+recipe+'</span>';
+    if(kind!=='buy'){
+      const target=kind==='collection'?'data-hand-index="'+i+'"':'data-kind="play" data-i="'+i+'"';
+      return '<button class="card" '+target+' aria-label="'+effectLabel+'" '+(disabled?'disabled':'')+'>'+artwork+symbols+'</button>';
+    }
     const pile=sum(c.pile)?'<span class="marketPile">+ '+chips(c.pile)+'</span>':'';
-    return '<button class="card merchantTile" data-kind="buy" data-i="'+i+'" aria-label="영입 비용 '+i+'개, '+effectLabel+(pile?', 쌓인 자원 '+resources(c.pile):'')+'"><span class="illustration '+artOf(c)+'"></span><span class="marketPrice">'+i+'</span>'+pile+'<span class="marketRecipe">'+recipe+'</span></button>';
+    return '<button class="card merchantTile" data-kind="buy" data-i="'+i+'" aria-label="영입 비용 '+i+'개, '+effectLabel+(pile?', 쌓인 자원 '+resources(c.pile):'')+'">'+artwork+'<span class="marketPrice">'+i+'</span>'+pile+symbols+'</button>';
   }
   const reward=kind==='order'&&bonus(g,i);
   const label=kind==='order'?(reward?coinToken(reward):''):'내 손패';
@@ -55,7 +61,10 @@ function render(){
   el('merchantDeck').textContent='남은 상인 '+g.merchants.length+'장';
   document.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{
     const kind=b.dataset.kind,i=+b.dataset.i;
-    if(myTurn()&&!g.over){start(kind,i);return;}
+    if(myTurn()&&!g.over){
+      if(kind==='play')playHandCard(i);else start(kind,i);
+      return;
+    }
     const c=(kind==='order'?g.orders:kind==='buy'?g.market:p.hand)[i];
     modal(kind==='order'?'주문 살펴보기':'상인 살펴보기','<div class="detailFace">'+face(c,kind==='order'?'':type(c))+'</div><p>'+(kind==='order'?'필요한 향신료 '+chips(c.cost):'카드 효과 '+desc(c))+'</p>',true);
   });
@@ -113,7 +122,7 @@ function schedule(){
     }catch{fallback();}
   },el('actionStage').hidden?950:2100);
 }
-function playFromCollection(i){
+function playHandCard(i){
   if(!myTurn()||g.over)return;
   const p=g.players[mySeat()],c=p.hand[i];
   if(!c)return;

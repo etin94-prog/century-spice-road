@@ -11,13 +11,13 @@ function inspectSeat(i){
   const own=i===mySeat(),canPlay=own&&myTurn()&&!g.over;
   const zones=groups.map(([label,cards],group)=>{
     const tiles=cards.map((c,index)=>own&&group===0
-      ? '<button class="card" data-hand-index="'+index+'" '+(canPlay?'':'disabled')+'>'+face(c,'')+'</button>'
+      ? card('collection',c,index,!canPlay)
       : '<div class="card">'+face(c,'')+'</div>').join('');
     return '<section><h3>'+label+' · '+cards.length+'장</h3>'+(tiles?'<div class="collectionGrid">'+tiles+'</div>':'<p class="meta">아직 없습니다.</p>')+'</section>';
   }).join('');
   modal(seatName(i)+'의 카드','<div id="collection" data-seat-index="'+i+'"><p>'+chips(p.bag,true)+' · '+score(p)+'점</p>'+zones+'</div>',true);
   el('collection').querySelectorAll('[data-hand-index]').forEach(button=>{
-    button.onclick=()=>playFromCollection(+button.dataset.handIndex);
+    button.onclick=()=>playHandCard(+button.dataset.handIndex);
   });
 }
 function visibleRect(node){
