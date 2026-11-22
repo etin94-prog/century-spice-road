@@ -29,8 +29,25 @@ function roomError(e){
 }
 function roomMenu(){
   const url=location.href;
-  modal(online.ready?'온라인 2인 대전':'친구 초대','<p>친구 한 명에게 이 방의 링크를 보내세요. 같은 브라우저로 다시 열면 자기 자리로 돌아옵니다.</p><input id="invite" readonly aria-label="친구 초대 링크" style="width:100%"><button class="primary" id="copyInvite">초대 링크 복사</button><button id="solo">AI 대국으로</button>');
-  el('invite').value=url;el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(url);el('copyInvite').textContent='복사됨';}catch{el('invite').select();}};el('solo').onclick=backToSolo;
+  const invite={title:'센추리 친구 대전',text:'센추리 한 판 같이 해요! 아래 링크로 입장하세요.',url};
+  modal(online.ready?'온라인 2인 대전':'친구 초대','<p>친구 한 명에게 이 방의 링크를 보내세요. 같은 브라우저로 다시 열면 자기 자리로 돌아옵니다.</p><input id="invite" readonly aria-label="친구 초대 링크" style="width:100%"><div class="inviteActions"><button id="copyInvite">초대 링크 복사</button><button class="primary" id="shareInvite">공유</button></div><div id="shareFallback" hidden><p>이 브라우저에서는 공유창을 열 수 없습니다.</p><a id="mailInvite">메일로 초대하기</a></div><button id="solo">AI 대국으로</button>');
+  el('invite').value=url;
+  el('mailInvite').href='mailto:?subject='+encodeURIComponent(invite.title)+'&body='+encodeURIComponent(invite.text+'\n'+url);
+  el('copyInvite').onclick=async()=>{
+    try{await navigator.clipboard.writeText(url);el('copyInvite').textContent='복사됨';}
+    catch{el('invite').select();}
+  };
+  el('shareInvite').onclick=async()=>{
+    try{
+      if(navigator.share&&(!navigator.canShare||navigator.canShare(invite))){
+        await navigator.share(invite);
+        return;
+      }
+    }catch(error){if(error.name==='AbortError')return;}
+    const fallback=el('shareFallback');
+    if(fallback){fallback.hidden=false;el('mailInvite').focus();}
+  };
+  el('solo').onclick=backToSolo;
 }
 async function createOnline(){
   if(openingRoom)return;openingRoom=true;stopAI();
