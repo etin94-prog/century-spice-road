@@ -30,7 +30,7 @@ function captureMove(actor,a,animate=true){
   const p=g.players[actor];
   const c=a.kind==='buy'?g.market[a.i]:a.kind==='order'?g.orders[a.i]:a.kind==='play'?p.hand[a.i]:p.used[p.used.length-1];
   const source=!animate?null:actor!==mySeat()&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
-  const selected=animate&&actor===mySeat()&&el('modal').open
+  const selected=animate&&a.kind==='play'&&actor===mySeat()&&el('modal').open
     ? el('body').querySelector('.detailFace')||el('collection')?.querySelector('[data-hand-index="'+a.i+'"]'):null;
   return {c,artwork:source?.matches('.card')?source.innerHTML:null,rect:visibleRect(selected)||visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
