@@ -101,6 +101,24 @@
           },
           "$other": {
             ".validate": false
+          },
+          "substitutes": {
+            ".validate": "newData.hasChildren(['0','1']) && (newData.parent().child('humans').val() < 3 || newData.hasChild('2')) && (newData.parent().child('humans').val() < 4 || newData.hasChild('3'))",
+            "0": {
+              ".validate": "newData.parent().parent().child('humans').val() > 0 && (newData.val() === 'Easy' || newData.val() === 'Medium' || newData.val() === 'Hard' || newData.val() === 'Hell')"
+            },
+            "1": {
+              ".validate": "newData.parent().parent().child('humans').val() > 1 && (newData.val() === 'Easy' || newData.val() === 'Medium' || newData.val() === 'Hard' || newData.val() === 'Hell')"
+            },
+            "2": {
+              ".validate": "newData.parent().parent().child('humans').val() > 2 && (newData.val() === 'Easy' || newData.val() === 'Medium' || newData.val() === 'Hard' || newData.val() === 'Hell')"
+            },
+            "3": {
+              ".validate": "newData.parent().parent().child('humans').val() > 3 && (newData.val() === 'Easy' || newData.val() === 'Medium' || newData.val() === 'Hard' || newData.val() === 'Hell')"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         },
         "moves": {

@@ -60,7 +60,7 @@ async function createOnline(){
   }catch(e){openingRoom=false;roomError(e);}
 }
 async function enterOnline(id){
-  stopAI();online={id,group:new URL(location.href).searchParams.has('table')?'tables':'rooms',seat:0,count:0,ready:false,pending:false,total:4,levels:['Medium','Medium','Medium','Medium']};
+  stopAI();online={id,group:new URL(location.href).searchParams.has('table')?'tables':'rooms',seat:0,count:0,ready:false,pending:false,total:4,substitutes:Array(4).fill('Medium'),levels:['Medium','Medium','Medium','Medium']};
   modal('게임방 연결','<p>참가 좌석을 확인하고 있습니다.</p>');
   try{
     const s=await firebaseService(),host=(await s.get(roomRef(s,id,'host'))).val();
@@ -179,6 +179,7 @@ function awaySeat(i){
   const presence=online?.presence?.[i];
   return !!presence?.changed&&!presence.connections;
 }
+function substituteLevel(i){return online?.config?.substitutes?.[i]??'Medium';}
 function canRunRoomAI(){
   return online?.ready&&online.connected&&!g.over&&g.turn!==online.seat&&(onlineAI(g.turn)||awaySeat(g.turn));
 }
@@ -189,7 +190,7 @@ function scheduleRoomAI(){
   const substitute=!onlineAI(g.turn);
   setTimeout(async()=>{
     if(online.aiJob!==job||revision!==online.count||!canRunRoomAI())return;
-    const players=g.players.map((p,i)=>substitute&&i===g.turn?{...p,level:'Medium'}:p);
+    const players=g.players.map((p,i)=>substitute&&i===g.turn?{...p,level:substituteLevel(i)}:p);
     const board={players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     let move;
     try{
@@ -207,20 +208,26 @@ function scheduleRoomAI(){
 }
 function drawLobby(){
   const box=el('lobbySeats'),humans=online.people||1;
-  if(online.ready){box.textContent='사람 '+online.config.humans+'명 · AI '+(online.config.total-online.config.humans)+'명';return;}
+  if(online.ready){box.textContent='사람 '+online.config.humans+'명 · AI '+(online.config.total-online.config.humans)+'명 · 대행 AI '+Array.from({length:online.config.humans},(_,i)=>(i+1)+'번 '+substituteLevel(i)).join(', ');return;}
   online.total=Math.max(humans,online.total);
   box.innerHTML='<p><b>참가한 사람 '+humans+'/4명</b> · 내 좌석 '+(online.seat+1)+'번</p>';
   if(online.seat){box.innerHTML+='<p>방장이 인원과 AI 난이도를 정하고 시작합니다.</p>';return;}
   const total=online.total;
-  box.innerHTML+='<label>전체 인원 <select id="roomTotal">'+[2,3,4].filter(n=>n>=humans).map(n=>'<option value="'+n+'" '+(n===total?'selected':'')+'>'+n+'인</option>').join('')+'</select></label><p>시작할 때 빈 자리를 AI로 채웁니다. 연결이 끊긴 사람의 차례는 잠시 기다린 뒤 Medium AI가 대행합니다.</p>';
-  for(let i=Math.max(2,humans);i<total;i++){
-    box.innerHTML+='<div class="seat"><label for="roomLevel'+i+'">'+(i+1)+'번 좌석 AI</label><select id="roomLevel'+i+'">'+levels.map(l=>'<option '+(online.levels[i]===l?'selected':'')+'>'+l+'</option>').join('')+'</select></div>';
+  box.innerHTML+='<label>전체 인원 <select id="roomTotal">'+[2,3,4].filter(n=>n>=humans).map(n=>'<option value="'+n+'" '+(n===total?'selected':'')+'>'+n+'인</option>').join('')+'</select></label><p>시작할 때 빈 자리를 AI로 채웁니다. 사람이 자리를 비우면 그 좌석에 설정한 AI가 대신 둡니다.</p>';
+  for(let i=0;i<total;i++){
+    if(i===1&&humans<2)continue;
+    const human=i<humans,choices=human?online.substitutes:online.levels;
+    const id=(human?'subLevel':'roomLevel')+i;
+    const label=(i+1)+'번 '+(human?(i===0?'방장':'친구')+' · 대행 AI':'좌석 AI');
+    const options=levels.map(l=>'<option '+(choices[i]===l?'selected':'')+'>'+l+'</option>').join('');
+    box.innerHTML+='<div class="seat"><label for="'+id+'">'+label+'</label><select id="'+id+'">'+options+'</select></div>';
   }
   box.innerHTML+='<button class="primary" id="beginTable" '+(humans<2?'disabled':'')+'>'+(humans<2?'친구 입장 대기':'사람 '+humans+'명 · AI '+(total-humans)+'명으로 시작')+'</button><small id="startHint"></small>';
   el('roomTotal').onchange=e=>{online.total=+e.target.value;drawLobby();};
+  for(let i=0;i<humans;i++)el('subLevel'+i).onchange=e=>online.substitutes[i]=e.target.value;
   for(let i=Math.max(2,humans);i<total;i++)el('roomLevel'+i).onchange=e=>online.levels[i]=e.target.value;
   el('beginTable').onclick=async()=>{
-    const config={humans,total};for(let i=humans;i<total;i++)config['level'+i]=online.levels[i];
+    const config={humans,total,substitutes:online.substitutes.slice(0,humans)};for(let i=humans;i<total;i++)config['level'+i]=online.levels[i];
     el('beginTable').disabled=true;
     // Wait for the server to confirm the exact roster before starting locally.
     try{
