@@ -104,7 +104,7 @@ function advance(a,remote=false,substitute=false){
   if(human)close();
   save();render();
   animateMove(actor,a,motion);
-  if(g.over)results();else schedule();
+  if(!review.open){if(g.over)results();else schedule();}
 }
 function recordMove(action,motion,actor){
   Object.assign(g.log[0],{action,card:motion.c,used:motion.used,coin:motion.coin,before:motion.before,after:g.players[actor].bag.slice()});
@@ -120,7 +120,7 @@ function stopAI(){
 }
 function schedule(){
   stopAI();
-  if(online||g.over||!g.turn||(el('modal').open&&el('modal').dataset.observe!=='true'))return;
+  if(review.open||online||g.over||!g.turn||(el('modal').open&&el('modal').dataset.observe!=='true'))return;
   timer=setTimeout(()=>{
     const publicBoard={players:g.players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     const fallback=()=>{stopAI();advance(chooseMove(publicBoard));};

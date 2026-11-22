@@ -46,7 +46,39 @@ function flightFrames(from,to,width,height,startScale,endScale,lift){
     return {transform:'translate3d('+x+'px,'+y+'px,0) rotate('+(-4*bend)+'deg) scale('+scale+')'};
   });
 }
-function animateMove(actor,a,{c,rect,artwork,before,marketSource,following}){
+const reviewQueue=[];
+const review=document.getElementById('playedCard');
+let reviewTimer;
+function showPlayedCard(entry){
+  if(review.open){reviewQueue.push(entry);return;}
+  const {actor,c,rect,substitute}=entry;
+  const card=review.querySelector('button');
+  card.innerHTML=face(c,seatName(actor)+(substitute?' · AI 대행':'')+' · 사용');
+  review.showModal();
+  const end=card.getBoundingClientRect();
+  const arrival=rect&&!matchMedia('(prefers-reduced-motion: reduce)').matches?380:0;
+  if(arrival){
+    const dx=rect.left+rect.width/2-end.left-end.width/2;
+    const dy=rect.top+rect.height/2-end.top-end.height/2;
+    card.animate([{transform:'translate('+dx+'px,'+dy+'px) scale('+Math.min(1,rect.width/end.width)+') rotate(-4deg)'},{transform:'none'}],{duration:arrival,easing:'ease-out'});
+  }
+  reviewTimer=setTimeout(dismissPlayedCard,arrival+3000);
+}
+function dismissPlayedCard(){
+  if(!review.open)return;
+  clearTimeout(reviewTimer);
+  review.close();
+  if(reviewQueue.length){showPlayedCard(reviewQueue.shift());return;}
+  if(g.over)results();else if(online)scheduleRoomAI();else schedule();
+}
+review.onclick=e=>{e.stopPropagation();dismissPlayedCard();};
+review.oncancel=e=>{e.preventDefault();dismissPlayedCard();};
+// A tap held across the timeout must finish on the review surface.
+review.onpointerdown=()=>clearTimeout(reviewTimer);
+review.onpointerup=review.onpointercancel=()=>{clearTimeout(reviewTimer);reviewTimer=setTimeout(dismissPlayedCard,350);};
+function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute}){
+  const playing=a.kind==='play';
+  if(playing)showPlayedCard({actor,c,rect,substitute});
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
   const stack=actor!==mySeat()?dest?.querySelector(a.kind==='order'?'.orderMini':'.cardBack'):null;
@@ -56,46 +88,38 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following}){
     if(last&&end&&last.right<=end.right+1&&last.left>=end.left-1)end=last;
     else end=visibleRect(el('handTitle'))||visibleRect(el('myTable'))||end;
   }
-  if(!rect&&!end)return;
+  if(!playing&&!rect&&!end)return;
   const layer=el('flightLayer');
-  // render() has detached the selected card. Carry its original face and dimensions.
-  const node=marketSource||document.createElement('div');
-  node.classList.add('card','flying');
-  node.removeAttribute('data-kind');node.removeAttribute('data-i');
-  node.tabIndex=-1;node.setAttribute('aria-hidden','true');
-  if(!marketSource)node.innerHTML=artwork||face(c,'');
-  const width=rect?rect.width:82,height=rect?rect.height:106;
-  Object.assign(node.style,{width:width+'px',height:height+'px',minHeight:'0',transformOrigin:'center'});
-  layer.append(node);
-  if(marketSource){
-    const row=el(a.kind==='buy'?'merchants':'orders');
-    Array.from(row.children).slice(a.i).forEach((card,j)=>{
-      const old=following[j],next=card.getBoundingClientRect();
-      const frames=old?[{transform:'translate('+(old.left-next.left)+'px,'+(old.top-next.top)+'px)'},{transform:'none'}]:[{opacity:0},{opacity:1}];
-      card.animate(frames,{delay:180,duration:320,fill:'backwards',easing:'ease-out'});
-    });
-  }
   const center=(r,defaultY)=>r?[r.left+r.width/2,r.top+r.height/2]:[innerWidth/2,defaultY];
   const from=center(rect,innerHeight/2),to=center(end,actor===mySeat()?innerHeight-32:40);
-  const playing=a.kind==='play';
-  const table=center(visibleRect(el('merchants')),innerHeight*.48);
-  const landing=playing?table:to;
-  const frames=flightFrames(from,landing,width,height,1,playing?.95:.62,22);
-  if(playing){
-    frames.forEach((frame,i)=>frame.offset=.42*i/12);
-    const laid=frames[12].transform;
-    frames.push({transform:laid+' scaleY(.89)',offset:.56,opacity:1},
-      {transform:laid+' scale(.72,.67)',offset:.85,opacity:.34},
-      {transform:laid+' scale(.36)',offset:1,opacity:0});
+  const table=[innerWidth/2,innerHeight/2];
+  if(!playing){
+    // render() has detached the selected card. Carry its original face and dimensions.
+    const node=marketSource||document.createElement('div');
+    node.classList.add('card','flying');
+    node.removeAttribute('data-kind');node.removeAttribute('data-i');
+    node.tabIndex=-1;node.setAttribute('aria-hidden','true');
+    if(!marketSource)node.innerHTML=artwork||face(c,'');
+    const width=rect?rect.width:82,height=rect?rect.height:106;
+    Object.assign(node.style,{width:width+'px',height:height+'px',minHeight:'0',transformOrigin:'center'});
+    layer.append(node);
+    if(marketSource){
+      const row=el(a.kind==='buy'?'merchants':'orders');
+      Array.from(row.children).slice(a.i).forEach((card,j)=>{
+        const old=following[j],next=card.getBoundingClientRect();
+        const frames=old?[{transform:'translate('+(old.left-next.left)+'px,'+(old.top-next.top)+'px)'},{transform:'none'}]:[{opacity:0},{opacity:1}];
+        card.animate(frames,{delay:180,duration:320,fill:'backwards',easing:'ease-out'});
+      });
+    }
+    const frames=flightFrames(from,to,width,height,1,.62,22);
+    frames[0].opacity=1;frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
+    node.style.transform=frames[0].transform;
+    const anim=node.animate(frames,{fill:'both',duration:950,easing:'ease-in-out'});
+    anim.onfinish=()=>{
+      node.remove();
+      if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:240});
+    };anim.oncancel=()=>node.remove();
   }
-  frames[0].opacity=1;if(!playing)frames[frames.length-3].opacity=1;frames[frames.length-1].opacity=0;
-  node.style.transform=frames[0].transform;
-  const anim=node.animate(frames,{fill:'both',duration:playing?1020:950,easing:'ease-in-out'});
-  anim.onfinish=()=>{
-    node.remove();
-    if(stack?.isConnected)stack.animate([{transform:'scale(1.28) rotate(-7deg)'},{transform:'none'}],{duration:240});
-  };anim.oncancel=()=>node.remove();
-
   // Animate only resources the player actually keeps after paying and returning excess.
   g.players[actor].bag.forEach((count,t)=>{
     const gain=count-before[t];

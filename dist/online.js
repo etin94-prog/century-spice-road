@@ -218,7 +218,7 @@ function canRunRoomAI(){
 }
 function scheduleRoomAI(){
   if(!canRunRoomAI()){online.aiJob=null;return;}
-  if(online.pending||online.aiJob?.revision===online.count)return;
+  if(review.open||online.pending||online.aiJob?.revision===online.count)return;
   const revision=online.count,job={revision};online.aiJob=job;
   const substitute=!onlineAI(g.turn);
   setTimeout(async()=>{
