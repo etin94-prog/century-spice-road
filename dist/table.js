@@ -21,7 +21,7 @@ function captureMove(actor,a){
   const p=g.players[actor];
   const c=a.kind==='buy'?g.market[a.i]:a.kind==='order'?g.orders[a.i]:a.kind==='play'?p.hand[a.i]:p.used[p.used.length-1];
   const source=actor&&['play','rest'].includes(a.kind)?document.querySelector('[data-seat="'+actor+'"]'):a.kind==='rest'?el('myTable'):document.querySelector('[data-kind="'+a.kind+'"][data-i="'+a.i+'"]');
-  return {c,rect:visibleRect(source)};
+  return {c,rect:visibleRect(source),before:p.bag.slice(),used:p.used.length,coin:a.kind==='order'?bonus(g,a.i):null};
 }
 function animateMove(actor,a,{c,rect}){
   if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -87,3 +87,45 @@ document.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')trackGest
 document.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')endGesture(e,e.clientX,e.clientY);});
 document.addEventListener('contextmenu',e=>{if(gesture)e.preventDefault();});
 window.addEventListener('blur',clearGesture);
+let stageTimer;
+function hideAction(){
+  clearTimeout(stageTimer);
+  document.getElementById('actionStage').hidden=true;
+}
+function showOpponentMove(actor,a,motion){
+  hideAction();
+  const c=motion.c,p=g.players[actor],stage=el('actionStage');
+  let label,flow;
+  if(a.kind==='rest'){label='휴식';flow='사용 더미 '+motion.used+'장 → 손패';}
+  if(a.kind==='buy'){
+    label='상인 영입';
+    flow=a.pay.length?'시장에 '+a.pay.map(t=>cube(t)+names[t]).join(' · ')+' 지불':'첫 상인 무료 영입';
+    if(sum(c.pile))flow+=' · '+chips(c.pile)+' 회수';
+  }
+  if(a.kind==='order'){label=c.vp+'점 주문 달성';flow=chips(c.cost)+' 지불'+(motion.coin?' · '+coinName[motion.coin]+'점':'');}
+  if(a.kind==='play'){
+    label=type(c);
+    if(c.up)flow=a.steps.map(t=>cube(t)+names[t]+' → '+cube(t+1)+names[t+1]).join(' · ');
+    else {const n=a.n||1;flow=sum(c.cost)?chips(c.cost.map(x=>x*n))+' → '+chips(c.gain.map(x=>x*n)):chips(c.gain)+' 획득';}
+  }
+  if(a.drop&&sum(a.drop))flow+=' · '+chips(a.drop)+' 반납';
+  stage.innerHTML='<div class="stageCard">'+face(c,a.kind==='rest'?'회수한 카드':label)+'</div><div><b>'+seatName(actor)+' · '+label+'</b><div class="stageFlow">'+flow+'</div><small>보유 '+chips(motion.before,true)+' → '+chips(p.bag,true)+'</small></div>';
+  stage.hidden=false;
+  stageTimer=setTimeout(hideAction,2000);
+}
+const fullButton=document.getElementById('fullscreen');
+const nativeFull=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function updateFullLabel(){fullButton.textContent=nativeFull()||document.body.classList.contains('boardOnly')?'전체화면 종료':'전체화면';}
+document.addEventListener('fullscreenchange',updateFullLabel);
+document.addEventListener('webkitfullscreenchange',updateFullLabel);
+fullButton.onclick=async()=>{
+  if(nativeFull()){await (document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+  else if(document.body.classList.contains('boardOnly'))document.body.classList.remove('boardOnly');
+  else{
+    const root=document.documentElement;
+    try{await (root.requestFullscreen||root.webkitRequestFullscreen).call(root);}
+    catch{document.body.classList.add('boardOnly');}
+    if(nativeFull()){try{await screen.orientation.lock('landscape');}catch{}}
+  }
+  updateFullLabel();
+};

@@ -40,7 +40,7 @@ function render(){
   el('log').innerHTML=g.log.map(x=>'<p>'+x.round+'R · '+seatName(x.who)+' · '+x.msg+(x.card?' &nbsp; '+(x.card.vp?chips(x.card.cost):desc(x.card)):'')+'</p>').join('')||'<p>아직 진행한 행동이 없습니다.</p>';
   if(g.over){el('status').innerHTML+='<button id="results">결과 보기</button>';el('results').onclick=results;}
 }
-function modal(title,body){stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
+function modal(title,body){hideAction();stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
 const close=()=>el('modal').close();
 el('close').onclick=close;
 el('myTable').onclick=()=>inspectSeat(0);
@@ -52,6 +52,7 @@ function advance(a){
   if(human)close();
   save();render();
   animateMove(actor,a,motion);
+  if(actor)showOpponentMove(actor,a,motion);
   if(g.over)results();else schedule();
 }
 function stopAI(){
@@ -70,7 +71,7 @@ function schedule(){
       worker.onerror=fallback;
       worker.postMessage(publicBoard);
     }catch{fallback();}
-  },950);
+  },el('actionStage').hidden?950:2100);
 }
 function start(kind,i){
   if(g.over||g.turn)return;
