@@ -52,6 +52,7 @@ function clearGesture(){
 }
 function beginGesture(e,x,y){
   clearGesture();
+  suppressClick=false;
   const card=e.target.closest('button[data-kind]');
   if(!card||card.disabled||el('modal').open||!myTurn()||g.over)return;
   const s={card,x,y,kind:card.dataset.kind,i:+card.dataset.i};gesture=s;
@@ -59,7 +60,8 @@ function beginGesture(e,x,y){
     s.ghost=card.cloneNode(true);s.ghost.removeAttribute('data-kind');s.ghost.removeAttribute('data-i');s.ghost.classList.add('lifted');s.ghost.setAttribute('aria-hidden','true');
     s.zone=document.createElement('div');s.zone.className='dropzone';s.zone.textContent={buy:'여기에 놓아 손패로 가져오기',play:'여기에 놓아 카드 사용',order:'여기에 놓아 주문 달성'}[s.kind];
     // Keep the target on the opposite half of the screen from the finger.
-    s.zone.style[s.y>innerHeight*.6?'top':'bottom']='max(16px, env(safe-area-inset-bottom))';
+    const edge=s.y>innerHeight*.5?'top':'bottom';
+    s.zone.style[edge]='max(16px, env(safe-area-inset-'+edge+'))';
     document.body.append(s.ghost,s.zone);trackGesture(null,s.x,s.y);
   },310);
 }
@@ -68,7 +70,9 @@ function trackGesture(e,x,y){
   const s=gesture;if(!s)return;
   if(!s.ghost){if(Math.hypot(x-s.x,y-s.y)>9)clearGesture();return;}
   if(e?.cancelable)e.preventDefault();
-  s.ghost.style.transform='translate('+(x-45)+'px,'+(y-75)+'px) rotate(-6deg)';
+  const left=Math.max(4,Math.min(innerWidth-s.ghost.offsetWidth-4,x-45));
+  const top=Math.max(4,Math.min(innerHeight-s.ghost.offsetHeight-4,y-s.ghost.offsetHeight-12));
+  s.ghost.style.transform='translate('+left+'px,'+top+'px) rotate(-6deg)';
   s.zone.classList.toggle('armed',inside(s.zone,x,y));
 }
 function endGesture(e,x,y){
@@ -121,7 +125,11 @@ function showOpponentMove(actor,a,motion){
 }
 const fullButton=document.getElementById('fullscreen');
 const nativeFull=()=>document.fullscreenElement||document.webkitFullscreenElement;
-function updateFullLabel(){fullButton.textContent=nativeFull()||document.body.classList.contains('boardOnly')?'전체화면 종료':'전체화면';}
+function updateFullLabel(){
+  const boardOnly=document.body.classList.contains('boardOnly');
+  fullButton.textContent=nativeFull()?'전체화면 종료':boardOnly?'보드 모드 종료':'전체화면';
+  fullButton.setAttribute('aria-pressed',String(!!nativeFull()||boardOnly));
+}
 document.addEventListener('fullscreenchange',updateFullLabel);
 document.addEventListener('webkitfullscreenchange',updateFullLabel);
 fullButton.onclick=async()=>{
