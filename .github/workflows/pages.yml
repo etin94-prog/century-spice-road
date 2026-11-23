@@ -21,6 +21,8 @@ jobs:
         run: node qa/expeditions.cjs
       - name: Replay all three combined games
         run: node qa/combinations.cjs
+      - name: Verify Splendor decks, payments and replay
+        run: node qa/splendor.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

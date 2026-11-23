@@ -1,4 +1,8 @@
-# 센추리 · 향신료의 길
+# 센추리와 스플렌더
+
+[스플렌더 기본판](https://etin94-prog.github.io/century-spice-road/splendor.html)은 첫 화면에서도 선택할 수 있습니다. 2~4인 AI 대국과 Firebase 초대방을 지원합니다. 보석 은행을 눌러 토큰을 고르고, 공개 카드를 눌러 구매 또는 예약합니다. 각 단계의 덱을 누르면 비공개 예약을 합니다. 기본판 구성과 점수는 [출판사 규칙서](https://cdn.svc.asmodee.net/production-spacecowboys/uploads/2025/10/SCSPL01EN_SPLENDOR_RULES_LIGHT.pdf)를 따릅니다. 개발 카드 비용은 [카드 데이터](https://github.com/bouk/splendimax/blob/master/Splendor%20Cards.csv)와 대조했습니다. 디지털 대국은 1번 좌석부터 시작합니다.
+
+스플렌더 규칙 및 재현 검사는 `node qa/splendor.cjs`로 실행합니다. Playwright와 Edge가 설치된 환경에서 `node qa/splendor-mobile.cjs`는 모바일 AI 대국을, `node qa/splendor-mobile.cjs --room`은 실제 Firebase 방의 두 화면을 검사합니다.
 
 첫 화면에서 독립판 1·2·3과 조합판 1+2·1+2+3·1+3을 선택합니다. 판마다 별도로 저장되고 초대 링크는 해당 대국으로 연결됩니다. 조합판의 종료·재현 검사는 `node qa/combinations.cjs`로 실행합니다. [Ⅱ 동방의 바다](https://etin94-prog.github.io/century-spice-road/expedition.html?edition=2)에서는 역순으로 출항 화물과 섬을 고르고, 항해·교역소 건설·납품을 진행합니다. [Ⅲ 신대륙의 개척자](https://etin94-prog.github.io/century-spice-road/expedition.html?edition=3)에서는 정착민을 배치·회수하고 요새의 승점 카드와 보너스를 모읍니다. 각 편은 별도로 기기에 저장됩니다. 초대 링크에는 판본이 포함됩니다.
 

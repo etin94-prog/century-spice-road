@@ -30,7 +30,8 @@ function roomError(e){
 }
 function roomMenu(){
   const url=location.href;
-  const invite={title:'센추리 친구 대전',text:'센추리 한 판 같이 해요! 아래 링크로 입장하세요.',url};
+  const name=g.edition===4?'스플렌더':'센추리';
+  const invite={title:name+' 친구 대전',text:name+' 한 판 같이 해요! 아래 링크로 입장하세요.',url};
   modal(online.ready?'온라인 '+g.players.length+'인 대전':'친구 초대','<div id="lobbySeats"></div><p>함께 할 친구에게 이 방의 링크를 보내세요. 같은 브라우저로 다시 열면 자기 자리로 돌아옵니다.</p><input id="invite" readonly aria-label="친구 초대 링크" style="width:100%"><div class="inviteActions"><button id="copyInvite">초대 링크 복사</button><button class="primary" id="shareInvite">공유</button></div><div id="shareFallback" hidden><p>이 브라우저에서는 공유창을 열 수 없습니다.</p><a id="mailInvite">메일로 초대하기</a></div><button id="solo">AI 대국으로</button>');
   if(online.group==='tables'||online.ready)drawLobby();
   el('invite').value=url;
@@ -233,7 +234,7 @@ function scheduleRoomAI(){
     let move;
     try{
       move=await new Promise((resolve,reject)=>{
-        const ai=new Worker(g.edition?'expedition-worker.js?v=mobile-audit':'ai-worker.js?v=mobile-audit');
+        const ai=new Worker(g.edition===4?'splendor-worker.js':g.edition?'expedition-worker.js?v=mobile-audit':'ai-worker.js?v=mobile-audit');
         ai.onmessage=e=>{ai.terminate();resolve(e.data);};
         ai.onerror=e=>{ai.terminate();reject(e);};ai.postMessage(board);
       });
