@@ -1,6 +1,6 @@
 # 센추리 · 향신료의 길
 
-대국 설정에서 독립판을 선택할 수 있습니다. [Ⅱ 동방의 바다](https://etin94-prog.github.io/century-spice-road/expedition.html?edition=2)에서는 역순으로 출항 화물과 섬을 고르고, 항해·교역소 건설·납품을 진행합니다. [Ⅲ 신대륙의 개척자](https://etin94-prog.github.io/century-spice-road/expedition.html?edition=3)에서는 정착민을 배치·회수하고 요새의 승점 카드와 보너스를 모읍니다. 각 편은 별도로 기기에 저장됩니다. 초대 링크에는 판본이 포함됩니다.
+첫 화면에서 독립판 1·2·3과 조합판 1+2·1+2+3·1+3을 선택합니다. 판마다 별도로 저장되고 초대 링크는 해당 대국으로 연결됩니다. 조합판의 종료·재현 검사는 `node qa/combinations.cjs`로 실행합니다. [Ⅱ 동방의 바다](https://etin94-prog.github.io/century-spice-road/expedition.html?edition=2)에서는 역순으로 출항 화물과 섬을 고르고, 항해·교역소 건설·납품을 진행합니다. [Ⅲ 신대륙의 개척자](https://etin94-prog.github.io/century-spice-road/expedition.html?edition=3)에서는 정착민을 배치·회수하고 요새의 승점 카드와 보너스를 모읍니다. 각 편은 별도로 기기에 저장됩니다. 초대 링크에는 판본이 포함됩니다.
 
 2·3편 규칙은 [출판사 규칙서](https://cdn.svc.asmodee.net/production-nextmove/uploads/sites/4/2024/06/EN_Century-BB_rules_lowres.pdf), [2편 영상](https://www.youtube.com/watch?v=Dv7dp6Ir2D0), [3편 영상](https://www.youtube.com/watch?v=PbqoAnf8_rg)으로 확인했습니다. 수치 대조에는 [2편 구성품](https://steamcommunity.com/sharedfiles/filedetails/?id=2211334114)과 [3편 구성품](https://steamcommunity.com/sharedfiles/filedetails/?id=3776599714)을 사용했습니다. 지형 삽화는 이 프로젝트용으로 생성했습니다.
 

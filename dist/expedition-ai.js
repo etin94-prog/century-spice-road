@@ -44,6 +44,7 @@ function expertValue(g,item,seat){
   return quality;
 }
 function chooseMove(g,level=g.players[g.turn].level||'Medium'){
+  if(g.combo)return mixAI(g,level);
   if(g.departures){
     const i=g.tiles.findIndex(t=>!t.port&&t.recipe==='00/2');
     return {edition:2,kind:'depart',i:i>=0?i:g.tiles.findIndex(t=>!t.port),option:(g.turn+1)%g.departures.length};

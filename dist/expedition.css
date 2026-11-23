@@ -5,3 +5,13 @@
 .sea .site{background-image:linear-gradient(0deg,#203a30e8,#23433630 85%),url(art/island.webp)}.sea .port{background-image:linear-gradient(0deg,#21382ae8,#45362a50),url(art/harbour.webp)}.land .site{background-image:linear-gradient(0deg,#1f3024e8,#30402c60),url(art/settlement.webp)}.land .fort{background-image:linear-gradient(0deg,#302b24e8,#5f452c50),url(art/fort.webp)}.land .covered{background-image:linear-gradient(125deg,#42513fdd,#475f51c7),url(art/settlement.webp)}.site .goods{background:#142f29db;border-radius:3px;padding:1px 3px}.site:nth-child(3n){background-position:35% 65%}.site:nth-child(3n+1){background-position:65% 35%}.exp .actions button[aria-pressed=true]{background:#16473b;color:#fff2d5}.motionTile.seaFace{background-image:linear-gradient(#14382bd4,#14382be8),url(art/harbour.webp)}.motionTile.landFace{background-image:linear-gradient(#14382bc9,#14382be8),url(art/fort.webp)}
 .exp #atlas.land{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,minmax(32px,1fr));grid-auto-rows:auto}.exp .land .site{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;align-content:center;gap:1px 4px}.land .site .pieces{right:1px;bottom:0}.land .site small{font-size:10px}.exp .site:focus-visible{outline:2px solid #ffe09e}.exp #personal b{color:#16553e}
 .piece,#workerPool{touch-action:none;cursor:grab}#workerPool{background:#cfbd95}.dragPiece{position:fixed;transform:translate(-50%,-50%);font-size:32px;pointer-events:none;z-index:30;color:#ffd985;text-shadow:0 2px 3px #17352c}
+
+.exp #atlas.comboGrid{grid-template-columns:repeat(auto-fit,minmax(108px,1fr));grid-auto-rows:minmax(55px,1fr);background:#294c41;align-content:start}
+.comboGrid .site,.comboMap .site{background-image:linear-gradient(0deg,#102f24eb,#29423170),url(art/settlement.webp);min-height:46px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}
+.comboGrid .fort{background-image:linear-gradient(0deg,#102f24eb,#29423170),url(art/fort.webp)}
+.comboGrid .merchant{background-image:linear-gradient(0deg,#102f24eb,#29423170),url(art/trade.webp)}
+.exp #atlas.comboMap{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(7,minmax(0,1fr))}
+.comboMap .site{background-image:linear-gradient(0deg,#102f24eb,#29423170),url(art/island.webp);min-height:0}
+#mixTabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}#mixTabs button{width:auto;flex:1;min-height:34px}
+#mixTabs [aria-pressed=true]{background:#204f43;color:#fff4cc;border-color:#bc914c}
+@media(orientation:portrait){.exp #atlas.comboGrid{grid-template-columns:repeat(3,minmax(0,1fr))}#mixTabs{flex-basis:100%;margin:0}}

@@ -19,6 +19,8 @@ jobs:
         run: node qa/rules.cjs
       - name: Replay Eastern Wonders and A New World
         run: node qa/expeditions.cjs
+      - name: Replay all three combined games
+        run: node qa/combinations.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

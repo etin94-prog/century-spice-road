@@ -78,7 +78,8 @@ function upgradeOptions(bag,steps){
   }
   visit(bag,[]);return [...outputs.values()];
 }
-function actionsAt(g,i,options={}){
+function actionsAt(g,i,options={},base=false){
+  if(g.combo&&!base)return mixOptions(g,i,options);
   const p=g.players[g.turn],t=g.tiles[i],list=[];
   if(!t)return list;
   const add=(kind,bag,details={})=>list.push({kind,i,bag,...details});
@@ -115,7 +116,7 @@ function actionsAt(g,i,options={}){
     }
   }else{
     if(t.cover||t.occupant?.seat===g.turn||workerCost(p,t)>p.ready)return list;
-    const raw=p.bag.slice();p.won.filter(c=>c[2]===1&&c[3]===t.tool).forEach(c=>raw[c[4]||0]++);
+    const raw=p.bag.slice();p.won.filter(c=>c[2]===1&&c[3]===(g.combo?t.help:t.tool)).forEach(c=>raw[c[4]||0]++);
     if(t.fort){
       const stacks=p.bonus.length<3?t.stacks.map((s,j)=>s.length?j:-1).filter(j=>j>=0):[];
       for(const stack of stacks)add('bonus',raw,{stack});
@@ -140,6 +141,7 @@ function trimBag(bag,limit,discard){
   return minPaid(bag,n,discard)?.left;
 }
 function expScore(g,p){
+  if(g.combo)return mixScore(g,p);
   const remaining=total(p.bag.slice(1));
   if(g.edition===2)return remaining+total(p.won.map(c=>c[1]))+total(p.tracks.map(n=>[0,0,1,3,5,8][n]))+total(p.bonus.map(b=>typeof b==='number'?b:b==='upgrade'?2:b==='harvest'?1:0));
   const icons=blank();p.won.forEach(c=>icons[c[2]]++);p.explored.filter(x=>x.startsWith('icon')).forEach(x=>icons[+x.at(-1)]++);
@@ -147,7 +149,8 @@ function expScore(g,p){
 }
 const expRanks=g=>g.players.map((p,i)=>({i,points:expScore(g,p)})).sort((a,b)=>b.points-a.points||b.i-a.i);
 const actNames={depart:'출항 준비',sail:'항해만',trade:'교역',harvest:'수확',build:'교역소 건설',order:'납품',rest:'일꾼 회수',bonus:'보너스 획득',upgrade:'승급',produce:'생산'};
-function apply(g,a){
+function apply(g,a,base=false){
+  if(g.combo&&!base)return mixApply(g,a);
   if(!a||g.over||a.edition!==g.edition||!Number.isInteger(a.i))return false;
   if(a.priority&&(!Array.isArray(a.priority)||a.priority.length!==4||new Set(a.priority).size!==4||!a.priority.every(t=>[0,1,2,3].includes(t))))return false;
   const actor=g.turn,p=g.players[actor],t=g.tiles[a.i];let points=0;

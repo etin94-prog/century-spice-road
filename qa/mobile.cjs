@@ -23,7 +23,7 @@ async function mobile() {
         reducedMotion:width===568?'reduce':'no-preference'});
       const errors=[];
       page.on('pageerror',e=>errors.push(e.message));
-      await page.goto(url);
+      await page.goto(new URL('spice.html',url).href);
       await page.locator('[data-count="4"]').tap();
       await page.locator('#new').tap();
       await page.locator('#guide').tap();

@@ -34,7 +34,7 @@ async function run() {
       pages.push(page);
     }
     const host = pages[0];
-    await host.goto(url);
+    await host.goto(new URL('spice.html',url).href);
     await host.locator('#friend').tap();
     const invite = await host.locator('#invite').inputValue();
     for (const guest of pages.slice(1)) {

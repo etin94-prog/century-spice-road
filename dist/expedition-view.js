@@ -1,10 +1,13 @@
 "use strict";
 const el=id=>document.getElementById(id);
 const tableId=roomIdFromUrl(),mark=tableId?.slice(0,8);
-const edition=mark==='ce000003'?3:mark==='ce000002'?2:Number(new URL(location.href).searchParams.get('edition'))===3?3:2;
+const params=new URL(location.href).searchParams;
+const markedCombo=tableId?.[12]==='e'?tableId.slice(8,12):null;
+const combo=tableId?({'c012':12,'c013':13,'c123':123}[markedCombo]||0):([12,13,123].includes(Number(params.get('combo')))?Number(params.get('combo')):0);
+const edition=combo?(combo===12?2:3):mark==='ce000003'?3:mark==='ce000002'?2:Number(new URL(location.href).searchParams.get('edition'))===3?3:2;
 if(tableId&&!['ce000002','ce000003'].includes(mark))location.replace('index.html'+location.search);
-const info=expeditionInfo[edition], storageKey='century-expedition-v1-'+edition;
-const newGame=(roles=['Medium'],random=Math.random)=>newExpedition(edition,roles,random);
+const info={...expeditionInfo[edition],...(combo?{name:mixNames[combo]}:{})}, storageKey='century-expedition-v1-'+(combo||edition);
+const newGame=(roles=['Medium'],random=Math.random)=>combo?newMix(combo,roles,random):newExpedition(edition,roles,random);
 const review={get open(){return flightActor!==null;}};
 let g,flightActor=null,timer=null,worker=null,motionTimer=null,draft=null;
 try{g=JSON.parse(localStorage.getItem(storageKey));}catch{}
@@ -21,7 +24,7 @@ const flow=recipe=>recipe.split('/').map(s=>goods(unitBag(s))).join(' → ');
 const helpNames=['통','칼','악수'];
 function cardBenefit(c){return c[2]===0?helpNames[c[3]]+' 장소 · 일꾼 1명 할인':c[2]===1?info.goods[c[3]]+' 생산지 · '+info.goods[c[4]]+' +1':c[2]===2?'정착민 +'+c[3]:'탐험 타일 1개 획득';}
 const landCells=[0,1,2,3,4,5,6,7,8,9,10,12,13,16,17,20,21,14,15,18,19,22,23];
-const series=()=>'<nav class="series" aria-label="시리즈"><a href="index.html">Ⅰ 향신료의 길</a><a href="expedition.html?edition=2">Ⅱ 동방의 바다</a><a href="expedition.html?edition=3">Ⅲ 신대륙의 개척자</a></nav>';
+const series=()=>'<nav class="series" aria-label="시리즈"><a href="index.html">모드 선택</a><a href="spice.html">Ⅰ 향신료의 길</a><a href="expedition.html?edition=2">Ⅱ 동방의 바다</a><a href="expedition.html?edition=3">Ⅲ 신대륙의 개척자</a></nav>';
 function modal(title,body){el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
 function close(){el('modal').close();draft=null;}
 el('close').onclick=close;
@@ -42,6 +45,7 @@ function siteFace(t,i){
 }
 function exploreName(x){return /^\d+$/.test(x)?wordBag(unitBag(x)):x==='points'?'3점':x==='crew'?'정착민 +1':benefitNames[+x.at(-1)]+' 문양';}
 function render(){
+  if(g.combo)return renderMix();
   const active=flightActor??g.turn,p=g.players[mySeat()]||g.players[0];
   el('status').textContent='Century '+(edition===2?'Ⅱ':'Ⅲ')+' · '+(g.departures?'출항':g.round+'R');
   el('latestMove').textContent=g.log[0]?seatName(g.log[0].who)+' · '+g.log[0].msg:info.name;
@@ -99,6 +103,7 @@ function optionsLabel(c,t){
   return label;
 }
 function openSite(i,opts={}){
+  if(g.combo)return openMix(i,opts);
   const t=g.tiles[i],p=g.players[mySeat()],arrival=edition===2&&!g.departures?seaArrival(g,i,opts):null;
   const options=myTurn()?actionsAt(g,i,opts):[];
   let detail=siteFace(t,i);
@@ -137,7 +142,7 @@ function editRoute(i,previous){
     el('collect').onchange=e=>{collect=e.target.checked;draw();};el('landHere').onclick=()=>openSite(last,opts);
   }draw();
 }
-function discard(a,bag,limit){
+function discard(a,bag,limit,submit=advance){
   const left=bag.slice(),paid=[];
   function draw(){modal('반납할 재료 선택','<p>'+ (total(left)-limit)+'개 남음</p><div class="actions">'+left.map((n,i)=>'<button data-drop="'+i+'" '+(!n?'disabled':'')+'>'+info.goods[i]+' '+n+'</button>').join('')+'</div>');
     el('body').querySelectorAll('[data-drop]').forEach(b=>b.onclick=()=>{
@@ -146,7 +151,7 @@ function discard(a,bag,limit){
       if(total(left)===limit+1){
         const buttons=[...el('body').querySelectorAll('[data-drop]:enabled')];
         buttons.forEach(button=>button.disabled=true);
-        Promise.resolve(advance({...a,discard:[...paid,k]})).finally(()=>{
+        Promise.resolve(submit({...a,discard:[...paid,k]})).finally(()=>{
           buttons.forEach(button=>button.disabled=false);
         });
       }else{left[k]--;paid.push(k);draw();}
@@ -154,6 +159,7 @@ function discard(a,bag,limit){
   draw();
 }
 function captureMove(who,a,animate=true){
+  if(g.combo)return {before:g.players[who].bag.slice(),path:[],who,i:a.i,origin:animate?mixOrigin(a.i):null};
   const p=g.players[who],t=g.tiles[a.i];
   const path=animate&&edition===2&&!g.departures&&t?[p.boat,...(a.path??seaPath(g,p.boat,a.i))]:[];
   return {before:p.bag.slice(),path,bumped:t?.occupant?.seat,i:a.i,who};
@@ -164,6 +170,7 @@ function advance(a,remote=false,sub=false){
   if(online&&!remote)return submitOnline(a);
   const who=g.turn,m=captureMove(who,a);if(!apply(g,a))return;
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
+  if(g.combo)mixRefresh=false;
   close();save();flightActor=who;render();playMotion(who,a,m);
 }
 function point(n){const r=n.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2];}
@@ -175,7 +182,7 @@ function playMotion(who,a,m){
   clearTimeout(motionTimer);const layer=el('motion');layer.replaceChildren();
   actionSound(a.kind==='order'?'order':a.kind==='rest'?'rest':'play');
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){motionTimer=setTimeout(finishMotion,pace(200));return;}
-  const seat=point(el('seats').children[who]),site=point(el('atlas').children[a.i]),center=[innerWidth/2,innerHeight/2];
+  const seat=point(el('seats').children[who]),site=m.origin||(g.combo?mixOrigin(a.i):point(el('atlas').children[a.i])),center=[innerWidth/2,innerHeight/2];
   function fly(cls,html,points,offsets,duration){
     const n=document.createElement('div');n.className=cls;n.innerHTML=html;layer.append(n);
     n.animate(points.map(([x,y],i)=>({left:x+'px',top:y+'px',offset:offsets[i]})),{duration:pace(duration),fill:'both',easing:'ease-in-out'});
@@ -200,13 +207,13 @@ document.addEventListener('click',e=>{if(flightActor!==null&&!el('modal').open){
 function stopAI(){clearTimeout(timer);if(worker){worker.terminate();worker=null;}}
 function schedule(){
   stopAI();if(online||g.over||!g.turn||flightActor!==null||el('modal').open)return;
-  timer=setTimeout(()=>{worker=new Worker('expedition-worker.js?v=voyage-2');worker.onmessage=e=>{stopAI();advance(e.data);};
+  timer=setTimeout(()=>{worker=new Worker('expedition-worker.js?v=combined');worker.onmessage=e=>{stopAI();advance(e.data);};
     worker.onerror=()=>{stopAI();advance(chooseMove(g));};worker.postMessage(g);},pace(650));
 }
 function results(){modal('최종 순위',expRanks(g).map((r,j)=>'<p class="rank"><b>'+(j+1)+'위 · '+seatName(r.i)+' · '+r.points+'점</b>　납품 '+g.players[r.i].won.length+'건</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
 function setup(){
   if(online){roomMenu();return;}let n=g.players.length;const roles=Array.from({length:3},(_,j)=>g.players[j+1]?.level||'Medium');
-  function draw(){modal(info.name+' · 대국 설정',series()+'<div class="choices">'+[2,3,4].map(i=>'<button data-count="'+i+'" aria-pressed="'+(i===n)+'">'+i+'인</button>').join('')+'</div>'+roles.slice(0,n-1).map((l,i)=>'<div class="seat"><label for="l'+i+'">상단 '+(i+2)+'</label><select id="l'+i+'">'+levels.map(v=>'<option '+(l===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>').join('')+'<button class="primary" id="new">AI 대국 시작</button><button id="friend" class="primary">친구 초대 대전</button>');
+  function draw(){modal(info.name+' · 대국 설정',series()+''+(combo?'<p>'+mixGuide[combo]+'</p>':'')+'<div class="choices">'+[2,3,4].map(i=>'<button data-count="'+i+'" aria-pressed="'+(i===n)+'">'+i+'인</button>').join('')+'</div>'+roles.slice(0,n-1).map((l,i)=>'<div class="seat"><label for="l'+i+'">상단 '+(i+2)+'</label><select id="l'+i+'">'+levels.map(v=>'<option '+(l===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>').join('')+'<button class="primary" id="new">AI 대국 시작</button><button id="friend" class="primary">친구 초대 대전</button>');
     el('body').querySelectorAll('[data-count]').forEach(b=>b.onclick=()=>{n=+b.dataset.count;draw();});roles.slice(0,n-1).forEach((_,i)=>el('l'+i).onchange=e=>roles[i]=e.target.value);
     el('new').onclick=()=>{stopAI();g=newGame(roles.slice(0,n-1));close();save();render();schedule();};el('friend').onclick=createOnline;
   }draw();
@@ -235,4 +242,5 @@ el('workerPool').onclick=()=>{
   el('body').querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>openSite(+b.dataset.work));
 };
 el('modal').addEventListener('close',()=>{if(!el('modal').open)schedule();});
+if(combo){el('guide').onclick=()=>modal(info.name,series()+'<p>'+mixGuide[combo]+'</p>');}
 render();if(tableId)enterOnline(tableId);else if(fresh)setup();else if(g.over)results();else schedule();

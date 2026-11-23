@@ -2,7 +2,7 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const edition=Number(process.argv[2]),humans=Number(process.argv[3]||2);
-assert([2,3].includes(edition)&&[2,3,4].includes(humans));
+assert([2,3,12,13,123].includes(edition)&&[2,3,4].includes(humans));
 const base=process.env.GAME_URL||'https://etin94-prog.github.io/century-spice-road/';
 async function run(){
  const b=await chromium.launch({channel:process.env.QA_BROWSER||'msedge',args:['--disable-renderer-backgrounding','--disable-background-timer-throttling','--disable-backgrounding-occluded-windows']});
@@ -12,7 +12,7 @@ async function run(){
    const p=await b.newPage({isMobile:true,hasTouch:true,reducedMotion:'reduce',viewport:{width:i%2?740:844,height:i%2?360:390}});
    p.on('pageerror',e=>errors.push(e.message));pages.push(p);
   }
-  const h=pages[0];await h.goto(new URL('expedition.html?edition='+edition,base).href);await h.locator('#friend').tap();
+  const h=pages[0];await h.goto(new URL('expedition.html?'+(edition>3?'combo':'edition')+'='+edition,base).href);await h.locator('#friend').tap();
   const link=await h.locator('#invite').inputValue();for(const p of pages.slice(1)){await p.goto(link);await p.locator('#invite').waitFor();}
   await h.waitForFunction(n=>online.people===n,humans);await h.locator('#beginTable').tap();
   await Promise.all(pages.map((p,i)=>p.waitForFunction(i=>online?.ready&&mySeat()===i,i)));
@@ -26,7 +26,25 @@ async function run(){
    const a=await p.evaluate(()=>chooseMove(g,'Medium'));
    if(a.kind==='rest')await p.locator('#rest').tap();
    else{
-    await p.locator('[data-site="'+a.i+'"]').tap();await p.locator('[data-option="'+a.option+'"]').tap();
+    if(edition>3){
+     if(a.refresh){
+       await p.locator('[data-tab="cards"]').tap();
+       const i=await p.evaluate(()=>g.tiles.findIndex(t=>t.special==='refresh'));
+       await p.locator('[data-site="'+i+'"]').tap();await p.locator('[data-option="0"]').tap();
+       while(await p.locator('dialog[open] [data-drop]:enabled').count())await p.locator('dialog[open] [data-drop]:enabled').first().tap();
+     }
+     const target=await p.evaluate(a=>{
+       const board=mixPreview(),t=mixSites(board)[a.i],c=mixOptions(board,a.i)[a.option];
+       return {tab:['market','buy','play','route','refresh','swap'].includes(t.special)?'cards':'board',dest:t.special==='move'?c.dest:null};
+     },a);
+     if(a.kind==='recover')await p.locator('#rest').tap();
+     else{
+      await p.locator('[data-tab="'+target.tab+'"]').tap();
+      await p.locator('[data-site="'+a.i+'"]').tap();
+      if(target.dest!==null)await p.locator('[data-dest="'+target.dest+'"]').tap();
+     }
+    }else await p.locator('[data-site="'+a.i+'"]').tap();
+    await p.locator('[data-option="'+a.option+'"]').tap();
     if(await p.locator('dialog[open] [data-drop]').count()){
      const remaining=parseInt(await p.locator('dialog[open] #body p').first().innerText(),10);
      assert(Number.isInteger(remaining)&&remaining>0);

@@ -55,7 +55,7 @@ async function createOnline(){
   if(openingRoom)return;openingRoom=true;stopAI();
   try{
     const s=await firebaseService(),uuid=crypto.randomUUID().replaceAll('-','');
-    const id=g.edition?'ce00000'+g.edition+uuid.slice(8):uuid;
+    const id=g.edition?'ce00000'+g.edition+(g.combo?'c'+String(g.combo).padStart(3,'0')+'e'+uuid.slice(13):uuid.slice(8)):uuid;
     await s.set(roomRef(s,id,'','tables'),{host:s.uid,seed:crypto.getRandomValues(new Uint32Array(1))[0],format:2});
     const url=new URL(location.href);url.searchParams.delete('room');url.searchParams.set('table',id);location.assign(url.href);
   }catch(e){openingRoom=false;roomError(e);}
@@ -230,7 +230,7 @@ function scheduleRoomAI(){
     let move;
     try{
       move=await new Promise((resolve,reject)=>{
-        const ai=new Worker(g.edition?'expedition-worker.js?v=voyage-2':'ai-worker.js?v=mobile-beta-26');
+        const ai=new Worker(g.edition?'expedition-worker.js?v=combined':'ai-worker.js?v=mobile-beta-26');
         ai.onmessage=e=>{ai.terminate();resolve(e.data);};
         ai.onerror=e=>{ai.terminate();reject(e);};ai.postMessage(board);
       });
