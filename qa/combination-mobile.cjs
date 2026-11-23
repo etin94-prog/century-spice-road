@@ -1,4 +1,4 @@
-const {chromium}=require('playwright');
+const {chromium,webkit}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 async function run(){
@@ -14,9 +14,11 @@ async function run(){
  let browser;
  try{
    const base=process.env.GAME_URL||'http://127.0.0.1:'+server.address().port+'/';
-   browser=await chromium.launch({channel:'msedge'});
+   const apple=process.env.QA_BROWSER==='webkit';
+   browser=apple?await webkit.launch():await chromium.launch({channel:'msedge'});
    for(const mode of [1,2,3,12,123,13]){
-     const p=await browser.newPage({viewport:{width:740,height:360},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+     const viewport=apple?{width:390,height:844}:{width:740,height:360};
+     const p=await browser.newPage({viewport,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
      const errors=[];p.on('pageerror',e=>errors.push(e.message));
      await p.goto(base);assert.equal(await p.locator('nav a').count(),6);
      const href=mode===1?'spice.html':'expedition.html?'+(mode<10?'edition':'combo')+'='+mode;
@@ -25,7 +27,14 @@ async function run(){
        await p.waitForFunction(()=>myTurn());
        await p.locator('[data-tab="cards"]').tap();
        if(mode===12){await p.locator('[data-tab="board"]').tap();await p.locator('[data-site]').filter({hasText:'섬'}).first().tap();}
-       else{await p.locator('[data-site]').filter({hasText:'상인 시장'}).first().tap();}
+       else{
+         const target=await p.evaluate(()=>{
+           const card=g.tiles.findIndex((t,i)=>t.special==='market'&&mixOptions(g,i).length);
+           if(card!==-1)return {i:card,tab:'cards'};
+           return {i:g.tiles.findIndex((t,i)=>t.industry===0&&mixOptions(g,i).length),tab:'board'};
+         });
+         await p.locator('[data-tab="'+target.tab+'"]').tap();await p.locator('[data-site="'+target.i+'"]').tap();
+       }
        await p.locator('[data-option]').first().tap();
        await p.waitForFunction(()=>myTurn()&&g.log.length>=2);
        const count=await p.evaluate(()=>g.log.length);
