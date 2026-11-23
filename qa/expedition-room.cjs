@@ -16,6 +16,19 @@ async function run(){
   const link=await h.locator('#invite').inputValue();for(const p of pages.slice(1)){await p.goto(link);await p.locator('#invite').waitFor();}
   await h.waitForFunction(n=>online.people===n,humans);await h.locator('#beginTable').tap();
   await Promise.all(pages.map((p,i)=>p.waitForFunction(i=>online?.ready&&mySeat()===i,i)));
+  if(process.argv.includes('--refresh')){
+   assert([13,123].includes(edition));
+   await h.waitForFunction(()=>myTurn());await h.locator('[data-tab="cards"]').tap();
+   const i=await h.evaluate(()=>g.tiles.findIndex(t=>t.special==='refresh'));
+   await h.locator('[data-site="'+i+'"]').tap();await h.locator('[data-option="0"]').tap();
+   for(const p of pages)await p.waitForFunction(()=>mixRefresh&&online.refreshRevision===0);
+   const original=await h.evaluate(()=>mixPreview().market);
+   await h.reload();await h.waitForFunction(()=>myTurn()&&mixRefresh);
+   for(const p of pages)assert.deepEqual(await p.evaluate(()=>mixPreview().market),original);
+   await h.locator('#rest').tap();await h.locator('[data-option="0"]').tap();
+   for(const p of pages)await p.waitForFunction(()=>online.count===1&&!mixRefresh);
+   console.log('Shared market refresh survived reload',edition);
+  }
   for(let j=0;j<500;j++){
    await h.waitForFunction(()=>g.over||g.turn<online.config.humans&&!review.open&&!online.pending);
    const state=await h.evaluate(()=>({n:online.count,turn:g.turn,over:g.over}));if(state.over)break;

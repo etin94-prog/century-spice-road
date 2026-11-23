@@ -170,7 +170,7 @@ function advance(a,remote=false,sub=false){
   if(online&&!remote)return submitOnline(a);
   const who=g.turn,m=captureMove(who,a);if(!apply(g,a))return;
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
-  if(g.combo)mixRefresh=false;
+  if(g.combo){mixRefresh=false;delete g.stagedRefresh;}
   close();save();flightActor=who;render();playMotion(who,a,m);
 }
 function point(n){const r=n.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2];}
@@ -215,7 +215,7 @@ function setup(){
   if(online){roomMenu();return;}let n=g.players.length;const roles=Array.from({length:3},(_,j)=>g.players[j+1]?.level||'Medium');
   function draw(){modal(info.name+' · 대국 설정',series()+''+(combo?'<p>'+mixGuide[combo]+'</p>':'')+'<div class="choices">'+[2,3,4].map(i=>'<button data-count="'+i+'" aria-pressed="'+(i===n)+'">'+i+'인</button>').join('')+'</div>'+roles.slice(0,n-1).map((l,i)=>'<div class="seat"><label for="l'+i+'">상단 '+(i+2)+'</label><select id="l'+i+'">'+levels.map(v=>'<option '+(l===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>').join('')+'<button class="primary" id="new">AI 대국 시작</button><button id="friend" class="primary">친구 초대 대전</button>');
     el('body').querySelectorAll('[data-count]').forEach(b=>b.onclick=()=>{n=+b.dataset.count;draw();});roles.slice(0,n-1).forEach((_,i)=>el('l'+i).onchange=e=>roles[i]=e.target.value);
-    el('new').onclick=()=>{stopAI();g=newGame(roles.slice(0,n-1));close();save();render();schedule();};el('friend').onclick=createOnline;
+    el('new').onclick=()=>{stopAI();g=newGame(roles.slice(0,n-1));if(combo){mixRefresh=false;mixTab='board';}close();save();render();schedule();};el('friend').onclick=createOnline;
   }draw();
 }
 el('setupTop').onclick=setup;el('ledger').onclick=()=>g.over?results():inventory(mySeat());
@@ -243,4 +243,5 @@ el('workerPool').onclick=()=>{
 };
 el('modal').addEventListener('close',()=>{if(!el('modal').open)schedule();});
 if(combo){el('guide').onclick=()=>modal(info.name,series()+'<p>'+mixGuide[combo]+'</p>');}
+if(combo&&!tableId&&g.stagedRefresh){mixRefresh=true;mixRefreshDiscard=g.stagedRefresh;}
 render();if(tableId)enterOnline(tableId);else if(fresh)setup();else if(g.over)results();else schedule();

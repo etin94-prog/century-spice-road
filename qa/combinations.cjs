@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const lib=['cards','expedition-data','expedition-engine','combinations','combination-ai','expedition-ai'].map(f=>fs.readFileSync(path.join(__dirname,'../dist/'+f+'.js'),'utf8')).join('\n');
-const {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket}=Function(lib+';return {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket}')();
+const {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket,starter}=Function(lib+';return {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket,starter}')();
 for(const combo of [12,13,123])for(const n of [2,3,4]){
   let seed=1240+n;const rng=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const g=newMix(combo,Array(n-1).fill('Medium'),rng),copy=structuredClone(g);
@@ -18,3 +18,20 @@ for(const combo of [12,13,123])for(const n of [2,3,4]){
   }
   assert(g.over,'unfinished '+combo+' '+n);assert.deepEqual(g,copy);console.log(combo,n,turns,expRanks(g));
 }
+
+// Score tracks and a non-rectangular outpost column are easy to misread on the player boards.
+const sea=newMix(12,['Medium'],()=>.4);
+sea.players[0].tracks=[1,2,3,4];
+assert.equal(expRanks(sea).find(r=>r.i===0).points,17);
+const all=newMix(123,['Medium'],()=>.4),p=all.players[0];
+p.tracks=[1,1,0,0];p.bag=[4,2,2,2];
+const island=all.islands.findIndex(t=>t.suit===2);
+const move=all.tiles.findIndex(t=>t.range===99);
+const rewards=mixOptions(all,move).filter(c=>c.dest===island&&c.build);
+assert(rewards.length&&rewards.every(c=>c.reward>=0));
+const route=newMix(13,['Medium'],()=>.4);
+route.players[0].route=[0,1,2].map(()=>({card:starter,workers:0}));
+const last=mixSites(route).findLastIndex(t=>t.special==='route');
+assert(mixOptions(route,last).every(c=>c.need===3));
+route.players[0].route[0].workers=1;
+assert(mixOptions(route,last).some(c=>c.need===2));

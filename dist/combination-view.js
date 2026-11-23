@@ -1,6 +1,27 @@
 "use strict";
 let mixRefresh=false,mixRefreshDiscard,mixTab='board';
-function startRefresh(discard){mixRefreshDiscard=discard;mixRefresh=true;mixTab='cards';close();render();}
+async function startRefresh(discard=[]){
+  if(!myTurn())return;
+  if(online){
+    if(online.refreshSaving)return;
+    online.refreshSaving=true;
+    try{await roomService.set(roomRef(roomService,online.id,'refreshes/t'+online.count),{n:online.count,drop:discard.join('')});}
+    catch(error){roomError(error);}
+    finally{online.refreshSaving=false;}
+  }else{
+    g.stagedRefresh=discard;save();mixRefreshDiscard=discard;mixRefresh=true;mixTab='cards';close();render();
+  }
+}
+function syncRefresh(room){
+  const stage=room.refreshes?.['t'+online.count];
+  if(online.refreshRevision===(stage?stage.n:-1))return;
+  const drop=stage?Array.from(stage.drop,Number):undefined;
+  if(stage&&!refreshMarket(structuredClone(g),drop))return;
+  online.refreshRevision=stage?stage.n:-1;mixRefresh=Boolean(stage);
+  mixRefreshDiscard=drop;
+  if(stage){close();mixTab='cards';online.aiJob=null;}
+  render();
+}
 const mixPreview=()=>{if(!mixRefresh)return g;const copy=structuredClone(g);if(refreshMarket(copy,mixRefreshDiscard))return copy;mixRefresh=false;return g;};
 function mixOrigin(i){const n=el('atlas').querySelector('[data-site="'+i+'"]')||el('atlas');return point(n);}
 function mixTileName(board,t,i){
@@ -12,7 +33,7 @@ function mixTileName(board,t,i){
 }
 function mixTileDetail(board,t,i){
   const p=board.players[board.turn];
-  if(t.order)return t.order[1]+'점 '+goods(unitBag(t.order[0]));
+  if(t.order)return t.order[1]+'점 '+goods(unitBag(t.order[0]))+(t.fort?' · '+benefitNames[t.order[2]]:'');
   if(t.cover)return '탐험 · '+exploreName(t.cover);
   if(t.special==='market'||t.special==='buy')return cardText(board.market[t.slot])+(t.special==='buy'?' · 비용 '+t.slot:'');
   if(t.special==='play')return cardText(p.hand[t.slot]);
@@ -47,9 +68,8 @@ function renderMix(){
   el('inventory').innerHTML=p.bag.map((n,i)=>'<span><i class="cube s'+i+'"></i> '+info.goods[i]+' '+n+'</span>').join('');
   el('personal').innerHTML='<b>'+(g.over?'대국 종료':seatName(active)+'의 차례')+'</b> · '+expScore(g,p)+'점<br>'+(g.departures?'섬을 눌러 출항하세요.':mixRefresh?'시장을 교체했습니다. 추가 행동을 선택하세요.':combo===12?'손패 '+p.hand.length+' · 사용 '+p.used.length+' · 항해 '+p.discards.length:'정착민 '+p.ready+'/'+p.crew+' · 수집 '+(p.route.length+p.discards.length)+'장');
   let tabs=el('mixTabs');if(!tabs){tabs=document.createElement('nav');tabs.id='mixTabs';el('personal').after(tabs);}
-  tabs.innerHTML=mixTabs().map(([k,v])=>'<button data-tab="'+k+'" aria-pressed="'+(mixTab===k)+'">'+v+'</button>').join('')+(mixRefresh?'<button id="cancelRefresh">시장 교체 취소</button>':'');
+  tabs.innerHTML=mixTabs().map(([k,v])=>'<button data-tab="'+k+'" aria-pressed="'+(mixTab===k)+'">'+v+'</button>').join('');
   tabs.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{mixTab=b.dataset.tab;render();});
-  if(el('cancelRefresh'))el('cancelRefresh').onclick=()=>{mixRefresh=false;render();};
   el('workerPool').hidden=true;el('rest').hidden=false;el('rest').textContent='휴식';el('rest').disabled=!myTurn()||!mixOptions(board,all.length-1).length;
   el('rest').onclick=()=>openMix(all.length-1);
   el('ledger').textContent=g.over?'최종 결과':'내 보유 현황';el('ledger').onclick=()=>g.over?results():mixInventory(mySeat());
@@ -89,6 +109,11 @@ function openMix(i,opts={}){
   const live=mixPreview(),board=myTurn()?live:{...live,turn:mySeat()},p=board.players[board.turn],t=mixSites(board)[i];if(!t)return;
   const choices=myTurn()?mixOptions(board,i,opts):[],shown=choices.map((c,j)=>({c,j})).filter(({c})=>opts.dest===undefined||opts.dest===c.dest);
   let notes='';
+  if(t.order&&t.fort){
+    const c=t.order;notes+='<p>'+(c[2]===1?helpNames[c[3]]+' 문양 장소에 배치할 때 '+info.goods[c[4]]+' +1':cardBenefit(c))+'</p>';
+    if(t.stacks.length)notes+='<p>보너스 · '+t.stacks.filter(s=>s.length).map(s=>mixBonusName(s.at(-1))).join(' / ')+'</p>';
+  }
+  if(t.need)notes+='<p>일꾼 '+workerCost(p,t)+'명 · '+helpNames[t.help]+' 문양</p>';
   if(combo===12&&!t.special&&!board.departures)notes+='<p>항해 비용 '+(choices[0]?.fuel?.length??Math.max(0,seaPath(board,p.boat,i).length-p.bonus.filter(b=>b==='move').length))+'장 · 사용한 카드부터 지불</p>'+(myTurn()?'<button id="mixPath">항로 직접 선택</button>':'');
   if(t.special==='move'&&opts.dest===undefined){
     const dests=[...new Set(choices.map(c=>c.dest))];

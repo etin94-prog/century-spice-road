@@ -116,6 +116,7 @@ function syncRoom(room){
     }
     online.count++;
   }
+  if(g.combo&&g.combo!==12)syncRefresh(room);
   if(first||!wasReady||presenceChanged)render();
   if(changedSettings&&el('lobbySeats')&&online.ready)drawLobby();
   if(first&&g.over)results();
@@ -226,7 +227,9 @@ function scheduleRoomAI(){
     if(online.aiJob!==job||revision!==online.count||!canRunRoomAI())return;
     const levelUsed=substitute?substituteLevel(g.turn):null;
     const players=g.players.map((p,i)=>substitute&&i===g.turn?{...p,level:levelUsed}:p);
+    const staged=g.combo&&online.refreshRevision===revision;
     const board=g.edition?{...g,players}:{players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
+    if(staged){board.players=structuredClone(players);board.tiles=structuredClone(g.tiles);board.merchantDeck=g.merchantDeck.slice();refreshMarket(board,mixRefreshDiscard);}
     let move;
     try{
       move=await new Promise((resolve,reject)=>{
@@ -237,6 +240,7 @@ function scheduleRoomAI(){
     }catch{move=chooseMove(board);}
     if(online.aiJob===job&&revision===online.count&&canRunRoomAI()){
       move.i??=0;
+      if(staged)move={...move,refresh:true,refreshDiscard:mixRefreshDiscard};
       await submitOnline(move,true,levelUsed);
     }
   },(substitute?8500:pace(950))+online.seat*350);
