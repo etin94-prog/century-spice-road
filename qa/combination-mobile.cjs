@@ -1,6 +1,25 @@
 const {chromium,webkit}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),http=require('node:http'),path=require('node:path');
+// Put a nearly full rival on a two-player island. All choices after setup use touch.
+async function checkTollChoice(p){
+ const {site,dest}=await p.evaluate(()=>{
+   g=newGame(['Medium'],()=>.4);
+   const site=g.tiles.findIndex(t=>t.range===99),dest=g.islands.findIndex(t=>t.recipe);
+   g.players[0].bag=[2,0,0,0];
+   g.players[0].won=[mixWhiteOrders.find(c=>c[3]===g.tiles[site].help&&c[4]===1)];
+   const rival=g.players[1];rival.boat=dest;rival.bag=[4,3,2,1];rival.priority=[3,2,1,0];
+   rival.tracks[g.islands[dest].suit]++;g.islands[dest].owners=[1];
+   mixTab='board';render();return {site,dest};
+ });
+ await p.locator('[data-site="'+site+'"]').tap();await p.locator('[data-dest="'+dest+'"]').tap();
+ await p.locator('#settle').tap();await p.locator('[data-k="1"]').tap();
+ await p.getByRole('button',{name:'건설비 선택 건너뛰기'}).tap();
+ const free=await p.evaluate(({site,dest})=>mixOptions(g,site,{pay:[1],buildPay:[]}).findIndex(c=>c.dest===dest&&!c.build&&!c.n),{site,dest});
+ await p.locator('[data-option="'+free+'"]').tap();
+ assert.deepEqual(await p.evaluate(()=>g.players.map(q=>q.bag)),[[2,0,0,0],[4,4,2,0]]);
+ assert.equal(await p.evaluate(()=>g.players[0].boat),dest);
+}
 async function run(){
  const server=http.createServer((req,res)=>{
    const name=new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';
@@ -51,6 +70,7 @@ async function run(){
        await p.reload();assert.equal(await p.evaluate(()=>g.log.length),count);
        if(mode===123){await p.locator('[data-tab="map"]').tap();assert.equal(await p.locator('[data-island]').count(),13);}
      }
+     if(mode===123&&seats===2)await checkTollChoice(p);
      assert.deepEqual(errors,[]);await p.close();console.log('mobile',mode,seats);
    }
  }finally{await browser?.close();server.close();}
