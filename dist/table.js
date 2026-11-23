@@ -239,8 +239,14 @@ function showPlayedCard(entry){
   if(arrival){
     const dx=rect.left+rect.width/2-end.left-end.width/2;
     const dy=rect.top+rect.height/2-end.top-end.height/2;
-    card.animate([{transform:'translate('+dx+'px,'+dy+'px) scale('+Math.min(1,rect.width/end.width)+') rotate(-4deg)'},{transform:'none'}],{duration:arrival,easing:'ease-out'});
-  }
+    card.animate([
+      {transform:'translate('+dx+'px,'+dy+'px) perspective(600px) rotateX(17deg) rotate(-5deg) scale('+Math.min(1,rect.width/end.width)+')',boxShadow:'0 14px 20px #06130e70'},
+      {offset:.75,transform:'translateY(-9px) perspective(600px) rotateX(8deg) rotate(-2deg) scale(1.035)',boxShadow:'0 9px 12px #06130e60'},
+      {offset:.92,transform:'scale(1.008,.99)',boxShadow:'0 2px 3px #06130e90'},
+      {transform:'none'}
+    ],{duration:arrival});
+    entry.stockTimers.push(setTimeout(()=>actionSound('play'),arrival*.92));
+  }else actionSound('play');
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches)animateConversion(entry,end,arrival);
   reviewTimer=setTimeout(dismissPlayedCard,arrival+pace(2000));
 }
@@ -260,13 +266,13 @@ review.oncancel=e=>{e.preventDefault();dismissPlayedCard();};
 review.onpointerdown=()=>clearTimeout(reviewTimer);
 review.onpointerup=review.onpointercancel=()=>{clearTimeout(reviewTimer);reviewTimer=setTimeout(dismissPlayedCard,350);};
 function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,substitute,coin,restCards}){
-  actionSound(a.kind);
+  if(a.kind!=='play'&&a.kind!=='order')actionSound(a.kind);
   if(a.kind==='rest'){showPlayedCard({actor,restCards,rect,substitute});return;}
   if(a.kind==='play'){
     showPlayedCard({actor,c,rect,substitute,before,after:g.players[actor].bag.slice(),drop:a.drop,action:a});
     return;
   }
-  if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches){if(a.kind==='order')actionSound('order');return;}
   const dest=actor!==mySeat()?document.querySelector('[data-seat="'+actor+'"]'):['buy','rest'].includes(a.kind)?el('hand'):el('myTable');
   const stack=actor!==mySeat()?dest?.querySelector(a.kind==='order'?'.orderMini':'.cardBack'):null;
   let end=visibleRect(stack)||visibleRect(dest);
@@ -275,7 +281,7 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
     if(last&&end&&last.right<=end.right+1&&last.left>=end.left-1)end=last;
     else end=visibleRect(el('handTitle'))||visibleRect(el('myTable'))||end;
   }
-  if(!rect&&!end)return;
+  if(!rect&&!end){if(a.kind==='order')actionSound('order');return;}
   const order=a.kind==='order';
   const collectAfter=order?670:0,travelTime=order?830:950;
   showFlightTurn(actor,pace(collectAfter+travelTime));refreshTurn();
@@ -291,6 +297,10 @@ function animateMove(actor,a,{c,rect,artwork,before,marketSource,following,subst
   const width=rect?rect.width:82,height=rect?rect.height:106;
   Object.assign(node.style,{width:width+'px',height:height+'px',minHeight:'0',transformOrigin:'center'});
   layer.append(node);
+  if(order){
+    const seal=node.animate([{boxShadow:'0 0 0 1px #b59858'},{offset:.75,boxShadow:'0 0 0 2px #ffe2a4, 0 4px 9px #492f1599'},{boxShadow:'0 2px 4px #09251c88'}],{duration:pace(collectAfter)});
+    seal.onfinish=()=>{if(node.isConnected)actionSound('order');};
+  }
   if(marketSource){
     const row=el(a.kind==='buy'?'merchants':'orders');
     Array.from(row.children).slice(a.i).forEach((card,j)=>{

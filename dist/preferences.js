@@ -44,11 +44,42 @@ document.addEventListener('visibilitychange',()=>{
   if(!audioEngine)return;
   if(document.hidden)audioEngine.suspend().catch(()=>{});else unlockAudio();
 });
-function actionSound(kind){
-  if(!audioEngine||audioEngine.state!=='running'||!preferences.sound)return;
-  const tones={play:[62,69],buy:[57,64],order:[69,74,81],rest:[64,57]}[kind];
-  tones.forEach((pitch,i)=>note(soundBus,pitch,audioEngine.currentTime+.01+i*.085,.19,.23,kind==='order'?'sine':'triangle'));
+let paperBuffer;
+function paperHit(start,strength){
+  if(!paperBuffer){
+    paperBuffer=audioEngine.createBuffer(1,Math.ceil(audioEngine.sampleRate*.09),audioEngine.sampleRate);
+    const samples=paperBuffer.getChannelData(0);
+    for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+  }
+  const paper=audioEngine.createBufferSource(),filter=audioEngine.createBiquadFilter(),env=audioEngine.createGain();
+  paper.buffer=paperBuffer;filter.type='bandpass';filter.frequency.setValueAtTime(2600,start);
+  filter.frequency.exponentialRampToValueAtTime(900,start+.065);filter.Q.value=.72;
+  env.gain.setValueAtTime(.0001,start);env.gain.exponentialRampToValueAtTime(strength,start+.002);
+  env.gain.exponentialRampToValueAtTime(.0001,start+.078);
+  paper.connect(filter);filter.connect(env);env.connect(soundBus);paper.start(start);
+  paper.onended=()=>{paper.disconnect();filter.disconnect();env.disconnect();};
 }
+function actionSound(kind){
+  if(!audioEngine||audioEngine.state!=='running'||!preferences.sound||document.hidden)return;
+  synthesizeSound(kind,audioEngine.currentTime+.005);
+}
+function synthesizeSound(kind,t){
+  if(kind==='play'){
+    paperHit(t,.85);note(soundBus,50,t,.092,.32,'sine');
+  }else if(kind==='rest'||kind==='buy'){
+    paperHit(t,.28);if(kind==='rest')paperHit(t+.06,.21);
+  }else if(kind==='move'){
+    note(soundBus,55,t,.11,.2,'sine');
+  }else if(kind==='order'||kind==='gem'){
+    const pitches=kind==='order'?[79,86,91]:[84,79];
+    pitches.forEach((pitch,i)=>note(soundBus,pitch,t+i*.064,.26,.17,'sine'));
+  }else if(kind==='finish'){
+    [62,69,74,78,81].forEach((pitch,i)=>note(soundBus,pitch,t+i*.135,i===4?.67:.3,.18));
+    note(soundBus,62,t+.54,.68,.13,'sine');
+  }
+}
+const endingCues=new WeakSet();
+function soundAtResults(board){if(endingCues.delete(board))actionSound('finish');}
 function openPreferences(){
   const sliders=[['music','배경음악'],['sound','효과음']].map(([key,label])=>
     '<label class="volume">'+label+' <output id="'+key+'Value">'+preferences[key]+'%</output><input id="'+key+'" type="range" min="0" max="100" value="'+preferences[key]+'"></label>').join('');
@@ -58,6 +89,12 @@ function openPreferences(){
     try{localStorage.setItem(preferenceKey,JSON.stringify(preferences));}catch{}
     if(key!=='speed'){el(key+'Value').value=preferences[key]+'%';mixAudio();}
   };
-  el('sound').onchange=()=>actionSound('buy');
+  el('sound').onchange=()=>actionSound('play');
+  const preview=document.createElement('div');preview.className='choices';
+  for(const [kind,label] of [['play','카드 착지'],['order','주문 달성'],['finish','대국 종료']]){
+    const button=document.createElement('button');button.textContent=label+' 듣기';
+    button.onclick=()=>actionSound(kind);preview.append(button);
+  }
+  el('body').append(preview);
 }
 document.getElementById('options').onclick=openPreferences;

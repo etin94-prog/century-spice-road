@@ -110,6 +110,7 @@ function advance(a,remote=false,substitute=false){
   const actor=g.turn,human=actor===mySeat();
   const motion=captureMove(actor,a);
   if(!apply(g,a))return;
+  if(g.over)endingCues.add(g);
   handOrigin=null;
   clearTimeout(turnTimer);flightActor=null;
   if(substitute)g.log[0].msg='AI 대행 · '+g.log[0].msg;
@@ -258,6 +259,7 @@ function editor(){
 }
 el('rest').onclick=()=>start('rest',0);
 function results(){
+  soundAtResults(g);
   const ranks=standings(g);
   const rows=ranks.map(({p,i,points},j)=>'<article class="ranking"><b>'+(j+1)+'위 · '+seatName(i)+(i&&(!online||onlineAI(i))?' ('+levelOf(p)+')':'')+' · '+points+'점</b><p>주문 '+sum(p.won.map(c=>c.vp))+' · 금화 '+3*p.gold+' · 은화 '+p.silver+' · 향신료 '+sum(p.bag.slice(1))+'</p></article>').join('');
   modal(ranks[0].i===mySeat()?'나의 승리':seatName(ranks[0].i)+' 승리',rows+'<p>동점이면 차례가 더 늦은 대상단이 앞섭니다.</p><button class="primary" id="again">다음 대국 설정</button>');

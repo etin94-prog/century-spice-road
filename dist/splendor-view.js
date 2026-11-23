@@ -83,7 +83,9 @@ function captureMove(actor,a,animate){
   return {rect:node.getBoundingClientRect(),node:face,before};
 }
 function recordMove(){} // The engine records the same description during live play and replay.
+let contactTimer;
 function finish(){
+  clearTimeout(contactTimer);
   clearTimeout(flightTimer);flight?.remove();flight=null;
   for(const token of movingTokens)token.remove();movingTokens.clear();
   flightActor=null;render();
@@ -92,19 +94,22 @@ function finish(){
 function advance(a,remote=false,sub=false){
   const actor=g.turn,motion=captureMove(actor,a,true);
   if(!apply(g,a))return;
+  if(g.over)endingCues.add(g);
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
   if(online&&el('modal').open)close();
   stopAI();clearTimeout(flightTimer);flight?.remove();flight=null;
   for(const token of movingTokens)token.remove();movingTokens.clear();
   flightActor=actor;
-  save();render();actionSound(a.kind==='take'?'play':'buy');
-  if(!motion||matchMedia('(prefers-reduced-motion:reduce)').matches){finish();return;}
+  const sound=a.kind==='take'?'gem':['reserve','blind'].includes(a.kind)?'buy':'play';
+  clearTimeout(contactTimer);save();render();
+  if(!motion||matchMedia('(prefers-reduced-motion:reduce)').matches){actionSound(sound);finish();return;}
   const dest=document.querySelector('[data-seat="'+actor+'"]').getBoundingClientRect();
   const r=motion.rect,f=motion.node;flight=f;f.classList.add('flying');f.setAttribute('aria-hidden','true');f.tabIndex=-1;
   Object.assign(f.style,{left:r.x+'px',top:r.y+'px',width:r.width+'px',height:r.height+'px'});document.body.append(f);
   const mid='translate('+(innerWidth/2-r.x-r.width/2)+'px,'+(innerHeight/2-r.y-r.height/2)+'px) scale(1.12)';
   const duration=pace(2900);
-  f.animate([{transform:'none'},{transform:mid,offset:.15},{transform:mid,offset:.84},{transform:'translate('+(dest.x+dest.width/2-r.x-r.width/2)+'px,'+(dest.y-r.y)+'px) scale(.35)',opacity:.3}],{duration,fill:'forwards'});
+  contactTimer=setTimeout(()=>actionSound(sound),duration*.15);
+  f.animate([{transform:'none'},{transform:mid+' perspective(600px) rotateX(12deg) translateY(-6px)',offset:.11},{transform:mid,offset:.15},{transform:mid,offset:.84},{transform:'translate('+(dest.x+dest.width/2-r.x-r.width/2)+'px,'+(dest.y-r.y)+'px) scale(.35)',opacity:.3}],{duration,fill:'forwards'});
   motion.before.forEach((count,i)=>{
     const delta=g.players[actor].tokens[i]-count;if(!delta)return;
     const bank=document.querySelector('[data-bank="'+i+'"]').getBoundingClientRect();
@@ -119,7 +124,7 @@ function advance(a,remote=false,sub=false){
   flightTimer=setTimeout(finish,duration);
 }
 document.addEventListener('click',e=>{if(flightActor!==null&&!el('modal').open){e.stopImmediatePropagation();finish();}},true);
-function results(){modal('최종 순위',rankings(g).map(r=>'<p class="ranking"><b>'+r.rank+'위 · '+name(r.i)+' · '+r.points+'점</b>　개발 카드 '+r.cards+'장</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
+function results(){soundAtResults(g);modal('최종 순위',rankings(g).map(r=>'<p class="ranking"><b>'+r.rank+'위 · '+name(r.i)+' · '+r.points+'점</b>　개발 카드 '+r.cards+'장</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
 function setup(){
   if(online){roomMenu();return;}
   let count=g.players.length;const roles=[1,2,3].map(i=>g.players[i]?.level||'Medium');

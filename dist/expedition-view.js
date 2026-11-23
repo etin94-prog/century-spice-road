@@ -170,19 +170,24 @@ function advance(a,remote=false,sub=false){
   if(!remote&&g.turn===mySeat()&&(edition===2||combo===123)&&nextPriority)a={...a,priority:nextPriority.slice()};
   if(online&&!remote)return submitOnline(a);
   const who=g.turn,m=captureMove(who,a);if(!apply(g,a))return;
+  if(g.over)endingCues.add(g);
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
   if(g.combo){mixRefresh=false;delete g.stagedRefresh;}
   close();save();flightActor=who;render();playMotion(who,a,m);
 }
 function point(n){const r=n.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2];}
 function finishMotion(){
+  clearTimeout(contactTimer);
   clearTimeout(motionTimer);el('motion').replaceChildren();flightActor=null;render();
   if(g.over)results();else if(online)scheduleRoomAI();else schedule();
 }
+let contactTimer;
 function playMotion(who,a,m){
   clearTimeout(motionTimer);const layer=el('motion');layer.replaceChildren();
-  actionSound(a.kind==='order'?'order':a.kind==='rest'?'rest':'play');
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches){motionTimer=setTimeout(finishMotion,pace(200));return;}
+  const sound=['play','useMerchant'].includes(a.kind)?'play':['order','rest','buy'].includes(a.kind)?a.kind:'move';
+  clearTimeout(contactTimer);
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){actionSound(sound);motionTimer=setTimeout(finishMotion,pace(200));return;}
+  contactTimer=setTimeout(()=>actionSound(sound),pace(2600*.12));
   const seat=point(el('seats').children[who]),site=m.origin||(g.combo?mixOrigin(a.i):point(el('atlas').children[a.i])),center=[innerWidth/2,innerHeight/2];
   function fly(cls,html,points,offsets,duration){
     const n=document.createElement('div');n.className=cls;n.innerHTML=html;layer.append(n);
@@ -211,7 +216,7 @@ function schedule(){
   timer=setTimeout(()=>{worker=new Worker('expedition-worker.js?v=mobile-audit');worker.onmessage=e=>{stopAI();advance(e.data);};
     worker.onerror=()=>{stopAI();advance(chooseMove(g));};worker.postMessage(g);},pace(650));
 }
-function results(){modal('최종 순위',expRanks(g).map((r,j)=>'<p class="rank"><b>'+(j+1)+'위 · '+seatName(r.i)+' · '+r.points+'점</b>　납품 '+g.players[r.i].won.length+'건</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
+function results(){soundAtResults(g);modal('최종 순위',expRanks(g).map((r,j)=>'<p class="rank"><b>'+(j+1)+'위 · '+seatName(r.i)+' · '+r.points+'점</b>　납품 '+g.players[r.i].won.length+'건</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
 function setup(){
   if(online){roomMenu();return;}let n=g.players.length;const roles=Array.from({length:3},(_,j)=>g.players[j+1]?.level||'Medium');
   function draw(){modal(info.name+' · 대국 설정',series()+''+(combo?'<p>'+mixGuide[combo]+'</p>':'')+'<div class="choices">'+[2,3,4].map(i=>'<button data-count="'+i+'" aria-pressed="'+(i===n)+'">'+i+'인</button>').join('')+'</div>'+roles.slice(0,n-1).map((l,i)=>'<div class="seat"><label for="l'+i+'">상단 '+(i+2)+'</label><select id="l'+i+'">'+levels.map(v=>'<option '+(l===v?'selected':'')+'>'+v+'</option>').join('')+'</select></div>').join('')+'<button class="primary" id="new">AI 대국 시작</button><button id="friend" class="primary">친구 초대 대전</button>');
