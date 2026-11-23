@@ -70,7 +70,7 @@ function guildTurn(original,a,auto=false){
   const g={...original,players:original.players.slice(),bank:original.bank.slice(),decks:original.decks.map(d=>d.slice()),market:original.market.map(r=>r.slice()),nobles:original.nobles.slice()};
   const seat=g.turn,p=structuredClone(g.players[seat]);g.players[seat]=p;
   if(g.cities)g.cities=g.cities.slice();if(g.forts)g.forts=structuredClone(g.forts);
-  const choices=a.choices??[],chosen=[];let step=0;
+  const choices=a.choices??[],chosen=[],effects=[];let step=0;
   const invalid=Symbol();
   function pick(title,items,label=String){
     if(!items.length)throw invalid;
@@ -98,23 +98,24 @@ function guildTurn(original,a,auto=false){
       while(owed>0){
         let ids=p.cards.filter(k=>guildColor(p,k)===color);
         const bags=ids.filter(k=>['pair','chain1'].includes(catalog[k].ability));if(bags.length)ids=bags;
-        const k=pick('반납할 개발 카드',ids,text);owed-=catalog[k].ability==='double'?2:1;discard(k);
+      const k=pick('반납할 개발 카드',ids,text);owed-=catalog[k].ability==='double'?2:1;discard(k);effects.push(gemNames[color]+' 할인 카드 반납');
       }
     }else if(!free){
       const bill=pick('지불할 보석',guildBills(p,c),b=>b.gems.map((v,i)=>v?gemNames[i]+v:'').filter(Boolean).join(' ') +(b.bars?' · 가상 황금 카드 '+b.bars:'')||'무료');
       bill.gems.forEach((n,i)=>{p.tokens[i]-=n;g.bank[i]+=n;});
       for(let n=0;n<bill.bars;n++)discard(p.cards.find(k=>catalog[k].ability==='gold'));
+      if(bill.bars)effects.push('가상 황금 카드 '+bill.bars+'장 사용');
     }
     let color=c.color;
-    if(pair){color=pick('복제할 보너스',[0,1,2,3,4].filter(i=>p.bonus[i]),token);p.pairs[id]=color;}
+    if(pair){color=pick('복제할 보너스',[0,1,2,3,4].filter(i=>p.bonus[i]),token);p.pairs[id]=color;effects.push(gemNames[color]+' 할인 복제');}
     p.cards.push(id);if(color>=0)p.bonus[color]+=c.ability==='double'?2:1;
     if(c.ability==='noble'&&g.nobles.length){
-      const n=pick('예약할 귀족',g.nobles,n=>patrons[n].map((v,i)=>v?gemNames[i]+v:'').filter(Boolean).join(' '));g.nobles.splice(g.nobles.indexOf(n),1);p.privateNobles.push(n);
+      const n=pick('예약할 귀족',g.nobles,n=>patrons[n].map((v,i)=>v?gemNames[i]+v:'').filter(Boolean).join(' '));g.nobles.splice(g.nobles.indexOf(n),1);p.privateNobles.push(n);effects.push('귀족 예약');
     }
     if(['chain1','chain2'].includes(c.ability)){
       const tier=c.ability==='chain1'?0:1;
       const ids=g.market.flat().filter(k=>catalog[k].tier===tier&&allowed(k)&&(!['pair','chain1'].includes(catalog[k].ability)||p.bonus.some(Boolean))).sort((a,b)=>catalog[b].vp-catalog[a].vp);
-      if(ids.length){const k=pick('무료로 얻을 카드',ids,text),r=removePublic(k);acquire(k,true);refill(r);}
+      if(ids.length){const k=pick('무료로 얻을 카드',ids,text),r=removePublic(k);effects.push(text(k)+' 무료 획득');acquire(k,true);refill(r);}
     }
   }
   function arrange(){
@@ -131,12 +132,13 @@ function guildTurn(original,a,auto=false){
     const o=pick('성채 배치 · 이동 · 철거',options,x=>(x.remove?'상대 성채 철거':x.from<0?'성채 배치':'#'+(x.from+1)+'에서 이동')+' → '+text(x.id));
     const subtract=id=>{if(!--g.forts[id].n)delete g.forts[id];};
     if(o.remove)subtract(o.id);else{if(o.from>=0)subtract(o.from);g.forts[o.id]??={seat,n:0};g.forts[o.id].n++;}
+    effects.push('#'+(o.id+1)+' 성채 '+(o.remove?'철거':o.from>=0?'이동':'배치'));
   }
   function purchase(id,held){
     if(held?!p.held.includes(id):row(id)<0||!allowed(id))throw invalid;
     const r=held?-1:removePublic(id);if(held)p.held.splice(p.held.indexOf(id),1);
     acquire(id);
-    if(p.posts?.includes(0)&&g.bank.slice(0,5).some(Boolean))gain(pick('구매 보상 보석',[0,1,2,3,4].filter(i=>g.bank[i]),token));
+    if(p.posts?.includes(0)&&g.bank.slice(0,5).some(Boolean)){const i=pick('구매 보상 보석',[0,1,2,3,4].filter(i=>g.bank[i]),token);gain(i);effects.push('교역소 보상 '+gemNames[i]);}
     if(g.forts)arrange();refill(r);
   }
   try{
@@ -145,7 +147,7 @@ function guildTurn(original,a,auto=false){
       if(!takeOptions(g.bank).some(o=>JSON.stringify(o)===JSON.stringify(a.take)))throw invalid;
       a.take.forEach(gain);
       if(p.posts?.includes(1)&&a.take.length===2&&a.take[0]===a.take[1]){
-        const other=[0,1,2,3,4].filter(i=>i!==a.take[0]&&g.bank[i]);if(other.length)gain(pick('추가 보석',other,token));
+        const other=[0,1,2,3,4].filter(i=>i!==a.take[0]&&g.bank[i]);if(other.length){const i=pick('추가 보석',other,token);gain(i);effects.push('교역소 보상 '+gemNames[i]);}
       }
     }else if(a.kind==='blind'||a.kind==='reserve'){
       if(p.held.length>=3)throw invalid;
@@ -155,7 +157,7 @@ function guildTurn(original,a,auto=false){
     }else throw invalid;
     if(g.forts){
       const k=g.market.flat().find(id=>g.forts[id]?.seat===seat&&g.forts[id].n===3);
-      if(k!=null&&guildBills(p,catalog[k]).length&&pick('성채 정복',[true,false],x=>x?text(k)+' 구매':'이번 턴 건너뛰기'))purchase(k,false);
+      if(k!=null&&guildBills(p,catalog[k]).length&&pick('성채 정복',[true,false],x=>x?text(k)+' 구매':'이번 턴 건너뛰기')){effects.push(text(k)+' 정복');purchase(k,false);}
     }
     while(sum(p.tokens)>10){
       const options=[0,1,2,3,4,5].filter(i=>p.tokens[i]).sort((a,b)=>Number(a===5)-Number(b===5)||p.tokens[b]-p.tokens[a]);
@@ -164,7 +166,7 @@ function guildTurn(original,a,auto=false){
     const nobles=[...g.nobles,...p.privateNobles||[]].filter(n=>patrons[n].every((v,i)=>v<=p.bonus[i]));
     if(nobles.length){const n=pick('방문할 귀족',nobles,n=>'귀족 '+(n+1)+' · '+patrons[n].map((v,i)=>v?gemNames[i]+v:'').filter(Boolean).join(' '));
       const pool=g.nobles.includes(n)?g.nobles:p.privateNobles;pool.splice(pool.indexOf(n),1);p.nobles.push(n);}
-    if(p.posts)powerCheck(p);
+    if(p.posts){const previous=p.posts.length;powerCheck(p);effects.push(...p.posts.slice(previous).map(i=>'교역소 개설 · '+guildPowers[i]));}
     if(g.cities){
       const eligible=g.cities.filter(n=>cityEligible(p,n));
       if(eligible.length){p.city=pick('획득할 도시',eligible,n=>'도시 '+(n+1)+' · '+cityFaces[n].vp+'점');g.cities.splice(g.cities.indexOf(p.city),1);g.last=true;}
@@ -172,6 +174,7 @@ function guildTurn(original,a,auto=false){
     if(!auto&&choices.length!==step)throw invalid;
     const msg=({take:'보석 획득',blind:'덱에서 예약',reserve:'공개 카드 예약',buy:'개발 카드 구매',held:'예약 카드 구매'})[a.kind];
     g.log=[{actor:seat,msg:msg+(['buy','held','reserve'].includes(a.kind)?' · '+text(a.i):'')+(nobles.length?' · 귀족 방문':'')+(p.city!=null?' · 도시 획득':'')},...original.log];
+    if(effects.length)g.log[0].msg+=' · '+effects.join(' · ');
     g.turn=(seat+1)%g.players.length;if(!g.turn){if(g.last)g.over=true;else g.round++;}
     return {board:g,choices:chosen};
   }catch(e){if(e===invalid)return null;if(e.labels)return {prompt:e};throw e;}

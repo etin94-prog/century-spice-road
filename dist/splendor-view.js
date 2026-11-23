@@ -22,7 +22,8 @@ function card(id,action){
   const c=catalog[id];
   const title=c.ability?specialText[c.ability]:gemNames[c.color];
   const fort=g.forts?.[id];
-  return '<button class="card" data-'+action+'="'+id+'" style="--art:url(art/guild/'+id+'.webp)" aria-label="'+(c.tier+1)+'단계 '+title+' 개발 카드 '+c.vp+'점"><span class="face"><b>'+c.vp+'점</b>'+(c.color>=0?gem(c.color,c.ability==='double'?2:''):'')+'</span>'+(c.ability||fort?'<small class="ability">'+(fort?name(fort.seat)+' 성채 '+fort.n:title)+'</small>':'')+'<span class="cost">'+chips(c.cost)+'</span></button>';
+  const ribbon=fort?name(fort.seat)+' 성채 '+fort.n:({pair:'복제',chain1:'복제 +Ⅰ',chain2:'무료 Ⅱ',gold:'황금 ×2',sacrifice:'할인 반납'}[c.ability]||title);
+  return '<button class="card" data-'+action+'="'+id+'" style="--art:url(art/guild/'+id+'.webp)" aria-label="'+(c.tier+1)+'단계 '+title+' 개발 카드 '+c.vp+'점"><span class="face"><b>'+c.vp+'점</b>'+(c.color>=0?gem(c.color,c.ability==='double'?2:''):'')+'</span>'+(c.ability||fort?'<small class="ability">'+ribbon+'</small>':'')+'<span class="cost">'+chips(c.cost)+'</span></button>';
 }
 function bind(attr,fn){document.querySelectorAll('[data-'+attr+']').forEach(b=>b.onclick=()=>fn(Number(b.getAttribute('data-'+attr))));}
 function render(){
