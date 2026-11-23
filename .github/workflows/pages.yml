@@ -40,7 +40,7 @@ jobs:
           echo "NODE_PATH=$RUNNER_TEMP/qa/node_modules" >> "$GITHUB_ENV"
       - name: Check mobile touch and previous release rooms before publishing
         run: |
-          python3 -m http.server 8088 --bind 127.0.0.1 --directory dist > "$RUNNER_TEMP/game-http.log" 2>&1 &
+          node qa/serve.cjs &
           node qa/review-mobile.cjs
           node qa/combination-mobile.cjs
           "$RUNNER_TEMP/qa/node_modules/.bin/firebase" emulators:exec --only auth,database --project demo-century 'node qa/rejoin-release.cjs'

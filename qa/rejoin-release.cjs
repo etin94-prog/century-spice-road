@@ -1,12 +1,14 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict');
 const {randomUUID}=require('node:crypto'),{legacyRoom,snapshot}=require('./previous-release.cjs');
-const base='http://127.0.0.1:8088/',namespace='demo-century-default-rtdb';
+const base='http://127.0.0.1:'+Number(process.env.QA_HTTP_PORT||8088)+'/',namespace='demo-century-default-rtdb';
 async function run(){
   const browser=await chromium.launch(process.env.QA_CHANNEL?{channel:process.env.QA_CHANNEL}:{});
   try{
     const pages=[],uids=[];
     for(const width of [740,844]){
       const p=await browser.newPage({viewport:{width,height:360},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+      p.setDefaultTimeout(30000);
+      p.on('pageerror',error=>console.error(p.url(),error.message));
       await p.goto(base+'splendor.html?emulator=1');pages.push(p);
       uids.push(await p.evaluate(async()=>(await firebaseService()).uid));
     }
@@ -24,7 +26,13 @@ async function run(){
         await Promise.all(pages.map(p=>p.goto(base+'?emulator=1&table='+id)));
         async function verify(at){
           await Promise.all(pages.map(async(p,i)=>{
-            await p.waitForFunction(({at,i})=>online?.count===at&&online.ready&&online.connected&&mySeat()===i,{at,i});
+            try{
+              await p.waitForFunction(({at,i})=>typeof mySeat==='function'&&typeof online!=='undefined'&&online?.count===at&&online.ready&&online.connected&&mySeat()===i,{at,i});
+            }catch(error){
+              console.error({mode,at,seat:i,page:p.url(),status:await p.locator('#modal').textContent(),
+                observed:await p.evaluate(()=>typeof mySeat==='function'?[online?.count,online?.ready,online?.connected,mySeat()]:'game scripts unavailable')});
+              throw error;
+            }
             const [board,ranks]=await p.evaluate(()=>[g,g.edition===4?rankings(g):g.edition?expRanks(g):standings(g)]);
             assert.deepEqual(snapshot(board,ranks),states[at],mode+' / '+at+' / '+i);
           }));
