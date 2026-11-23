@@ -5,10 +5,9 @@ const myTurn=()=>!g.over&&flightActor===null&&g.turn===mySeat()&&(!online||onlin
 const name=i=>i===mySeat()?'나':online&&i<online.config?.humans?'친구 '+(i+1):'AI '+(i+1);
 const gem=(i,n='')=>'<span class="gem g'+i+'" title="'+gemNames[i]+'" aria-label="'+gemNames[i]+' '+n+'">'+gemSigns[i]+n+'</span>';
 const chips=vs=>vs.map((v,i)=>v?gem(i,v):'').join(' ');
-const art=['produce','harbour','fort'];
 let g=newGame(),timer,flightActor=null,flight=null,flightTimer;
 const movingTokens=new Set();
-function modal(title,body){el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
+function modal(title,body){if(!online)stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
 function close(){el('modal').close();}
 function stopAI(){clearTimeout(timer);}
 function schedule(){stopAI();if(online){scheduleRoomAI();return;}if(!g.over&&g.turn&&flightActor===null&&!el('modal').open)timer=setTimeout(()=>advance(chooseMove(g)),pace(650));}
@@ -21,14 +20,29 @@ function save(){
 }
 function card(id,action){
   const c=catalog[id];
-  return '<button class="card g'+c.color+'" data-'+action+'="'+id+'" style="--art:url(art/'+art[c.tier]+'.webp)" aria-label="'+(c.tier+1)+'단계 '+gemNames[c.color]+' 개발 카드 '+c.vp+'점"><span class="face"><b>'+c.vp+'점</b>'+gem(c.color)+'</span><span class="cost">'+chips(c.cost)+'</span></button>';
+  const title=c.ability?specialText[c.ability]:gemNames[c.color];
+  const fort=g.forts?.[id];
+  return '<button class="card" data-'+action+'="'+id+'" style="--art:url(art/guild/'+id+'.webp)" aria-label="'+(c.tier+1)+'단계 '+title+' 개발 카드 '+c.vp+'점"><span class="face"><b>'+c.vp+'점</b>'+(c.color>=0?gem(c.color,c.ability==='double'?2:''):'')+'</span>'+(c.ability||fort?'<small class="ability">'+(fort?name(fort.seat)+' 성채 '+fort.n:title)+'</small>':'')+'<span class="cost">'+chips(c.cost)+'</span></button>';
 }
 function bind(attr,fn){document.querySelectorAll('[data-'+attr+']').forEach(b=>b.onclick=()=>fn(Number(b.getAttribute('data-'+attr))));}
 function render(){
   el('status').textContent=g.over?'대국 종료':(g.last?'마지막 라운드':g.round+'라운드')+' · '+name(flightActor??g.turn)+' 차례';
   el('seats').innerHTML=g.players.map((p,i)=>'<button data-seat="'+i+'" class="'+((flightActor??g.turn)===i?'current':'')+'"><b>'+name(i)+' · '+score(p)+'점</b><span class="sub">'+(chips(p.tokens)||'보석 없음')+' · 예약 '+p.held.length+'</span></button>').join('');
   el('market').innerHTML=[2,1,0].map(t=>'<div class="row"><button class="deck" data-deck="'+t+'">'+['Ⅰ','Ⅱ','Ⅲ'][t]+'<small>'+g.decks[t].length+'장</small></button>'+g.market[t].map(id=>card(id,'card')).join('')+'</div>').join('');
-  el('patrons').innerHTML=g.nobles.map(n=>'<span class="patron">'+chips(patrons[n])+'</span>').join('')||'모두 방문했습니다';
+  el('patrons').innerHTML=g.nobles.map(n=>'<span class="patron guildPatron" style="--scene:url(art/guild-'+Math.floor(n/5)+'-'+(n%5)+'.webp)">'+chips(patrons[n])+'</span>').join('')||'모두 방문했습니다';
+  if(g.mode){
+    el('status').textContent=guildNames[g.mode]+' · '+el('status').textContent;
+    if(g.mode==='orient'){
+      document.querySelectorAll('#market .row').forEach((row,j)=>{
+        const t=5-j;
+        row.insertAdjacentHTML('beforeend',g.market[t].map(id=>card(id,'card')).join('')+'<button class="deck" data-deck="'+t+'">동방<small>'+g.decks[t].length+'장</small></button>');
+      });
+    }
+    if(g.cities)el('patrons').innerHTML=g.cities.map(i=>'<div class="patron guildPatron" style="--scene:url(art/guild-'+Math.floor(i/5)+'-'+(i%5)+'.webp)">'+cityFaces[i].vp+'점 '+chips(cityFaces[i].cost)+(cityFaces[i].wild?' · 다른 한 색 '+cityFaces[i].wild:'')+'</div>').join('');
+    if(g.mode==='posts')el('patrons').innerHTML+='<p>내 문장　'+(g.players[mySeat()]?.posts||[]).map(i=>guildPowers[i]).join(' · ')+'</p>';
+  }
+  document.body.classList.toggle('orient',g.mode==='orient');
+  document.querySelector('aside h2').innerHTML=g.cities?'도시 <small>승리 조건</small>':'귀족 <small>방문 +3점</small>';
   el('bank').innerHTML=g.bank.map((v,i)=>'<button data-bank="'+i+'" aria-label="'+gemNames[i]+' '+v+'개">'+gem(i,v)+'</button>').join('');
   el('reserved').textContent='내 예약 카드 · '+g.players[mySeat()]?.held.length+'장';
   el('latestMove').textContent=g.log.length?name(g.log[0].actor)+' · '+g.log[0].msg:'대국 기록';
@@ -38,9 +52,18 @@ function render(){
 }
 function inventory(i){
   const p=g.players[i];modal(name(i)+' · '+score(p)+'점','<p>보석　'+(chips(p.tokens)||'없음')+'</p><p>영구 할인　'+(chips(p.bonus)||'없음')+'</p><p>귀족 '+p.nobles.length+'명 · 개발 카드 '+p.cards.length+'장</p><div class="cards">'+p.cards.map(id=>card(id,'owned')).join('')+'</div><h2>예약 '+p.held.length+'장</h2>'+(i===mySeat()?'<div class="cards">'+p.held.map(id=>card(id,'held')).join('')+'</div>':''));
+  if(p.privateNobles?.length)el('body').insertAdjacentHTML('beforeend','<p>예약 귀족　'+p.privateNobles.map(n=>chips(patrons[n])).join(' / ')+'</p>');
+  if(p.city!=null)el('body').insertAdjacentHTML('beforeend','<p>도시 획득 · '+cityFaces[p.city].vp+'점 조건 달성</p>');
+  if(p.posts?.length)el('body').insertAdjacentHTML('beforeend','<p>'+p.posts.map(i=>guildPowers[i]).join(' · ')+'</p>');
   bind('held',id=>cardMenu(id,true));
 }
 function cardMenu(id,held){
+  if(g.mode){
+    const c=catalog[id],kind=held?'held':'buy',can=!!guildTurn(g,{kind,i:id},true);
+    const reserve=!held&&!!guildTurn(g,{kind:'reserve',i:id},true);
+    modal(guildBadge(g.players[mySeat()],id),'<p>'+ (c.ability==='sacrifice'?'반납할 영구 보너스':'구매 비용')+'　'+chips(c.cost)+'</p>'+(myTurn()?'<button id="buy" '+(can?'':'disabled')+'>구매</button> '+(!held?'<button id="reserve" '+(reserve?'':'disabled')+'>예약</button>':''):''));
+    if(el('buy'))el('buy').onclick=()=>prepare({kind,i:id});if(el('reserve'))el('reserve').onclick=()=>prepare({kind:'reserve',i:id});return;
+  }
   const c=catalog[id],p=g.players[g.turn],bill=payment(p,c);
   modal(gemNames[c.color]+' 개발 카드 · '+c.vp+'점','<p>구매 비용　'+chips(c.cost)+'</p><p>영구 할인　'+gem(c.color,1)+'</p>'+(myTurn()?'<p>할인 후 지불　'+(chips(bill)||'무료')+'</p><button class="primary" id="buy" '+(bill[5]>p.tokens[5]?'disabled':'')+'>구매</button> '+(!held?'<button id="reserve" '+(p.held.length>=3?'disabled':'')+'>예약'+(g.bank[5]?' + 황금':'')+'</button>':''):''));
   if(el('buy'))el('buy').onclick=()=>prepare({kind:held?'held':'buy',i:id,pay:bill});
@@ -54,6 +77,17 @@ function takeMenu(selected){
   bind('pick',i=>takeMenu([...selected,i]));el('reset').onclick=()=>takeMenu([]);el('take').onclick=()=>prepare({kind:'take',i:0,take:complete});
 }
 function prepare(a){
+  if(g.mode){
+    const result=guildTurn(g,a);if(!result||!myTurn())return;
+    if(result.prompt){
+      modal(result.prompt.title,'<div class="choices">'+result.prompt.labels.map((s,i)=>'<button data-choice="'+i+'">'+s+'</button>').join('')+'</div>');
+      bind('choice',i=>prepare({...a,choices:[...a.choices||[],i]}));
+    }else{
+      modal('행동 확인','<p>'+result.board.log[0].msg+'</p><button class="primary" id="confirm">확정</button>');
+      el('confirm').onclick=()=>{if(myTurn()){close();if(online)submitOnline(a);else advance(a);}};
+    }
+    return;
+  }
   const v=preview(g,a);if(!v)return;
   const drop=a.drop??zeros(),p=g.players[g.turn],bill=a.pay;
   const canSwap=bill&&p.tokens[5]>0&&sum(bill)>0;
@@ -124,18 +158,32 @@ function advance(a,remote=false,sub=false){
   flightTimer=setTimeout(finish,duration);
 }
 document.addEventListener('click',e=>{if(flightActor!==null&&!el('modal').open){e.stopImmediatePropagation();finish();}},true);
-function results(){soundAtResults(g);modal('최종 순위',rankings(g).map(r=>'<p class="ranking"><b>'+r.rank+'위 · '+name(r.i)+' · '+r.points+'점</b>　개발 카드 '+r.cards+'장</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
+function results(){soundAtResults(g);modal('최종 순위',rankings(g).map(r=>'<p class="ranking"><b>'+r.rank+'위 · '+name(r.i)+' · '+r.points+'점</b>　'+(r.city?'도시 획득 · ':'')+'개발 카드 '+r.cards+'장</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
 function setup(){
   if(online){roomMenu();return;}
-  let count=g.players.length;const roles=[1,2,3].map(i=>g.players[i]?.level||'Medium');
-  function draw(){modal('스플렌더 · 대국 설정','<div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+'인</button>').join('')+'</div>'+roles.slice(0,count-1).map((l,j)=>'<label class="seat">AI '+(j+2)+'<select id="level'+j+'">'+levels.map(v=>'<option '+(v===l?'selected':'')+'>'+v+'</option>').join('')+'</select></label>').join('')+'<p><button class="primary" id="new">AI 대국 시작</button> <button id="friend">친구 초대 대전</button></p>');
-    bind('count',n=>{count=n;draw();});roles.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>roles[j]=e.target.value);
-    el('new').onclick=()=>{g=newGame(roles.slice(0,count-1));close();save();render();schedule();};el('friend').onclick=createOnline;
+  let mode=g.mode||'base',count=g.players.length;const roles=[1,2,3].map(i=>g.players[i]?.level||'Medium');
+  function draw(){modal('스플렌더 · 대국 설정','<label class="seat">게임 모드<select id="mode">'+guildModes.map(k=>'<option value="'+k+'" '+(k===mode?'selected':'')+'>'+guildNames[k]+'</option>').join('')+'</select></label><p>'+(guildRules[mode]||'보석을 모으고 개발 카드를 구매해 명성 15점을 달성하세요.')+'</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+'인</button>').join('')+'</div>'+roles.slice(0,count-1).map((l,j)=>'<label class="seat">AI '+(j+2)+'<select id="level'+j+'">'+levels.map(v=>'<option '+(v===l?'selected':'')+'>'+v+'</option>').join('')+'</select></label>').join('')+'<p><button class="primary" id="new">AI 대국 시작</button> <button id="friend">친구 초대 대전</button></p>');
+    el('mode').onchange=e=>{mode=e.target.value;draw();};bind('count',n=>{count=n;draw();});roles.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>roles[j]=e.target.value);
+    el('new').onclick=()=>{g=newGame(roles.slice(0,count-1),Math.random,mode);close();save();render();schedule();};el('friend').onclick=()=>createOnline(mode);
   }draw();
 }
 el('setupTop').onclick=setup;el('close').onclick=close;el('modal').onclose=schedule;
-el('reserved').onclick=()=>inventory(mySeat());el('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{modal('전체화면','<p>가로로 돌려 플레이하세요. 아이폰에서는 홈 화면에 추가해 열 수 있습니다.</p>');}};
-el('guide').onclick=()=>modal('스플렌더 기본판','<p>내 차례에 보석을 가져오거나, 카드를 사거나, 카드를 예약하세요. 은행의 보석을 누르면 색을 고를 수 있습니다.</p><p>카드 오른쪽 위 보석은 이후 구매에 계속 적용되는 할인입니다. 귀족이 요구하는 할인을 갖추면 3점을 얻습니다. 예약은 3장, 보유 토큰은 10개까지입니다.</p><p>15점이 나오면 같은 횟수로 차례를 마칩니다. 동점이면 구매한 개발 카드가 적은 사람이 앞서고, 그 수도 같으면 공동 순위입니다.</p>');
+el('reserved').onclick=()=>inventory(mySeat());const nativeFull=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function updateFull(){const on=!!nativeFull()||document.body.classList.contains('tableFull');el('full').textContent=on?'전체화면 종료':'전체화면';el('full').setAttribute('aria-pressed',String(on));}
+el('full').onclick=async()=>{
+  const root=document.documentElement;
+  if(nativeFull()||document.body.classList.contains('tableFull')){
+    try{if(nativeFull())await (document.exitFullscreen||document.webkitExitFullscreen).call(document);screen.orientation?.unlock?.();}catch{}
+    document.body.classList.remove('tableFull','rotateHint');
+  }else{
+    try{await (root.requestFullscreen||root.webkitRequestFullscreen).call(root);}catch{document.body.classList.add('tableFull');}
+    try{await screen.orientation.lock('landscape');}catch{document.body.classList.add('rotateHint');}
+  }
+  updateFull();
+};
+function fullChanged(){if(!nativeFull())document.body.classList.remove('rotateHint');updateFull();}
+document.addEventListener('fullscreenchange',fullChanged);document.addEventListener('webkitfullscreenchange',fullChanged);
+el('guide').onclick=()=>g.mode?modal('스플렌더 · '+guildNames[g.mode],'<p>'+guildRules[g.mode]+'</p>'+(g.mode==='posts'?'<p>빨강 3·흰색 1 → 구매 후 보석 / 흰색 2 → 쌍 보석 보상 / 파랑 3·검정 1 → 황금 강화 / 초록 5·귀족 1 → 5점 / 검정 3 → 문장 점수</p>':'')):modal('스플렌더 기본판','<p>내 차례에 보석을 가져오거나, 카드를 사거나, 카드를 예약하세요. 은행의 보석을 누르면 색을 고를 수 있습니다.</p><p>카드 오른쪽 위 보석은 이후 구매에 계속 적용되는 할인입니다. 귀족이 요구하는 할인을 갖추면 3점을 얻습니다. 예약은 3장, 보유 토큰은 10개까지입니다.</p><p>15점이 나오면 같은 횟수로 차례를 마칩니다. 동점이면 구매한 개발 카드가 적은 사람이 앞서고, 그 수도 같으면 공동 순위입니다.</p>');
 el('latestMove').onclick=()=>g.over?results():modal('대국 기록',g.log.map(r=>'<p>'+name(r.actor)+' · '+r.msg+'</p>').join('')||'첫 차례입니다.');
 const room=roomIdFromUrl();let resumed=false;
 if(!room){

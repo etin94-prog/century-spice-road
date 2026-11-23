@@ -26,6 +26,8 @@ jobs:
         run: node qa/combinations.cjs
       - name: Verify Splendor decks, payments and replay
         run: node qa/splendor.cjs
+      - name: Replay four Splendor expansions with 2–4 seats
+        run: node qa/splendor-expansions.cjs
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -42,8 +44,9 @@ jobs:
         run: |
           node qa/serve.cjs &
           node qa/review-mobile.cjs
+          node qa/guild-mobile.cjs
           node qa/combination-mobile.cjs
-          "$RUNNER_TEMP/qa/node_modules/.bin/firebase" emulators:exec --only auth,database --project demo-century 'node qa/rejoin-release.cjs'
+          "$RUNNER_TEMP/qa/node_modules/.bin/firebase" emulators:exec --only auth,database --project demo-century 'node qa/rejoin-release.cjs && node qa/guild-mobile.cjs --rooms'
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

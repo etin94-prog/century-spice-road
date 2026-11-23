@@ -55,3 +55,9 @@ python -m http.server 8000 --bind 127.0.0.1 --directory dist
 | `node qa/room.cjs 3 --recovery` | 친구 브라우저를 닫고 대행 중 난이도를 바꿔, 두 번의 대행과 복귀 후 직접 플레이를 확인합니다. |
 
 브라우저 검사는 Node에서 불러올 수 있는 Playwright와 Edge를 사용합니다. WebKit을 설치하고 모바일 검사에서 `QA_BROWSER=webkit`을 지정하면 동일한 화면에서 터치 선택을 시험합니다. `GAME_URL`로 대상 주소를 지정할 수 있으며, 초대방 검사의 기본 대상은 공개 Pages입니다.
+
+### 스플렌더 확장
+
+대국 설정에서 기본판과 2017년판 ‘찬란한 도시’의 도시·교역소·동방·성채 중 하나를 고릅니다. 선택한 모드는 AI 대국과 친구 초대방에 적용됩니다. 동방에서는 단계별 동방 덱을 눌러 비공개 예약할 수 있습니다. 카드 120장의 전면에는 이 프로젝트용으로 생성한 삽화를 사용했습니다.
+
+규칙은 [2017년 확장 규칙서](https://tesera.ru/images/items/1136668/rules_citiesofsplendor_us_ld-2.pdf), 인쇄된 비용은 [구성품 수치](https://github.com/hexanome-04/splendor/tree/HEAD/server/src/main/resources)를 참고했습니다. 확장 규칙·재현 검사는 `node qa/splendor-expansions.cjs`로 실행합니다.

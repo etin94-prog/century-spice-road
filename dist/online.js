@@ -7,6 +7,10 @@ const roomIdFromUrl=()=>{
 };
 function seededGame(seed,roles=['친구']){
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+  if(typeof guildModes!=='undefined'&&online?.id.startsWith('ce000004d00')&&online.id[12]==='e'){
+    const mode=guildModes[Number(online.id[11])];if(!mode)throw Error('지원하지 않는 스플렌더 확장입니다.');
+    return newGame(roles,random,mode);
+  }
   return newGame(roles,random);
 }
 // Legacy rooms retain the UUID variant (8..b) at index 16, including combined
@@ -56,12 +60,13 @@ function roomMenu(){
   };
   el('solo').onclick=backToSolo;
 }
-async function createOnline(){
+async function createOnline(selectedMode){
   if(openingRoom)return;openingRoom=true;stopAI();
   try{
     const s=await firebaseService(),raw=crypto.randomUUID().replaceAll('-','');
     const uuid=raw.slice(0,16)+'e'+currentRulesVersion.toString(16)+raw.slice(18);
-    const id=g.edition?'ce00000'+g.edition+(g.combo?'c'+String(g.combo).padStart(3,'0')+'e'+uuid.slice(13):uuid.slice(8)):uuid;
+    const guild=g.edition===4?guildModes.indexOf(typeof selectedMode==='string'?selectedMode:g.mode):0;
+    const id=g.edition?'ce00000'+g.edition+(guild>0?'d00'+guild+'e'+uuid.slice(13):g.combo?'c'+String(g.combo).padStart(3,'0')+'e'+uuid.slice(13):uuid.slice(8)):uuid;
     await s.set(roomRef(s,id,'','tables'),{host:s.uid,seed:crypto.getRandomValues(new Uint32Array(1))[0],format:2});
     const url=new URL(location.href);url.searchParams.delete('room');url.searchParams.set('table',id);location.assign(url.href);
   }catch(e){openingRoom=false;roomError(e);}
@@ -240,7 +245,7 @@ function scheduleRoomAI(){
     let move;
     try{
       move=await new Promise((resolve,reject)=>{
-        const ai=new Worker(g.edition===4?'splendor-worker.js':g.edition?'expedition-worker.js?v=mobile-audit':'ai-worker.js?v=mobile-audit');
+        const ai=new Worker(g.edition===4?'splendor-worker.js?v=guild-modules':g.edition?'expedition-worker.js?v=mobile-audit':'ai-worker.js?v=mobile-audit');
         ai.onmessage=e=>{ai.terminate();resolve(e.data);};
         ai.onerror=e=>{ai.terminate();reject(e);};ai.postMessage(board);
       });

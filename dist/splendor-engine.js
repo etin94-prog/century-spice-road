@@ -1,17 +1,18 @@
 "use strict";
 const sum=xs=>xs.reduce((a,b)=>a+b,0);
 const zeros=(n=6)=>Array(n).fill(0);
-const score=p=>sum(p.cards.map(id=>catalog[id].vp))+3*p.nobles.length;
+const score=p=>sum(p.cards.map(id=>catalog[id].vp))+3*p.nobles.length+(p.posts?guildPoints(p):0);
 function shuffled(values,random){
   const a=values.slice();
   for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
-function newGame(roles=['Medium'],random=Math.random){
-  const decks=[0,1,2].map(t=>shuffled(catalog.filter(c=>c.tier===t).map(c=>c.id),random));
+function newGame(roles=['Medium'],random=Math.random,mode='base'){
+  const decks=[0,1,2].map(t=>shuffled(catalog.filter(c=>c.tier===t&&!c.ability).map(c=>c.id),random));
   const players=['나',...roles].map(level=>({level,tokens:zeros(),bonus:zeros(5),cards:[],held:[],nobles:[]}));
-  return {edition:4,decks,market:decks.map(d=>d.splice(0,4)),bank:[...Array(5).fill([4,5,7][roles.length-1]),5],
+  const game={edition:4,decks,market:decks.map(d=>d.splice(0,4)),bank:[...Array(5).fill([4,5,7][roles.length-1]),5],
     nobles:shuffled(patrons.map((_,i)=>i),random).slice(0,players.length+1),players,turn:0,round:1,last:false,over:false,log:[]};
+  return mode==='base'?game:guildSetup(game,mode,random);
 }
 function payment(p,c){
   const due=c.cost.map((v,i)=>Math.max(0,v-p.bonus[i]));
@@ -52,6 +53,7 @@ function preview(g,a){
     visits:g.nobles.filter(n=>patrons[n].every((v,i)=>v<=bonus[i]))};
 }
 function apply(g,a){
+  if(g.mode){const result=guildTurn(g,a);if(!result?.board)return false;Object.assign(g,result.board);return true;}
   const next=preview(g,a);if(!next)return false;
   const {id,tier,slot,tokens,bonus,excess,visits}=next,p=g.players[g.turn],drop=a.drop??zeros();
   if(!Array.isArray(drop)||drop.length!==6||drop.some((v,i)=>!Number.isInteger(v)||v<0||v>tokens[i])||sum(drop)!==excess)return false;
@@ -75,6 +77,10 @@ function apply(g,a){
   return true;
 }
 function rankings(g){
+  if(g.mode==='cities'){
+    const rows=g.players.map((p,i)=>({i,points:score(p),cards:p.cards.length,city:p.city!=null})).sort((a,b)=>Number(b.city)-Number(a.city)||b.points-a.points);
+    rows.forEach((r,i)=>{const prev=rows[i-1];r.rank=prev&&prev.city===r.city&&prev.points===r.points?prev.rank:i+1;});return rows;
+  }
   const rows=g.players.map((p,i)=>({i,points:score(p),cards:p.cards.length})).sort((a,b)=>b.points-a.points||a.cards-b.cards);
   rows.forEach((r,i)=>{const prev=rows[i-1];r.rank=prev&&r.points===prev.points&&r.cards===prev.cards?prev.rank:i+1;});return rows;
 }
@@ -134,6 +140,7 @@ function expertMove(g){
   return best;
 }
 function chooseMove(g,level=g.players[g.turn].level){
+  if(g.mode)return guildAI(g,level);
   if(level==='Hell')return expertMove(g);
   const p=g.players[g.turn],market=g.market.flat(),ids=market.concat(p.held);
   function distance(c,tokens){return Math.max(0,sum(c.cost.map((v,i)=>Math.max(0,v-p.bonus[i]-tokens[i])))-tokens[5]);}
