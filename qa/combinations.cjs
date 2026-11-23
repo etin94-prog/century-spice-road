@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const lib=['cards','expedition-data','expedition-engine','combinations','combination-ai','expedition-ai'].map(f=>fs.readFileSync(path.join(__dirname,'../dist/'+f+'.js'),'utf8')).join('\n');
-const {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket,starter}=Function(lib+';return {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket,starter}')();
+const {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket,starter,receiveToll}=Function(lib+';return {newMix,apply,chooseMove,expRanks,mixSites,mixOptions,refreshMarket,starter,receiveToll}')();
 for(const combo of [12,13,123])for(const n of [2,3,4]){
   let seed=1240+n;const rng=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const g=newMix(combo,Array(n-1).fill('Medium'),rng),copy=structuredClone(g);
@@ -16,6 +16,7 @@ for(const combo of [12,13,123])for(const n of [2,3,4]){
     const a=chooseMove(g,'Medium');assert(apply(g,a));assert(apply(copy,a));turns++;
     assert(g.players.every(p=>p.ready>=0&&p.bag.every(k=>k>=0)));
   }
+  require('./audit-final.cjs')(g,n,expRanks(g));
   assert(g.over,'unfinished '+combo+' '+n);assert.deepEqual(g,copy);console.log(combo,n,turns,expRanks(g));
 }
 
@@ -35,3 +36,17 @@ const last=mixSites(route).findLastIndex(t=>t.special==='route');
 assert(mixOptions(route,last).every(c=>c.need===3));
 route.players[0].route[0].workers=1;
 assert(mixOptions(route,last).some(c=>c.need===2));
+
+const recipient={bag:[4,3,2,1],bonus:[],priority:[3,2,1,0]};
+receiveToll(recipient,1);
+assert.deepEqual(recipient.bag,[4,4,2,0]);
+for(const combo of [13,123]){
+ const board=newMix(combo,['Medium'],()=>.4);
+ const i=board.tiles.findIndex(t=>t.industry===1&&!t.cover);
+ board.players[0].bag=[0,0,0,1];
+ const opts=mixOptions(board,i);
+ assert(opts.some(c=>c.kind==='upgrade'&&c.steps.length===0));
+ assert(apply(board,{edition:3,combo,i,kind:'upgrade',option:opts.length-1}));
+ assert.deepEqual(board.players[0].bag,[0,0,0,1]);
+ assert.equal(board.tiles[i].occupant.seat,0);
+}

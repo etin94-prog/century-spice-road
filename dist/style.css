@@ -173,3 +173,9 @@ button[data-kind]{touch-action:manipulation}
 #playedCard .playAnchor{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(190px,51vw);height:min(240px,83dvh);display:grid;place-items:center}
 #playedCard:not(.restReview) .playAnchor>.card{width:100%;height:100%;margin:0}
 .editionNav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.editionNav>*{padding:8px;color:#204c41;border:1px solid #a98c5c;border-radius:6px;font-size:13px;text-decoration:none}.editionNav b{background:#214a3c;color:#fff0cb}
+
+@media(orientation:landscape) and (max-height:430px){
+  .caravan #handHint{display:none}
+  .caravan #handTitle{white-space:nowrap;font-size:13px}
+  .caravan #rest{font-size:12px;padding-inline:4px}
+}

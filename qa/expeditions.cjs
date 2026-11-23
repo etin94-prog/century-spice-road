@@ -9,6 +9,7 @@ for(const edition of [2,3])for(const n of [2,3,4]){
    assert(apply(g,a));assert(apply(copy,structuredClone(a)));turns++;
    assert(g.players.every(p=>p.bag.every(n=>n>=0)&&p.ready>=0));
  }
- console.log(edition,n,turns,g.players.map(p=>p.won.length),expRanks(g));
+ require('./audit-final.cjs')(g,n,expRanks(g));
+  console.log(edition,n,turns,g.players.map(p=>p.won.length),expRanks(g));
  assert(g.over);assert.deepEqual(g,copy);
 }

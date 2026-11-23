@@ -30,13 +30,13 @@ function effect(p,a,g){
   }
   if(a.kind==='buy'){
     const c=g.market[a.i];
-    if(!c||a.pay.length!==a.i)return null;
+    if(!c||!Array.isArray(a.pay)||a.pay.length!==a.i)return null;
     for(const t of a.pay){if(!Number.isInteger(t)||t<0||t>3||--bag[t]<0)return null;}
     return add(bag,c.pile);
   }
   const c=p.hand[a.i]; if(!c||a.kind!=='play')return null;
   if(c.up){
-    if(!a.steps?.length||a.steps.length>c.up)return null;
+    if(!Array.isArray(a.steps)||a.steps.length>c.up)return null;
     for(const t of a.steps){if(!Number.isInteger(t)||t<0||t>2||--bag[t]<0)return null;bag[t+1]++;}
     return bag;
   }

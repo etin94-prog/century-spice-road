@@ -54,9 +54,9 @@ function seaPath(g,from,to){
 }
 function seaArrival(g,i,options={}){
   const p=g.players[g.turn],t=g.tiles[i],path=options.path??seaPath(g,p.boat,i);
-  if(!Array.isArray(path)||path.length>20||(path.at(-1)??p.boat)!==i)return null;
-  let prev=p.boat;for(const next of path){if(!Number.isInteger(next)||!neighbors(g,prev,next))return null;prev=next;}
   const free=1+p.bonus.filter(x=>x==='move').length;
+  if(!Array.isArray(path)||path.length>free+total(p.bag)||(path.at(-1)??p.boat)!==i)return null;
+  let prev=p.boat;for(const next of path){if(!Number.isInteger(next)||!neighbors(g,prev,next))return null;prev=next;}
   const drops=path.slice(free-1,-1);
   const others=path.length&&!t.port?g.players.map((q,j)=>j!==g.turn&&q.boat===i?j:-1).filter(j=>j>=0):[];
   const pay=minPaid(p.bag,drops.length+others.length,options.pay);if(!pay)return null;
@@ -129,7 +129,10 @@ function actionsAt(g,i,options={},base=false){
         }
       }
     }else if(t.industry===0)add('produce',combine(raw,unitBag(t.recipe)));
-    else if(t.industry===1){for(const op of upgradeOptions(raw,+t.recipe))add('upgrade',op.bag,{steps:op.steps});}
+    else if(t.industry===1){
+      for(const op of upgradeOptions(raw,+t.recipe))add('upgrade',op.bag,{steps:op.steps});
+      add('upgrade',raw,{steps:[]});
+    }
     else trade(raw,t.recipe,{});
   }
   return list;
@@ -149,10 +152,19 @@ function expScore(g,p){
 }
 const expRanks=g=>g.players.map((p,i)=>({i,points:expScore(g,p)})).sort((a,b)=>b.points-a.points||b.i-a.i);
 const actNames={depart:'출항 준비',sail:'항해만',trade:'교역',harvest:'수확',build:'교역소 건설',order:'납품',rest:'일꾼 회수',bonus:'보너스 획득',upgrade:'승급',produce:'생산'};
+function validPriority(order){
+  return Array.isArray(order)&&order.length===4&&new Set(order).size===4&&order.every(t=>[0,1,2,3].includes(t));
+}
+function receiveToll(p,t){
+  p.bag[t]++;
+  if(total(p.bag)>capacity(p)){
+    const first=(p.priority||[0,1,2,3]).find(k=>p.bag[k]>0);p.bag[first]--;
+  }
+}
 function apply(g,a,base=false){
   if(g.combo&&!base)return mixApply(g,a);
   if(!a||g.over||a.edition!==g.edition||!Number.isInteger(a.i))return false;
-  if(a.priority&&(!Array.isArray(a.priority)||a.priority.length!==4||new Set(a.priority).size!==4||!a.priority.every(t=>[0,1,2,3].includes(t))))return false;
+  if(a.priority&&!validPriority(a.priority))return false;
   const actor=g.turn,p=g.players[actor],t=g.tiles[a.i];let points=0;
   if(g.departures){
     if(a.kind!=='depart'||!t||t.port||!Number.isInteger(a.option)||a.option<0||a.option>=g.departures.length)return false;
@@ -172,9 +184,7 @@ function apply(g,a,base=false){
     if(g.edition===2){
       const ar=seaArrival(g,a.i,a);
       ar.drops.forEach((site,j)=>g.tiles[site].pile[ar.paid[j]]++);
-      ar.others.forEach((j,k)=>{const q=g.players[j];q.bag[ar.paid[k+ar.drops.length]]++;
-        if(total(q.bag)>capacity(q)){const discard=(q.priority||[0,1,2,3]).find(t=>q.bag[t]>0);q.bag[discard]--;}
-      });
+      ar.others.forEach((seat,k)=>receiveToll(g.players[seat],ar.paid[ar.drops.length+k]));
       if(a.collect!==false)t.pile=blank();p.boat=a.i;
       if(choice.build){t.owners.push(actor);p.tracks[t.suit]++;
         if(choice.prize){const k=bonTypes.indexOf(choice.prize);p.bonus.push(choice.prize==='points'?2+g.stocks[k]:choice.prize);g.stocks[k]--;}

@@ -16,14 +16,24 @@ async function run(){
    const base=process.env.GAME_URL||'http://127.0.0.1:'+server.address().port+'/';
    const apple=process.env.QA_BROWSER==='webkit';
    browser=apple?await webkit.launch():await chromium.launch({channel:'msedge'});
-   for(const mode of [1,2,3,12,123,13]){
+   for(const mode of [1,2,3,12,123,13])for(const seats of [2,3,4]){
      const viewport=apple?{width:390,height:844}:{width:740,height:360};
      const p=await browser.newPage({viewport,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
      const errors=[];p.on('pageerror',e=>errors.push(e.message));
      await p.goto(base);assert.equal(await p.locator('nav a').count(),6);
      const href=mode===1?'spice.html':'expedition.html?'+(mode<10?'edition':'combo')+'='+mode;
-     await p.locator('a[href="'+href+'"]').tap();await p.locator('#new').tap();
-     if(mode>10){
+     await p.locator('a[href="'+href+'"]').tap();await p.locator('[data-count="'+seats+'"]').tap();await p.locator('#new').tap();
+     assert.equal(await p.evaluate(()=>g.players.length),seats);
+     if(mode===1){
+       await p.locator('[data-kind="play"][data-i="1"]').tap();
+       await p.locator('#confirm').tap();
+       assert(await p.evaluate(()=>g.players[0].used.some(c=>c.up)&&g.players[0].bag[0]===3));
+     }else if(mode<10){
+       await p.waitForFunction(()=>myTurn());
+       const i=await p.evaluate(()=>g.tiles.findIndex((t,i)=>(g.departures?t.recipe:t.industry===0)&&actionsAt(g,i).length));
+       await p.locator('[data-site="'+i+'"]').tap();await p.locator('[data-option="0"]').tap();
+       assert(await p.evaluate(()=>g.log.some(x=>x.who===0)));
+     }else{
        await p.waitForFunction(()=>myTurn());
        await p.locator('[data-tab="cards"]').tap();
        if(mode===12){await p.locator('[data-tab="board"]').tap();await p.locator('[data-site]').filter({hasText:'섬'}).first().tap();}
@@ -41,7 +51,7 @@ async function run(){
        await p.reload();assert.equal(await p.evaluate(()=>g.log.length),count);
        if(mode===123){await p.locator('[data-tab="map"]').tap();assert.equal(await p.locator('[data-island]').count(),13);}
      }
-     assert.deepEqual(errors,[]);await p.close();console.log('mobile',mode);
+     assert.deepEqual(errors,[]);await p.close();console.log('mobile',mode,seats);
    }
  }finally{await browser?.close();server.close();}
 }

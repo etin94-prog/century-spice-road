@@ -2,7 +2,9 @@
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 const humans = Number(process.argv[2] || 3);
-assert([3, 4].includes(humans));
+assert([2, 3, 4].includes(humans));
+const seats=Number(process.env.QA_SEATS||4);
+assert(seats>=humans&&seats<=4);
 const url = process.env.GAME_URL || 'https://etin94-prog.github.io/century-spice-road/';
 async function takeTurn(p) {
   const action=await p.evaluate(()=>chooseMove(g,'Medium'));
@@ -28,7 +30,7 @@ async function run() {
   try {
     const pages = [], errors = [];
     for (let i=0; i<humans; i++) {
-      const context = await browser.newContext({viewport:{width:i%2?740:844,height:i%2?360:390},isMobile:true,hasTouch:true});
+      const context = await browser.newContext({viewport:{width:i%2?740:844,height:i%2?360:390},reducedMotion:'reduce',isMobile:true,hasTouch:true});
       const page = await context.newPage();
       page.on('pageerror',e=>errors.push(e.message));
       pages.push(page);
@@ -42,6 +44,7 @@ async function run() {
       await guest.locator('#invite').waitFor();
     }
     await host.waitForFunction(n=>online.people===n,humans);
+    await host.locator('#roomTotal').selectOption(String(seats));
     await host.locator('#beginTable').tap();
     await Promise.all(pages.map((p,i)=>p.waitForFunction(seat=>online?.ready&&online.connected&&mySeat()===seat,i)));
     if(process.argv.includes('--recovery')){
@@ -82,7 +85,7 @@ async function run() {
       console.log('Guest restored. Substitute levels Medium then Hell, next personal turn played directly.');
       return;
     }
-    if(humans===3) {
+    if(humans===3&&seats===4) {
       await host.locator('#setupTop').tap();
       await host.locator('#matchSub0').selectOption('Hard');
       await host.waitForFunction(()=>online.settings?.[0]?.level==='Hard');
@@ -113,8 +116,9 @@ async function run() {
     await Promise.all(pages.map(p=>p.locator('.ranking').first().waitFor()));
     const finals=await Promise.all(pages.map(p=>p.evaluate(()=>({moves:online.count,state:g,
       rows:[...document.querySelectorAll('.ranking')].map(n=>n.innerText.replace(/나|친구 [1-4]|AI [1-4]/,s=>s==='나'?String(mySeat()+1):s.at(-1)))}))));
-    for(const result of finals)assert.deepEqual(result,finals[0]);
-    assert.equal(finals[0].rows.length,4);
+    require('./audit-final.cjs')(finals[0].state,seats,await host.evaluate(()=>standings(g).map(({i,points})=>({i,points}))));
+  for(const result of finals)assert.deepEqual(result,finals[0]);
+    assert.equal(finals[0].rows.length,seats);assert.equal(finals[0].state.players.length,seats);
     assert.deepEqual(errors,[]);
     console.log(JSON.stringify({humans,moves:finals[0].moves,round:finals[0].state.round,rows:finals[0].rows}));
   } finally {await browser.close();}

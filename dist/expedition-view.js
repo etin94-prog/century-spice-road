@@ -96,7 +96,8 @@ function optionsLabel(c,t){
   if(c.kind==='depart')return wordBag(c.bag);
   if(c.build&&c.kind==='trade')label='건설 후 교역';
   if(c.n)label+=' ×'+c.n;
-  if(c.steps?.length)label+=' · '+c.steps.map(k=>info.goods[k]+'→'+info.goods[k+1]).join(', ');
+  if(c.steps?.length)label+=' · '+c.steps.map(k=>goods(unitBag(String(k)))+' → '+goods(unitBag(String(k+1)))).join(' / ');
+  if(c.kind==='upgrade'&&!c.steps?.length)label+=' 없이 배치';
   if(c.prize)label+=' · '+bonusLabel(c.prize);
   if(c.stack>=0)label+=' · '+bonusLabel(t.stacks[c.stack].at(-1));
   if(c.explore>=0)label+=' · '+siteName(g.tiles[c.explore],c.explore)+' 탐험 ('+exploreName(g.tiles[c.explore].cover)+')';
@@ -135,7 +136,7 @@ function editRoute(i,previous){
     const panel=(id,bag,choices,n)=>n?'<h3>'+({pay:'항해·통행료',buildPay:'교역소 건설비'}[id])+' · '+n+'개</h3><p>'+(choices.map(k=>info.goods[k]).join(' → ')||'낮은 단계부터 자동 지불')+'</p><div class="actions">'+bag.map((amount,k)=>'<button data-fee="'+id+'" data-spice="'+k+'" '+(choices.length>=n||choices.filter(x=>x===k).length>=amount?'disabled':'')+'>'+goods(unitBag(String(k)))+'</button>').join('')+'<button data-clear="'+id+'">다시 선택</button></div>':'';
     const next=g.tiles.map((t,k)=>neighbors(g,last,k)?'<button data-next="'+k+'">'+siteName(t,k)+'</button>':'').join('');
     modal('항로 선택','<p>'+[p.boat,...route].map(k=>siteName(g.tiles[k],k)).join(' → ')+'</p><div class="actions">'+next+'<button id="undo">한 칸 취소</button></div>'+panel('pay',p.bag,pay,fees)+panel('buildPay',ar?.bag||blank(),buildPay,price)+'<label><input type="checkbox" id="collect" '+(collect?'checked':'')+'> 도착지에 놓인 재료 회수</label><button class="primary" id="landHere" '+(!ar?'disabled':'')+'>이곳에서 행동 선택</button>');
-    el('body').querySelectorAll('[data-next]').forEach(b=>b.onclick=()=>{if(route.length>=20)return;route.push(+b.dataset.next);pay=[];buildPay=[];draw();});
+    el('body').querySelectorAll('[data-next]').forEach(b=>b.onclick=()=>{if(route.length>=free+total(p.bag))return;route.push(+b.dataset.next);pay=[];buildPay=[];draw();});
     el('undo').onclick=()=>{route.pop();pay=[];buildPay=[];draw();};
     el('body').querySelectorAll('[data-fee]').forEach(b=>b.onclick=()=>{(b.dataset.fee==='pay'?pay:buildPay).push(+b.dataset.spice);draw();});
     el('body').querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{if(b.dataset.clear==='pay')pay=[];else buildPay=[];draw();});
@@ -166,7 +167,7 @@ function captureMove(who,a,animate=true){
 }
 function recordMove(){}
 function advance(a,remote=false,sub=false){
-  if(!remote&&g.turn===mySeat()&&edition===2&&nextPriority)a={...a,priority:nextPriority.slice()};
+  if(!remote&&g.turn===mySeat()&&(edition===2||combo===123)&&nextPriority)a={...a,priority:nextPriority.slice()};
   if(online&&!remote)return submitOnline(a);
   const who=g.turn,m=captureMove(who,a);if(!apply(g,a))return;
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
@@ -207,7 +208,7 @@ document.addEventListener('click',e=>{if(flightActor!==null&&!el('modal').open){
 function stopAI(){clearTimeout(timer);if(worker){worker.terminate();worker=null;}}
 function schedule(){
   stopAI();if(online||g.over||!g.turn||flightActor!==null||el('modal').open)return;
-  timer=setTimeout(()=>{worker=new Worker('expedition-worker.js?v=combined');worker.onmessage=e=>{stopAI();advance(e.data);};
+  timer=setTimeout(()=>{worker=new Worker('expedition-worker.js?v=mobile-audit');worker.onmessage=e=>{stopAI();advance(e.data);};
     worker.onerror=()=>{stopAI();advance(chooseMove(g));};worker.postMessage(g);},pace(650));
 }
 function results(){modal('최종 순위',expRanks(g).map((r,j)=>'<p class="rank"><b>'+(j+1)+'위 · '+seatName(r.i)+' · '+r.points+'점</b>　납품 '+g.players[r.i].won.length+'건</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}

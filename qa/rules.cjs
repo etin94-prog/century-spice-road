@@ -34,7 +34,7 @@ function rules() {
   assert.deepEqual(market.market.slice(0,2).map(c=>c.pile),[[1,0,0,0],[1,0,0,0]]);assert.deepEqual(market.players[0].bag,[1,1,0,0]);
   const trade=setup();const trader=trade.players[0];trader.hand=[{up:0,cost:[2,0,0,0],gain:[0,0,1,0]}];trader.bag=[6,0,0,0];
   assert(apply(trade,{kind:'play',i:0,n:3}));assert.deepEqual(trader.bag,[0,0,3,0]);
-  for(const steps of [[0],[0,1],[0,0]]){const game=setup();assert(apply(game,{kind:'play',i:1,steps}));assert.equal(game.players[0].used.length,1);}
+  for(const steps of [[],[0],[0,1],[0,0]]){const game=setup();assert(apply(game,{kind:'play',i:1,steps}));assert.equal(game.players[0].used.length,1);}
   const cap=setup();cap.players[0].bag=[8,2,0,0];assert(!apply(cap,{kind:'play',i:0}));assert(apply(cap,{kind:'play',i:0,drop:[1,1,0,0]}));assert.deepEqual(cap.players[0].bag,[9,1,0,0]);
   const coins=setup();coins.gold=1;for(const coin of ['gold','silver']){assert.equal(bonus(coins,0),coin);const p=coins.players[coins.turn],c=coins.orders[0];p.bag=c.cost.slice();assert(apply(coins,{kind:'order',i:0}));assert.equal(score(p),c.vp+(coin==='gold'?3:1));}
   for(const n of [2,3,4]){
@@ -47,7 +47,8 @@ function rules() {
       assert.deepEqual(replay,game);
       assert(++turns<500);
     }
-    console.log(n+' seats replayed through '+turns+' turns');
+    require('./audit-final.cjs')(game,n,standings(game));
+  console.log(n+' seats replayed through '+turns+' turns');
   }
   console.log('Rules passed');
 }

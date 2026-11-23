@@ -186,6 +186,7 @@ function mixFinish(g,i,kind,msg){
 const mixActions={playCard:'상인 사용',buyCard:'상인 영입',recover:'휴식',useMerchant:'사용 후 수집',extend:'교역로에 배치',route:'교역로 사용',adjust:'교역로 정렬',refresh:'시장 교체 후 추가 턴',navigate:'항해',islandTrade:'섬 교역'};
 function mixApply(g,a){
   if(!a||g.over||a.edition!==g.edition||a.combo!==g.combo||!Number.isInteger(a.i)||a.i<0)return false;
+  if(a.priority&&!validPriority(a.priority))return false;
   if(a.refresh){
     const preview=structuredClone(g);if(!refreshMarket(preview,a.refreshDiscard)||!mixApply(preview,{...a,refresh:false}))return false;
     preview.log[0].msg='시장 교체 · '+preview.log[0].msg;Object.assign(g,preview);return true;
@@ -230,10 +231,11 @@ function mixApply(g,a){
     }
     if(c.reward>=0)p.bonus.push(g.prizes[t.special==='market'?'market':'outpost'][c.reward].pop());
   }
+  if(a.priority)p.priority=a.priority.slice();
   p.bag=bag;mixFinish(g,a.i,c.kind,mixActions[c.kind]||actNames[c.kind]);return true;
 }
 function payRivals(g,c){
-  c.rivals.forEach((seat,i)=>{const p=g.players[seat];p.bag[c.tolls[i]]++;p.bag=trimBag(p.bag,capacity(p));});
+  c.rivals.forEach((seat,i)=>receiveToll(g.players[seat],c.tolls[i]));
 }
 function mixScore(g,p){
   const icons=blank();let score=total(p.bag.slice(1))+total(p.won.map(c=>c[1]));

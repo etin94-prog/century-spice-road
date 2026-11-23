@@ -139,7 +139,7 @@ function schedule(){
     const publicBoard={players:g.players,turn:g.turn,orders:g.orders,market:g.market,gold:g.gold,silver:g.silver};
     const fallback=()=>{stopAI();advance(chooseMove(publicBoard));};
     try{
-      worker=new Worker('ai-worker.js?v=mobile-beta-26');
+      worker=new Worker('ai-worker.js?v=mobile-audit');
       worker.onmessage=({data})=>{stopAI();advance(data);};
       worker.onerror=fallback;
       worker.postMessage(publicBoard);
@@ -224,7 +224,7 @@ function editor(){
     title=type(c)+' 카드';body='<p>'+desc(c)+'</p>';label='카드 사용';
     if(c.up){
       a.steps.forEach(t=>{bag[t]--;bag[t+1]++;});
-      body+='<p>승급할 향신료를 선택하세요. ('+a.steps.length+'/'+c.up+')</p>';
+      body+='<p>승급할 향신료를 선택하세요. ('+a.steps.length+'/'+c.up+') 승급 없이 카드를 낼 수도 있습니다.</p>';
       if(a.steps.length)body+='<p>선택한 승급 · '+a.steps.map(upgradePair).join(' · ')+'</p>';
       if(a.steps.length<c.up)body+=picks(names.slice(0,3).map((_,t)=>[t,upgradePair(t),!bag[t]]),'steps');
     }else if(sum(c.cost)){

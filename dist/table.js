@@ -425,7 +425,7 @@ function moveFlow(a,motion){
   }
   if(a.kind==='play'){
     label=type(c);
-    if(c.up)flow=a.steps.map(t=>names[t]+' → '+names[t+1]).join(', ')+' 순서로 승급했어요.';
+    if(c.up)flow=a.steps.length?a.steps.map(t=>names[t]+' → '+names[t+1]).join(', ')+' 순서로 승급했어요.':'승급 없이 카드를 냈어요.';
     else {
       const n=a.n||1;
       flow=sum(c.cost)?spices(c.cost.map(x=>x*n))+'를 내고 '+spices(c.gain.map(x=>x*n))+'를 받았어요.':spices(c.gain)+'를 얻었어요.';

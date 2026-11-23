@@ -78,6 +78,11 @@ function renderMix(){
 function mixInventory(i){
   const p=g.players[i];
   modal(seatName(i)+'의 보유 현황','<p>'+wordBag(p.bag)+'</p><p>납품 '+p.won.length+'건 · 교역소 '+total(p.tracks)+'곳</p><p>보너스 '+(p.bonus.map(mixBonusName).join(' · ')||'없음')+'</p>'+(g.combo===13?p.route.map(r=>'<p>'+cardText(r.card)+' · 일꾼 '+r.workers+'</p>').join(''):'')+(g.combo===12?'<p>손패 '+p.hand.length+'장 · 사용 '+p.used.length+'장 · 항해 '+p.discards.length+'장</p>':''));
+  if(i===mySeat()&&g.combo!==13&&!g.over){
+    const order=nextPriority||p.priority||[0,1,2,3];
+    el('body').insertAdjacentHTML('beforeend','<p>통행료로 적재 한도를 넘으면 앞 재료부터 반납합니다. 변경은 다음 내 행동부터 적용됩니다.</p><div class="actions">'+order.map(t=>'<button data-priority="'+t+'">'+info.goods[t]+' ↑</button>').join('')+'</div>');
+    el('body').querySelectorAll('[data-priority]').forEach(b=>b.onclick=()=>{const k=+b.dataset.priority;nextPriority=[k,...order.filter(t=>t!==k)];mixInventory(i);});
+  }
 }
 function mixBonusName(b){
   if(b==='cards')return '상인 두 장당 2점';if(b==='four')return '4점';
@@ -96,6 +101,8 @@ function mixLabel(board,c,t){
   if(c.dest!==undefined)str+=' · '+(board.islands[c.dest].water?'바다':'섬 '+(c.dest+1));
   if(c.build&&c.kind!=='build')str+=' · 건설';
   if(c.n)str+=' · 교환 ×'+c.n;
+  if(c.steps?.length)str+=' · '+c.steps.map(k=>goods(unitBag(String(k)))+' → '+goods(unitBag(String(k+1)))).join(' / ');
+  if(c.kind==='upgrade'&&!c.steps?.length)str+=' 없이 배치';
   if(c.need)str+=' · 일꾼 '+c.need;
   if(c.slot!==undefined)str+=' · '+(c.slot+1)+'번째';
   if(c.swap)str+=' · '+c.swap.map(k=>k+1).join(' ↔ ');
@@ -114,7 +121,7 @@ function openMix(i,opts={}){
     if(t.stacks.length)notes+='<p>보너스 · '+t.stacks.filter(s=>s.length).map(s=>mixBonusName(s.at(-1))).join(' / ')+'</p>';
   }
   if(t.need)notes+='<p>일꾼 '+workerCost(p,t)+'명 · '+helpNames[t.help]+' 문양</p>';
-  if(combo===12&&!t.special&&!board.departures)notes+='<p>항해 비용 '+(choices[0]?.fuel?.length??Math.max(0,seaPath(board,p.boat,i).length-p.bonus.filter(b=>b==='move').length))+'장 · 사용한 카드부터 지불</p>'+(myTurn()?'<button id="mixPath">항로 직접 선택</button>':'');
+  if(combo===12&&!t.special&&!board.departures)notes+='<p>항해 비용 '+(choices[0]?.fuel?.length??Math.max(0,(opts.path??seaPath(board,p.boat,i)).length-p.bonus.filter(b=>b==='move').length))+'장 · 사용한 카드부터 지불</p>'+(myTurn()?'<button id="mixPath">항로 직접 선택</button>':'');
   if(t.special==='move'&&opts.dest===undefined){
     const dests=[...new Set(choices.map(c=>c.dest))];
     modal(t.name,'<p>목적지 섬을 선택하세요.</p><div class="actions">'+dests.map(d=>'<button data-dest="'+d+'">'+(board.islands[d].water?'바다':'섬 '+(d+1))+' '+(board.islands[d].recipe?flow(board.islands[d].recipe):'')+'</button>').join('')+'</div>');
@@ -122,7 +129,7 @@ function openMix(i,opts={}){
   }
   const option=shown[0]?.c,fee=t.special==='buy'?t.slot:option?.tolls?.length||0;
   const tile=combo===123?board.islands[opts.dest]:t;
-  const buildFee=tile?.recipe&&!tile.owners?.includes(board.turn)?(tile.owners?.length||0)*(board.players.length===2?2:1):0;
+  const buildFee=shown.some(({c})=>c.build)&&tile?.recipe&&!tile.owners?.includes(board.turn)?(tile.owners?.length||0)*(board.players.length===2?2:1):0;
   if(myTurn()&&(fee||buildFee||option?.fuel?.length))notes+='<button id="settle">지불 카드·재료 선택</button>';
   modal(mixTileName(board,t,i),'<p>'+mixTileDetail(board,t,i)+'</p>'+notes+'<div class="actions">'+shown.map(({c,j})=>'<button data-option="'+j+'">'+mixLabel(board,c,t)+(c.kind==='refresh'?'':'<br>'+goods(c.bag,true))+'</button>').join('')+'</div>'+(!shown.length?'<p>'+(!myTurn()?seatName(g.turn)+'의 차례입니다.':'현재 비용이나 재료 조건을 충족하지 않습니다.')+'</p>':''));
   if(el('mixPath'))el('mixPath').onclick=()=>mixRoute(board,i,opts);
@@ -137,12 +144,20 @@ function openMix(i,opts={}){
 }
 function mixPayment(board,i,opts,fee,buildFee,fuelCount){
   const p=board.players[board.turn],available=[...p.used,...p.hand],fuel=[],pay=[],buildPay=[];
+  const spendingBag=p.bag.slice(),site=mixSites(board)[i];
+  if(board.combo===123&&site.special==='move'){
+    p.won.filter(c=>c[2]===1&&c[3]===site.help).forEach(c=>spendingBag[c[4]]++);
+  }
   function draw(){
     const phase=fuel.length<fuelCount?'fuel':pay.length<fee?'pay':buildPay.length<buildFee?'build':null;
     if(!phase){openMix(i,{...opts,fuel,pay,buildPay});return;}
-    const remaining=p.bag.slice();[...pay,...buildPay].forEach(k=>remaining[k]--);
+    const remaining=spendingBag.slice();[...pay,...buildPay].forEach(k=>remaining[k]--);
     const buttons=phase==='fuel'?available.map((card,j)=>'<button data-k="'+j+'">'+cardText(card)+'</button>').join(''):remaining.map((n,k)=>'<button data-k="'+k+'" '+(n?'':'disabled')+'>'+info.goods[k]+' '+n+'</button>').join('');
     modal(phase==='fuel'?'항해에 쓸 카드':phase==='pay'?'지불할 재료':'건설에 쓸 재료','<div class="actions">'+buttons+'</div><button id="defaultPay">자동 지불로 돌아가기</button>');
+    if(phase==='build'){
+      const skip=document.createElement('button');skip.textContent='건설비 선택 건너뛰기';
+      skip.onclick=()=>openMix(i,{...opts,fuel,pay,buildPay:[]});el('body').append(skip);
+    }
     el('defaultPay').onclick=()=>openMix(i,opts);el('body').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(phase==='fuel')fuel.push(...available.splice(k,1));else (phase==='pay'?pay:buildPay).push(k);draw();});
   }draw();
 }
