@@ -25,7 +25,7 @@ const helpNames=['통','칼','악수'];
 function cardBenefit(c){return c[2]===0?helpNames[c[3]]+' 장소 · 일꾼 1명 할인':c[2]===1?info.goods[c[3]]+' 생산지 · '+info.goods[c[4]]+' +1':c[2]===2?'정착민 +'+c[3]:'탐험 타일 1개 획득';}
 const landCells=[0,1,2,3,4,5,6,7,8,9,10,12,13,16,17,20,21,14,15,18,19,22,23];
 const series=()=>'<nav class="series" aria-label="시리즈"><a href="index.html">모드 선택</a><a href="spice.html">Ⅰ 향신료의 길</a><a href="expedition.html?edition=2">Ⅱ 동방의 바다</a><a href="expedition.html?edition=3">Ⅲ 신대륙의 개척자</a></nav>';
-function modal(title,body){el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
+function modal(title,body){if(!online)stopAI();el('title').textContent=title;el('body').innerHTML=body;if(!el('modal').open)el('modal').showModal();}
 function close(){el('modal').close();draft=null;}
 el('close').onclick=close;
 function save(){if(!online)try{localStorage.setItem(storageKey,JSON.stringify(g));}catch{}}
@@ -105,7 +105,7 @@ function optionsLabel(c,t){
 }
 function openSite(i,opts={}){
   if(g.combo)return openMix(i,opts);
-  const t=g.tiles[i],p=g.players[mySeat()],arrival=edition===2&&!g.departures?seaArrival(g,i,opts):null;
+  const t=g.tiles[i],p=g.players[mySeat()],arrival=edition===2&&!g.departures?seaArrival(g,i,opts,mySeat()):null;
   const options=myTurn()?actionsAt(g,i,opts):[];
   let detail=siteFace(t,i);
   if(g.departures){
@@ -205,7 +205,7 @@ function playMotion(who,a,m){
   motionTimer=setTimeout(finishMotion,pace(2600));
 }
 document.addEventListener('click',e=>{if(flightActor!==null&&!el('modal').open){e.stopPropagation();finishMotion();}},true);
-function stopAI(){clearTimeout(timer);if(worker){worker.terminate();worker=null;}}
+function stopAI(){clearTimeout(timer);if(worker){worker.onmessage=worker.onerror=null;worker.terminate();worker=null;}}
 function schedule(){
   stopAI();if(online||g.over||!g.turn||flightActor!==null||el('modal').open)return;
   timer=setTimeout(()=>{worker=new Worker('expedition-worker.js?v=mobile-audit');worker.onmessage=e=>{stopAI();advance(e.data);};

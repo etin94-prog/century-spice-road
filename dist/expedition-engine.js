@@ -52,13 +52,13 @@ function seaPath(g,from,to){
     g.tiles.forEach((t,i)=>{if(!seen.has(i)&&neighbors(g,last,i)){seen.add(i);queue.push([...path,i]);}});}
   return [];
 }
-function seaArrival(g,i,options={}){
-  const p=g.players[g.turn],t=g.tiles[i],path=options.path??seaPath(g,p.boat,i);
+function seaArrival(g,i,options={},seat=g.turn){
+  const p=g.players[seat],t=g.tiles[i],path=options.path??seaPath(g,p.boat,i);
   const free=1+p.bonus.filter(x=>x==='move').length;
   if(!Array.isArray(path)||path.length>free+total(p.bag)||(path.at(-1)??p.boat)!==i)return null;
   let prev=p.boat;for(const next of path){if(!Number.isInteger(next)||!neighbors(g,prev,next))return null;prev=next;}
   const drops=path.slice(free-1,-1);
-  const others=path.length&&!t.port?g.players.map((q,j)=>j!==g.turn&&q.boat===i?j:-1).filter(j=>j>=0):[];
+  const others=path.length&&!t.port?g.players.map((q,j)=>j!==seat&&q.boat===i?j:-1).filter(j=>j>=0):[];
   const pay=minPaid(p.bag,drops.length+others.length,options.pay);if(!pay)return null;
   const pickup=options.collect!==false?t.pile.slice():blank();
   if(options.collect!==false)drops.forEach((site,j)=>{if(site===i)pickup[pay.paid[j]]++;});

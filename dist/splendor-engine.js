@@ -78,7 +78,63 @@ function rankings(g){
   const rows=g.players.map((p,i)=>({i,points:score(p),cards:p.cards.length})).sort((a,b)=>b.points-a.points||a.cards-b.cards);
   rows.forEach((r,i)=>{const prev=rows[i-1];r.rank=prev&&r.points===prev.points&&r.cards===prev.cards?prev.rank:i+1;});return rows;
 }
+// Estimate turns to visible purchases using both total demand and the slowest colour.
+// Hidden decks and rival reservations never enter this evaluation.
+function expertMove(g){
+  const p=g.players[g.turn],market=g.market.flat(),targets=[...market,...p.held];
+  const points=score(p),late=points>=10||g.players.some(q=>score(q)>=12);
+  const threat=new Map();
+  for(const id of market){
+    const c=catalog[id];
+    for(const q of g.players){
+      if(q===p||payment(q,c)[5]>q.tokens[5])continue;
+      const visit=g.nobles.some(n=>patrons[n].every((v,i)=>v<=q.bonus[i]+Number(i===c.color)));
+      if(score(q)+c.vp+3*Number(visit)>=15)threat.set(id,true);
+    }
+  }
+  function prospects(tokens,bonus,exclude){
+    let first=0,second=0;
+    for(const id of targets){
+      if(id===exclude)continue;
+      const c=catalog[id],need=c.cost.map((n,i)=>Math.max(0,n-bonus[i]-tokens[i]));
+      let gold=tokens[5];
+      while(gold-->0){const k=need.indexOf(Math.max(...need));if(!need[k])break;need[k]--;}
+      const scarce=need.some((n,i)=>n>g.bank[i]);
+      const turns=Math.max(Math.ceil(sum(need)/3),...need.map((n,i)=>g.bank[i]>=4?Math.ceil(n/2):n));
+      const value=(2.5+c.vp*3.4+Number(points+c.vp>=15)*6)/(1+turns+.65*Number(scarce));
+      if(value>first){second=first;first=value;}else second=Math.max(second,value);
+    }
+    return first+.35*second;
+  }
+  const moves=[...targets.map(i=>({kind:p.held.includes(i)?'held':'buy',i})),
+    ...takeOptions(g.bank).map(take=>({kind:'take',take,i:0})),...market.map(i=>({kind:'reserve',i}))];
+  let best=null,high=-Infinity;
+  for(const a of moves){
+    const next=preview(g,a);if(!next)continue;
+    const buying=a.kind==='buy'||a.kind==='held',c=buying?catalog[a.i]:null;
+    const after=next.tokens.slice();a.drop=zeros();
+    for(let n=0;n<next.excess;n++){
+      let bestDrop=-Infinity,color=0;
+      after.forEach((count,i)=>{if(!count)return;after[i]--;const v=prospects(after,next.bonus,null)+after[5]*.6;after[i]++;if(v>bestDrop){bestDrop=v;color=i;}});
+      after[color]--;a.drop[color]++;
+    }
+    const gained=(c?.vp||0)+(next.visits.length?3:0);
+    let value=prospects(after,next.bonus,buying?a.i:null)+sum(after)*.48+after[5]*.8+gained*4;
+    if(c){
+      const useful=targets.filter(id=>catalog[id].cost[c.color]>p.bonus[c.color]).length;
+      const noble=Math.max(0,...g.nobles.filter(n=>patrons[n][c.color]>p.bonus[c.color]).map(n=>
+        1/sum(patrons[n].map((v,i)=>Math.max(0,v-p.bonus[i])))));
+      value+=(late?1.4:3.8)+Math.min(1.8,useful*.19)+noble*4;
+    }
+    if(a.kind==='reserve')value-=1.25+p.held.length*.9;
+    if(a.kind!=='take'&&threat.has(a.i))value+=18;
+    if(points+gained>=15||g.last)value+=gained*12+(points+gained>=15?70:0);
+    if(value>high){high=value;best=a;}
+  }
+  return best;
+}
 function chooseMove(g,level=g.players[g.turn].level){
+  if(level==='Hell')return expertMove(g);
   const p=g.players[g.turn],market=g.market.flat(),ids=market.concat(p.held);
   function distance(c,tokens){return Math.max(0,sum(c.cost.map((v,i)=>Math.max(0,v-p.bonus[i]-tokens[i])))-tokens[5]);}
   function worth(c){

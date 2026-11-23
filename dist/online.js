@@ -9,6 +9,10 @@ function seededGame(seed,roles=['친구']){
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   return newGame(roles,random);
 }
+// Legacy rooms retain the UUID variant (8..b) at index 16, including combined
+// editions. Keep their original rules contract when replaying after a release.
+const currentRulesVersion=1;
+function roomRulesVersion(id){return id[16]==='e'?parseInt(id[17],16):1;}
 async function firebaseService(){
   if(roomService)return roomService;
   const local=['127.0.0.1','localhost'].includes(location.hostname)&&new URL(location.href).searchParams.has('emulator');
@@ -55,13 +59,15 @@ function roomMenu(){
 async function createOnline(){
   if(openingRoom)return;openingRoom=true;stopAI();
   try{
-    const s=await firebaseService(),uuid=crypto.randomUUID().replaceAll('-','');
+    const s=await firebaseService(),raw=crypto.randomUUID().replaceAll('-','');
+    const uuid=raw.slice(0,16)+'e'+currentRulesVersion.toString(16)+raw.slice(18);
     const id=g.edition?'ce00000'+g.edition+(g.combo?'c'+String(g.combo).padStart(3,'0')+'e'+uuid.slice(13):uuid.slice(8)):uuid;
     await s.set(roomRef(s,id,'','tables'),{host:s.uid,seed:crypto.getRandomValues(new Uint32Array(1))[0],format:2});
     const url=new URL(location.href);url.searchParams.delete('room');url.searchParams.set('table',id);location.assign(url.href);
   }catch(e){openingRoom=false;roomError(e);}
 }
 async function enterOnline(id){
+  if(roomRulesVersion(id)!==currentRulesVersion){roomError(Error('이 방의 규칙 버전을 지원하지 않습니다. 페이지를 새로고침해 주세요.'));return;}
   stopAI();online={id,group:new URL(location.href).searchParams.has('table')?'tables':'rooms',seat:0,count:0,ready:false,pending:false,total:4,substitutes:Array(4).fill('Medium'),levels:['Medium','Medium','Medium','Medium']};
   modal('게임방 연결','<p>참가 좌석을 확인하고 있습니다.</p>');
   try{

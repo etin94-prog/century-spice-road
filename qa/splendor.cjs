@@ -20,4 +20,15 @@ const g=newGame(),p=g.players[0];p.tokens=[2,2,2,2,2,0];
 const blind={kind:'blind',i:0};assert.equal(apply(g,blind),false);const top=g.decks[0].at(-1),row=g.market[0].join();
 assert(apply(g,{...blind,drop:[1,0,0,0,0,0]}));assert.equal(g.market[0].join(),row);assert.equal(p.held[0],top);
 g.turn=0;p.bonus=[5,5,5,5,5];const noble=g.nobles.at(-1);assert(apply(g,{kind:'held',i:top,noble}));assert.equal(p.nobles[0],noble);
+// A zero-point card can trigger the final round through a noble visit.
+const finish=newGame(),actor=finish.players[0];
+actor.cards=catalog.filter(c=>c.vp===4).slice(0,3).map(c=>c.id);
+const patron=0,color=2;actor.bonus=patrons[patron].slice();actor.bonus[color]--;
+const winner=catalog.find(c=>c.tier===0&&c.color===color&&c.vp===0);
+actor.tokens=[2,2,2,2,2,0];finish.nobles=[patron];finish.market=[[winner.id],[],[]];
+const winning=chooseMove(finish,'Hell');assert.equal(winning.kind,'buy');assert(apply(finish,winning));assert.equal(score(actor),15);
+const block=newGame(),rival=block.players[1],threat=catalog.find(c=>c.vp===5);
+rival.cards=catalog.filter(c=>c.vp===5&&c.id!==threat.id).slice(0,2).map(c=>c.id);
+rival.bonus=threat.cost.slice();block.market=[[],[],[threat.id]];
+const denial=chooseMove(block,'Hell');assert.equal(denial.kind,'reserve');assert.equal(denial.i,threat.id);
 `,{assert,console});

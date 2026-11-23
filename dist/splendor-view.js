@@ -12,7 +12,13 @@ function modal(title,body){el('title').textContent=title;el('body').innerHTML=bo
 function close(){el('modal').close();}
 function stopAI(){clearTimeout(timer);}
 function schedule(){stopAI();if(online){scheduleRoomAI();return;}if(!g.over&&g.turn&&flightActor===null&&!el('modal').open)timer=setTimeout(()=>advance(chooseMove(g)),pace(650));}
-function save(){if(!online)try{localStorage.setItem('splendor-solo-v1',JSON.stringify(g));}catch{}}
+const soloKey='splendor-solo-v1';
+let saveStatus='새 대국';
+function save(){
+  if(online)return;
+  try{localStorage.setItem(soloKey,JSON.stringify(g));saveStatus='이 기기에 자동 저장';}
+  catch{saveStatus='저장 공간 사용 불가 · 이번 대국만 플레이';}
+}
 function card(id,action){
   const c=catalog[id];
   return '<button class="card g'+c.color+'" data-'+action+'="'+id+'" style="--art:url(art/'+art[c.tier]+'.webp)" aria-label="'+(c.tier+1)+'단계 '+gemNames[c.color]+' 개발 카드 '+c.vp+'점"><span class="face"><b>'+c.vp+'점</b>'+gem(c.color)+'</span><span class="cost">'+chips(c.cost)+'</span></button>';
@@ -26,7 +32,7 @@ function render(){
   el('bank').innerHTML=g.bank.map((v,i)=>'<button data-bank="'+i+'" aria-label="'+gemNames[i]+' '+v+'개">'+gem(i,v)+'</button>').join('');
   el('reserved').textContent='내 예약 카드 · '+g.players[mySeat()]?.held.length+'장';
   el('latestMove').textContent=g.log.length?name(g.log[0].actor)+' · '+g.log[0].msg:'대국 기록';
-  if(!online)el('save').textContent='이 기기에 자동 저장';
+  if(!online)el('save').textContent=saveStatus;
   bind('card',id=>cardMenu(id,false));bind('seat',inventory);bind('deck',t=>{if(myTurn()&&g.decks[t].length)prepare({kind:'blind',i:t});});
   bind('bank',i=>{if(myTurn())takeMenu(i<5&&g.bank[i]?[i]:[]);});
 }
@@ -126,5 +132,13 @@ el('setupTop').onclick=setup;el('close').onclick=close;el('modal').onclose=sched
 el('reserved').onclick=()=>inventory(mySeat());el('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{modal('전체화면','<p>가로로 돌려 플레이하세요. 아이폰에서는 홈 화면에 추가해 열 수 있습니다.</p>');}};
 el('guide').onclick=()=>modal('스플렌더 기본판','<p>내 차례에 보석을 가져오거나, 카드를 사거나, 카드를 예약하세요. 은행의 보석을 누르면 색을 고를 수 있습니다.</p><p>카드 오른쪽 위 보석은 이후 구매에 계속 적용되는 할인입니다. 귀족이 요구하는 할인을 갖추면 3점을 얻습니다. 예약은 3장, 보유 토큰은 10개까지입니다.</p><p>15점이 나오면 같은 횟수로 차례를 마칩니다. 동점이면 구매한 개발 카드가 적은 사람이 앞서고, 그 수도 같으면 공동 순위입니다.</p>');
 el('latestMove').onclick=()=>g.over?results():modal('대국 기록',g.log.map(r=>'<p>'+name(r.actor)+' · '+r.msg+'</p>').join('')||'첫 차례입니다.');
-const room=roomIdFromUrl();if(!room){try{const data=JSON.parse(localStorage.getItem('splendor-solo-v1'));if(data?.edition===4)g=data;}catch{}}
-render();if(room)enterOnline(room);else if(g.over)results();else if(!localStorage.getItem('splendor-solo-v1'))setup();else schedule();
+const room=roomIdFromUrl();let resumed=false;
+if(!room){
+  try{
+    const data=JSON.parse(localStorage.getItem(soloKey));
+    if(data?.edition===4&&Array.isArray(data.players)&&data.players[data.turn]){
+      g=data;resumed=true;saveStatus='이 기기에 자동 저장';
+    }
+  }catch{saveStatus='저장된 대국을 읽을 수 없음';}
+}
+render();if(room)enterOnline(room);else if(g.over)results();else if(!resumed)setup();else schedule();

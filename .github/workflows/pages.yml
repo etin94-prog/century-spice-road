@@ -13,8 +13,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check rules and replay 2–4 player games
         run: node qa/rules.cjs
       - name: Replay Eastern Wonders and A New World
@@ -23,6 +26,24 @@ jobs:
         run: node qa/combinations.cjs
       - name: Verify Splendor decks, payments and replay
         run: node qa/splendor.cjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install mobile browser and Firebase emulator tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/qa" playwright@1.55.0 firebase-tools@14.15.2
+          "$RUNNER_TEMP/qa/node_modules/.bin/playwright" install --with-deps chromium
+          echo "NODE_PATH=$RUNNER_TEMP/qa/node_modules" >> "$GITHUB_ENV"
+      - name: Check mobile touch and previous release rooms before publishing
+        run: |
+          python3 -m http.server 8088 --bind 127.0.0.1 --directory dist > "$RUNNER_TEMP/game-http.log" 2>&1 &
+          node qa/review-mobile.cjs
+          node qa/combination-mobile.cjs
+          "$RUNNER_TEMP/qa/node_modules/.bin/firebase" emulators:exec --only auth,database --project demo-century 'node qa/rejoin-release.cjs'
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
