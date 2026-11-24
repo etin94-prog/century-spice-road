@@ -184,6 +184,8 @@ const Cepter = (() => {
     const attacker=make(inv,atk,b.invHP??inv.hp,s.turn,0,false);
     const defender=make(guard,def,t.unit.hp,t.owner,bonus,t.unit.confused);
     const lines=[];
+    const health=()=>[Math.max(0,attacker.hp),Math.max(0,defender.hp)];
+    b.startHP=health();b.strikes=[];
     function hit(a,d){
       const scroll=a.gear?.category==='scroll';
       const penetrate=scroll||a.gear?.effect==='pierceEarth'&&d.unit.element===2;
@@ -191,8 +193,8 @@ const Cepter = (() => {
       let damage=a.st;
       if(scroll&&a.gear.effect==='freeze'&&d.unit.element===0)damage=Math.floor(damage*1.5);
       if(!scroll&&a.gear?.effect!=='orb'){
-        if(d.gear?.effect==='reflect'){a.hp-=damage;lines.push('반사 '+damage);return;}
-        if(d.gear?.effect==='nullify'){lines.push('공격 무효');return;}
+        if(d.gear?.effect==='reflect'){a.hp-=damage;lines.push('반사 '+damage);return 'reflect';}
+        if(d.gear?.effect==='nullify'){lines.push('공격 무효');return 'block';}
         if(d.unit.half)damage=Math.floor(damage/2);
       }
       d.hp-=damage;lines.push(a.unit.name+' → '+damage+' 피해');
@@ -200,7 +202,12 @@ const Cepter = (() => {
       if(a.unit.confuse&&damage>0)d.confused=true;
     }
     const order=guard.first&&!inv.first?[defender,attacker]:[attacker,defender];
-    hit(order[0],order[1]);if(order.every(c=>c.hp>0))hit(order[1],order[0]);
+    for(let i=0;i<order.length;i++){
+      const source=order[i],target=order[1-i],lineStart=lines.length;
+      const effect=hit(source,target)||'hit';
+      b.strikes.push({effect,side:source===attacker?0:1,hp:health(),notes:lines.slice(lineStart)});
+      if(source.hp<=0||target.hp<=0)break;
+    }
     const won=defender.hp<=0&&attacker.hp>0,both=defender.hp<=0&&attacker.hp<=0;
     b.guard=t.unit.id;b.guardHP=t.unit.hp;b.attackST=attacker.st;b.defendST=defender.st;b.landHP=bonus;
     b.finalHP=[Math.max(0,attacker.hp),Math.max(0,defender.hp)];

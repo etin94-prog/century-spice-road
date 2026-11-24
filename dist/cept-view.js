@@ -132,18 +132,11 @@ function map(){
     });
     b.append(pawns);root.append(b);
   });
-  const center=$('center');center.classList.toggle('market-center',s.mapId==='market'&&!s.battle);center.replaceChildren();
+  const center=$('center');center.classList.toggle('market-center',s.mapId==='market'&&!s.battle);
   if(s.battle){
-    const b=s.battle,t=s.tiles[b.at],row=el('div',null,'duel');
-    for(const [title,id,hp] of [['침략',b.inv,b.invHP??C.cards[b.inv].hp],['방어',b.guard??t.unit.id,b.guardHP??t.unit.hp]]){
-      const card=C.cards[id],cell=el('div',null,'fighter');const offence=title==='침략',item=C.cards[offence?b.atkItem:b.defItem];
-      const fighterArt=creatureFigure(id);
-      cell.append(el('span',title),fighterArt.classList.contains('standing-model')?fighterArt:cardSeal(id),el('strong',card.name),el('span',(offence?b.attackST??card.st:b.defendST??card.st)+' ST'),el('span',hp+' HP'+(!offence&&b.landHP?' +'+b.landHP:'')+(b.finalHP?' → '+b.finalHP[offence?0:1]:'')));
-      const meter=el('meter');meter.min=0;meter.max=Math.max(100,hp);meter.value=b.finalHP?.[offence?0:1]??hp;meter.setAttribute('aria-label',title+' 기본 HP');cell.append(meter);
-      if(item&&(s.phase==='result'||offence&&s.phase==='attack'))cell.append(el('span',item.name));row.append(cell);
-    }
-    center.append(el('small',(b.at+1)+'번 영지 · '+C.elements[t.type]+' Lv.'+t.level),row,el('span',s.phase==='result'?b.lines.join(' · '):hints[s.phase],'battle-summary'));return;
+    renderBattle(center,s);return;
   }
+  center.replaceChildren();
   if(inspect>=0){const t=s.tiles[inspect];if(t.unit)center.append(creatureFigure(t.unit.id));center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type),el('span',t.unit?C.cards[t.unit.id].name+' · HP '+t.unit.hp+' · 가치 '+C.value(s,t)+'G':'점유 크리처 없음'));return;}
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?p.name+' 승리':s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+m.forts.length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
 }
@@ -232,5 +225,5 @@ function render(){
     if(focusCard>=0&&C.cards[p.hand[focusCard]]){const c=C.cards[p.hand[focusCard]];$('detail').replaceChildren(cardSeal(p.hand[focusCard]),el('span',c.name+' · '+stats(c)+' · 비용 '+c.cost+'G'));}
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
   $('log').replaceChildren(...s.log.map(t=>el('li',t)));
-  if(!room&&!over&&p.ai)timer=setTimeout(()=>act(C.ai(s)),550);
+  if(!room&&!over&&p.ai)timer=setTimeout(()=>act(C.ai(s)),550+(s.phase==='result'?battleReplayDuration(s.battle):0));
 }
