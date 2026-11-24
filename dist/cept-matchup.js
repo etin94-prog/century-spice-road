@@ -36,7 +36,6 @@ function refreshMatchup(){
   $('aiChoice').disabled=!usingAI||same;
   const player=$('bookChoice').value==='recommend'?describe(tier.player):$('bookChoice').selectedOptions[0].text;
   $('deckMatchNames').textContent='Player · '+player+' / AI · '+(!usingAI?'없음':same?'플레이어와 같은 북':describe(sourceBook($('aiChoice'))||tier));
-  if(usingAI&&!same&&!sourceBook($('aiChoice'))) $('deckMatchNames').append(' · 기준 덱 상대 AI 승률 '+(tier.score/384*100).toFixed(1)+'% (6개 맵, 2인 384판)');
   $('deckOdds').textContent='';
   $('estimateDeck').disabled=false;
 }
@@ -50,16 +49,17 @@ for(const id of ['mapChoice','count','humans','target','tierChoice','bookChoice'
 $('storeBook').addEventListener('click',refreshMatchup);
 $('estimateDeck').onclick=()=>{
   matchupWorker?.terminate();
-  const options={count:Number($('count').value),humans:Number($('humans').value),target:Number($('target').value),map:$('mapChoice').value,player:chosenBook(),opponent:chosenAiBook()};
+  const options={count:Number($('count').value),humans:Number($('humans').value),target:Number($('target').value),map:$('mapChoice').value,player:chosenBook(),opponent:chosenAiBook(),aiLevel:selectedAiLevel()};
   $('estimateDeck').disabled=true;
   $('deckOdds').textContent='모의 대국 계산 중…';
   function stop(){matchupWorker?.terminate();matchupWorker=null;$('estimateDeck').disabled=false;}
   try{
     matchupWorker=new Worker('cept-simulate.js');
     matchupWorker.onmessage=({data})=>{
-      const {wins,finished,attempts}=data;
-      const rate=finished?(wins/finished*100).toFixed(1)+'%':'산출 불가';
-      $('deckOdds').textContent='1번 좌석 예상 승률 '+rate+' · '+wins+'승 / 완주 '+finished+'판 (시도 '+attempts+'판). 모든 좌석을 같은 AI가 조작한 추정치입니다.';
+      const {wins,finished,sample}=data;
+      const sum=values=>values.reduce((a,b)=>a+b,0);
+      const rate=(w,n)=>n?(w/n*100).toFixed(1)+'%':'산출 불가';
+      $('deckOdds').textContent='플레이어 북 · 실제 시작 자리(1번) '+rate(wins[0],finished[0])+' ('+wins[0]+'승/'+finished[0]+'판) · 자리 교대 평균 '+rate(sum(wins),sum(finished))+' (완주 '+sum(finished)+'/'+sample*options.count+'판). 사람 좌석은 기본 AI, 상대는 선택한 난이도로 계산합니다.';
       if(data.done)stop();
     };
     matchupWorker.onerror=()=>{$('deckOdds').textContent='계산할 수 없습니다. 다시 시도해 주세요.';stop();};

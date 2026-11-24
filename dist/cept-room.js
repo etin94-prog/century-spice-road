@@ -37,7 +37,7 @@ $('hostRoom').onclick=async()=>{
   if(+$('humans').value<2){$('roomHelp').textContent='사람 좌석을 2명 이상 선택하세요.';return;}
   $('hostRoom').disabled=true;
   try{
-    onlineKey=newKey();const data=await requestRoom('rooms','POST',{count:+$('count').value,humans:+$('humans').value,target:+$('target').value,mapId:$('mapChoice').value,book:chosenBook(),aiBook:chosenAiBook()});
+    onlineKey=newKey();const data=await requestRoom('rooms','POST',{count:+$('count').value,humans:+$('humans').value,target:+$('target').value,mapId:$('mapChoice').value,book:chosenBook(),aiBook:chosenAiBook(),aiLevel:selectedAiLevel()});
     remember(data.id);applyRoom(data);pollRoom();
   }catch(e){$('roomHelp').textContent='초대방을 열 수 없습니다. '+e.message;}finally{$('hostRoom').disabled=false;}
 };

@@ -1,11 +1,19 @@
 importScripts('cept-cards.js','cept-stage-data.js','cept-layouts.js','cept-maps.js','cept-catalog-data.js','cept-engine.js');
 self.onmessage=({data})=>{
-  const {count,humans,target,map,player,opponent}=data;
-  let wins=0,finished=0;
-  for(let attempts=1;attempts<=160;attempts++){
-    const s=Cepter.start(count,humans,target,map,player,opponent);
-    for(let step=0;s.winner<0&&step<9000;step++)Cepter.play(s,Cepter.ai(s));
-    if(s.winner>=0){finished++;if(s.winner===0)wins++;}
-    if(attempts%40===0)postMessage({wins,finished,attempts,done:attempts===160});
+  const {count,humans,target,map,player,opponent,aiLevel}=data;
+  const wins=Array(count).fill(0),finished=Array(count).fill(0);
+  for(let sample=1;sample<=160;sample++){
+    for(let seat=0;seat<count;seat++){
+      const s=Cepter.start(count,humans,target,map,player,opponent,aiLevel);
+      if(seat){
+        // Rotate whole seats, including their decks and decision policies. The opening draw belongs to seat zero.
+        s.players[0].book.push(s.players[0].hand.pop());
+        s.players.unshift(...s.players.splice(count-seat));
+        s.players[0].hand.push(s.players[0].book.pop());
+      }
+      for(let step=0;s.winner<0&&step<9000;step++)Cepter.play(s,Cepter.ai(s));
+      if(s.winner>=0){finished[seat]++;if(s.winner===seat)wins[seat]++;}
+    }
+    if(sample%40===0)postMessage({wins,finished,sample,done:sample===160});
   }
 };

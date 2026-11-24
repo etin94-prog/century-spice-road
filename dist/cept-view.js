@@ -15,12 +15,13 @@ function lobby(){cancelMapEffect();stopWalk();if(room){location.assign(location.
 function handoff(){return !room&&s.phase!=='over'&&!s.players[C.actor(s)].ai&&s.players.filter(p=>!p.ai).length>1;}
 function enter(){seenActionSound=s.actionSound?.sequence||0;cancelMapEffect();seenMapEffect=s.mapEffect?.sequence||0;stopWalk();seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
 $('count').onchange=seats;$('setup').onclick=lobby;$('resume').onclick=enter;
-$('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook(),chosenAiBook());save();enter();};
+$('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook(),chosenAiBook(),selectedAiLevel());save();enter();};
 const handPanel=$('handPanel');
 try{const saved=localStorage.getItem('cept-hand-open');handPanel.open=saved===null?!matchMedia('(max-width:900px), (pointer:coarse)').matches:saved==='1';}catch{}
 handPanel.addEventListener('toggle',()=>{try{localStorage.setItem('cept-hand-open',handPanel.open?'1':'0');}catch{}});
 seats();lobby();
 function act(a){if(room){roomAction(a);return;}const before=C.actor(s);if(!C.play(s,a))return;pending=before!==C.actor(s)&&handoff();focusCard=inspect=-1;save();render();}
+function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){return CepterTierBooks[Number($('tierChoice').value)||0];}
 function chosenAiBook(){return $('tierChoice').value==='same'?chosenBook():(sourceBook($('aiChoice'))||tierBooks()).deck;}
 function chosenBook(){if($('bookChoice').value.startsWith('source-'))return sourceBook($('bookChoice')).deck;if($('bookChoice').value==='recommend')return tierBooks().player.deck;return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
@@ -287,7 +288,7 @@ function render(){
     if(!room&&C.maps['ps2-'+next])controls.append(btn('다음 스테이지 · '+C.maps['ps2-'+next].name,()=>{
       const book=s.players[0].template;
       $('mapChoice').value='ps2-'+next;showStage();
-      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.target,'ps2-'+next,book,s.players.find(p=>p.ai)?.template||book);save();enter();
+      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.target,'ps2-'+next,book,s.players.find(p=>p.ai)?.template||book,s.aiLevel||0);save();enter();
     },'primary'));
     controls.append(btn('대국 설정으로',lobby));
   }
