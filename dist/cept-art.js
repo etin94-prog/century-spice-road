@@ -1,27 +1,38 @@
-// Original 12-pixel seals for the introductory book, drawn on a transparent canvas.
-const cardSeal=(()=>{
-  const rows=[
-    ['............','..2.....2...','..22...22...','..2222222...','.22212212...','..22aa222...','...22222..2.','..222222.22.','.222222222..','..22..22....','..2...2.....','............'],
-    ['....1111....','...122221...','..12222221..','..12111121..','..12a11a21..','...122221...','.1122222211.','.122aa22221.','.1122222211.','...122221...','...12..21...','..111..111..'],
-    ['............','...2....2...','..22222222..','..22122122..','...22aa22...','..222aa222..','..22aaaa22..','...2aaaa2.22','...22222222.','...22..22...','............','............'],
-    ['.....22.....','....2222....','...2aaaa2...','..22122122..','...222222...','.2222aa2222.','2222aaaa2222','22.22aa22.22','...222222...','...222222...','..222..222..','.2222..2222.'],
-    ['..2.....22..','...22..22...','.2..2222..2.','..22222222..','...2a22a2...','....2222....','.2222222222.','...222222...','....2222....','...222222...','..22.22.22..','.22......22.'],
-    ['............','..22....22..','..22222222..','..22a22a22..','...222222...','...22aa22...','.2222222222.','222222222222','22.222222.22','...222222...','..222..222..','..22....22..'],
-    ['............','........22..','.......2a22.','22....222aaa','.222.22222..','..2222222...','...22a222...','..222aa2....','.22..22.....','....22......','...aa.aa....','............'],
-    ['............','..2......2..','..22222222..','.22aa22aa22.','.2222aa2222.','..222aa222..','..22222222..','...22aa22...','.2222aa222..','...222222.22','...22..2222.','..222..222..'],
-    ['.........aa.','........aa2.','.......aa2..','......aa2...','.....aa2....','....aa2.....','..1aa2......','..a22a......','...2..a.....','..2.........','.a..........','............'],
-    ['...aaaaaa...','.aa222222aa.','.a22aaaa22a.','.a2aa22aa2a.','.a2a2222a2a.','.a22a22a22a.','..a22aa22a..','..a222222a..','...a2222a...','....a22a....','.....aa.....','............'],
-    ['.....aa.....','....a22a....','...a2222a...','..a22aa22a..','.a22aaaa22a.','...2aaaa2...','...2aaaa2...','...2aaaa2...','....a22a....','.....aa.....','............','............'],
-    ['.........aaa','......aaa22.','....aa2222..','...a22222...','..a22aaa....','.a22222.....','.a22aa......','..2a........','.2..........','2...........','............','............'],
-    ['.....aa.....','....a22a....','....a22a....','...a2222a...','..a22aa22a..','.a22aaaa22a.','.a22aaaa22a.','..a22aa22a..','...a2222a...','....aaaa....','............','............']
-  ];
-  const palette=['#c9603c','#4b83aa','#758f4d','#8978b7','#ab8b4c'];
-  return id=>{
-    const c=document.createElement('canvas');c.width=c.height=12;c.className='seal';c.setAttribute('aria-hidden','true');
-    const ctx=c.getContext('2d'),base=palette[id<8?Math.floor(id/2):4];
-    const card=Cepter.cards[id];
-    const seal=id<13?id:card.kind==='creature'?((Math.max(0,card.element)*2+id%2)%8):card.kind==='item'?(card.st?8:9):10+id%3;
-    rows[seal].forEach((row,y)=>[...row].forEach((v,x)=>{if(v!=='.'){ctx.fillStyle=v==='1'?'#232735':v==='a'?'#f8e5ab':base;ctx.fillRect(x,y,1,1);}}));
-    return c;
-  };
-})();
+// Sprite positions follow the six-column, five-row figure atlas.
+const standingFigures=[
+  'cepter','mage','knight','ranger',
+  'rat','wolf','goblin','fighter','gas','kobold','dragonfly','flame',
+  'minotaur','woodfolk','wall','beetle','dwarf','pan',
+  'ash-hound','furnace','otter','tide','root','bear','falcon','lion'
+];
+function figure(index,label){
+  const model = standingFigures[index];
+  if(model){
+    const image = document.createElement('img');
+    image.className = 'cept-figure standing-model';
+    image.src = 'art/cept-standing-'+model+'.webp';
+    image.alt = label || '';
+    return image;
+  }
+  const node=document.createElement('span');
+  node.className='cept-figure';
+  node.style.backgroundPosition=(index%6)*20+'% '+Math.floor(index/6)*25+'%';
+  if(label){node.setAttribute('role','img');node.setAttribute('aria-label',label);}
+  else node.setAttribute('aria-hidden','true');
+  return node;
+}
+function creatureFigure(id){
+  if(id>42)return cardSeal(id);
+  return figure(id<8?18+id:4+id-13,Cepter.cards[id].name);
+}
+function cardSeal(id){
+  const c=Cepter.cards[id];
+  if(id>=13){
+    const img=document.createElement('img');
+    img.className='card-face';img.src=id>42?'art/cept-catalog/'+c.catalog.path+'.webp':'art/cept-card-'+id+'.webp';
+    img.alt=c.name+' 카드';img.width=400;img.height=500;img.decoding='async';
+    return img;
+  }
+  const face=figure(id<8?18+id:[26,27,28,28,29][id-8],c.name);
+  face.classList.add('custom-face');return face;
+}

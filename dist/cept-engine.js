@@ -19,9 +19,17 @@ const Cepter = (() => {
   const offset=cards.length;
   cards.push(...original.map(c=>({...c})));
   const fireBook=original.flatMap((c,i)=>Array(c.copies).fill(i+offset));
+  const catalog=typeof module==='undefined'?CepterCatalog:require('./cept-catalog-data.js');
+  for(const entry of catalog){
+    if(entry.gameId!=null){
+      Object.assign(cards[entry.gameId],{catalog:entry});
+    }else{
+      cards.push({...entry,catalog:entry});
+    }
+  }
   const presets={intro:starter,fire:fireBook};
   function validBook(book){
-    return Array.isArray(book)&&book.length===50&&book.every(id=>Number.isInteger(id)&&!!cards[id]&&book.filter(n=>n===id).length<=4);
+    return Array.isArray(book)&&book.length===50&&book.every(id=>Number.isInteger(id)&&!!cards[id]&&!cards[id].catalogOnly&&book.filter(n=>n===id).length<=4);
   }
   function shuffledBook(template=starter){
     const book=template.slice();
@@ -69,7 +77,10 @@ const Cepter = (() => {
   }
   function advance(s,next){
     const p=s.players[s.turn],m=board(s);
+    const path=[p.pos];
+    s.lastMove={sequence:(s.lastMove?.sequence||0)+1,seat:s.turn,path};
     while(s.remaining){
+      path.push(next);
       p.previous=p.pos;p.pos=next;s.remaining--;
       const t=s.tiles[next];if(t.owner===s.turn)s.visited.push(next);
       if(m.forts.includes(next)&&!p.flags.includes(next)){

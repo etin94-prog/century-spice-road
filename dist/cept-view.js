@@ -10,9 +10,10 @@ function btn(text,fn,cls){const b=el('button',text,cls);b.type='button';b.onclic
 function save(){if(room)return;try{localStorage.setItem(storage,JSON.stringify(s));}catch{$('notice').textContent='저장 공간을 사용할 수 없어 이번 대국은 현재 창에서만 진행됩니다.';}}
 try{const raw=localStorage.getItem(storage);if(raw){const v=JSON.parse(raw);if(v.version===1&&[2,3,4].includes(v.players.length)&&C.maps[v.mapId||'classic']?.types.length===v.tiles.length&&(v.phase==='over'||C.choices(v).length))s=v;else throw Error();}}catch{$('notice').textContent='저장한 대국을 읽을 수 없습니다.';}
 function seats(){const select=$('humans'),prior=+select.value||1;select.replaceChildren();for(let i=1;i<=+$('count').value;i++)select.add(new Option(i+'명 · AI '+(+$('count').value-i)+'명',i));select.value=Math.min(prior,+$('count').value);}
-function lobby(){if(room){location.assign(location.pathname);return;}clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;$('resume').hidden=!s||s.phase==='over';}
+let seenMove=0,activeWalk=null;
+function lobby(){stopWalk();if(room){location.assign(location.pathname);return;}clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;$('resume').hidden=!s||s.phase==='over';}
 function handoff(){return !room&&s.phase!=='over'&&!s.players[C.actor(s)].ai&&s.players.filter(p=>!p.ai).length>1;}
-function enter(){pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
+function enter(){stopWalk();seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
 $('count').onchange=seats;$('setup').onclick=lobby;$('resume').onclick=enter;
 $('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook());save();enter();};
 seats();lobby();
@@ -20,16 +21,47 @@ function act(a){if(room){roomAction(a);return;}const before=C.actor(s);if(!C.pla
 function chosenBook(){return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
 const bookKey='cept-book-v1';
 try{const data=JSON.parse(localStorage.getItem(bookKey));if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}}catch{}
+const catalogTypes={neutral:'무속성',fire:'화속성',water:'수속성',earth:'지속성',air:'풍속성',weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구',sflash:'단일 즉시 주문',mflash:'복수 즉시 주문',senchant:'단일 지속 주문',menchant:'복수 지속 주문'};
+function showCatalogCard(c,id){
+  const entry=c.catalog;
+  $('catalogName').textContent=entry&&entry.name!==c.name?c.name+' · '+entry.name:c.name;
+  $('catalogArt').replaceChildren(cardSeal(id));
+  $('catalogStats').textContent=entry?[catalogTypes[entry.category],entry.rarity,entry.stats].join(' · '):c.cost+'G';
+  $('catalogAbility').textContent=entry?entry.ability:stats(c);
+  $('cardDialog').showModal();
+}
+$('closeCard').onclick=()=>$('cardDialog').close();
+function tallyBook(){
+  const total=draft.reduce((a,b)=>a+b,0);
+  $('bookCount').textContent=total+' / 50장';$('storeBook').disabled=total!==50;
+}
+function filterBook(){
+  const query=$('cardSearch').value.trim().toLowerCase(),scope=$('cardScope').value,kind=$('cardKind').value;
+  const rows=[];
+  C.cards.forEach((c,id)=>{
+    if((scope==='original'&&!c.catalog)||(scope==='usable'&&c.catalogOnly)||(kind&&kind!==c.kind))return;
+    if(![c.name,c.catalog?.name,c.catalog?.path].some(v=>v?.toLowerCase().includes(query)))return;
+    const row=el('div',null,'catalog-entry'),open=btn(c.name,()=>showCatalogCard(c,id),'catalog-open');
+    const art=cardSeal(id);if(art.tagName==='IMG'){art.loading='lazy';art.alt='';}
+    open.prepend(art);row.append(open);
+    if(c.catalogOnly){row.append(el('small','도감 전용'));}
+    else{
+      const input=el('select');input.setAttribute('aria-label',c.name+' 수량');
+      for(let i=0;i<=4;i++)input.add(new Option(i+'장',i));
+      input.value=draft[id];input.onchange=()=>{draft[id]=+input.value;tallyBook();};row.append(input);
+    }
+    rows.push(row);
+  });
+  $('bookRows').replaceChildren(...rows);$('bookRows').scrollTop=0;
+  $('cardResults').textContent=rows.length+'종';
+}
 function bookEditor(){
   draft=C.cards.map((_,id)=>chosenBook().filter(n=>n===id).length);
-  const tally=()=>{const n=draft.reduce((a,b)=>a+b,0);$('bookCount').textContent=n+' / 50장';$('storeBook').disabled=n!==50;};
-  $('bookRows').replaceChildren(...C.cards.map((c,id)=>{
-    const row=el('label',c.name+' · '+c.cost+'G'),input=el('select');
-    for(let i=0;i<=4;i++)input.add(new Option(i+'장',i));input.value=draft[id];
-    input.onchange=()=>{draft[id]=+input.value;tally();};row.append(input);return row;
-  }));tally();
+  filterBook();tallyBook();
 }
-$('editor').ontoggle=()=>{if($('editor').open)bookEditor();};
+$('cardSearch').onkeydown=e=>{if(e.key==='Enter')e.preventDefault();};
+$('cardSearch').oninput=filterBook;$('cardScope').onchange=filterBook;$('cardKind').onchange=filterBook;
+$('editor').ontoggle=()=>{if($('editor').open&&!draft.length)bookEditor();};
 $('bookChoice').onchange=bookEditor;
 $('storeBook').onclick=()=>{
   const book=draft.flatMap((n,id)=>Array(n).fill(id));if(!C.validBook(book))return;
@@ -60,6 +92,12 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     default:return labels[k];
   }
 }
+// StockAgent uses a 104px standing figure on its 360px battle stage.
+const boardSizeObserver=new ResizeObserver(([entry])=>{
+  const height=entry.contentRect.height;
+  if(height>0)entry.target.parentElement.style.setProperty('--standing-height',(height*104/360)+'px');
+});
+boardSizeObserver.observe($('map'));
 function map(){
   const root=$('map'),m=C.board(s);root.replaceChildren();root.style.gridTemplate='repeat('+m.rows+',1fr) / repeat('+m.cols+',1fr)';root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
   s.tiles.forEach((t,n)=>{
@@ -68,28 +106,83 @@ function map(){
     const [r,c]=m.position[n];b.style.gridRow=r;b.style.gridColumn=c;b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
     b.append(el('b',(n+1)+' · '+name));
     if(s.phase==='fork'&&C.choices(s).some(a=>a[0]==='route'&&a[1]===n))b.classList.add('exit');
+    if(t.unit){const miniature=creatureFigure(t.unit.id);miniature.classList.add('summoned');b.append(miniature);}
     if(t.unit)b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+C.toll(s,t)+'G'));
-    const pawns=el('div');s.players.forEach((p,i)=>{if(p.pos===n){const mark=el('i',(i+1)+'P');mark.style.setProperty('--color',colors[i]);pawns.append(mark);}});b.append(pawns);root.append(b);
+    const pawns=el('div',null,'pawns');
+    s.players.forEach((p,i)=>{
+      if(p.pos!==n)return;
+      const mark=el('span',null,'pawn');mark.dataset.seat=i;mark.style.setProperty('--color',colors[i]);
+      mark.append(figure(i,p.name),el('i',(i+1)+'P'));pawns.append(mark);
+    });
+    b.append(pawns);root.append(b);
   });
   const center=$('center');center.classList.toggle('market-center',s.mapId==='market'&&!s.battle);center.replaceChildren();
   if(s.battle){
     const b=s.battle,t=s.tiles[b.at],row=el('div',null,'duel');
     for(const [title,id,hp] of [['침략',b.inv,b.invHP??C.cards[b.inv].hp],['방어',b.guard??t.unit.id,b.guardHP??t.unit.hp]]){
       const card=C.cards[id],cell=el('div',null,'fighter');const offence=title==='침략',item=C.cards[offence?b.atkItem:b.defItem];
-      cell.append(el('span',title),cardSeal(id),el('strong',card.name),el('span',(offence?b.attackST??card.st:b.defendST??card.st)+' ST'),el('span',hp+' HP'+(!offence&&b.landHP?' +'+b.landHP:'')+(b.finalHP?' → '+b.finalHP[offence?0:1]:'')));
+      const fighterArt=creatureFigure(id);
+      cell.append(el('span',title),fighterArt.classList.contains('standing-model')?fighterArt:cardSeal(id),el('strong',card.name),el('span',(offence?b.attackST??card.st:b.defendST??card.st)+' ST'),el('span',hp+' HP'+(!offence&&b.landHP?' +'+b.landHP:'')+(b.finalHP?' → '+b.finalHP[offence?0:1]:'')));
       const meter=el('meter');meter.min=0;meter.max=Math.max(100,hp);meter.value=b.finalHP?.[offence?0:1]??hp;meter.setAttribute('aria-label',title+' 기본 HP');cell.append(meter);
       if(item&&(s.phase==='result'||offence&&s.phase==='attack'))cell.append(el('span',item.name));row.append(cell);
     }
     center.append(el('small',(b.at+1)+'번 영지 · '+C.elements[t.type]+' Lv.'+t.level),row,el('span',s.phase==='result'?b.lines.join(' · '):hints[s.phase],'battle-summary'));return;
   }
-  if(inspect>=0){const t=s.tiles[inspect];center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type),el('span',t.unit?C.cards[t.unit.id].name+' · HP '+t.unit.hp+' · 가치 '+C.value(s,t)+'G':'점유 크리처 없음'));return;}
-  const p=s.players[s.turn];center.append(el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?p.name+' 승리':s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+m.forts.length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  if(inspect>=0){const t=s.tiles[inspect];if(t.unit)center.append(creatureFigure(t.unit.id));center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type),el('span',t.unit?C.cards[t.unit.id].name+' · HP '+t.unit.hp+' · 가치 '+C.value(s,t)+'G':'점유 크리처 없음'));return;}
+  const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?p.name+' 승리':s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+m.forts.length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
 }
+function stopWalk(){
+  if(!activeWalk)return;
+  const {sprite,pawn,animation}=activeWalk;
+  activeWalk=null;
+  animation?.cancel();
+  sprite.remove();
+  if(pawn)pawn.style.visibility='';
+  $('game').inert=false;
+}
+
+async function walkPath(move){
+  const root=$('map'),tiles=[...root.querySelectorAll('.tile')];
+  const pawn=root.querySelector('.pawn[data-seat="'+move.seat+'"]');
+  const sprite=el('img',null,'walking-cepter');
+  sprite.alt='';sprite.src='art/cept-walk-'+move.seat+'.webp';
+  const walk={sprite,pawn,animation:null};
+  activeWalk=walk;
+  $('game').inert=true;
+  try{
+    await sprite.decode();
+    if(activeWalk!==walk)return;
+    root.append(sprite);
+    if(pawn)pawn.style.visibility='hidden';
+    for(let step=1;step<move.path.length;step++){
+      const from=tiles[move.path[step-1]],to=tiles[move.path[step]];
+      const foot=tile=>[tile.offsetLeft+tile.offsetWidth/2,tile.offsetTop+tile.offsetHeight*.88];
+      const [x,y]=foot(from),[endX,endY]=foot(to);
+      sprite.style.width=Math.min(from.offsetWidth*1.18,from.offsetHeight*1.35)+'px';
+      sprite.style.left=x+'px';sprite.style.top=y+'px';
+      if(endX!==x)sprite.style.scale=endX<x?'-1 1':'1 1';
+      walk.animation=sprite.animate([{left:x+'px',top:y+'px'},{left:endX+'px',top:endY+'px'}],{duration:480,fill:'forwards'});
+      await walk.animation.finished;
+      walk.animation.cancel();
+    }
+  }catch{/* A cancelled walk or missing sprite falls back to the current board. */}
+  finally{if(activeWalk===walk){stopWalk();render();}}
+}
+
 function render(){
-  clearTimeout(timer);const i=C.actor(s),p=s.players[i],over=s.phase==='over',local=!p.ai&&!pending&&!over&&(!room||room.seat===i&&!room.busy);
+  clearTimeout(timer);
+  const move=s.lastMove;
+  if(move&&move.sequence!==seenMove){
+    stopWalk();seenMove=move.sequence;
+    if(move.path.length>1&&s.players[move.seat].pos===move.path.at(-1)&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      walkPath(move);return;
+    }
+  }
+  if(activeWalk)return;
+  const i=C.actor(s),p=s.players[i],over=s.phase==='over',local=!p.ai&&!pending&&!over&&(!room||room.seat===i&&!room.busy);
   $('mapName').textContent=C.board(s).name;
   $('round').textContent=s.round+'라운드 · 목표 '+s.target+'G';
-  $('seats').replaceChildren(...s.players.map((v,j)=>{const box=el('div',null,'seat'+(i===j?' active':''));box.style.setProperty('--color',colors[j]);box.append(el('b',v.name),el('span','마력 '+v.cash+'G · 총 '+C.total(s,j)+'G'));if(s.mapId==='market')box.append(el('small',' 호부 '+v.symbols.reduce((a,b)=>a+b,0)+'장'));return box;}));
+  $('seats').replaceChildren(...s.players.map((v,j)=>{const box=el('div',null,'seat'+(i===j?' active':''));box.style.setProperty('--color',colors[j]);box.append(figure(j,v.name),el('b',v.name),el('span','마력 '+v.cash+'G · 총 '+C.total(s,j)+'G'));if(s.mapId==='market')box.append(el('small',' 호부 '+v.symbols.reduce((a,b)=>a+b,0)+'장'));return box;}));
   map();$('who').textContent=over?p.name+' 승리':p.name+' 차례';
   $('hint').textContent=over?'목표 총마력을 가지고 성에 귀환했습니다.':pending?'다음 셉터에게 기기를 건네세요.':p.ai?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':hints[s.phase];
   const controls=$('buttons');controls.replaceChildren();
@@ -113,7 +206,7 @@ function render(){
   const hand=$('hand');hand.replaceChildren();$('handTitle').textContent=local?p.name+'의 손패 · '+p.hand.length+'장':'손패';
   $('detail').textContent='';
   if(local){p.hand.forEach((id,j)=>{const c=C.cards[id],b=btn('',()=>{focusCard=j;render();},'card'+(j===focusCard?' active':''));b.append(cardSeal(id),el('span',c.kind==='creature'?(C.elements[c.element]||'무')+' · 크리처':c.kind==='item'?'아이템':'주문'),el('b',c.name),el('span',stats(c)),el('span',c.cost+' G'));hand.append(b);});
-    if(focusCard>=0&&C.cards[p.hand[focusCard]]){const c=C.cards[p.hand[focusCard]];$('detail').textContent=c.name+' · '+stats(c)+' · 비용 '+c.cost+'G';}
+    if(focusCard>=0&&C.cards[p.hand[focusCard]]){const c=C.cards[p.hand[focusCard]];$('detail').replaceChildren(cardSeal(p.hand[focusCard]),el('span',c.name+' · '+stats(c)+' · 비용 '+c.cost+'G'));}
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
   $('log').replaceChildren(...s.log.map(t=>el('li',t)));
   if(!room&&!over&&p.ai)timer=setTimeout(()=>act(C.ai(s)),550);
