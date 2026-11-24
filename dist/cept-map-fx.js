@@ -29,7 +29,7 @@ function presentMapEffect(event){
   let spin;
   if(rolling){
     const dice=el('div',null,'map-dice');
-    const faces=event.faces.map(value=>{const face=el('b',value,'map-die');dice.append(face);return face;});
+    const faces=event.faces.map(value=>{const face=el('b',value,'map-die');const rim=el('span',null,'dice-setting');rim.append(face);dice.append(rim);return face;});
     dice.setAttribute('aria-hidden','true');
     layer.append(dice,el('span','이동 '+event.label+'칸','roll-result'));
     if(!quiet){

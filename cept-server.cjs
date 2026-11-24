@@ -32,7 +32,7 @@ function createServer(dir){
       if(!route.startsWith('/api/cept/')){
         if(req.method!=='GET'&&req.method!=='HEAD')fail(405,'허용되지 않은 요청');
         const relative=decodeURIComponent(route==='/'?'cept.html':route.slice(1));
-        if(!/^(?:art\/)?[\w.-]+$/.test(relative))fail(404,'파일 없음');
+        if(!/^(?:art\/(?:cept-maps\/|cept-catalog\/[\w-]+\/)?)?[\w-]+\.[\w]+$/.test(relative))fail(404,'파일 없음');
         const name=path.join(dist,relative);
         if(!fs.existsSync(name)||!fs.statSync(name).isFile()||!fs.realpathSync(name).startsWith(dist+path.sep))fail(404,'파일 없음');
         const type={html:'text/html; charset=utf-8',js:'text/javascript; charset=utf-8',css:'text/css',webp:'image/webp',png:'image/png',json:'application/json'}[path.extname(name).slice(1)]||'application/octet-stream';

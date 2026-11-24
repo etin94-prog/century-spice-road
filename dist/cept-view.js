@@ -2,8 +2,8 @@
 'use strict';
 const $=k=>document.getElementById(k);
 const C=Cepter,colors=['#fa9c80','#85c9ff','#e3c367','#a9d6a4'],storage='cept-local-v1';
-const labels={route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
-const hints={fork:'남은 이동에 사용할 길을 선택하세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'첫 이동 방향을 선택하세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
+const labels={fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
+const hints={fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'남은 이동에 사용할 길을 선택하세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'첫 이동 방향을 선택하세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 let room=null,customBook=null,draft=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
 function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
 function btn(text,fn,cls){const b=el('button',text,cls);b.type='button';b.onclick=fn;return b;}
@@ -31,6 +31,12 @@ function showCatalogCard(c,id){
   $('catalogArt').replaceChildren(cardSeal(id));
   $('catalogStats').textContent=entry?[catalogTypes[entry.category],entry.rarity,entry.stats].join(' · '):c.cost+'G';
   $('catalogAbility').textContent=entry?entry.ability:stats(c);
+  if(entry){
+    const terms={R:'화 영지',B:'수 영지',G:'지 영지',Y:'풍 영지','+[]':'손패 1장',Fire:'화',Water:'수',Earth:'지',Air:'풍',Weapon:'무기',Armor:'방어구',Scroll:'두루마리',Tool:'도구'};
+    const describe=v=>v.split(',').filter(Boolean).map(x=>terms[x]||x).join(' · ');
+    const limits=[entry.additionalCost&&'소환 조건 '+describe(entry.additionalCost),entry.placement&&'배치 제한 '+describe(entry.placement),entry.equipment&&'장비 제한 '+describe(entry.equipment)].filter(Boolean);
+    $('catalogStats').textContent=['No. '+entry.number,$('catalogStats').textContent,...limits].join(' · ');
+  }
   $('cardDialog').showModal();
 }
 $('closeCard').onclick=()=>$('cardDialog').close();
@@ -81,11 +87,12 @@ function stats(c){
 }
 function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
   switch(k){
+    case 'fortuneDraw':return {creature:'크리처',item:'아이템',spell:'주문'}[x];
     case 'route':case 'targetLand':return (x+1)+'번 · '+(C.elements[s.tiles[x].type]||s.tiles[x].type);
     case 'targetPlayer':return s.players[x].name;
     case 'breakCard':return C.cards[s.players[s.spellTarget].hand[x]].name;
-    case 'liquidate':case 'buySymbol':case 'sellSymbol':return (x<4?'서부':'동부')+' '+C.elements[x%4]+' · '+y+'장 · '+s.prices[x]*y+'G';
-    case 'direction':return x===1?'시계 방향':'반시계 방향';
+    case 'liquidate':case 'buySymbol':case 'sellSymbol':return (C.board(s).stage?(1+Math.floor(x/4))+'지역':x<4?'서부':'동부')+' '+C.elements[x%4]+' · '+y+'장 · '+s.prices[x]*y+'G';
+    case 'direction':if(C.board(s).stage){const exits=C.board(s).links[p.pos];return (1+(x===1?exits[0]:exits.at(-1)))+'번 칸 방향';}return x===1?'시계 방향':'반시계 방향';
     case 'cast':case 'equip':case 'discard':case 'summon':case 'invade':return c.name+' · '+c.cost+'G';
     case 'level':return (x+1)+'번 → Lv.'+y+' · '+(80*2**(y-1)-80*2**(s.tiles[x].level-1))+'G';
     case 'exchange':return (x+1)+'번 · '+C.cards[p.hand[y]].name;
@@ -108,17 +115,23 @@ function pawnFoot(tileId,seat,occupants){
   return [s.tiles[tileId].unit ? .60+x*.32 : x,y];
 }
 function map(){
-  const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.rows+m.cols+.6;
-  const half=100/span;
+  const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.stage?1:m.rows+m.cols+.6;
+  const half=m.stage?m.half:100/span;
+  root.classList.toggle('source-map',!!m.stage);
+  root.style.backgroundImage=m.stage?'url("art/cept-maps/'+m.image+'.webp")':'';
   root.style.setProperty('--half-tile',half+'cqw');
-  root.style.aspectRatio='100 / '+(18+.5*(m.rows+m.cols)*half);
+  root.style.aspectRatio=m.stage?'3 / 2':'100 / '+(18+.5*(m.rows+m.cols)*half);
   root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
   s.tiles.forEach((t,n)=>{
     const name=C.elements[t.type]||t.type,owner=t.owner>=0?s.players[t.owner].name:'미점유';
     const b=btn('',()=>{if(s.phase==='fork'&&!pending&&(!room||room.seat===s.turn&&!room.busy)&&!s.players[s.turn].ai&&C.choices(s).some(a=>a[0]==='route'&&a[1]===n)){act(['route',n]);return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect?' chosen':''));
     const [r,c]=m.position[n];b.style.left=((m.rows+c-r+.3)*half)+'%';
     b.style.top=(11+(r+c-2)*half*.5)+'cqw';
-    b.style.zIndex=String(2*(r+c));b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
+    if(m.stage){
+      b.style.left=r+'%';b.style.top='calc('+c+'% - '+half*.5+'cqw)';
+      b.classList.toggle('altered',t.type!==m.types[n]);b.dataset.fort=m.forts.includes(n)?'true':'false';
+    }
+    b.style.zIndex=String(m.stage?Math.round(c):2*(r+c));b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
     const surface=el('span',null,'tile-surface');surface.setAttribute('aria-hidden','true');
     b.append(surface,el('b',(n+1)+' · '+name));
     if(s.phase==='fork'&&C.choices(s).some(a=>a[0]==='route'&&a[1]===n))b.classList.add('exit');
@@ -190,6 +203,7 @@ async function walkPath(move){
 
 function render(){
   clearTimeout(timer);
+  syncStageMusic();
   if(presentMapEffect(s.mapEffect))return;
   const move=s.lastMove;
   if(move&&move.sequence!==seenMove){
@@ -202,18 +216,32 @@ function render(){
   const i=C.actor(s),p=s.players[i],over=s.phase==='over',local=!p.ai&&!pending&&!over&&(!room||room.seat===i&&!room.busy);
   $('mapName').textContent=C.board(s).name;
   $('round').textContent=s.round+'라운드 · 목표 '+s.target+'G';
-  $('seats').replaceChildren(...s.players.map((v,j)=>{const box=el('div',null,'seat'+(i===j?' active':''));box.style.setProperty('--color',colors[j]);box.append(figure(j,v.name),el('b',v.name),el('span','마력 '+v.cash+'G · 총 '+C.total(s,j)+'G'));if(s.mapId==='market')box.append(el('small',' 호부 '+v.symbols.reduce((a,b)=>a+b,0)+'장'));return box;}));
+  $('seats').replaceChildren(...s.players.map((v,j)=>{const box=el('div',null,'seat'+(i===j?' active':''));box.style.setProperty('--color',colors[j]);box.append(figure(j,v.name),el('b',v.name),el('span','마력 '+v.cash+'G · 총 '+C.total(s,j)+'G'));if(s.mapId==='market'||C.board(s).special?.includes('Temple'))box.append(el('small',' 호부 '+v.symbols.reduce((a,b)=>a+b,0)+'장'));return box;}));
   map();$('who').textContent=over?p.name+' 승리':p.name+' 차례';
   $('hint').textContent=over?'목표 총마력을 가지고 성에 귀환했습니다.':pending?'다음 셉터에게 기기를 건네세요.':p.ai?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':hints[s.phase];
   const controls=$('buttons');controls.replaceChildren();
   if(pending)controls.append(btn('내 차례 확인',()=>{pending=false;render();},'primary'));
-  if(over)controls.append(btn('다시 플레이',lobby,'primary'));
+  if(over){
+    if(s.reward){
+      const result=el('details');result.append(el('summary','승리 보상 카드 '+s.reward.length+'장'));
+      const grid=el('div',null,'archive-cards');
+      for(const id of s.reward){const c=C.cards[id];grid.append(archiveCard(c.catalog.path));}
+      result.append(grid);controls.append(result);
+    }
+    const next=C.board(s).stage+1;
+    if(!room&&C.maps['ps2-'+next])controls.append(btn('다음 스테이지 · '+C.maps['ps2-'+next].name,()=>{
+      const book=s.players[0].template;
+      $('mapChoice').value='ps2-'+next;showStage();
+      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.target,'ps2-'+next,book);save();enter();
+    },'primary'));
+    controls.append(btn('대국 설정으로',lobby));
+  }
   const choices=local?(room?room.choices:C.choices(s)):[];
   for(const k of new Set(choices.map(a=>a[0]))){
     const group=choices.filter(a=>a[0]===k);
     if(k==='buySymbol'||k==='sellSymbol'){
       const field=el('label',labels[k]),asset=el('select'),quantity=el('select');
-      for(const n of new Set(group.map(a=>a[1])))asset.add(new Option((n<4?'서부':'동부')+' '+C.elements[n%4]+' · 장당 '+s.prices[n]+'G',n));
+      for(const n of new Set(group.map(a=>a[1])))asset.add(new Option((C.board(s).stage?(1+Math.floor(n/4))+'지역':n<4?'서부':'동부')+' '+C.elements[n%4]+' · 장당 '+s.prices[n]+'G',n));
       const refresh=()=>{quantity.replaceChildren();for(const a of group.filter(a=>a[1]===+asset.value))quantity.add(new Option(a[2]+'장 · '+a[2]*s.prices[a[1]]+'G',a[2]));};
       asset.setAttribute('aria-label','호부 종류');quantity.setAttribute('aria-label','거래 수량');asset.onchange=refresh;refresh();
       field.append(asset,quantity,btn(labels[k]+' 확정',()=>act([k,+asset.value,+quantity.value])));controls.append(field);continue;
@@ -228,6 +256,7 @@ function render(){
   if(local){p.hand.forEach((id,j)=>{const c=C.cards[id],b=btn('',()=>{focusCard=j;render();},'card'+(j===focusCard?' active':''));b.append(cardSeal(id),el('span',c.kind==='creature'?(C.elements[c.element]||'무')+' · 크리처':c.kind==='item'?'아이템':'주문'),el('b',c.name),el('span',stats(c)),el('span',c.cost+' G'));hand.append(b);});
     if(focusCard>=0&&C.cards[p.hand[focusCard]]){const c=C.cards[p.hand[focusCard]];$('detail').replaceChildren(cardSeal(p.hand[focusCard]),el('span',c.name+' · '+stats(c)+' · 비용 '+c.cost+'G'));}
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
+  if(local&&typeof showHandCombos==='function')showHandCombos(hand,p.hand);
   $('log').replaceChildren(...s.log.map(t=>el('li',t)));
   if(!room&&!over&&p.ai)timer=setTimeout(()=>act(C.ai(s)),550+(s.phase==='result'?battleReplayDuration(s.battle):0));
 }

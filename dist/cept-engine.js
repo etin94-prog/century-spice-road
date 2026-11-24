@@ -27,6 +27,17 @@ const Cepter = (() => {
       cards.push({...entry,catalog:entry});
     }
   }
+  const stageAbilities={
+    'water/wallofice':{landBan:0,ban:['armor','scroll'],stationary:true,battleHP:30},
+    'neutral/skeleton':{regenerate:true},'water/giantamoeba':{neutralizes:[0,2]},
+    'water/kingtortoise':{last:true},'air/hornet':{poison:true},
+    'air/hurricane':{landBan:2,ban:['armor','scroll'],first:true,stationary:true},
+    'air/sprite':{landBan:2,blocksLarge:true},'items/firebolt':{st:30,hp:0,critical:1}
+  };
+  for(const c of cards){
+    const rule=stageAbilities[c.catalog?.path];
+    if(rule)Object.assign(c,rule,{catalogOnly:false});
+  }
   const presets={intro:starter,fire:fireBook};
   function validBook(book){
     return Array.isArray(book)&&book.length===50&&book.every(id=>Number.isInteger(id)&&!!cards[id]&&!cards[id].catalogOnly&&book.filter(n=>n===id).length<=4);
@@ -40,10 +51,10 @@ const Cepter = (() => {
   function start(count,humans,target=4000,mapId='classic',template=starter){
     if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||![3000,4000,5000,6000].includes(target)||!Object.hasOwn(maps,mapId)||!validBook(template))throw Error('대국 설정 오류');
     const players=Array.from({length:count},(_,i)=>{
-      const p={ai:i>=humans,name:(i>=humans?'AI ':'셉터 ')+(i+1),cash:200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(template),template:template.slice(),symbols:Array(8).fill(0),previous:null};
+      const p={ai:i>=humans,name:(i>=humans?'AI ':'셉터 ')+(i+1),cash:200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(template),template:template.slice(),symbols:Array((maps[mapId].areaCount||2)*4).fill(0),previous:null};
       for(let j=0;j<4;j++)draw(p);return p;
     });
-    const s={version:1,mapId,prices:Array(8).fill(10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
+    const s={version:1,mapId,prices:Array((maps[mapId].areaCount||2)*4).fill(10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
     draw(players[0]);return s;
   }
   function note(s,t){s.log.unshift(t);if(s.log.length>16)s.log.pop();}
@@ -55,7 +66,7 @@ const Cepter = (() => {
   const total=(s,i)=>s.tiles.reduce((v,t)=>v+(t.owner===i?value(s,t):0),s.players[i].cash)+(s.players[i].symbols||[]).reduce((v,n,k)=>v+n*s.prices[k],0);
   function vacate(t,release=false){t.owner=-1;if(release)t.level=1;t.unit=null;}
   function landValues(s){
-    const result=Array(8).fill(0);
+    const result=Array(s.prices.length).fill(0);
     for(const t of s.tiles)if(typeof t.type==='number')result[(t.area||0)*4+t.type]+=t.owner<0?worth(t):value(s,t);
     return result;
   }
@@ -73,7 +84,21 @@ const Cepter = (() => {
     const id=p.hand.splice(j,1)[0];p.cash-=cards[id].cost;return id;
   }
   function onward(s){
-    const p=s.players[s.turn];return board(s).links[p.pos].filter(n=>n!==p.previous);
+    const p=s.players[s.turn],links=board(s).links[p.pos];return links.length===1?links:links.filter(n=>n!==p.previous);
+  }
+  function arrived(s){
+    const p=s.players[s.turn],tile=s.tiles[p.pos];s.phase='land';
+    if(tile.type==='점술관'&&p.book.length){s.phase='fortune';return;}
+    if(tile.type!=='성소')return;
+    const area=s.tiles.filter(t=>t.area===tile.area&&t.unit);
+    const event=Math.floor(Math.random()*3),element=Math.floor(Math.random()*4);
+    for(const t of area){
+      const hp=cards[t.unit.id].hp;
+      if(event===0)t.unit.hp-=Math.floor(hp/2);
+      else if(t.type===element)t.unit.hp=event===1?hp:t.unit.hp-Math.floor(hp/5);
+      if(t.unit.hp<=0)vacate(t);
+    }
+    note(s,'성소 · '+(event===0?'지역 전체 크리처 최대 HP의 50% 피해':elements[element]+' 영지 크리처 '+(event===1?'HP 회복':'최대 HP의 20% 피해')));
   }
   function advance(s,next){
     const p=s.players[s.turn],m=board(s);
@@ -93,19 +118,27 @@ const Cepter = (() => {
         s.tiles.filter(v=>v.owner===s.turn).forEach(v=>{const max=cards[v.unit.id].hp;v.unit.hp=Math.min(max,v.unit.hp+Math.floor(max/5));});
         note(s,p.name+' · '+p.lap+'주 완주');
       }
-      if(next===0&&total(s,s.turn)>=s.target){s.winner=s.turn;s.phase='over';return;}
+      if(next===0&&total(s,s.turn)>=s.target){s.winner=s.turn;s.phase='over';
+        if(m.reward){
+          s.reward=m.reward.counts.flatMap((count,k)=>{
+            const pool=cards.flatMap((card,id)=>card.catalog?.rarity===['N','S','R'][k]&&m.reward.categories.includes(card.catalog.category)?[id]:[]);
+            return Array.from({length:count},()=>pool[Math.floor(Math.random()*pool.length)]);
+          });
+        }
+        return;}
       if(t.type==='신전'){s.phase='temple';return;}
       if(s.remaining){const exits=onward(s);if(exits.length!==1){s.phase='fork';return;}next=exits[0];}
     }
-    s.phase='land';
+    arrived(s);
   }
   function resumeMove(s){
-    if(!s.remaining){s.phase='land';return;}
+    if(!s.remaining){arrived(s);return;}
     const exits=onward(s);if(exits.length===1)advance(s,exits[0]);else s.phase='fork';
   }
   function move(s,dir){
     const p=s.players[s.turn];p.dir=dir;s.remaining=s.die;s.visited=[];
-    if(p.previous==null)advance(s,dir===1?1:board(s).links[p.pos].at(-1));
+    if(p.previous==null&&board(s).stage&&board(s).links[p.pos].length>2)s.phase='fork';
+    else if(p.previous==null)advance(s,dir===1?board(s).links[p.pos][0]:board(s).links[p.pos].at(-1));
     else resumeMove(s);
   }
   function debt(s){
@@ -122,7 +155,7 @@ const Cepter = (() => {
   function territory(s){
     const p=s.players[s.turn];
     if(p.pos===0||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>v.owner===s.turn?[n]:[]);
-    return [...new Set(s.visited)];
+    return [...new Set(s.visited)].filter(n=>s.tiles[n].owner===s.turn);
   }
   function choices(s){
     if(s.phase==='over')return [];
@@ -140,6 +173,7 @@ const Cepter = (() => {
       case 'roll':options.push(['roll']);break;
       case 'direction':return [['direction',1],['direction',-1]];
       case 'fork':return onward(s).map(n=>['route',n]);
+      case 'fortune':return [...new Set(p.book.map(id=>cards[id].kind))].map(kind=>['fortuneDraw',kind]);
       case 'temple':
         s.prices.forEach((price,k)=>{
           for(let n=1;n<=Math.min(50,Math.floor(p.cash/price));n++)options.push(['buySymbol',k,n]);
@@ -179,10 +213,11 @@ const Cepter = (() => {
     const bonus=guard.element===t.type?10*t.level:0;
     const near=board(s).links[b.at].filter(n=>n!==b.from);
     const support=i=>10*near.filter(n=>s.tiles[n].owner===i).length;
-    const make=(unit,gear,hp,side,land,confused)=>({unit,gear,hp:hp+(gear?.hp||0)+land,land,confused,
+    const make=(unit,gear,hp,side,land,confused)=>({unit,gear,hp:hp+(gear?.hp||0)+(unit.battleHP||0)+land,land,confused,
       st:['reflect','nullify'].includes(gear?.effect)?0:gear?.category==='scroll'?gear.st:unit.st+(gear?.st||0)+support(side)});
     const attacker=make(inv,atk,b.invHP??inv.hp,s.turn,0,false);
     const defender=make(guard,def,t.unit.hp,t.owner,bonus,t.unit.confused);
+    defender.poisoned=t.unit.poisoned;
     const lines=[];
     const health=()=>[Math.max(0,attacker.hp),Math.max(0,defender.hp)];
     b.startHP=health();b.strikes=[];
@@ -191,31 +226,38 @@ const Cepter = (() => {
       const penetrate=scroll||a.gear?.effect==='pierceEarth'&&d.unit.element===2;
       if(penetrate&&d.land){d.hp-=d.land;d.land=0;lines.push('지형 보너스 관통');}
       let damage=a.st;
-      if(scroll&&a.gear.effect==='freeze'&&d.unit.element===0)damage=Math.floor(damage*1.5);
+      if(scroll&&(a.gear.effect==='freeze'&&d.unit.element===0||a.gear.critical===d.unit.element))damage=Math.floor(damage*1.5);
       if(!scroll&&a.gear?.effect!=='orb'){
         if(d.gear?.effect==='reflect'){a.hp-=damage;lines.push('반사 '+damage);return 'reflect';}
         if(d.gear?.effect==='nullify'){lines.push('공격 무효');return 'block';}
+        if(d.unit.neutralizes?.includes(a.unit.element)||d.unit.blocksLarge&&a.unit.hp>=40){lines.push('크리처 능력 · 공격 무효');return 'block';}
         if(d.unit.half)damage=Math.floor(damage/2);
       }
       d.hp-=damage;lines.push(a.unit.name+' → '+damage+' 피해');
       if(a.confused)a.hp-=Math.floor(damage*.3);
-      if(a.unit.confuse&&damage>0)d.confused=true;
+      if(damage>0&&a.unit.confuse){d.confused=true;d.poisoned=false;}
+      if(damage>0&&a.unit.poison){d.poisoned=true;d.confused=false;}
     }
-    const order=guard.first&&!inv.first?[defender,attacker]:[attacker,defender];
+    const priority=unit=>unit.first?1:unit.last?-1:0;
+    const order=priority(guard)>priority(inv)?[defender,attacker]:[attacker,defender];
     for(let i=0;i<order.length;i++){
       const source=order[i],target=order[1-i],lineStart=lines.length;
       const effect=hit(source,target)||'hit';
       b.strikes.push({effect,side:source===attacker?0:1,hp:health(),notes:lines.slice(lineStart)});
       if(source.hp<=0||target.hp<=0)break;
     }
+    for(const side of [attacker,defender]){
+      if(side.hp>0&&side.poisoned){const damage=(1+Math.floor(Math.random()*3))*10;side.hp-=damage;lines.push('독 · '+damage+' 피해');}
+      if(side.hp>0&&side.unit.regenerate){side.hp=side.unit.hp;lines.push('재생 · HP 회복');}
+    }
     const won=defender.hp<=0&&attacker.hp>0,both=defender.hp<=0&&attacker.hp<=0;
     b.guard=t.unit.id;b.guardHP=t.unit.hp;b.attackST=attacker.st;b.defendST=defender.st;b.landHP=bonus;
     b.finalHP=[Math.max(0,attacker.hp),Math.max(0,defender.hp)];
     b.lines=[...lines,both?'양측 소멸':won?'침략 성공 · 영지 점령':'방어 성공'];b.won=won;b.noToll=b.from!=null||both;
     if(both)vacate(t);
-    else if(won){t.owner=s.turn;t.unit={id:b.inv,hp:Math.min(inv.hp,attacker.hp),confused:attacker.confused};}
+    else if(won){t.owner=s.turn;t.unit={id:b.inv,hp:Math.min(inv.hp,attacker.hp),poisoned:attacker.poisoned,confused:attacker.confused};}
     else{
-      t.unit.hp=Math.min(t.unit.hp,defender.hp);t.unit.confused=defender.confused;
+      t.unit.hp=guard.regenerate?guard.hp:Math.min(t.unit.hp,defender.hp);t.unit.poisoned=defender.poisoned;t.unit.confused=defender.confused;
       if(attacker.hp>0){if(b.from==null)s.players[s.turn].hand.push(b.inv);else s.tiles[b.from].unit.hp=Math.min(b.invHP,attacker.hp);}
     }
     if(b.from!=null&&(won||attacker.hp<=0))vacate(s.tiles[b.from]);
@@ -224,11 +266,16 @@ const Cepter = (() => {
   function play(s,a){
     if(!Array.isArray(a)||!choices(s).some(b=>a.length===b.length&&b.every((v,i)=>v===a[i])))return false;
     const [k,x,y]=a,i=actor(s),p=s.players[i],t=s.tiles[p.pos];
-    const before=s.mapId==='market'?landValues(s):null;
+    const before=(s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
     function mapEffect(type,label,tile=p.pos,extra={}){
       s.mapEffect={sequence:(s.mapEffect?.sequence||0)+1,type,label,tile,source:p.pos,...extra};
     }
     switch(k){
+      case 'fortuneDraw':{
+        const indices=p.book.flatMap((id,j)=>cards[id].kind===x?[j]:[]);
+        const j=indices[Math.floor(Math.random()*indices.length)],id=p.book.splice(j,1)[0];p.hand.push(id);
+        note(s,'점술관 · '+cards[id].name);s.phase='land';break;
+      }
       case 'route':advance(s,x);break;
       case 'buySymbol':case 'sellSymbol':{
         const count=k==='buySymbol'?y:-y;p.cash-=count*s.prices[x];p.symbols[x]+=count;resumeMove(s);break;
@@ -260,7 +307,7 @@ const Cepter = (() => {
         else{s.players[x].word=s.spellEffect==='word1'?1:6;mapEffect('word','이동 '+s.players[x].word,s.players[x].pos,{title:s.players[x].name});s.phase='roll';}break;
       case 'breakCard':mapEffect('shatter','카드 파괴',s.players[s.spellTarget].pos,{title:s.players[s.spellTarget].name});s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
       case 'fizzle':mapEffect('cast','대상 없음');s.phase='roll';break;
-      case 'roll':{const die=()=>1+Math.floor(Math.random()*board(s).die);const fixed=p.word||s.fixed,faces=fixed?[fixed]:s.fly?[die(),die()]:[die()];s.die=faces.reduce((a,b)=>a+b,0);mapEffect('roll',String(s.die),p.pos,{faces,sides:board(s).die});delete p.word;s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(p.dir){if(p.previous==null)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else s.phase='direction';break;
+      case 'roll':{const die=()=>1+Math.floor(Math.random()*board(s).die);const fixed=p.word||s.fixed,faces=fixed?[fixed]:s.fly?[die(),die()]:[die()];s.die=faces.reduce((a,b)=>a+b,0);mapEffect('roll',String(s.die),p.pos,{faces,sides:board(s).die});delete p.word;s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(p.dir){if(p.previous==null&&!board(s).stage)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if(board(s).stage&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
       case 'summon':case 'exchange':{
         const tile=k==='summon'?t:s.tiles[x],id=paid(s,p,k==='summon'?x:y);
@@ -271,7 +318,7 @@ const Cepter = (() => {
       case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=(s.tiles[x].base||80)*2**(y-1)-worth(s.tiles[x]);s.tiles[x].level=y;note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
       case 'transfer':{
         const from=s.tiles[x],dest=s.tiles[y];
-        if(dest.owner<0){dest.owner=i;dest.unit=from.unit;delete dest.unit.confused;vacate(from);afterTerritory(s);}
+        if(dest.owner<0){dest.owner=i;dest.unit=from.unit;delete dest.unit.confused;delete dest.unit.poisoned;vacate(from);afterTerritory(s);}
         else{mapEffect('invade','영지 공격',y,{source:x});s.battle={at:y,inv:from.unit.id,invHP:from.unit.hp,from:x,atkItem:null,defItem:null};s.phase='attack';}
         break;
       }
@@ -294,13 +341,14 @@ const Cepter = (() => {
       const c=cards[p.hand[x]];
       switch(k){
         case 'route':{
-          const p=s.players[s.turn],goals=board(s).forts.filter(n=>!p.flags.includes(n));
+          const p=s.players[s.turn],goals=total(s,s.turn)>=s.target?[]:board(s).forts.filter(n=>!p.flags.includes(n));
           let queue=[[x,p.pos,0]],seen=new Set();
           for(let k=0;k<queue.length;k++){
             const [at,prev,d]=queue[k],key=at+'/'+prev;if(seen.has(key))continue;seen.add(key);
             if((goals.length?goals:[0]).includes(at))return 9-d;
-            board(s).links[at].filter(n=>n!==prev).forEach(n=>queue.push([n,at,d+1]));
-          }return -9;
+            const exits=board(s).links[at];
+            exits.filter(n=>exits.length===1||n!==prev).forEach(n=>queue.push([n,at,d+1]));
+          }return -10000;
         }
         case 'buySymbol':return p.cash>300&&y<=5&&p.symbols[x]<10?2:-2;
         case 'sellSymbol':return p.cash<90?2+y/100:-2;

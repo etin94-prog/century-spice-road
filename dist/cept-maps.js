@@ -13,6 +13,13 @@ const CepterMaps=(()=>{
   const dunnanPositions=[[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[2,6],[3,6],[4,6],[5,6],[5,5],[5,4],[5,3],[5,2],[5,1],[4,1],[3,1],[2,1]];
   const dunnan=map('듀난',dunnanPositions,['성',2,2,2,2,3,3,3,3,'남쪽 요새',0,0,0,0,1,1,1,1],[9],80,6,loop(18),Array(18).fill(0));
   dunnan.fortBonus=100;
-  return {classic,dunnan,market};
+  const stages=typeof module==='undefined'?CepterStages:require('./cept-stage-data.js');
+  const maps={classic,dunnan,market};
+  for(const stage of stages){
+    const links=stage.position.map(()=>[]);
+    for(const [a,b] of stage.edges){links[a].push(b);links[b].push(a);}
+    maps['ps2-'+stage.stage]={...stage,links,base:80,bonus:200,fortBonus:stage.stage===1?100:50};
+  }
+  return maps;
 })();
 if(typeof module!=='undefined')module.exports=CepterMaps;
