@@ -11,7 +11,8 @@ function showStage(){
   if(!m.stage)return;
   const image=preview.querySelector('img');image.src='art/cept-maps/'+m.image+'.webp';image.alt=m.name;
   const features=m.special.replace(/Fortune[- ]Teller|Card Shop|Temple|Shrine|none/g,v=>stageFeatureLabels[v]);
-  preview.querySelector('figcaption').textContent='주사위 1–'+m.die+' · 요새 '+m.forts.length+' · '+m.areaCount+'지역 · 특수지 '+features+' · 승리 보상 '+m.reward.counts.reduce((a,b)=>a+b,0)+'장';
+  const caption=preview.querySelector('figcaption');caption.textContent='주사위 1–'+m.die+' · 요새 '+m.forts.length+' · '+m.areaCount+'지역 · 특수지 '+features+' · 승리 보상 '+m.reward.counts.reduce((a,b)=>a+b,0)+'장';
+  if(m.source)caption.append(' · ',sourceLink(m.source,'칸 배치 원문'));
 }
 stageSelect.onchange=showStage;showStage();
 const archive=CepterArchive;

@@ -2,7 +2,7 @@
 const Cepter = (() => {
   const maps=typeof module==='undefined'?CepterMaps:require('./cept-maps.js');
   const original=typeof module==='undefined'?CepterCards:require('./cept-cards.js');
-  const board=s=>maps[s.mapId||'classic'];
+  const board=s=>maps[(s.mapId?.startsWith('ps2-')&&!s.layoutRevision?'legacy-':'')+(s.mapId||'classic')];
   const elements=['화','수','지','풍'];
   const creature=(name,element,st,hp,cost)=>({name,kind:'creature',element,st,hp,cost});
   const item=(name,st,hp,cost)=>({name,kind:'item',st,hp,cost});
@@ -32,7 +32,7 @@ const Cepter = (() => {
     'neutral/skeleton':{regenerate:true},'water/giantamoeba':{neutralizes:[0,2]},
     'water/kingtortoise':{last:true},'air/hornet':{poison:true},
     'air/hurricane':{landBan:2,ban:['armor','scroll'],first:true,stationary:true},
-    'air/sprite':{landBan:2,blocksLarge:true},'items/firebolt':{st:30,hp:0,critical:1}
+    'spells/plague':{effect:'plague'},'air/sprite':{landBan:2,blocksLarge:true},'items/firebolt':{st:30,hp:0,critical:1}
   };
   for(const c of cards){
     const rule=stageAbilities[c.catalog?.path];
@@ -54,13 +54,15 @@ const Cepter = (() => {
       const p={ai:i>=humans,name:(i>=humans?'AI ':'셉터 ')+(i+1),cash:200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(template),template:template.slice(),symbols:Array((maps[mapId].areaCount||2)*4).fill(0),previous:null};
       for(let j=0;j<4;j++)draw(p);return p;
     });
-    const s={version:1,mapId,prices:Array((maps[mapId].areaCount||2)*4).fill(10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
+    const s={version:1,layoutRevision:1,mapId,prices:Array((maps[mapId].areaCount||2)*4).fill(10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
     draw(players[0]);return s;
   }
   function note(s,t){s.log.unshift(t);if(s.log.length>16)s.log.pop();}
   const actor=s=>s.phase==='defend'?s.tiles[s.battle.at].owner:s.turn;
   const worth=t=>(t.base||80)*2**(t.level-1);
-  const chain=(s,t)=>Math.min(5,s.tiles.filter(v=>v.owner===t.owner&&v.type===t.type&&v.area===t.area).length);
+  const territoryType=type=>typeof type==='number'||type==='복합'||type==='무속성';
+  const landBonus=(unit,t)=>unit.element===t.type||t.type==='복합'&&unit.element>=0?10*t.level:0;
+  const chain=(s,t)=>typeof t.type!=='number'?1:Math.min(5,s.tiles.filter(v=>v.owner===t.owner&&v.type===t.type&&v.area===t.area).length);
   const value=(s,t)=>Math.floor(worth(t)*[0,1,1.5,1.8,2,2.2][chain(s,t)]);
   const toll=(s,t)=>Math.floor(value(s,t)*[0,.2,.3,.4,.6,.8][t.level]);
   const total=(s,i)=>s.tiles.reduce((v,t)=>v+(t.owner===i?value(s,t):0),s.players[i].cash)+(s.players[i].symbols||[]).reduce((v,n,k)=>v+n*s.prices[k],0);
@@ -108,17 +110,18 @@ const Cepter = (() => {
       path.push(next);
       p.previous=p.pos;p.pos=next;s.remaining--;
       const t=s.tiles[next];if(t.owner===s.turn)s.visited.push(next);
-      if(m.forts.includes(next)&&!p.flags.includes(next)){
-        p.flags.push(next);const money=m.fortBonus||50;p.cash+=money;note(s,p.name+' · '+t.type+' +'+money+'G');
+      const checkpoint=(m.checkpoints||m.forts).find(n=>m.types[n]===t.type);
+      if(checkpoint!==undefined&&!p.flags.includes(checkpoint)){
+        p.flags.push(checkpoint);const money=m.fortBonus||50;p.cash+=money;note(s,p.name+' · '+t.type+' +'+money+'G');
       }
-      if(next===0&&p.flags.length===m.forts.length){
+      if(t.type==='성'&&p.flags.length===(m.checkpoints||m.forts).length){
         p.lap++;p.flags=[];p.cash+=m.bonus+20*(p.lap-1)+20*s.tiles.filter(v=>v.owner===s.turn).length;
         const bonus=(p.symbols||[]).reduce((sum,n,k)=>sum+(n&&s.players.every(q=>q===p||q.symbols[k]<n)?n*s.prices[k]:0),0);
         p.cash+=Math.floor(bonus/10);
         s.tiles.filter(v=>v.owner===s.turn).forEach(v=>{const max=cards[v.unit.id].hp;v.unit.hp=Math.min(max,v.unit.hp+Math.floor(max/5));});
         note(s,p.name+' · '+p.lap+'주 완주');
       }
-      if(next===0&&total(s,s.turn)>=s.target){s.winner=s.turn;s.phase='over';
+      if(t.type==='성'&&total(s,s.turn)>=s.target){s.winner=s.turn;s.phase='over';
         if(m.reward){
           s.reward=m.reward.counts.flatMap((count,k)=>{
             const pool=cards.flatMap((card,id)=>card.catalog?.rarity===['N','S','R'][k]&&m.reward.categories.includes(card.catalog.category)?[id]:[]);
@@ -126,6 +129,11 @@ const Cepter = (() => {
           });
         }
         return;}
+      const dest=m.transit?.[next];
+      if(dest!=null&&(t.type==='다리'||t.type==='전송진'&&!s.remaining)){
+        p.pos=dest;p.previous=next;path.push(dest);
+        note(s,t.type+' · '+(next+1)+'번 → '+(dest+1)+'번');
+      }
       if(t.type==='신전'){s.phase='temple';return;}
       if(s.remaining){const exits=onward(s);if(exits.length!==1){s.phase='fork';return;}next=exits[0];}
     }
@@ -154,7 +162,7 @@ const Cepter = (() => {
   function afterTerritory(s){const t=s.tiles[s.players[s.turn].pos];if(t.owner>=0&&t.owner!==s.turn)payToll(s);else finish(s);}
   function territory(s){
     const p=s.players[s.turn];
-    if(p.pos===0||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>v.owner===s.turn?[n]:[]);
+    if(s.tiles[p.pos].type==='성'||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>v.owner===s.turn?[n]:[]);
     return [...new Set(s.visited)].filter(n=>s.tiles[n].owner===s.turn);
   }
   function choices(s){
@@ -165,6 +173,7 @@ const Cepter = (() => {
       case 'spell':hand('spell','cast');options.push(['roll']);break;
       case 'spellTarget':{
         const effect=s.spellEffect;
+        if(effect==='plague')return [...new Set(s.tiles.map(t=>t.area))].map(area=>['plagueArea',area]);
         if(effect==='heal'||effect==='bolt')s.tiles.forEach((v,n)=>{if(v.unit)options.push(['targetLand',n]);});
         else s.players.forEach((q,j)=>{if(effect!=='shatter'||q.hand.some(id=>cards[id].kind!=='creature'))options.push(['targetPlayer',j]);});
         if(!options.length)options.push(['fizzle']);break;
@@ -182,13 +191,13 @@ const Cepter = (() => {
       case 'land':
         if(t.owner>=0&&t.owner!==i){hand('creature','invade');options.push(['pay']);}
         {
-          if(t.owner<0&&typeof t.type==='number')hand('creature','summon');
+          if(t.owner<0&&territoryType(t.type))hand('creature','summon');
           for(const n of territory(s)){
             const v=s.tiles[n];for(let level=v.level+1;level<=5;level++){
               if(p.cash>=(v.base||80)*2**(level-1)-worth(v))options.push(['level',n,level]);
             }
             for(const dest of board(s).links[n]){
-              if(!cards[v.unit.id].stationary&&cards[v.unit.id].landBan!==s.tiles[dest].type&&typeof s.tiles[dest].type==='number'&&s.tiles[dest].owner!==i)options.push(['transfer',n,dest]);
+              if(!cards[v.unit.id].stationary&&cards[v.unit.id].landBan!==s.tiles[dest].type&&territoryType(s.tiles[dest].type)&&s.tiles[dest].owner!==i)options.push(['transfer',n,dest]);
             }
             if(p.cash>=300)elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
             p.hand.forEach((id,j)=>{if(cards[id].kind==='creature'&&cards[id].cost<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
@@ -210,7 +219,7 @@ const Cepter = (() => {
   function resolve(s){
     const b=s.battle,t=s.tiles[b.at],inv=cards[b.inv],guard=cards[t.unit.id];
     const atk=cards[b.atkItem],def=cards[b.defItem];
-    const bonus=guard.element===t.type?10*t.level:0;
+    const bonus=landBonus(guard,t);
     const near=board(s).links[b.at].filter(n=>n!==b.from);
     const support=i=>10*near.filter(n=>s.tiles[n].owner===i).length;
     const make=(unit,gear,hp,side,land,confused)=>({unit,gear,hp:hp+(gear?.hp||0)+(unit.battleHP||0)+land,land,confused,
@@ -247,7 +256,10 @@ const Cepter = (() => {
       if(source.hp<=0||target.hp<=0)break;
     }
     for(const side of [attacker,defender]){
-      if(side.hp>0&&side.poisoned){const damage=(1+Math.floor(Math.random()*3))*10;side.hp-=damage;lines.push('독 · '+damage+' 피해');}
+      if(side.hp>0&&side.poisoned){
+        const damage=Math.floor(side.unit.hp/2),baseHP=side===defender?t.unit.hp:b.invHP??inv.hp;
+        side.hp=Math.min(side.hp,baseHP)-damage;lines.push('독 · '+damage+' 피해');
+      }
       if(side.hp>0&&side.unit.regenerate){side.hp=side.unit.hp;lines.push('재생 · HP 회복');}
     }
     const won=defender.hp<=0&&attacker.hp>0,both=defender.hp<=0&&attacker.hp<=0;
@@ -296,6 +308,10 @@ const Cepter = (() => {
         }else mapEffect('cast',c.name);
         note(s,p.name+' · '+c.name);break;
       }
+      case 'plagueArea':{
+        for(const tile of s.tiles)if(tile.area===x&&tile.unit){tile.unit.poisoned=true;delete tile.unit.confused;}
+        mapEffect('cast',(x+1)+'지역 · 독');s.phase='roll';break;
+      }
       case 'targetLand':{
         const unit=s.tiles[x].unit,prior=unit.hp;if(s.spellEffect==='heal')unit.hp=cards[unit.id].hp;
         else if((unit.hp-=20)<=0)vacate(s.tiles[x]);s.phase='roll';
@@ -341,13 +357,17 @@ const Cepter = (() => {
       const c=cards[p.hand[x]];
       switch(k){
         case 'route':{
-          const p=s.players[s.turn],goals=total(s,s.turn)>=s.target?[]:board(s).forts.filter(n=>!p.flags.includes(n));
+          const p=s.players[s.turn],m=board(s),missing=m.forts.filter(n=>!p.flags.some(f=>m.types[f]===m.types[n]));
+          const goals=total(s,s.turn)<s.target&&missing.length?missing:(m.castles||[0]);
           let queue=[[x,p.pos,0]],seen=new Set();
           for(let k=0;k<queue.length;k++){
             const [at,prev,d]=queue[k],key=at+'/'+prev;if(seen.has(key))continue;seen.add(key);
-            if((goals.length?goals:[0]).includes(at))return 9-d;
-            const exits=board(s).links[at];
-            exits.filter(n=>exits.length===1||n!==prev).forEach(n=>queue.push([n,at,d+1]));
+            if(goals.includes(at))return 9-d;
+            const dest=m.transit?.[at];
+            if(dest!=null&&m.types[at]==='전송진'&&prev!==dest)queue.push([dest,at,d+1]);
+            const pos=dest!=null&&m.types[at]==='다리'?dest:at;
+            const exits=m.links[pos];
+            exits.filter(n=>exits.length===1||n!==prev).forEach(n=>queue.push([n,pos,d+1]));
           }return -10000;
         }
         case 'buySymbol':return p.cash>300&&y<=5&&p.symbols[x]<10?2:-2;
@@ -358,7 +378,7 @@ const Cepter = (() => {
         case 'cast':if(['manna','fly','word6','bolt','shatter'].includes(c.effect))return 4;
           return c.effect==='cash'?10:c.effect==='six'?3:-2;
         case 'summon':return 70+c.hp/10+(c.element===s.tiles[p.pos].type?4:0);
-        case 'invade':{const g=s.tiles[p.pos],hp=g.unit.hp+(cards[g.unit.id].element===g.type?10*g.level:0);
+        case 'invade':{const g=s.tiles[p.pos],hp=g.unit.hp+landBonus(cards[g.unit.id],g);
           return c.st+(p.hand.some(id=>cards[id].kind==='item'&&cards[id].st&&cards[id].cost+c.cost<=p.cash)?30:0)>=hp?40: -2;}
         case 'equip':return (s.phase==='attack'?c.st:c.hp)/5-1;
         case 'level':return 30+y+(chain(s,s.tiles[x])>1?5:0);

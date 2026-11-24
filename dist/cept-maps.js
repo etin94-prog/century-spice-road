@@ -15,10 +15,17 @@ const CepterMaps=(()=>{
   dunnan.fortBonus=100;
   const stages=typeof module==='undefined'?CepterStages:require('./cept-stage-data.js');
   const maps={classic,dunnan,market};
-  for(const stage of stages){
+  const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
+  function playable(stage){
     const links=stage.position.map(()=>[]);
     for(const [a,b] of stage.edges){links[a].push(b);links[b].push(a);}
-    maps['ps2-'+stage.stage]={...stage,links,base:80,bonus:200,fortBonus:stage.stage===1?100:50};
+    const checkpoints=stage.forts.filter((n,i,forts)=>forts.findIndex(k=>stage.types[k]===stage.types[n])===i);
+    const castles=stage.types.flatMap((type,i)=>type==='성'?[i]:[]);
+    return {...stage,links,checkpoints,castles,base:80,bonus:200,fortBonus:stage.stage===1?100:50};
+  }
+  for(const stage of stages){
+    maps['legacy-ps2-'+stage.stage]=playable(stage);
+    maps['ps2-'+stage.stage]=playable({...stage,...layouts[stage.stage-1]});
   }
   return maps;
 })();

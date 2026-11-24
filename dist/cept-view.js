@@ -2,13 +2,13 @@
 'use strict';
 const $=k=>document.getElementById(k);
 const C=Cepter,colors=['#fa9c80','#85c9ff','#e3c367','#a9d6a4'],storage='cept-local-v1';
-const labels={fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
+const labels={plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
 const hints={fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'남은 이동에 사용할 길을 선택하세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'첫 이동 방향을 선택하세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 let room=null,customBook=null,draft=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
 function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
 function btn(text,fn,cls){const b=el('button',text,cls);b.type='button';b.onclick=fn;return b;}
 function save(){if(room)return;try{localStorage.setItem(storage,JSON.stringify(s));}catch{$('notice').textContent='저장 공간을 사용할 수 없어 이번 대국은 현재 창에서만 진행됩니다.';}}
-try{const raw=localStorage.getItem(storage);if(raw){const v=JSON.parse(raw);if(v.version===1&&[2,3,4].includes(v.players.length)&&C.maps[v.mapId||'classic']?.types.length===v.tiles.length&&(v.phase==='over'||C.choices(v).length))s=v;else throw Error();}}catch{$('notice').textContent='저장한 대국을 읽을 수 없습니다.';}
+try{const raw=localStorage.getItem(storage);if(raw){const v=JSON.parse(raw);if(v.version===1&&[2,3,4].includes(v.players.length)&&C.board(v)?.types.length===v.tiles.length&&(v.phase==='over'||C.choices(v).length))s=v;else throw Error();}}catch{$('notice').textContent='저장한 대국을 읽을 수 없습니다.';}
 function seats(){const select=$('humans'),prior=+select.value||1;select.replaceChildren();for(let i=1;i<=+$('count').value;i++)select.add(new Option(i+'명 · AI '+(+$('count').value-i)+'명',i));select.value=Math.min(prior,+$('count').value);}
 let seenMove=0,activeWalk=null;
 function lobby(){cancelMapEffect();stopWalk();if(room){location.assign(location.pathname);return;}clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;$('resume').hidden=!s||s.phase==='over';}
@@ -77,7 +77,7 @@ $('storeBook').onclick=()=>{
   customBook=book;$('bookChoice').lastElementChild.disabled=false;$('bookChoice').value='custom';
   try{localStorage.setItem(bookKey,JSON.stringify(book));$('bookCount').textContent='50장 · 북 저장 완료';}catch{$('bookCount').textContent='이번 창에서 사용할 북으로 설정했습니다.';}
 };
-const spellText={one:'다음 이동 1칸',six:'다음 이동 6칸',cash:'100G 획득',heal:'크리처 HP 완전 회복',shatter:'대상의 아이템·주문 1장 파괴',fly:'주사위 2개',bolt:'크리처 HP −20',manna:'현재 주회 × 50G',word1:'셉터의 다음 이동 1칸',word6:'셉터의 다음 이동 6칸'};
+const spellText={plague:'선택한 지역의 모든 크리처에게 독 부여',one:'다음 이동 1칸',six:'다음 이동 6칸',cash:'100G 획득',heal:'크리처 HP 완전 회복',shatter:'대상의 아이템·주문 1장 파괴',fly:'주사위 2개',bolt:'크리처 HP −20',manna:'현재 주회 × 50G',word1:'셉터의 다음 이동 1칸',word6:'셉터의 다음 이동 6칸'};
 const gearText={freeze:'두루마리 · 화 속성에 강타',reflect:'ST 0 · 일반 공격 반사',nullify:'ST 0 · 일반 공격 무효',orb:'무효·반사 무시',pierceEarth:'지 속성 지형 보너스 관통'};
 function stats(c){
   if(c.kind==='spell')return spellText[c.effect];
@@ -87,6 +87,7 @@ function stats(c){
 }
 function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
   switch(k){
+    case 'plagueArea':return (x+1)+'지역';
     case 'fortuneDraw':return {creature:'크리처',item:'아이템',spell:'주문'}[x];
     case 'route':case 'targetLand':return (x+1)+'번 · '+(C.elements[s.tiles[x].type]||s.tiles[x].type);
     case 'targetPlayer':return s.players[x].name;
@@ -153,8 +154,8 @@ function map(){
     renderBattle(center,s);return;
   }
   center.replaceChildren();
-  if(inspect>=0){const t=s.tiles[inspect];if(t.unit)center.append(creatureFigure(t.unit.id));center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type),el('span',t.unit?C.cards[t.unit.id].name+' · HP '+t.unit.hp+' · 가치 '+C.value(s,t)+'G':'점유 크리처 없음'));return;}
-  const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?p.name+' 승리':s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+m.forts.length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  if(inspect>=0){const t=s.tiles[inspect];if(t.unit)center.append(creatureFigure(t.unit.id));center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type),el('span',t.unit?C.cards[t.unit.id].name+(t.unit.poisoned?' · 독':'')+' · HP '+t.unit.hp+' · 가치 '+C.value(s,t)+'G':m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':t.type==='카드 상점'?'상점 상품 미확인':'점유 크리처 없음'));return;}
+  const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?p.name+' 승리':s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
 }
 function stopWalk(){
   if(!activeWalk)return;
@@ -193,7 +194,9 @@ async function walkPath(move){
       sprite.style.zIndex=String(Math.max(+from.style.zIndex,+to.style.zIndex)+1);
       sprite.style.left=x+'px';sprite.style.top=y+'px';
       if(endX!==x)sprite.style.scale=endX<x?'-1 1':'1 1';
-      walk.animation=sprite.animate([{left:x+'px',top:y+'px'},{left:endX+'px',top:endY+'px'}],{duration:480,fill:'forwards'});
+      const jumping=C.board(s).transit?.[move.path[step-1]]===destination;
+      const frames=jumping?[{left:x+'px',top:y+'px',opacity:1},{left:x+'px',top:y+'px',opacity:0,offset:.49},{left:endX+'px',top:endY+'px',opacity:0,offset:.5},{left:endX+'px',top:endY+'px',opacity:1}]:[{left:x+'px',top:y+'px'},{left:endX+'px',top:endY+'px'}];
+      walk.animation=sprite.animate(frames,{duration:480,fill:'forwards'});
       await walk.animation.finished;
       walk.animation.cancel();
     }
