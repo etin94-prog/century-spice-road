@@ -26,9 +26,24 @@ function card(id,action){
   return '<button class="card" data-'+action+'="'+id+'" style="--art:url(art/guild/'+id+'.webp)" aria-label="'+(c.tier+1)+'단계 '+title+' 개발 카드 '+c.vp+'점"><span class="face"><b>'+c.vp+'점</b>'+(c.color>=0?gem(c.color,c.ability==='double'?2:''):'')+'</span>'+(c.ability||fort?'<small class="ability">'+ribbon+'</small>':'')+'<span class="cost">'+chips(c.cost)+'</span></button>';
 }
 function bind(attr,fn){document.querySelectorAll('[data-'+attr+']').forEach(b=>b.onclick=()=>fn(Number(b.getAttribute('data-'+attr))));}
+function seatTableau(p, i){
+  const piles=Array.from({length:6},()=>[]);
+  for(const id of p.cards){
+    const color=guildColor(p,id);
+    piles[color<0?5:color].push(id);
+  }
+  const stacks=piles.map((ids,color)=>{
+    if(color===5&&!ids.length)return '';
+    const count=color===5?ids.length:p.bonus[color];
+    const label=color===5?'특수 카드 '+count+'장':gemNames[color]+' 할인 '+count+' · '+ids.length+'장';
+    const cards=ids.map((id,j)=>'<i aria-hidden="true" style="--pos:'+ (ids.length===1?0:j/(ids.length-1))+';background-image:url(art/guild/'+id+'.webp)"></i>').join('');
+    return '<span class="pile g'+color+'" title="'+label+'" aria-label="'+label+'"><span class="layers">'+cards+'</span><strong>'+gemSigns[color]+count+'</strong></span>';
+  }).join('');
+  return '<button data-seat="'+i+'" class="'+((flightActor??g.turn)===i?'current':'')+'"><span class="seatHead"><b>'+name(i)+' · '+score(p)+'점</b><small>예약 '+p.held.length+'</small></span><span class="piles" aria-label="구매 카드와 영구 할인">'+stacks+'</span><span class="wallet">보석 '+(chips(p.tokens)||'없음')+'</span></button>';
+}
 function render(){
   el('status').textContent=g.over?'대국 종료':(g.last?'마지막 라운드':g.round+'라운드')+' · '+name(flightActor??g.turn)+' 차례';
-  el('seats').innerHTML=g.players.map((p,i)=>'<button data-seat="'+i+'" class="'+((flightActor??g.turn)===i?'current':'')+'"><b>'+name(i)+' · '+score(p)+'점</b><span class="sub">'+(chips(p.tokens)||'보석 없음')+' · 예약 '+p.held.length+'</span></button>').join('');
+  el('seats').innerHTML=g.players.map(seatTableau).join('');
   el('market').innerHTML=[2,1,0].map(t=>'<div class="row"><button class="deck" data-deck="'+t+'">'+['Ⅰ','Ⅱ','Ⅲ'][t]+'<small>'+g.decks[t].length+'장</small></button>'+g.market[t].map(id=>card(id,'card')).join('')+'</div>').join('');
   el('patrons').innerHTML=g.nobles.map(n=>'<span class="patron guildPatron" style="--scene:url(art/guild-'+Math.floor(n/5)+'-'+(n%5)+'.webp)">'+chips(patrons[n])+'</span>').join('')||'모두 방문했습니다';
   if(g.mode){
