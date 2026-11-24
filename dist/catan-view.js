@@ -4,7 +4,6 @@ const $=id=>document.getElementById(id);
 const {resources:R,modes,cards}=Catan;
 const description={sea:'본섬과 세 외딴섬 지도입니다. 목재와 양모 각 1장으로 배를 건조하고 새 섬마다 첫 정착 보너스 2점을 얻으세요. 열린 항로의 끝 배는 차례당 한 번 이동할 수 있습니다. 목표는 14점입니다.',knights:'마을 하나와 도시 하나로 시작합니다. 도시에서 얻은 직물·종이·화폐로 도시를 개선하고, 기사를 활성화해 야만인의 습격을 막으세요. 목표는 13점입니다.',classic:'자원을 교역하고 마을과 도시를 세워 먼저 10점을 달성하세요.',friendly:'공개 승점이 2점인 플레이어의 건물 주변에는 도둑을 놓을 수 없습니다. 목표는 10점입니다.',ports:'항구 건물 점수 3점부터 항구왕에 도전합니다. 단독으로 앞서면 보너스 2점을 얻으며, 목표는 11점입니다.'};
 const colors=['#ef674e','#55a8ff','#fff2cb','#b47be4'];
-const terrain=['#3f7853','#b56844','#9caf60','#dfb65a','#849396','#d4b480'];
 const label={takeProgress:'가져올 진보 카드',dropProgress:'진보 카드 반납',pillage:'약탈당할 도시',reward:'수호 보상',returnProgress:'반납할 진보 카드',gold:'금광 자원 선택',loot:'가져올 카드',smith:'무료 기사 승급',harborTrade:'상업항 교환',ship:'배 건조',sail:'이동할 배',relocate:'새 항로 선택',cancel:'돌아가기',pirate:'해적 이동',recruit:'기사 모집',activate:'기사 활성화',promote:'기사 승급',march:'기사 이동',moveKnight:'이동할 곳',chase:'도둑 추방',wall:'성벽 건설',improve:'도시 개선',progress:'진보 카드 사용',water:'수로 자원 선택',alchemy:'연금술',retreat:'기사 후퇴',dismissKnight:'기사 반환',placeKnight:'기사 배치',gift:'자원 전달',road:'도로 건설',village:'마을 건설',city:'도시 건설',buy:'발전 카드 구입',roll:'주사위 굴리기',end:'차례 종료',robber:'도둑 이동',card:'발전 카드 사용',bank:'은행·항구 교역',offer:'플레이어 교환',accept:'수락',reject:'거절',gain:'자원 받기',take:'독점할 자원',discard:'자원 버리기',steal:'가져올 상대'};
 const locationKinds=['pillage','village','road','city','robber','pirate','ship','sail','relocate','recruit','activate','promote','march','moveKnight','chase','wall','retreat','dismissKnight','placeKnight'];
 const key='catan-table-v1';
@@ -59,12 +58,11 @@ function optionText([k,x,y,z]){
 function board(interactive){
   const s=state,px=v=>300+v.x*55,py=v=>277+v.y*55;
   const box=s.mode==='sea'?'-155 -150 910 850':'0 0 600 550';
-  const bits=['<svg viewBox="'+box+'" aria-label="카탄 섬 지도">'];
+  const bits=['<svg viewBox="'+box+'" aria-label="카탄 섬 지도">',islandRelief.defs];
   const mid=e=>({x:(s.nodes[e.a].x+s.nodes[e.b].x)/2,y:(s.nodes[e.a].y+s.nodes[e.b].y)/2});
   for(const [j,t] of s.tiles.entries()){
     const x=px(t),y=py(t),robbed=s.robber===j;
-    if(t.res===-2){bits.push(`<polygon points="${t.ns.map(n=>[px(s.nodes[n]),py(s.nodes[n])].join(',')).join(' ')}" fill="#33797e" stroke="#569597"/><text x="${x}" y="${y}" fill="white" font-size="15">${s.pirate===j?'해적':'∼'}</text>`);continue;}
-    bits.push(`<polygon points="${t.ns.map(n=>[px(s.nodes[n]),py(s.nodes[n])].join(',')).join(' ')}" fill="${t.res===8?'#daa53b':terrain[t.res<0?5:t.res]}" stroke="#374939" stroke-width="2"/><text x="${x}" y="${y-15}" fill="${t.res===0?'white':'#182d29'}" font-size="14">${(s.merchant?.tile===j?'상인 · ':'')+(t.res===8?'금광':R[t.res]||'사막')}</text><circle cx="${x}" cy="${y+7}" r="15" fill="${robbed?'#263635':'#ffedc1'}"/><text x="${x}" y="${y+7}" fill="${robbed?'white':t.num===6||t.num===8?'#a52e24':'#203733'}" font-size="${robbed?12:18}">${robbed?'도둑':t.num}</text>`);
+    bits.push(islandRelief.tile(t,x,y,robbed,s.merchant?.tile===j,t.res===8?'금광':R[t.res]||'사막',s.pirate===j));
   }
   for(const e of s.edges){
     const a=s.nodes[e.a],b=s.nodes[e.b];
@@ -77,8 +75,7 @@ function board(interactive){
   }
   for(const v of s.nodes)if(v.owner>=0){
     const x=px(v),y=py(v),fill=colors[v.owner];
-    bits.push(v.level===1?`<circle cx="${x}" cy="${y}" r="9" fill="${fill}" stroke="#203434" stroke-width="2"/>`:`<path d="M${x} ${y-13}l13 13 -13 13 -13 -13z" fill="${fill}" stroke="#203434" stroke-width="2"/>`);
-    bits.push(`<text x="${x}" y="${y}" font-size="10">${v.owner+1}</text>`);
+    bits.push(islandRelief.building(x,y,v.owner,fill,v.level>1));
   }
   for(const v of s.nodes){
     if(v.knight){const k=v.knight;bits.push(`<circle cx="${px(v)}" cy="${py(v)}" r="12" fill="${colors[k.owner]}" stroke="#24333a"/><text x="${px(v)}" y="${py(v)}" font-size="11">${k.active?'▲':'△'}${k.level}</text>`);}
@@ -104,7 +101,7 @@ function render(){
   rules[2].hidden=ck;
   rules[1].hidden=ck;
   rules[0].textContent='도로는 목재·벽돌 각 1장, 마을은 목재·벽돌·양모·곡식 각 1장, 도시는 곡식 2장과 광석 3장이 필요합니다.'+(ck?'':' 발전 카드는 양모·곡식·광석 각 1장입니다.');
-  document.querySelector('.legend').textContent='● 마을　◆ 도시　━ 도로　'+(ck?'▲ 활성 기사　△ 대기 기사':s.mode==='sea'?'배 모양 표식은 항로':'')+'　· 점선 원은 선택 가능';
+  document.querySelector('.legend').textContent='낮은 집은 마을, 탑이 있는 건물은 도시　'+(ck?'▲ 활성 기사　△ 대기 기사':s.mode==='sea'?'배 모양 표식은 항로':'')+'　· 점선 원은 선택 가능';
   $('variant').textContent=description[s.mode]+(ck?' 기사 모집과 승급은 양모·광석 각 1장, 활성화는 곡식 1장입니다. 성벽은 벽돌 2장이며 손패 한도를 2장 늘립니다. 야만인이 7칸 전진하면 활성 기사 전력과 전체 도시 수를 비교합니다. 개선 4단계부터 대도시를 세워 2점을 얻습니다.':'');
   const prizes={road:'최장 도로',army:'최대 기사단',port:'항구왕'};
   $('scores').replaceChildren(...s.players.map((q,j)=>{
