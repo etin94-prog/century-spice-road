@@ -7,6 +7,7 @@ if(/^[a-f0-9]{32}$/.test(id||'')){url.pathname=url.pathname.replace(/[^/]*$/,id.
 <button type="button" role="tab" id="tab-century" aria-controls="century" aria-selected="true" tabindex="0">센추리</button>
 <button type="button" role="tab" id="tab-catan" aria-controls="catan" aria-selected="false" tabindex="-1">카탄</button>
 <button type="button" role="tab" id="tab-splendor" aria-controls="splendor" aria-selected="false" tabindex="-1">스플랜더</button>
+<button type="button" role="tab" id="tab-cept" aria-controls="cept" aria-selected="false" tabindex="-1">컬드셉트 2</button>
 </div>
 <section role="tabpanel" id="century" aria-labelledby="tab-century"><nav aria-label="센추리 모드">
 <a href="spice.html" style="--art:url(art/trade.webp)"><span>1</span><div><h2>향신료의 길</h2><p>상인 카드를 모아 주문을 달성하세요.</p></div></a>
@@ -30,4 +31,5 @@ if(/^[a-f0-9]{32}$/.test(id||'')){url.pathname=url.pathname.replace(/[^/]*$/,id.
 <a href="splendor.html?mode=orient" style="--art:url(art/guild-2-2.webp)"><div><h2>동방</h2><p>동방 카드로 보너스를 복제하고 개발 카드를 연계하세요.</p></div></a>
 <a href="splendor.html?mode=forts" style="--art:url(art/guild-1-3.webp)"><div><h2>성채</h2><p>성채로 개발 카드를 선점하세요.</p></div></a>
 </nav></section>
+<section role="tabpanel" id="cept" aria-labelledby="tab-cept" hidden><nav aria-label="컬드셉트 대전"><a href="cept.html" style="--art:url(art/fort.webp)"><div><h2>컬드셉트 2 · 셉터 대전</h2><p>듀난과 신전 지도에서 북을 편집하고 영지를 겨루세요. 2~4인.</p></div></a></nav></section>
 </main><script src="welcome.js"></script></body></html>

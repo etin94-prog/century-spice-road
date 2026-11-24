@@ -61,3 +61,12 @@ python -m http.server 8000 --bind 127.0.0.1 --directory dist
 대국 설정에서 기본판과 2017년판 ‘찬란한 도시’의 도시·교역소·동방·성채 중 하나를 고릅니다. 선택한 모드는 AI 대국과 친구 초대방에 적용됩니다. 동방에서는 단계별 동방 덱을 눌러 비공개 예약할 수 있습니다. 카드 120장의 전면에는 이 프로젝트용으로 생성한 삽화를 사용했습니다.
 
 규칙은 [2017년 확장 규칙서](https://tesera.ru/images/items/1136668/rules_citiesofsplendor_us_ld-2.pdf), 인쇄된 비용은 [구성품 수치](https://github.com/hexanome-04/splendor/tree/HEAD/server/src/main/resources)를 참고했습니다. 확장 규칙·재현 검사는 `node qa/splendor-expansions.cjs`로 실행합니다.
+
+
+## 컬드셉트 2 대전
+
+게임 선택의 **컬드셉트 2** 탭에서 시작합니다. 듀난은 18칸에 성과 남쪽 요새가 있으며 기본 목표는 5,000G입니다. 쌍문 신전은 갈림길과 지역별 호부를 추가한 창작 지도입니다. 화·지 초기 북은 26종 50장입니다. 북 편집에서 종류별 최대 4장씩 조정하고 정확히 50장일 때 저장할 수 있습니다.
+
+같은 기기에서의 대전은 정적 파일로 실행할 수 있습니다. 다른 기기와의 초대 대전은 저장소 루트에서 `node cept-server.cjs`를 실행한 뒤 호스트 브라우저로 [대전 서버](http://localhost:8094/cept.html)를 여세요. 사람 좌석을 2개 이상 고르고 **초대방 만들기**를 누릅니다. 참가자는 동일 네트워크에서 초대 주소를 열며, 외부 인터넷에서 사용하려면 이 서버에 연결되는 HTTPS 주소가 필요합니다. GitHub Pages는 정적 파일만 제공합니다.
+
+서버는 방 상태를 사용자 홈의 `.cept-rooms` 폴더에 보관합니다. `CEPT_ROOM_DIR`, `HOST`, `PORT`로 저장 위치·수신 주소·포트를 설정할 수 있습니다. 같은 브라우저와 같은 사이트 주소로 재접속하면 기존 좌석을 복원합니다. 규칙 검사는 `node qa/cept.cjs`와 `node qa/cept-original.cjs`, 독립 브라우저 4좌석 검사는 Playwright 환경에서 `node qa/cept-room.cjs`로 실행합니다.
