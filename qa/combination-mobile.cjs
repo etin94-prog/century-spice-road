@@ -39,7 +39,7 @@ async function run(){
      const viewport=apple?{width:390,height:844}:{width:740,height:360};
      const p=await browser.newPage({viewport,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
      const errors=[];p.on('pageerror',e=>errors.push(e.message));
-     await p.goto(base);assert.equal(await p.locator('a[href="splendor.html"]').count(),1);
+     await p.goto(base);assert.equal(await p.locator('a[href="splendor.html?mode=base"]').count(),1);
      const href=mode===1?'spice.html':'expedition.html?'+(mode<10?'edition':'combo')+'='+mode;
      await p.locator('a[href="'+href+'"]').tap();await p.locator('[data-count="'+seats+'"]').tap();await p.locator('#new').tap();
      assert.equal(await p.evaluate(()=>g.players.length),seats);

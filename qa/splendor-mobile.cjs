@@ -36,7 +36,7 @@ async function run(){
   }
   try{
     const url=process.env.GAME_URL||'http://127.0.0.1:'+server.address().port+'/';
-    const host=await page();await host.goto(url);await host.locator('[href="splendor.html"]').tap();
+    const host=await page();await host.goto(url);await host.locator('#tab-splendor').tap();await host.locator('[href="splendor.html?mode=base"]').tap();
     const room=process.argv.includes('--room');
     if(room){
       await host.locator('#friend').tap();const guest=await page(true);await guest.goto(await host.locator('#invite').inputValue());

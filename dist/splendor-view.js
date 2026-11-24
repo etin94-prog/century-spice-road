@@ -160,9 +160,9 @@ function advance(a,remote=false,sub=false){
 }
 document.addEventListener('click',e=>{if(flightActor!==null&&!el('modal').open){e.stopImmediatePropagation();finish();}},true);
 function results(){soundAtResults(g);modal('최종 순위',rankings(g).map(r=>'<p class="ranking"><b>'+r.rank+'위 · '+name(r.i)+' · '+r.points+'점</b>　'+(r.city?'도시 획득 · ':'')+'개발 카드 '+r.cards+'장</p>').join('')+'<button id="again">새 대국</button>');el('again').onclick=online?createOnline:setup;}
-function setup(){
+function setup(preferredMode){
   if(online){roomMenu();return;}
-  let mode=g.mode||'base',count=g.players.length;const roles=[1,2,3].map(i=>g.players[i]?.level||'Medium');
+  let mode=guildModes.includes(preferredMode)?preferredMode:(g.mode||'base'),count=g.players.length;const roles=[1,2,3].map(i=>g.players[i]?.level||'Medium');
   function draw(){modal('스플렌더 · 대국 설정','<label class="seat">게임 모드<select id="mode">'+guildModes.map(k=>'<option value="'+k+'" '+(k===mode?'selected':'')+'>'+guildNames[k]+'</option>').join('')+'</select></label><p>'+(guildRules[mode]||'보석을 모으고 개발 카드를 구매해 명성 15점을 달성하세요.')+'</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+'인</button>').join('')+'</div>'+roles.slice(0,count-1).map((l,j)=>'<label class="seat">AI '+(j+2)+'<select id="level'+j+'">'+levels.map(v=>'<option '+(v===l?'selected':'')+'>'+v+'</option>').join('')+'</select></label>').join('')+'<p><button class="primary" id="new">AI 대국 시작</button> <button id="friend">친구 초대 대전</button></p>');
     el('mode').onchange=e=>{mode=e.target.value;draw();};bind('count',n=>{count=n;draw();});roles.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>roles[j]=e.target.value);
     el('new').onclick=()=>{g=newGame(roles.slice(0,count-1),Math.random,mode);close();save();render();schedule();};el('friend').onclick=()=>createOnline(mode);
@@ -195,4 +195,5 @@ if(!room){
     }
   }catch{saveStatus='저장된 대국을 읽을 수 없음';}
 }
-render();if(room)enterOnline(room);else if(g.over)results();else if(!resumed)setup();else schedule();
+const requestedMode=new URLSearchParams(location.search).get('mode');
+render();if(room)enterOnline(room);else if(guildModes.includes(requestedMode))setup(requestedMode);else if(g.over)results();else if(!resumed)setup();else schedule();

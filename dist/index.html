@@ -2,4 +2,32 @@
 <script>
 const url=new URL(location.href),id=url.searchParams.get('table')||url.searchParams.get('room');
 if(/^[a-f0-9]{32}$/.test(id||'')){url.pathname=url.pathname.replace(/[^/]*$/,id.startsWith('ce000004')?'splendor.html':/^ce00000[23]/.test(id)?'expedition.html':'spice.html');location.replace(url.href);}
-</script><link rel="stylesheet" href="welcome.css"></head><body><main><header><p lang="en">Board Game Table</p><h1>어떤 게임을 펼칠까요?</h1><div>게임을 고른 뒤 AI와 대결하거나 친구를 초대하세요.</div></header><nav aria-label="게임 모드"><a href="spice.html" style="--art:url(art/trade.webp)"><span>1</span><div><h2>향신료의 길</h2><p>상인 카드를 모아 주문을 달성하세요.</p></div></a><a href="expedition.html?edition=2" style="--art:url(art/island.webp)"><span>2</span><div><h2>동방의 바다</h2><p>섬을 오가며 교역소를 세우세요.</p></div></a><a href="expedition.html?edition=3" style="--art:url(art/settlement.webp)"><span>3</span><div><h2>신대륙의 개척자</h2><p>정착민을 배치해 신대륙을 개척하세요.</p></div></a><a href="expedition.html?combo=12" style="--art:url(art/harbour.webp)"><span>1 + 2</span><div><h2>모래에서 바다로</h2><p>상인 카드를 써서 배를 움직이세요.</p></div></a><a href="expedition.html?combo=123" style="--art:url(art/fort.webp)"><span>1 + 2 + 3</span><div><h2>세 시대의 교역</h2><p>상인, 선박, 정착민을 함께 운용하세요.</p></div></a><a href="expedition.html?combo=13" style="--art:url(art/produce.webp)"><span>1 + 3</span><div><h2>동쪽에서 서쪽으로</h2><p>상인 카드로 나만의 교역로를 만드세요.</p></div></a><a href="splendor.html" style="--art:url(art/guild-2-4.webp)"><span>◆</span><div><h2>스플렌더</h2><p>보석을 모아 개발 카드를 사고 귀족을 초대하세요.</p></div></a><a href="catan.html" style="--art:url(art/island.webp)"><span>⬡</span><div><h2>카탄</h2><p>기본판 · 친절한 도둑 · 항구왕</p></div></a></nav></main></body></html>
+</script><link rel="stylesheet" href="welcome.css?v=tabs"></head><body><main><header><p lang="en">Board Game Table</p><h1>어떤 게임을 펼칠까요?</h1><div>게임을 고르고 플레이할 모드를 선택하세요.</div></header>
+<div role="tablist" aria-label="보드게임">
+<button type="button" role="tab" id="tab-century" aria-controls="century" aria-selected="true" tabindex="0">센추리</button>
+<button type="button" role="tab" id="tab-catan" aria-controls="catan" aria-selected="false" tabindex="-1">카탄</button>
+<button type="button" role="tab" id="tab-splendor" aria-controls="splendor" aria-selected="false" tabindex="-1">스플랜더</button>
+</div>
+<section role="tabpanel" id="century" aria-labelledby="tab-century"><nav aria-label="센추리 모드">
+<a href="spice.html" style="--art:url(art/trade.webp)"><span>1</span><div><h2>향신료의 길</h2><p>상인 카드를 모아 주문을 달성하세요.</p></div></a>
+<a href="expedition.html?edition=2" style="--art:url(art/island.webp)"><span>2</span><div><h2>동방의 바다</h2><p>섬을 오가며 교역소를 세우세요.</p></div></a>
+<a href="expedition.html?edition=3" style="--art:url(art/settlement.webp)"><span>3</span><div><h2>신대륙의 개척자</h2><p>정착민을 배치해 신대륙을 개척하세요.</p></div></a>
+<a href="expedition.html?combo=12" style="--art:url(art/harbour.webp)"><span>1 + 2</span><div><h2>모래에서 바다로</h2><p>상인 카드를 써서 배를 움직이세요.</p></div></a>
+<a href="expedition.html?combo=123" style="--art:url(art/fort.webp)"><span>1 + 2 + 3</span><div><h2>세 시대의 교역</h2><p>상인, 선박, 정착민을 함께 운용하세요.</p></div></a>
+<a href="expedition.html?combo=13" style="--art:url(art/produce.webp)"><span>1 + 3</span><div><h2>동쪽에서 서쪽으로</h2><p>상인 카드로 나만의 교역로를 만드세요.</p></div></a>
+</nav></section>
+<section role="tabpanel" id="catan" aria-labelledby="tab-catan" hidden><nav aria-label="카탄 모드">
+<a href="catan.html?mode=classic" style="--art:url(art/settlement.webp)"><div><h2>기본 카탄</h2><p>자원을 교역하고 마을과 도시를 건설하세요.</p></div></a>
+<a href="catan.html?mode=sea" style="--art:url(art/island.webp)"><div><h2>항해자</h2><p>배를 건조해 새로운 섬에 정착하세요.</p></div></a>
+<a href="catan.html?mode=knights" style="--art:url(art/fort.webp)"><div><h2>도시와 기사</h2><p>도시를 발전시키고 기사로 야만인을 막으세요.</p></div></a>
+<a href="catan.html?mode=friendly" style="--art:url(art/produce.webp)"><div><h2>친절한 도둑</h2><p>초반 정착지를 보호하는 규칙으로 플레이하세요.</p></div></a>
+<a href="catan.html?mode=ports" style="--art:url(art/harbour.webp)"><div><h2>항구왕</h2><p>항구에 진출해 추가 승점을 얻으세요.</p></div></a>
+</nav></section>
+<section role="tabpanel" id="splendor" aria-labelledby="tab-splendor" hidden><nav aria-label="스플랜더 모드">
+<a href="splendor.html?mode=base" style="--art:url(art/guild-2-4.webp)"><div><h2>기본판</h2><p>보석을 모아 개발 카드를 사고 귀족을 초대하세요.</p></div></a>
+<a href="splendor.html?mode=cities" style="--art:url(art/guild-2-0.webp)"><div><h2>도시</h2><p>도시가 요구하는 명성과 보너스를 달성하세요.</p></div></a>
+<a href="splendor.html?mode=posts" style="--art:url(art/guild-1-1.webp)"><div><h2>교역소</h2><p>개발 카드 보너스를 조합해 교역 특권을 얻으세요.</p></div></a>
+<a href="splendor.html?mode=orient" style="--art:url(art/guild-2-2.webp)"><div><h2>동방</h2><p>동방 카드로 보너스를 복제하고 개발 카드를 연계하세요.</p></div></a>
+<a href="splendor.html?mode=forts" style="--art:url(art/guild-1-3.webp)"><div><h2>성채</h2><p>성채로 개발 카드를 선점하세요.</p></div></a>
+</nav></section>
+</main><script src="welcome.js"></script></body></html>
