@@ -225,6 +225,9 @@ const Cepter = (() => {
     if(!Array.isArray(a)||!choices(s).some(b=>a.length===b.length&&b.every((v,i)=>v===a[i])))return false;
     const [k,x,y]=a,i=actor(s),p=s.players[i],t=s.tiles[p.pos];
     const before=s.mapId==='market'?landValues(s):null;
+    function mapEffect(type,label,tile=p.pos,extra={}){
+      s.mapEffect={sequence:(s.mapEffect?.sequence||0)+1,type,label,tile,source:p.pos,...extra};
+    }
     switch(k){
       case 'route':advance(s,x);break;
       case 'buySymbol':case 'sellSymbol':{
@@ -233,39 +236,48 @@ const Cepter = (() => {
       case 'leaveTemple':resumeMove(s);break;
       case 'liquidate':p.cash+=s.prices[x]*y;p.symbols[x]-=y;debt(s);break;
       case 'cast':{
-        const c=cards[paid(s,p,x)];s.phase='roll';
+        const c=cards[paid(s,p,x)],cash=p.cash;s.phase='roll';
         if(c.effect==='cash')p.cash+=100;
         else if(c.effect==='manna')p.cash+=50*(p.lap+1);
         else if(c.effect==='fly')s.fly=true;
         else if(c.effect==='six'||c.effect==='one')p.word=c.effect==='one'?1:6;
         else{s.spellEffect=c.effect;s.phase='spellTarget';}
+        if(s.phase==='roll'){
+          const word=c.effect==='one'||c.effect==='six';
+          const label=word?'이동 '+p.word:c.effect==='fly'?'주사위 ×2':'+'+(p.cash-cash)+' G';
+          mapEffect(word?'word':c.effect==='fly'?'fly':'gain',label,p.pos,{title:c.name});
+        }else mapEffect('cast',c.name);
         note(s,p.name+' · '+c.name);break;
       }
       case 'targetLand':{
-        const unit=s.tiles[x].unit;if(s.spellEffect==='heal')unit.hp=cards[unit.id].hp;
-        else if((unit.hp-=20)<=0)vacate(s.tiles[x]);s.phase='roll';break;
+        const unit=s.tiles[x].unit,prior=unit.hp;if(s.spellEffect==='heal')unit.hp=cards[unit.id].hp;
+        else if((unit.hp-=20)<=0)vacate(s.tiles[x]);s.phase='roll';
+        const change=(s.tiles[x].unit?.hp||0)-prior;
+        mapEffect(s.spellEffect,(change>=0?'+':'−')+Math.abs(change)+' HP',x,{title:cards[unit.id].name});
+        break;
       }
       case 'targetPlayer':if(s.spellEffect==='shatter'){s.spellTarget=x;s.phase='shatter';}
-        else{s.players[x].word=s.spellEffect==='word1'?1:6;s.phase='roll';}break;
-      case 'breakCard':s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
-      case 'fizzle':s.phase='roll';break;
-      case 'roll':{const die=()=>1+Math.floor(Math.random()*board(s).die);s.die=p.word||s.fixed||(die()+(s.fly?die():0));delete p.word;s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(p.dir){if(p.previous==null)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else s.phase='direction';break;
+        else{s.players[x].word=s.spellEffect==='word1'?1:6;mapEffect('word','이동 '+s.players[x].word,s.players[x].pos,{title:s.players[x].name});s.phase='roll';}break;
+      case 'breakCard':mapEffect('shatter','카드 파괴',s.players[s.spellTarget].pos,{title:s.players[s.spellTarget].name});s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
+      case 'fizzle':mapEffect('cast','대상 없음');s.phase='roll';break;
+      case 'roll':{const die=()=>1+Math.floor(Math.random()*board(s).die);const fixed=p.word||s.fixed,faces=fixed?[fixed]:s.fly?[die(),die()]:[die()];s.die=faces.reduce((a,b)=>a+b,0);mapEffect('roll',String(s.die),p.pos,{faces,sides:board(s).die});delete p.word;s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(p.dir){if(p.previous==null)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else s.phase='direction';break;
       case 'direction':move(s,x);break;
       case 'summon':case 'exchange':{
         const tile=k==='summon'?t:s.tiles[x],id=paid(s,p,k==='summon'?x:y);
         if(k==='exchange')p.hand.push(tile.unit.id);
+        mapEffect('summon',cards[id].name,k==='summon'?p.pos:x);
         tile.owner=i;tile.unit={id,hp:cards[id].hp};note(s,p.name+' · '+cards[id].name+' 배치');afterTerritory(s);break;
       }
-      case 'level':p.cash-=(s.tiles[x].base||80)*2**(y-1)-worth(s.tiles[x]);s.tiles[x].level=y;note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
+      case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=(s.tiles[x].base||80)*2**(y-1)-worth(s.tiles[x]);s.tiles[x].level=y;note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
       case 'transfer':{
         const from=s.tiles[x],dest=s.tiles[y];
         if(dest.owner<0){dest.owner=i;dest.unit=from.unit;delete dest.unit.confused;vacate(from);afterTerritory(s);}
-        else{s.battle={at:y,inv:from.unit.id,invHP:from.unit.hp,from:x,atkItem:null,defItem:null};s.phase='attack';}
+        else{mapEffect('invade','영지 공격',y,{source:x});s.battle={at:y,inv:from.unit.id,invHP:from.unit.hp,from:x,atkItem:null,defItem:null};s.phase='attack';}
         break;
       }
-      case 'element':p.cash-=300;s.tiles[x].type=y;afterTerritory(s);break;
+      case 'element':mapEffect('cast',elements[y]+' 속성',x);p.cash-=300;s.tiles[x].type=y;afterTerritory(s);break;
       case 'pay':payToll(s);break;
-      case 'invade':s.battle={at:p.pos,inv:paid(s,p,x),atkItem:null,defItem:null};s.phase='attack';break;
+      case 'invade':mapEffect('invade','영지 침략',p.pos);s.battle={at:p.pos,inv:paid(s,p,x),atkItem:null,defItem:null};s.phase='attack';break;
       case 'bare':case 'equip':{
         const id=k==='equip'?paid(s,p,x):null;
         if(s.phase==='attack'){s.battle.atkItem=id;s.phase='defend';}else{s.battle.defItem=id;resolve(s);}break;

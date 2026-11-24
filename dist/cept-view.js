@@ -11,11 +11,14 @@ function save(){if(room)return;try{localStorage.setItem(storage,JSON.stringify(s
 try{const raw=localStorage.getItem(storage);if(raw){const v=JSON.parse(raw);if(v.version===1&&[2,3,4].includes(v.players.length)&&C.maps[v.mapId||'classic']?.types.length===v.tiles.length&&(v.phase==='over'||C.choices(v).length))s=v;else throw Error();}}catch{$('notice').textContent='저장한 대국을 읽을 수 없습니다.';}
 function seats(){const select=$('humans'),prior=+select.value||1;select.replaceChildren();for(let i=1;i<=+$('count').value;i++)select.add(new Option(i+'명 · AI '+(+$('count').value-i)+'명',i));select.value=Math.min(prior,+$('count').value);}
 let seenMove=0,activeWalk=null;
-function lobby(){stopWalk();if(room){location.assign(location.pathname);return;}clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;$('resume').hidden=!s||s.phase==='over';}
+function lobby(){cancelMapEffect();stopWalk();if(room){location.assign(location.pathname);return;}clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;$('resume').hidden=!s||s.phase==='over';}
 function handoff(){return !room&&s.phase!=='over'&&!s.players[C.actor(s)].ai&&s.players.filter(p=>!p.ai).length>1;}
-function enter(){stopWalk();seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
+function enter(){cancelMapEffect();seenMapEffect=s.mapEffect?.sequence||0;stopWalk();seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
 $('count').onchange=seats;$('setup').onclick=lobby;$('resume').onclick=enter;
 $('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook());save();enter();};
+const handPanel=$('handPanel');
+try{const saved=localStorage.getItem('cept-hand-open');handPanel.open=saved===null?!matchMedia('(max-width:900px), (pointer:coarse)').matches:saved==='1';}catch{}
+handPanel.addEventListener('toggle',()=>{try{localStorage.setItem('cept-hand-open',handPanel.open?'1':'0');}catch{}});
 seats();lobby();
 function act(a){if(room){roomAction(a);return;}const before=C.actor(s);if(!C.play(s,a))return;pending=before!==C.actor(s)&&handoff();focusCard=inspect=-1;save();render();}
 function chosenBook(){return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
@@ -187,6 +190,7 @@ async function walkPath(move){
 
 function render(){
   clearTimeout(timer);
+  if(presentMapEffect(s.mapEffect))return;
   const move=s.lastMove;
   if(move&&move.sequence!==seenMove){
     stopWalk();seenMove=move.sequence;

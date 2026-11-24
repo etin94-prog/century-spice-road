@@ -90,3 +90,31 @@
 .battle-versus{pointer-events:none;position:absolute;inset:43% 8% auto;text-align:center;padding:6px;border-block:2px solid #ccac68;background:linear-gradient(90deg,#181f2bea,#394052f5,#181f2bea);color:#ffe8b4;font-weight:bold;opacity:0;animation:cept-versus 1.4s .32s both}
 @keyframes cept-versus{0%,100%{opacity:0}25%,75%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.battle-versus{display:none}}
+
+#handPanel{margin:8px 0;padding:0;min-width:0}
+#handPanel summary{padding:10px 12px;cursor:pointer;min-height:44px;box-sizing:border-box}
+#handPanel[open] #hand{padding:6px 8px 10px;scroll-snap-type:x proximity}
+#handPanel .card{scroll-snap-align:start;flex:0 0 clamp(95px,12vw,145px)}
+.table aside{min-width:0}
+.showing-map-effect #hand{visibility:hidden}
+.map-effect{position:absolute;inset:0;z-index:90;pointer-events:none;--glow:#ffe8a5}
+.map-fx-anchor,.map-fx-badge,.map-projectile{position:absolute}
+.map-fx-badge{max-width:118px;text-align:center;translate:-50% -100%;background:#161424ed;border:1px solid var(--glow);padding:2px 7px;border-radius:6px;color:#fff8eb;line-height:1.2;animation:cept-badge .86s ease-out both}
+.map-fx-label,.map-fx-badge small{display:block}.map-fx-label{font-size:clamp(14px,3cqw,23px)}
+.map-burst{position:absolute;width:clamp(44px,14cqw,105px);aspect-ratio:1;translate:-50% -50%;border:3px solid var(--glow);border-radius:50%;box-shadow:0 0 12px var(--glow),inset 0 0 10px var(--glow);animation:cept-burst .68s .15s both}
+.map-projectile{opacity:0;width:13px;height:13px;translate:-50% -50%;border-radius:50%;background:white;box-shadow:0 0 12px 5px var(--glow)}
+.map-effect.bolt,.map-effect.invade,.map-effect.shatter{--glow:#ffa47d}
+.bolt .map-burst,.invade .map-burst,.shatter .map-burst{background:conic-gradient(from 20deg,transparent,#fff4cd,transparent,#e96935,transparent);clip-path:polygon(50% 0,58% 33%,90% 9%,70% 43%,100% 49%,68% 58%,88% 93%,55% 67%,44% 100%,38% 68%,3% 88%,31% 53%,0 40%,35% 36%,22% 4%,47% 33%)}
+.heal,.summon{--glow:#98ffd1}.word,.fly,.cast{--glow:#d8adff}
+.map-effect.roll{display:grid;place-content:center;justify-items:center;gap:6px;background:radial-gradient(ellipse at center,#21192e66,transparent 54%)}
+.map-dice{display:flex;gap:6px;perspective:280px}
+.map-die{width:clamp(52px,11cqw,88px);aspect-ratio:1;display:grid;place-content:center;clip-path:polygon(25% 0,76% 0,100% 40%,87% 79%,49% 100%,11% 78%,0 36%);background:conic-gradient(from 25deg at 47% 45%,#38205b,#8142ae,#382047,#ae70c6,#653a87,#e6c887,#38205b);font:900 clamp(28px,6cqw,46px) Georgia,serif;color:#fff4c5;text-shadow:0 2px 4px #20112a;animation:cept-dice-turn .36s linear infinite}
+.settled .map-die{animation:none}.roll-result{background:#20182ce8;border:1px solid #ceab65;border-radius:5px;color:#ffebaa;padding:2px 9px;visibility:hidden}.settled .roll-result{visibility:visible}
+@keyframes cept-dice-turn{to{transform:rotateY(360deg) rotateZ(12deg)}}
+@keyframes cept-burst{from{opacity:0;transform:scale(.2)}35%{opacity:1}to{opacity:0;transform:scale(1.35)}}
+@keyframes cept-badge{from{opacity:0;transform:translateY(6px)}35%,100%{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.map-effect *{animation:none!important}}
+@media(max-width:740px){#buttons button,#buttons select{min-height:44px}.table aside{padding:8px}.table aside h2,.table aside p{margin:4px 0}.table aside details:not(#handPanel){font-size:13px}#handPanel .card{flex-basis:100px}#handPanel .card-face{max-height:108px}}
+.map-sigil{position:absolute;translate:-50% -50%;color:#fff6cc;font:bold clamp(22px,6cqw,45px) Georgia,serif;text-shadow:0 0 9px var(--glow),0 2px 3px #25182e;animation:cept-badge .6s ease-out both}
+.map-effect.shatter .map-burst{border-radius:2px;clip-path:polygon(0 0,58% 0,41% 45%,72% 29%,35% 100%,0 100%,0 0,66% 0,100% 0,100% 100%,46% 100%,83% 21%,53% 34%);background:linear-gradient(140deg,#f3d3a7,#82475c);width:32px;aspect-ratio:4/5}
+.map-effect.fly .map-burst{border-radius:60% 5% 60% 12%;transform:rotate(-25deg);background:linear-gradient(30deg,transparent,#eee1ffb0)}
