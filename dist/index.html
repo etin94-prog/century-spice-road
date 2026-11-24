@@ -1,7 +1,7 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#132e2a"><title>보드게임 선택</title>
 <script>
 const url=new URL(location.href),id=url.searchParams.get('table')||url.searchParams.get('room');
-if(/^[a-f0-9]{32}$/.test(id||'')){url.pathname=url.pathname.replace(/[^/]*$/,id.startsWith('ce000004')?'splendor.html':/^ce00000[23]/.test(id)?'expedition.html':'spice.html');location.replace(url.href);}
+if(/^[a-f0-9]{32}$/.test(id||'')){url.pathname=url.pathname.replace(/[^/]*$/,id.startsWith('ce000005')?'vegas.html':id.startsWith('ce000004')?'splendor.html':/^ce00000[23]/.test(id)?'expedition.html':'spice.html');location.replace(url.href);}
 </script><link rel="stylesheet" href="welcome.css?v=tabs"></head><body><main><header><p lang="en">Board Game Table</p><h1>어떤 게임을 펼칠까요?</h1><div>게임을 고르고 플레이할 모드를 선택하세요.</div></header>
 <div role="tablist" aria-label="보드게임">
 <button type="button" role="tab" id="tab-century" aria-controls="century" aria-selected="true" tabindex="0">센추리</button>

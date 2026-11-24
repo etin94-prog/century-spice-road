@@ -2,9 +2,9 @@
 const Vegas=(()=>{
   const denominations=[6,8,8,6,6,5,5,5,5];
   const total=values=>values.reduce((a,b)=>a+b,0);
-  function start(levels){
+  function start(levels,random=Math.random){
     const deck=denominations.flatMap((count,i)=>Array(count).fill(i+1));
-    for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+    for(let i=deck.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
     const g={players:[null,...levels].map(level=>({level,bills:[],left:8})),deck,round:0,starter:0};
     next(g);return g;
   }
@@ -17,9 +17,9 @@ const Vegas=(()=>{
       return {notes:notes.sort((a,b)=>b-a),counts:g.players.map(()=>0),winners:[]};
     });
   }
-  function roll(g){
+  function roll(g,random=Math.random){
     if(g.phase!=='roll')return;
-    g.roll=Array.from({length:g.players[g.turn].left},()=>Math.floor(Math.random()*6));
+    g.roll=Array.from({length:g.players[g.turn].left},()=>Math.floor(random()*6));
     g.phase='place';
   }
   function order(counts){
