@@ -2,8 +2,8 @@
 'use strict';
 const $=k=>document.getElementById(k);
 const C=Cepter,colors=['#fa9c80','#85c9ff','#e3c367','#a9d6a4'],storage='cept-local-v1';
-const labels={plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
-const hints={fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
+const labels={suppressCard:'모두 제거할 주문',sacrifice:'추가 비용으로 버릴 카드',ability:'영지 능력',abilityPlayer:'대상 셉터',abilityLand:'대상 영지',teleTo:'이동할 영지',eraseDraw:'파괴할 북 위치',comboArea:'효과 적용 지역',totem:'토템을 바쳐 마력 획득',plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
+const hints={suppression:'대상 손패에서 제거할 주문을 선택하세요.',sacrifice:'추가 비용으로 버릴 카드를 선택하세요.',territoryTarget:'영지 능력의 대상을 선택하세요.',teleMove:'이동할 칸을 선택하세요.',mindseeker:'북 맨 위에서 몇 번째 카드를 파괴할지 선택하세요.',fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 let room=null,customBook=null,draft=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
 function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
 function btn(text,fn,cls){const b=el('button',text,cls);b.type='button';b.onclick=fn;return b;}
@@ -22,9 +22,14 @@ handPanel.addEventListener('toggle',()=>{try{localStorage.setItem('cept-hand-ope
 seats();lobby();
 function act(a){if(room){roomAction(a);return;}const before=C.actor(s);if(!C.play(s,a))return;pending=before!==C.actor(s)&&handoff();focusCard=inspect=-1;save();render();}
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
-function tierBooks(){return CepterTierBooks[Number($('tierChoice').value)||0];}
+function tierBooks(){
+  const tier=CepterTierBooks[Number($('tierChoice').value)||0];
+  if(typeof sourceBook!=='function')return tier;
+  const find=b=>adaptedBooks.find(v=>v.name===b.name)||b;
+  return {...tier,...find(tier),player:find(tier.player)};
+}
 function chosenAiBook(){return $('tierChoice').value==='same'?chosenBook():(sourceBook($('aiChoice'))||tierBooks()).deck;}
-function chosenBook(){if($('bookChoice').value.startsWith('source-'))return sourceBook($('bookChoice')).deck;if($('bookChoice').value==='recommend')return tierBooks().player.deck;return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
+function chosenBook(){if(/^(source|combo)-/.test($('bookChoice').value))return sourceBook($('bookChoice')).deck;if($('bookChoice').value==='recommend')return tierBooks().player.deck;return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
 const bookKey='cept-book-v1';
 try{const data=JSON.parse(localStorage.getItem(bookKey));if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}}catch{}
 const catalogTypes={neutral:'무속성',fire:'화속성',water:'수속성',earth:'지속성',air:'풍속성',weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구',sflash:'단일 즉시 주문',mflash:'복수 즉시 주문',senchant:'단일 지속 주문',menchant:'복수 지속 주문'};
@@ -83,18 +88,21 @@ $('storeBook').onclick=()=>{
 const spellText={plague:'선택한 지역의 모든 크리처에게 독 부여',one:'다음 이동 1칸',six:'다음 이동 6칸',cash:'100G 획득',heal:'크리처 HP 완전 회복',shatter:'대상의 아이템·주문 1장 파괴',fly:'주사위 2개',bolt:'크리처 HP −20',manna:'현재 주회 × 50G',word1:'셉터의 다음 이동 1칸',word6:'셉터의 다음 이동 6칸'};
 const gearText={freeze:'두루마리 · 화 속성에 강타',reflect:'ST 0 · 일반 공격 반사',nullify:'ST 0 · 일반 공격 무효',orb:'무효·반사 무시',pierceEarth:'지 속성 지형 보너스 관통'};
 function stats(c){
-  if(c.kind==='spell')return spellText[c.effect];
+  if(c.kind==='spell')return spellText[c.effect]||c.catalog?.ability||c.name;
   const base=c.st+' ST / '+c.hp+' HP';
   return [base,gearText[c.effect],c.first?'선제':null,c.half?'일반 피해 절반':null,c.stationary?'방어 전용':null,c.support?'크리처로 지원 가능':null,c.confuse?'공격 명중 시 혼란':null,
     c.landBan!=null?C.elements[c.landBan]+' 배치 불가':null,c.ban?.map(v=>({weapon:'무기',armor:'방어구',scroll:'두루마리'})[v]+' 불가').join('·')].filter(Boolean).join(' · ');
 }
 function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
   switch(k){
-    case 'plagueArea':return (x+1)+'지역';
+    case 'comboArea':case 'plagueArea':return (x+1)+'지역';
     case 'fortuneDraw':return {creature:'크리처',item:'아이템',spell:'주문'}[x];
     case 'route':case 'targetLand':return (x+1)+'번 · '+(C.elements[s.tiles[x].type]||s.tiles[x].type);
-    case 'targetPlayer':return s.players[x].name;
-    case 'breakCard':return C.cards[s.players[s.spellTarget].hand[x]].name;
+    case 'ability':case 'abilityLand':case 'teleTo':case 'totem':return (x+1)+'번 영지';
+    case 'eraseDraw':return '위에서 '+(x+1)+'번째';
+    case 'sacrifice':return c.name;
+    case 'abilityPlayer':case 'targetPlayer':return s.players[x].name;
+    case 'suppressCard':case 'breakCard':return C.cards[s.players[s.spellTarget].hand[x]].name;
     case 'liquidate':case 'buySymbol':case 'sellSymbol':return (C.board(s).stage?(1+Math.floor(x/4))+'지역':x<4?'서부':'동부')+' '+C.elements[x%4]+' · '+y+'장 · '+s.prices[x]*y+'G';
     case 'direction':if(C.board(s).stage){const exits=C.board(s).links[p.pos];return (1+(x===1?exits[0]:exits.at(-1)))+'번 칸 방향';}return x===1?'시계 방향':'반시계 방향';
     case 'cast':case 'equip':case 'discard':case 'summon':case 'invade':return c.name+' · '+c.cost+'G';
@@ -180,6 +188,13 @@ function map(){
       b.classList.toggle('altered',t.type!==m.types[n]);b.dataset.fort=m.forts.includes(n)?'true':'false';
     }
     b.style.zIndex=String(m.stage?Math.round(c):2*(r+c));b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
+    const links=C.chain(s,t);
+    if(links>=2){
+      const label=name+' '+links+'연쇄';
+      b.append(el('span',label,'chain-mark'));
+      b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+label+' · 영지 가치 ×'+C.chainRate(s,t));
+      b.classList.toggle('chain-peer',inspect>=0&&C.sameChain(t,s.tiles[inspect]));
+    }
     const surface=el('span',null,'tile-surface');surface.setAttribute('aria-hidden','true');
     b.append(surface,el('b',(n+1)+' · '+name));
     if(s.phase==='fork'&&C.choices(s).some(a=>a[0]==='route'&&a[1]===n))b.classList.add('exit');
@@ -202,7 +217,18 @@ function map(){
     renderBattle(center,s);return;
   }
   center.replaceChildren();
-  if(inspect>=0){const t=s.tiles[inspect];if(t.unit)center.append(creatureFigure(t.unit.id));center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type),el('span',t.unit?C.cards[t.unit.id].name+(t.unit.poisoned?' · 독':'')+' · HP '+t.unit.hp+' · 가치 '+C.value(s,t)+'G':m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':t.type==='카드 상점'?'상점 상품 미확인':'점유 크리처 없음'));return;}
+  if(s.chainNotice)center.append(el('span',s.chainNotice,'chain-notice'));
+  if(inspect>=0){
+    const t=s.tiles[inspect],u=t.unit;
+    center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type));
+    if(u){
+      const c=C.cards[u.id],effect=C.cards.find(card=>u.enchant&&C.combo.key(card)===u.enchant);
+      const status=u.poisoned?'독':u.confused?'혼란':u.enchant==='paralysis'?'마비':u.enchant==='phantasm'?'판타즘':effect?.name;
+      center.prepend(creatureFigure(u.id));
+      center.append(el('span',[c.name,status,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.elements[t.type]+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+C.toll(s,t)+'G','가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
+    }else center.append(el('span',m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':t.type==='카드 상점'?'상점 상품 미확인':'점유 크리처 없음'));
+    return;
+  }
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?p.name+' 승리':s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
 }
 function stopWalk(){
@@ -292,6 +318,7 @@ function render(){
     },'primary'));
     controls.append(btn('대국 설정으로',lobby));
   }
+  if(local&&p.peek)$('hint').textContent+=' · 위저드 아이로 본 순서 '+p.peek.ids.map(id=>C.cards[id].name).join(' → ');
   const choices=local?(room?room.choices:C.choices(s)):[];
   for(const k of new Set(choices.map(a=>a[0]))){
     const group=choices.filter(a=>a[0]===k);

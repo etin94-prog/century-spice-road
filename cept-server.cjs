@@ -11,7 +11,7 @@ function createServer(dir){
     const ready=r.keys.every(Boolean),out={id:r.id,seat,revision:r.rev,joined:r.keys.filter(Boolean).length,needed:r.keys.length};
     if(!ready)return out;
     const s=structuredClone(r.game);
-    s.players.forEach((p,j)=>{delete p.book;delete p.template;if(j!==seat&&!(s.phase==='shatter'&&s.turn===seat&&s.spellTarget===j))p.hand=[];});
+    s.players.forEach((p,j)=>{if(j!==seat)delete p.peek;p.bookCount=p.book.length;delete p.book;delete p.template;if(j!==seat&&!(['shatter','suppression'].includes(s.phase)&&s.turn===seat&&s.spellTarget===j))p.hand=[];});
     if(s.battle&&s.phase==='defend'&&seat!==s.turn)s.battle.atkItem=null;
     out.game=s;out.choices=C.actor(r.game)===seat?C.choices(r.game):[];return out;
   }

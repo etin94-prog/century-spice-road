@@ -5,7 +5,7 @@ async function main(){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cept-test-')),server=createServer(dir);
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
  const base='http://127.0.0.1:'+server.address().port;
- const browser=await chromium.launch({executablePath:process.env.CHROME_BIN||undefined,headless:true});
+ const browser=await chromium.launch({executablePath:process.env.CHROME_BIN||undefined,headless:true,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows']});
  try{
   const pages=[],errors=[];
   for(let i=0;i<4;i++){
@@ -43,7 +43,7 @@ async function main(){
    assert.equal((await request(actor,{revision:r.revision,action})).status,200);
   }
   assert.ok(resumed,'expected a human defender reconnect');assert.ok(n<3500);
-  await Promise.all(pages.map(p=>p.waitForFunction(()=>s.phase==='over')));
+  await Promise.all(pages.map(p=>p.waitForFunction(()=>s.phase==='over',null,{polling:250,timeout:60000})));
   const views=await Promise.all(pages.map(p=>p.evaluate(()=>[s.winner,C.total(s,s.winner),room.revision])));
   for(const view of views)assert.deepEqual(view,views[0]);
   for(const p of pages)assert.ok(await p.evaluate(()=>innerWidth>=document.documentElement.scrollWidth));

@@ -26,13 +26,18 @@ for(const [group,select] of [['Player',$('bookChoice')],['AI',$('aiChoice')]]){
   adaptedBooks.forEach((b,i)=>{if(b.group===group)list.append(new Option(b.name+' · 유지 '+b.kept+'장','source-'+i));});
   select.insertBefore(list,select.querySelector('[value="custom"]'));
 }
-function sourceBook(select){const value=select.value;return value.startsWith('source-')?adaptedBooks[Number(value.slice(7))]:null;}
+const practiceBooks=C.combo.recipes.map((_,i)=>({name:'콤보 '+(i+1)+' · '+comboLabel(i),deck:C.practiceBook(i),practice:true}));
+for(const select of [$('bookChoice'),$('aiChoice')]){
+  const list=document.createElement('optgroup');list.label='콤보 연습 북';
+  practiceBooks.forEach((b,i)=>{if(b.deck)list.append(new Option(b.name,'combo-'+i));});select.insertBefore(list,select.querySelector('[value="custom"]'));
+}
+function sourceBook(select){const value=select.value;if(value.startsWith('combo-'))return practiceBooks[Number(value.slice(6))];return value.startsWith('source-')?adaptedBooks[Number(value.slice(7))]:null;}
 let matchupWorker=null;
 function refreshMatchup(){
   matchupWorker?.terminate();matchupWorker=null;
   const tier=tierBooks(),humanCount=Number($('humans').value),count=Number($('count').value);
   const usingAI=humanCount<count,same=$('tierChoice').value==='same';
-  const describe=b=>b.name+' (원본 유지 '+b.kept+'/50장)';
+  const describe=b=>b.practice?b.name:b.name+' (원본 유지 '+b.kept+'/50장)';
   $('aiChoice').disabled=!usingAI||same;
   const player=$('bookChoice').value==='recommend'?describe(tier.player):$('bookChoice').selectedOptions[0].text;
   $('deckMatchNames').textContent='Player · '+player+' / AI · '+(!usingAI?'없음':same?'플레이어와 같은 북':describe(sourceBook($('aiChoice'))||tier));

@@ -149,3 +149,7 @@
 #musicPanel summary{cursor:pointer}
 .audio-row{display:grid;grid-template-columns:6em minmax(70px,14em) 3em;align-items:center;gap:8px;margin:10px 0}
 .audio-row input[type=range]{width:100%;accent-color:#e5bc75}.audio-row output{text-align:right}
+
+.tile .chain-mark{position:absolute;z-index:6;top:52%;right:0;pointer-events:none;white-space:nowrap;padding:1px 3px;border:1px solid #e1bd7c;border-radius:3px;background:#201a12;color:#ffeac5;font:700 clamp(8px,1cqw,12px)/1.15 sans-serif}
+.tile.chain-peer .chain-mark{background:#ffe3a5;color:#30220d;box-shadow:0 0 5px #ffe3a5}
+#center .chain-notice{flex-basis:100%;color:#ffdc96;font-weight:700}

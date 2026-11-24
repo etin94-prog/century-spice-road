@@ -18,9 +18,11 @@ stageSelect.onchange=showStage;showStage();
 const archive=CepterArchive;
 const cardIndex=new Map(C.cards.flatMap((c,id)=>c.catalog?[[c.catalog.path,id]]:[]));
 const comboCards=paths=>paths.map(path=>C.cards[cardIndex.get(path)]?.catalog.name||path);
+const pathByName=new Map([...cardIndex.keys()].map(path=>[path.split('/').pop(),path]));
+function comboLabel(i){return C.combo.recipes[i].map(group=>group.length>4?'조건에 맞는 크리처 ('+group.length+'종)':comboCards(group.map(n=>pathByName.get(n))).join(' 또는 ')).join(' + ');}
 function archiveLabel(kind,row){
   if(kind==='books')return row.group+' · '+row.name;
-  if(kind==='combos')return row[0]+' · '+comboCards(row[1]).join(' + ');
+  if(kind==='combos')return row[0]+' · '+comboLabel(archive.combos.indexOf(row));
   return row[0];
 }
 function sourceLink(url,label){
@@ -51,23 +53,30 @@ function showEntry(){
       filterBook();tallyBook();$('bookCount').append(' · '+row.name+'에서 가져옴');$('editor').scrollIntoView();
     }));
     const grid=el('div',null,'archive-cards');grid.append(...cards.map(([path,n])=>archiveCard(path,n)));detail.append(grid);
-    const matched=archive.combos.filter(([,parts])=>parts.every(path=>row.cards[path]));
-    if(matched.length)detail.append(el('p','포함된 콤보 · '+matched.map(([,parts])=>comboCards(parts).join(' + ')).join(' / ')));
+    const names=book.map(id=>C.combo.key(C.cards[id]));
+    const matched=archive.combos.filter((_,i)=>C.combo.matches(C.combo.recipes[i],names));
+    if(matched.length)detail.append(el('p','포함된 콤보 · '+matched.map(row=>comboLabel(archive.combos.indexOf(row))).join(' / ')));
   }else if(kind==='combos'){
-    const missing=row[1].filter(path=>!C.cards[cardIndex.get(path)]||C.cards[cardIndex.get(path)].catalogOnly);
-    detail.append(el('p',missing.length?'대전 미지원 카드 · '+comboCards(missing).join(', '):'구성 카드 모두 대전 사용 가능'));
-    const grid=el('div',null,'archive-cards');grid.append(...row[1].map(path=>archiveCard(path)));detail.append(grid,sourceLink('https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-card-combos/culdcept-ps2dc-all-combos','원문 조합 설명'));
+    const groups=C.combo.recipes[index],paths=[...new Set(groups.flat())].map(n=>pathByName.get(n)).filter(Boolean);
+    detail.append(el('p',comboLabel(index)));
+    for(const [choice,label] of [['bookChoice','플레이어'],['aiChoice','AI']]){
+      detail.append(btn(label+' 콤보 연습 북으로 선택',()=>{
+        if(choice==='aiChoice'&&$('tierChoice').value==='same')$('tierChoice').selectedIndex=1;
+        $(choice).value='combo-'+index;refreshMatchup();$('config').scrollIntoView({block:'center'});
+      }));
+    }
+    const grid=el('div',null,'archive-cards');grid.append(...paths.map(path=>archiveCard(path)));detail.append(grid,sourceLink('https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-card-combos/culdcept-ps2dc-all-combos','원문 조합 설명'));
   }else if(kind==='music'){
     detail.append(btn('재생 · '+row[1],()=>{$('stageMusic').checked=false;saveAudioSettings();playTrack(index);}));
   }else if(kind==='medals'){detail.append(el('p',row[1]));}
   else detail.append(sourceLink(row[1],row[0]));
 }
 function showHandCombos(container,hand){
-  const held=new Set(hand.map(id=>C.cards[id]?.catalog?.path));
-  const matches=archive.combos.filter(([,parts])=>parts.length>1&&parts.every(path=>held.has(path)));
+  const held=hand.map(id=>C.combo.key(C.cards[id]));
+  const matches=C.combo.recipes.flatMap((g,i)=>C.combo.matches(g,held)?[i]:[]);
   if(!matches.length)return;
   const details=el('details');details.append(el('summary','손패에 모인 콤보 '+matches.length+'개'));
-  for(const [kind,parts] of matches)details.append(el('p',kind+' · '+comboCards(parts).join(' + ')));
+  for(const i of matches)details.append(el('p',archive.combos[i][0]+' · '+comboLabel(i)));
   container.append(details);
 }
 function listEntries(){
