@@ -17,6 +17,9 @@ function presentMapEffect(event){
   seenMapEffect=event.sequence;
   const map=$('map'),tiles=map.querySelectorAll('.tile'),target=tiles[event.tile];
   if(!target)return false;
+  playEffect(event.type);
+  if(event.type==='summon')announceCreatures([s.tiles[event.tile]?.unit?.id]);
+  if(event.type==='invade'&&s.battle)announceCreatures([s.battle.inv,s.tiles[s.battle.at]?.unit?.id]);
   const rolling=event.type==='roll',quiet=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const layer=el('div',null,'map-effect '+event.type),fx=el('div',null,'map-burst');
   layer.setAttribute('role','status');

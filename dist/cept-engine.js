@@ -48,10 +48,11 @@ const Cepter = (() => {
     return book;
   }
   function draw(p){if(!p.book.length)p.book=shuffledBook(p.template);p.hand.push(p.book.pop());}
-  function start(count,humans,target=4000,mapId='classic',template=starter){
-    if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||![3000,4000,5000,6000].includes(target)||!Object.hasOwn(maps,mapId)||!validBook(template))throw Error('대국 설정 오류');
+  function start(count,humans,target=4000,mapId='classic',template=starter,aiBook=template){
+    if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||![3000,4000,5000,6000].includes(target)||!Object.hasOwn(maps,mapId)||!validBook(template)||!validBook(aiBook))throw Error('대국 설정 오류');
     const players=Array.from({length:count},(_,i)=>{
-      const p={ai:i>=humans,name:(i>=humans?'AI ':'셉터 ')+(i+1),cash:200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(template),template:template.slice(),symbols:Array((maps[mapId].areaCount||2)*4).fill(0),previous:null};
+      const seatBook=i>=humans?aiBook:template;
+      const p={ai:i>=humans,name:(i>=humans?'AI ':'셉터 ')+(i+1),cash:200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(seatBook),template:seatBook.slice(),symbols:Array((maps[mapId].areaCount||2)*4).fill(0),previous:null};
       for(let j=0;j<4;j++)draw(p);return p;
     });
     const s={version:1,layoutRevision:1,mapId,prices:Array((maps[mapId].areaCount||2)*4).fill(10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
@@ -349,7 +350,10 @@ const Cepter = (() => {
       case 'pass':finish(s);break;
       case 'sell':p.cash+=value(s,s.tiles[x]);vacate(s.tiles[x],true);debt(s);break;
       case 'discard':p.hand.splice(x,1);if(p.hand.length<=6)s.phase='spell';break;
-    }updatePrices(s,before);return true;
+    }
+    const cue=s.phase==='over'?'victory':({pay:'coin',sell:'coin',buySymbol:'coin',sellSymbol:'coin',liquidate:'coin',equip:'card',discard:'card',fortuneDraw:'card'})[k];
+    if(cue)s.actionSound={sequence:(s.actionSound?.sequence||0)+1,cue};
+    updatePrices(s,before);return true;
   }
   function ai(s){
     const p=s.players[actor(s)];

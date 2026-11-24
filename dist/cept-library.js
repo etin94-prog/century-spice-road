@@ -43,7 +43,7 @@ function showEntry(){
     if(C.validBook(book))detail.append(btn('이 북으로 대국 설정',()=>{
       customBook=book;const choice=$('bookChoice');choice.lastElementChild.disabled=false;choice.value='custom';
       try{localStorage.setItem(bookKey,JSON.stringify(book));}catch{}
-      bookEditor();lobby();$('config').scrollIntoView({block:'center'});
+      bookEditor();refreshMatchup();lobby();$('config').scrollIntoView({block:'center'});
     }));
     else if(ready)detail.append(btn('지원 카드로 북 편집 시작',()=>{
       draft=C.cards.map((c,id)=>c.catalogOnly?0:Math.min(4,book.filter(n=>n===id).length));
@@ -54,9 +54,11 @@ function showEntry(){
     const matched=archive.combos.filter(([,parts])=>parts.every(path=>row.cards[path]));
     if(matched.length)detail.append(el('p','포함된 콤보 · '+matched.map(([,parts])=>comboCards(parts).join(' + ')).join(' / ')));
   }else if(kind==='combos'){
+    const missing=row[1].filter(path=>!C.cards[cardIndex.get(path)]||C.cards[cardIndex.get(path)].catalogOnly);
+    detail.append(el('p',missing.length?'대전 미지원 카드 · '+comboCards(missing).join(', '):'구성 카드 모두 대전 사용 가능'));
     const grid=el('div',null,'archive-cards');grid.append(...row[1].map(path=>archiveCard(path)));detail.append(grid,sourceLink('https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-card-combos/culdcept-ps2dc-all-combos','원문 조합 설명'));
   }else if(kind==='music'){
-    detail.append(btn('재생 · '+row[1],()=>{$('stageMusic').checked=false;playTrack(index);}));
+    detail.append(btn('재생 · '+row[1],()=>{$('stageMusic').checked=false;saveAudioSettings();playTrack(index);}));
   }else if(kind==='medals'){detail.append(el('p',row[1]));}
   else detail.append(sourceLink(row[1],row[0]));
 }
@@ -76,16 +78,16 @@ function listEntries(){
 }
 $('libraryKind').onchange=listEntries;$('libraryQuery').oninput=listEntries;$('libraryResults').onchange=showEntry;
 $('ps2Library').ontoggle=()=>{if($('ps2Library').open)listEntries();};
-const audio=$('soundtrack');audio.volume=.45;
+
 function playTrack(index){
   $('musicPanel').hidden=false;
   audio.src=archive.music[index][2];audio.title=archive.music[index][0];audio.loop=true;
-  audio.play().catch(()=>{$('notice').textContent='음악 재생 버튼을 눌러주세요.';});
+  startMusic();
 }
 function syncStageMusic(){
-  if(!$('stageMusic').checked||!s)return;
+  if(!$('musicOn').checked||!$('stageMusic').checked||!s)return;
   const first=[2,5,8,11,14,17,20,14,23,23,23,26,29,32,35,38][C.board(s).stage-1];
   const track=s.phase==='over'?41:first==null?49:first+(s.battle?2:s.players.some((_,i)=>C.total(s,i)>=s.target/2)?1:0);
   if(audio.src!==archive.music[track][2])playTrack(track);
 }
-$('stageMusic').onchange=()=>{if($('stageMusic').checked)syncStageMusic();};
+$('stageMusic').onchange=()=>{saveAudioSettings();if($('stageMusic').checked)syncStageMusic();};

@@ -44,9 +44,9 @@ function createServer(dir){
       const key=crypto.createHash('sha256').update(auth).digest('hex');
       const data=req.method==='POST'?await body(req):{};
       if(route==='/api/cept/rooms'&&req.method==='POST'){
-        const {count,humans,target,mapId,book}=data;
+        const {count,humans,target,mapId,book,aiBook}=data;
         if(!Number.isInteger(humans)||humans<2||humans>count||!C.validBook(book))fail(400,'초대방은 사람 좌석이 2개 이상 필요합니다.');
-        let game;try{game=C.start(count,humans,target,mapId,book);}catch{fail(400,'대국 설정 오류');}
+        let game;try{game=C.start(count,humans,target,mapId,book,aiBook);}catch{fail(400,'대국 설정 오류');}
         const r={id:crypto.randomBytes(16).toString('hex'),game,keys:[key,...Array(humans-1).fill(null)],rev:0};
         persist(r);const out=snapshot(r,0);
         if(['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress)){

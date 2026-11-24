@@ -48,7 +48,7 @@ function renderBattle(center,state){
     fighters.forEach((f,i)=>{f.update(b.finalHP[i]);f.frame.classList.toggle('defeated',b.finalHP[i]===0);});
     status.textContent=b.lines.at(-1);stage.dataset.phase='complete';
   };
-  if(!battleReplayDuration(b)){reveal();finish();return;}
+  if(!battleReplayDuration(b)){playEffect(b.strikes?.at(-1)?.effect||'hit');reveal();finish();return;}
   stage.dataset.phase='replay';status.textContent='전투 준비';
   later(180,()=>{reveal();status.textContent=[...items.map(id=>C.cards[id]?.name),b.landHP?'지형 보너스 +'+b.landHP+' HP':''].filter(Boolean).join(' · ')||'아이템 없이 전투';});
   b.strikes.forEach((strike,index)=>{
@@ -60,10 +60,12 @@ function renderBattle(center,state){
       attacker.frame.animate([{transform:'scale(1)'},{transform:'translateX('+(left?9:-9)+'%) scale(1.09)'},{transform:'scale(1)'}],{duration:420});
       const beast=[0,2,5,7,13,14,24].includes(ids[strike.side]);
       const attack=gear?.category==='scroll'?'magic':!gear&&beast?'fang':'slash';
+      playEffect(attack);
       const fx=el('i',null,'battle-impact '+attack);
       defender.frame.append(fx);later(650,()=>fx.remove());
     });
     later(time+290,()=>{
+      playEffect(strike.effect||'hit');
       status.textContent=strike.notes.join(' · ');
       if(strike.effect==='reflect'||strike.effect==='block'){
         const shield=el('i',null,'battle-impact ward');defender.frame.append(shield);

@@ -3,7 +3,7 @@
 const $=k=>document.getElementById(k);
 const C=Cepter,colors=['#fa9c80','#85c9ff','#e3c367','#a9d6a4'],storage='cept-local-v1';
 const labels={plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
-const hints={fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'남은 이동에 사용할 길을 선택하세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'첫 이동 방향을 선택하세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
+const hints={fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 let room=null,customBook=null,draft=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
 function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
 function btn(text,fn,cls){const b=el('button',text,cls);b.type='button';b.onclick=fn;return b;}
@@ -13,15 +13,17 @@ function seats(){const select=$('humans'),prior=+select.value||1;select.replaceC
 let seenMove=0,activeWalk=null;
 function lobby(){cancelMapEffect();stopWalk();if(room){location.assign(location.pathname);return;}clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;$('resume').hidden=!s||s.phase==='over';}
 function handoff(){return !room&&s.phase!=='over'&&!s.players[C.actor(s)].ai&&s.players.filter(p=>!p.ai).length>1;}
-function enter(){cancelMapEffect();seenMapEffect=s.mapEffect?.sequence||0;stopWalk();seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
+function enter(){seenActionSound=s.actionSound?.sequence||0;cancelMapEffect();seenMapEffect=s.mapEffect?.sequence||0;stopWalk();seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
 $('count').onchange=seats;$('setup').onclick=lobby;$('resume').onclick=enter;
-$('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook());save();enter();};
+$('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook(),chosenAiBook());save();enter();};
 const handPanel=$('handPanel');
 try{const saved=localStorage.getItem('cept-hand-open');handPanel.open=saved===null?!matchMedia('(max-width:900px), (pointer:coarse)').matches:saved==='1';}catch{}
 handPanel.addEventListener('toggle',()=>{try{localStorage.setItem('cept-hand-open',handPanel.open?'1':'0');}catch{}});
 seats();lobby();
 function act(a){if(room){roomAction(a);return;}const before=C.actor(s);if(!C.play(s,a))return;pending=before!==C.actor(s)&&handoff();focusCard=inspect=-1;save();render();}
-function chosenBook(){return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
+function tierBooks(){return CepterTierBooks[Number($('tierChoice').value)||0];}
+function chosenAiBook(){return $('tierChoice').value==='same'?chosenBook():(sourceBook($('aiChoice'))||tierBooks()).deck;}
+function chosenBook(){if($('bookChoice').value.startsWith('source-'))return sourceBook($('bookChoice')).deck;if($('bookChoice').value==='recommend')return tierBooks().player.deck;return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
 const bookKey='cept-book-v1';
 try{const data=JSON.parse(localStorage.getItem(bookKey));if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}}catch{}
 const catalogTypes={neutral:'무속성',fire:'화속성',water:'수속성',earth:'지속성',air:'풍속성',weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구',sflash:'단일 즉시 주문',mflash:'복수 즉시 주문',senchant:'단일 지속 주문',menchant:'복수 지속 주문'};
@@ -126,6 +128,7 @@ function focusMapTile(index){
   const root=$('map'),tile=root.children[index];
   if(!tile?.classList.contains('tile')||!root.clientWidth)return;
   const z=Number(mapZoom),w=root.clientWidth,h=root.clientHeight;
+  root.style.setProperty('--camera-zoom',z);
   const offset=(size,center,anchor)=>Math.min(0,Math.max(size*(1-z),size*anchor-center*z));
   const x=offset(w,tile.offsetLeft,.5),y=offset(h,tile.offsetTop+tile.offsetHeight*.5,.58);
   root.style.transform='translate('+x+'px,'+y+'px) scale('+z+')';
@@ -140,6 +143,24 @@ for(const button of mapViewButtons){
   };
 }
 new ResizeObserver(()=>focusMapTile(cameraTile)).observe($('mapViewport'));
+function drawRouteArrows(actions){
+  const root=$('map'),pos=s.players[s.turn].pos,from=root.children[pos],exits=C.board(s).links[pos];
+  for(const action of actions){
+    const [kind,value]=action;
+    const dest=kind==='route'?value:value===1?exits[0]:exits.at(-1);
+    const to=root.children[dest];
+    const dx=(to.offsetLeft-from.offsetLeft)/root.clientWidth,dy=(to.offsetTop-from.offsetTop)/root.clientHeight;
+    const angle=Math.atan2(dy*root.clientHeight,dx*root.clientWidth);
+    const b=btn('➜',()=>act(action),'route-arrow');
+    b.setAttribute('aria-label',(dest+1)+'번 칸 방향으로 이동');
+    b.style.left=(100*to.offsetLeft/root.clientWidth)+'%';
+    b.style.top=(100*(to.offsetTop+to.offsetHeight/2)/root.clientHeight)+'%';
+    b.style.setProperty('--angle',angle+'rad');
+    b.style.setProperty('--push-x',Math.cos(angle)*16+'px');
+    b.style.setProperty('--push-y',Math.sin(angle)*16+'px');
+    root.append(b);
+  }
+}
 function map(){
   const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.stage?1:m.rows+m.cols+.6;
   const half=m.stage?m.half:100/span;
@@ -222,6 +243,7 @@ async function walkPath(move){
       sprite.style.left=x+'px';sprite.style.top=y+'px';
       if(endX!==x)sprite.style.scale=endX<x?'-1 1':'1 1';
       const jumping=C.board(s).transit?.[move.path[step-1]]===destination;
+      playEffect(jumping?'warp':'step');
       const frames=jumping?[{left:x+'px',top:y+'px',opacity:1},{left:x+'px',top:y+'px',opacity:0,offset:.49},{left:endX+'px',top:endY+'px',opacity:0,offset:.5},{left:endX+'px',top:endY+'px',opacity:1}]:[{left:x+'px',top:y+'px'},{left:endX+'px',top:endY+'px'}];
       walk.animation=sprite.animate(frames,{duration:480,fill:'forwards'});
       await walk.animation.finished;
@@ -234,10 +256,13 @@ async function walkPath(move){
 function render(){
   clearTimeout(timer);
   syncStageMusic();
+  syncActionSound(s);
+  $('map').querySelectorAll('.route-arrow').forEach(b=>b.remove());
   if(presentMapEffect(s.mapEffect))return;
   const move=s.lastMove;
   if(move&&move.sequence!==seenMove){
     stopWalk();seenMove=move.sequence;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches)playEffect('step');
     if(move.path.length>1&&s.players[move.seat].pos===move.path.at(-1)&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
       walkPath(move);return;
     }
@@ -262,13 +287,14 @@ function render(){
     if(!room&&C.maps['ps2-'+next])controls.append(btn('다음 스테이지 · '+C.maps['ps2-'+next].name,()=>{
       const book=s.players[0].template;
       $('mapChoice').value='ps2-'+next;showStage();
-      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.target,'ps2-'+next,book);save();enter();
+      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.target,'ps2-'+next,book,s.players.find(p=>p.ai)?.template||book);save();enter();
     },'primary'));
     controls.append(btn('대국 설정으로',lobby));
   }
   const choices=local?(room?room.choices:C.choices(s)):[];
   for(const k of new Set(choices.map(a=>a[0]))){
     const group=choices.filter(a=>a[0]===k);
+    if(k==='direction'||k==='route'){drawRouteArrows(group);continue;}
     if(k==='buySymbol'||k==='sellSymbol'){
       const field=el('label',labels[k]),asset=el('select'),quantity=el('select');
       for(const n of new Set(group.map(a=>a[1])))asset.add(new Option((C.board(s).stage?(1+Math.floor(n/4))+'지역':n<4?'서부':'동부')+' '+C.elements[n%4]+' · 장당 '+s.prices[n]+'G',n));

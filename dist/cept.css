@@ -141,3 +141,11 @@
 .in-battle #mapViews,.showing-map-effect #mapViews{visibility:hidden}
 @media(pointer:coarse){#mapViews button{min-height:40px}}
 @media(prefers-reduced-motion:reduce){#mapViewport #map{transition:none}}
+
+#map .route-arrow{position:absolute;z-index:120;display:grid;place-items:center;width:44px;height:44px;min-width:0;padding:0;border-radius:50%;border:2px solid #ffe6a4;color:#ffe49c;background:#211d2be8;box-shadow:0 2px 6px #0009;font:700 26px/1 sans-serif;translate:-50% -50%;transform:scale(calc(1 / var(--camera-zoom,1))) translate(var(--push-x),var(--push-y)) rotate(var(--angle));cursor:pointer}
+#map .route-arrow:is(:hover,:focus-visible){background:#624723;outline:2px solid white;outline-offset:1px}
+
+#musicPanel{margin:12px 0;padding:10px;border:1px solid #655b49;border-radius:8px;background:#242731}
+#musicPanel summary{cursor:pointer}
+.audio-row{display:grid;grid-template-columns:6em minmax(70px,14em) 3em;align-items:center;gap:8px;margin:10px 0}
+.audio-row input[type=range]{width:100%;accent-color:#e5bc75}.audio-row output{text-align:right}

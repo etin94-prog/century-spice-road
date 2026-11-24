@@ -25,7 +25,7 @@ async function main(){
   let snap=(await request(0)).data;assert.equal(snap.game.players[1].hand.length,0);assert.equal(snap.game.players[0].book,undefined);
   const first={revision:snap.revision,action:['roll']};
   assert.equal((await request(1,first)).status,409);
-  await host.getByRole('button',{name:'주사위 굴리기'}).click();await host.getByRole('button',{name:'이동 방향 확정'}).waitFor();
+  await host.getByRole('button',{name:'주사위 굴리기'}).click();await host.locator('.route-arrow').first().waitFor();
   assert.equal((await request(0,first)).status,409);
   let resumed=false,n=0;
   while(n++<3500){
