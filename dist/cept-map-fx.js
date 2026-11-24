@@ -54,9 +54,10 @@ function presentMapEffect(event){
       spark.animate([{left:sx+'px',top:sy+'px',opacity:1},{left:x+'px',top:y+'px',opacity:1}],{duration:320,easing:'ease-in'});
     }
   }
-  map.append(layer);
+  if(rolling)$('mapViewport').append(layer);
+  else{focusMapTile(event.tile);map.append(layer);}
   $('game').classList.add('showing-map-effect');$('game').inert=true;
-  if(!quiet&&matchMedia('(max-width:900px), (pointer:coarse)').matches)map.scrollIntoView({block:'nearest',inline:'nearest'});
+  if(!quiet&&matchMedia('(max-width:900px), (pointer:coarse)').matches)$('mapViewport').scrollIntoView({block:'nearest',inline:'nearest'});
   const end=setTimeout(()=>{cancelMapEffect();render();},quiet?420:rolling?1190:960);
   mapPlayback={layer,end,spin};
   return true;

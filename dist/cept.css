@@ -131,3 +131,13 @@
 .dice-setting .map-die{width:83%;aspect-ratio:1;clip-path:none;border-radius:50%;background:radial-gradient(ellipse at 29% 21%,#fff9 0,transparent 19%),radial-gradient(ellipse at 45% 34%,#d33af0 0,#73119a 38%,#260435 72%,#130c26 92%);box-shadow:inset 0 -3px 5px #090411,inset 0 1px 2px #ffeccc;transform:rotate(12deg);color:white;font-style:italic}
 .settled .dice-setting{animation:orb-settle .3s ease-out}@keyframes orb-settle{50%{scale:1.08}to{scale:1}}
 @media(prefers-reduced-motion:reduce){.settled .dice-setting{animation:none}}
+
+#mapViewport{position:relative;overflow:clip;border-radius:6px;isolation:isolate}
+#mapViewport #map{transform-origin:0 0;transition:transform .46s ease-in-out}
+#mapViews{position:absolute;top:5px;right:5px;z-index:2;display:flex;gap:1px;padding:2px;border:1px solid #e9d6a55e;border-radius:7px;background:#151923b8}
+#mapViews button{min-width:42px;min-height:34px;margin:0;padding:3px 6px;border:0;background:transparent;color:#fff;font:inherit;font-size:12px;border-radius:4px}
+#mapViews button[aria-pressed=true]{background:#e1c78ed9;color:#241d10;font-weight:700}
+#mapViews button:focus-visible{outline:2px solid white;outline-offset:-2px}
+.in-battle #mapViews,.showing-map-effect #mapViews{visibility:hidden}
+@media(pointer:coarse){#mapViews button{min-height:40px}}
+@media(prefers-reduced-motion:reduce){#mapViewport #map{transition:none}}

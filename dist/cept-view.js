@@ -115,6 +115,31 @@ function pawnFoot(tileId,seat,occupants){
   const [x,y]=positions[occupants.length][occupants.indexOf(seat)];
   return [s.tiles[tileId].unit ? .60+x*.32 : x,y];
 }
+const mapViewButtons=[...$('mapViews').querySelectorAll('button')];
+let mapZoom='1.8',cameraTile=0;
+try{
+  const saved=localStorage.getItem('cept-map-zoom');
+  if(mapViewButtons.some(b=>b.dataset.zoom===saved))mapZoom=saved;
+}catch{}
+function focusMapTile(index){
+  cameraTile=index;
+  const root=$('map'),tile=root.children[index];
+  if(!tile?.classList.contains('tile')||!root.clientWidth)return;
+  const z=Number(mapZoom),w=root.clientWidth,h=root.clientHeight;
+  const offset=(size,center,anchor)=>Math.min(0,Math.max(size*(1-z),size*anchor-center*z));
+  const x=offset(w,tile.offsetLeft,.5),y=offset(h,tile.offsetTop+tile.offsetHeight*.5,.58);
+  root.style.transform='translate('+x+'px,'+y+'px) scale('+z+')';
+}
+for(const button of mapViewButtons){
+  button.setAttribute('aria-pressed',String(button.dataset.zoom===mapZoom));
+  button.onclick=()=>{
+    mapZoom=button.dataset.zoom;
+    for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(b===button));
+    try{localStorage.setItem('cept-map-zoom',mapZoom);}catch{}
+    focusMapTile(cameraTile);
+  };
+}
+new ResizeObserver(()=>focusMapTile(cameraTile)).observe($('mapViewport'));
 function map(){
   const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.stage?1:m.rows+m.cols+.6;
   const half=m.stage?m.half:100/span;
@@ -149,6 +174,7 @@ function map(){
     });
     b.append(pawns);root.append(b);
   });
+  focusMapTile(s.players[s.turn].pos);
   const center=$('center');center.classList.toggle('market-center',s.mapId==='market'&&!s.battle);
   if(s.battle){
     renderBattle(center,s);return;
@@ -188,6 +214,7 @@ async function walkPath(move){
       ];
       const start=step===1&&pawn?[parseFloat(pawn.style.left)/100,parseFloat(pawn.style.top)/100]:[.5,.58];
       const destination=move.path[step];
+      focusMapTile(destination);
       const occupants=s.players.flatMap((p,i)=>p.pos===destination?[i]:[]);
       const end=step===move.path.length-1?pawnFoot(destination,move.seat,occupants):[.5,.58];
       const [x,y]=point(from,start),[endX,endY]=point(to,end);
