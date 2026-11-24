@@ -16,12 +16,14 @@ const CepterMaps=(()=>{
   const stages=typeof module==='undefined'?CepterStages:require('./cept-stage-data.js');
   const maps={classic,dunnan,market};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
+  // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
+  const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];
   function playable(stage){
     const links=stage.position.map(()=>[]);
     for(const [a,b] of stage.edges){links[a].push(b);links[b].push(a);}
     const checkpoints=stage.forts.filter((n,i,forts)=>forts.findIndex(k=>stage.types[k]===stage.types[n])===i);
     const castles=stage.types.flatMap((type,i)=>type==='성'?[i]:[]);
-    return {...stage,links,checkpoints,castles,base:80,bonus:200,fortBonus:stage.stage===1?100:50};
+    return {...stage,storyGoal:storyGoals[stage.stage-1],links,checkpoints,castles,base:80,bonus:200,fortBonus:stage.stage===1?100:50};
   }
   for(const stage of stages){
     maps['legacy-ps2-'+stage.stage]=playable(stage);

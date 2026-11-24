@@ -7,6 +7,7 @@ stageSelect.value='ps2-1';
 const stageFeatureLabels={'Temple':'신전','Shrine':'성소','Fortune-Teller':'점술관','Fortune Teller':'점술관','Card Shop':'카드 상점','none':'없음'};
 function showStage(){
   const m=C.maps[stageSelect.value],preview=$('stagePreview');
+  $('target').querySelector('[value="0"]').textContent=(m.storyGoal?'스토리 목표 · ':'기본 목표 · ')+(m.storyGoal||5000)+'G';
   preview.hidden=!m.stage;
   if(!m.stage)return;
   const image=preview.querySelector('img');image.src='art/cept-maps/'+m.image+'.webp';image.alt=m.name;

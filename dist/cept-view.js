@@ -106,7 +106,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'liquidate':case 'buySymbol':case 'sellSymbol':return (C.board(s).stage?(1+Math.floor(x/4))+'지역':x<4?'서부':'동부')+' '+C.elements[x%4]+' · '+y+'장 · '+s.prices[x]*y+'G';
     case 'direction':if(C.board(s).stage){const exits=C.board(s).links[p.pos];return (1+(x===1?exits[0]:exits.at(-1)))+'번 칸 방향';}return x===1?'시계 방향':'반시계 방향';
     case 'cast':case 'equip':case 'discard':case 'summon':case 'invade':return c.name+' · '+c.cost+'G';
-    case 'level':return (x+1)+'번 → Lv.'+y+' · '+(80*2**(y-1)-80*2**(s.tiles[x].level-1))+'G';
+    case 'level':return (x+1)+'번 → Lv.'+y+' · '+C.levelCost(s.tiles[x],y)+'G';
     case 'exchange':return (x+1)+'번 · '+C.cards[p.hand[y]].name;
     case 'transfer':return (x+1)+'번 → '+(y+1)+'번';
     case 'element':return (x+1)+'번 → '+C.elements[y]+' · 300G';
@@ -310,11 +310,12 @@ function render(){
       for(const id of s.reward){const c=C.cards[id];grid.append(archiveCard(c.catalog.path));}
       result.append(grid);controls.append(result);
     }
-    const next=C.board(s).stage+1;
-    if(!room&&C.maps['ps2-'+next])controls.append(btn('다음 스테이지 · '+C.maps['ps2-'+next].name,()=>{
+    const retry=s.mapGoal&&C.board(s).storyGoal&&s.players.some(p=>!p.ai)&&s.players[s.winner].ai;
+    const next=C.board(s).stage+(retry?0:1);
+    if(!room&&C.maps['ps2-'+next])controls.append(btn((retry?'다시 도전 · ':'다음 스테이지 · ')+C.maps['ps2-'+next].name,()=>{
       const book=s.players[0].template;
       $('mapChoice').value='ps2-'+next;showStage();
-      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.target,'ps2-'+next,book,s.players.find(p=>p.ai)?.template||book,s.aiLevel||0);save();enter();
+      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.mapGoal?0:s.target,'ps2-'+next,book,s.players.find(p=>p.ai)?.template||book,s.aiLevel||0);save();enter();
     },'primary'));
     controls.append(btn('대국 설정으로',lobby));
   }

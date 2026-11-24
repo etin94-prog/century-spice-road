@@ -54,7 +54,8 @@ const Cepter = (() => {
     if(n==='sphinx')c.confuse=true;
   }
   const deployable=(s,id)=>!s.tiles.some(v=>fx.name(v.unit)==='marbleidol')||!s.tiles.some(v=>v.unit?.id===id);
-  const allowed=(s,i,c,t)=>!c.catalog?.placement?.split(',').includes('RBGY'[t.type]||'-')&&
+  const canOccupy=(c,t)=>c.landBan!==t.type&&!c.catalog?.placement?.split(',').includes('RBGY'[t.type]||'-');
+  const allowed=(s,i,c,t)=>canOccupy(c,t)&&
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>t.owner===i&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length);
   const presets={intro:starter,fire:fireBook};
   function validBook(book){
@@ -71,17 +72,20 @@ const Cepter = (() => {
     if(s)for(const watcher of s.players)if(s.players[watcher.peek?.seat]===p)watcher.peek.ids.shift();
   }
   function start(count,humans,target=4000,mapId='classic',template=starter,aiBook=template,aiLevel=0){
-    if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||![3000,4000,5000,6000].includes(target)||!Object.hasOwn(maps,mapId)||!validBook(template)||!validBook(aiBook)||![0,1,2,3].includes(aiLevel))throw Error('대국 설정 오류');
+    const mapGoal=target===0;
+    if(mapGoal)target=maps[mapId]?.storyGoal??5000;
+    if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||![3000,4000,5000,6000,8000,9000,10000,12000].includes(target)||!Object.hasOwn(maps,mapId)||!validBook(template)||!validBook(aiBook)||![0,1,2,3].includes(aiLevel))throw Error('대국 설정 오류');
     const players=Array.from({length:count},(_,i)=>{
       const seatBook=i>=humans?aiBook:template;
       const p={ai:i>=humans,name:(i>=humans?'AI ':'셉터 ')+(i+1),cash:200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(seatBook),template:seatBook.slice(),symbols:Array((maps[mapId].areaCount||2)*4).fill(0),previous:null};
       for(let j=0;j<4;j++)draw(p);return p;
     });
-    const s={version:1,layoutRevision:1,mapId,aiLevel,prices:Array((maps[mapId].areaCount||2)*4).fill(10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
+    const s={version:1,layoutRevision:1,mapId,mapGoal,aiLevel,prices:Array((maps[mapId].areaCount||2)*4).fill(10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
     draw(players[0]);return s;
   }
   function note(s,t){s.log.unshift(t);if(s.log.length>16)s.log.pop();}
   const actor=s=>s.phase==='defend'?s.tiles[s.battle.at].owner:s.phase==='attack'?(s.battle.attackerSeat??s.turn):s.turn;
+  const levelCost=(t,level)=>(t.base||80)*2**(level-1)-worth(t);
   const worth=t=>(t.base||80)*2**(t.level-1);
   const territoryType=type=>typeof type==='number'||type==='복합'||type==='무속성';
   const landBonus=(unit,t)=>unit.element===t.type||t.type==='복합'&&unit.element>=0?10*t.level:0;
@@ -216,7 +220,7 @@ const Cepter = (() => {
   function territory(s){
     const p=s.players[s.turn];
     if(s.tiles[p.pos].type==='성'||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>v.owner===s.turn?[n]:[]);
-    return [...new Set(s.visited)].filter(n=>s.tiles[n].owner===s.turn);
+    return [...new Set([...s.visited,p.pos])].filter(n=>s.tiles[n].owner===s.turn);
   }
   function choices(s){
     if(s.phase==='over')return [];
@@ -254,10 +258,10 @@ const Cepter = (() => {
           if(t.owner<0&&territoryType(t.type))hand('creature','summon');
           for(const n of territory(s)){
             const v=s.tiles[n];if(fx.territoryTargets(s,n).length)options.push(['ability',n]);if(fx.name(v.unit)==='goldentotem')options.push(['totem',n]);for(let level=v.level+1;level<=5;level++){
-              if(v.unit.enchant!=='desertstorm'&&p.cash>=(v.base||80)*2**(level-1)-worth(v))options.push(['level',n,level]);
+              if(!combo.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
             for(const dest of new Set([...board(s).links[n],...s.tiles.flatMap((t,j)=>fx.name(v.unit)==='dryad'&&t.type===2&&t.area===v.area&&t.owner<0?[j]:[])])){
-              if(s.tiles[dest].unit?.enchant!=='peace'&&allowed(s,i,cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&cards[v.unit.id].landBan!==s.tiles[dest].type&&territoryType(s.tiles[dest].type)&&s.tiles[dest].owner!==i)options.push(['transfer',n,dest]);
+              if(s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&s.tiles[dest].owner!==i)options.push(['transfer',n,dest]);
             }
             if(p.cash>=300)elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
             p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!cards[id].catalog?.additionalCost?.includes('+[]')||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id])<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
@@ -380,7 +384,7 @@ const Cepter = (() => {
       if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
       if(a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
       if(a.g==='dynamite'||a.n==='wraith'||!muted&&a.u.enchant==='senility')a.hp=0;
-      if((a.hp>0||d.hp>0)&&(a.n==='leshy'||a.g==='silverplow'))t.level=Math.min(5,t.level+(a.n==='leshy')+(a.g==='silverplow'));
+      if(!combo.levelLocked(t)&&(a.hp>0||d.hp>0)&&(a.n==='leshy'||a.g==='silverplow'))t.level=Math.min(5,t.level+(a.n==='leshy')+(a.g==='silverplow'));
       if(a.item!=null&&(a.n==='centaur'||['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
     }
     for(const a of sides)if(a.hp<=0&&a.n==='sulfurousballoon'){const d=a===A?D:A;d.hp=Math.min(d.hp,d.u.hp)-30;}
@@ -491,7 +495,7 @@ const Cepter = (() => {
         mapEffect('summon',cards[id].name,k==='summon'?p.pos:x);
         tile.owner=i;tile.unit={id,hp:cards[id].hp};note(s,p.name+' · '+cards[id].name+' 배치');afterTerritory(s);break;
       }
-      case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=(s.tiles[x].base||80)*2**(y-1)-worth(s.tiles[x]);s.tiles[x].level=y;note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
+      case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=levelCost(s.tiles[x],y);s.tiles[x].level=y;note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
       case 'transfer':{
         const from=s.tiles[x],dest=s.tiles[y];
         if(dest.owner<0){dest.owner=i;dest.unit={...from.unit};combo.clear(dest.unit);if(fx.name(from.unit)!=='powdereater')vacate(from);afterTerritory(s);}
@@ -532,7 +536,7 @@ const Cepter = (() => {
     }
     function development(k,x,y,c){
       const t=k==='summon'?s.tiles[p.pos]:s.tiles[x];
-      const next={...t,owner:seat},price=k==='summon'?c.cost:k==='element'?300:(t.base||80)*2**(y-1)-worth(t);
+      const next={...t,owner:seat},price=k==='summon'?c.cost:k==='element'?300:levelCost(t,y);
       if(k==='level')next.level=y;
       if(k==='element')next.type=y;
       const trial={...s,tiles:s.tiles.map(v=>v===t?next:v)};
@@ -666,6 +670,6 @@ const Cepter = (() => {
     for(const id of presets.fire)if(book.length<50&&book.filter(v=>v===id).length<4)book.push(id);
     return book;
   }
-  return {combo,practiceBook,start,choices,play,ai,actor,total,toll,value,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic.forts};
+  return {combo,practiceBook,start,choices,play,ai,actor,total,toll,value,levelCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic.forts};
 })();
 if(typeof module!=='undefined')module.exports=Cepter;
