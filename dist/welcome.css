@@ -6,3 +6,4 @@
 [role="tab"]:focus-visible{outline:3px solid #ffcf67;outline-offset:2px}
 [role="tabpanel"] a>div:only-child{margin-top:auto}
 @media(orientation:landscape) and (max-height:510px){[role="tablist"]{padding:2px;margin-bottom:7px}}
+@media(max-width:830px){[role="tablist"]{overflow-x:auto;scrollbar-width:thin}[role="tab"]{flex:1 0 auto;padding-inline:12px;white-space:nowrap}}
