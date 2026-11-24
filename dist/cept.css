@@ -10,15 +10,7 @@
 .card-face{display:block;width:auto;height:auto;object-fit:contain}.card .card-face{width:100%;max-height:164px;margin:auto auto 5px}.card .custom-face{display:block;width:80%;margin:auto}#bookRows .card-face,#bookRows .custom-face{width:48px;height:60px;object-fit:contain}#bookRows label{align-content:start}
 .fighter .card-face,.fighter .custom-face{width:auto;height:clamp(65px,12vh,126px);max-width:90%;margin:3px auto}.fighter .custom-face{aspect-ratio:1}
 #detail:has(.card-face),#detail:has(.custom-face){display:flex;gap:10px;align-items:center}#detail .card-face,#detail .custom-face{width:88px;flex:none}
-.seat .cept-figure{width:38px;float:left;margin-right:6px}.tile{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;justify-content:space-between}.tile>b,.tile>small{position:relative;z-index:2;background:#1b19209e;border-radius:3px;padding:0 2px}.tile>small{align-self:stretch;font-size:clamp(9px,1vw,13px)}.tile .summoned{position:absolute;inset:10% auto auto 0;width:auto;height:78%;z-index:0}.pawns{position:absolute;inset:12% 1% 13% auto;width:94%;display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none}.tile:has(.summoned) .pawns{width:52%}.pawn{position:relative;max-width:100%;width:46%;height:90%;min-width:0;display:flex;align-items:flex-end;justify-content:center}.pawn .cept-figure{width:100%;height:auto;max-height:100%;filter:drop-shadow(0 1px 1px #10131d)}.pawn i{position:absolute;bottom:0;right:0;font-size:8px}
-/* Shared tiles use staggered foot positions, independent of sprite dimensions. */
-.pawns:has(.pawn:nth-child(3)){display:block}
-.pawns:has(.pawn:nth-child(3)) .pawn{position:absolute;width:47%;height:86%;bottom:22%;left:7%}
-.pawns:has(.pawn:nth-child(3)) .pawn:nth-child(2){left:47%}
-.pawns:has(.pawn:nth-child(3)) .pawn:nth-child(3){bottom:0;left:0}
-.pawns:has(.pawn:nth-child(3)) .pawn:nth-child(4){bottom:0;left:39%}
-
-main{container-type:inline-size}.cept-full body{overflow:hidden}.cept-full main{position:fixed;inset:0;max-width:none;height:100dvh;overflow:auto;background:#171b23;padding:8px max(10px,env(safe-area-inset-right)) 16px}.cept-full header{position:sticky;top:0;background:#171b23f5;z-index:8;padding:3px 0}
+.seat .cept-figure{width:38px;float:left;margin-right:6px}.tile{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;justify-content:space-between}.tile>b,.tile>small{position:relative;z-index:2;background:#1b19209e;border-radius:3px;padding:0 2px}.tile>small{align-self:stretch;font-size:clamp(9px,1vw,13px)}.tile .summoned{position:absolute;inset:10% auto auto 0;width:auto;height:78%;z-index:0}main{container-type:inline-size}.cept-full body{overflow:hidden}.cept-full main{position:fixed;inset:0;max-width:none;height:100dvh;overflow:auto;background:#171b23;padding:8px max(10px,env(safe-area-inset-right)) 16px}.cept-full header{position:sticky;top:0;background:#171b23f5;z-index:8;padding:3px 0}
 @media(orientation:portrait){.cept-wide body{overflow:hidden}.cept-wide main{position:fixed;inset:0 auto auto 0;width:100dvh;height:100dvw;max-width:none;overflow:auto;transform-origin:top left;transform:translateX(100dvw) rotate(90deg)}}
 @container(min-width:620px){.cept-wide .table{grid-template-columns:minmax(0,1.45fr) minmax(235px,1fr)}.cept-wide #seats{grid-template-columns:repeat(4,minmax(0,1fr))}.cept-wide .heading h1{font-size:24px}.cept-wide .heading,.cept-wide #seats{margin:4px 0}.cept-wide #map{aspect-ratio:1.85}.cept-wide .seat{font-size:12px}.cept-wide .seat .cept-figure{width:30px}.cept-wide #hand .card{max-width:135px}.cept-wide .table aside{max-height:380px;overflow:auto}}
 @media(max-width:480px){header{gap:4px}.screen-controls{gap:4px}.screen-controls button{padding:5px 7px;font-size:13px}}
@@ -29,8 +21,6 @@ main{container-type:inline-size}.cept-full body{overflow:hidden}.cept-full main{
 .tile:has(.standing-model){overflow:visible}
 .tile:has(.standing-model):hover,.tile:has(.standing-model):focus-visible{z-index:3}
 .tile .summoned.standing-model{inset:auto auto 12% 0;height:112%;width:85%;object-position:left bottom;transform-origin:bottom left}
-.pawn:has(.standing-model):only-child{width:95%;height:145%}
-.pawn .standing-model,.pawns:has(.pawn:nth-child(3)) .standing-model{width:100%;height:100%;max-height:none}
 #center>.cept-figure{width:min(80%,18cqw);height:clamp(38px,18cqw,155px);flex:0 1 auto;min-height:0}
 #center>.cept-figure:not(.standing-model){aspect-ratio:1;width:auto;flex-shrink:0;height:clamp(36px,12cqw,90px)}
 .in-battle .fighter .standing-model{display:block;margin:0 auto;width:95%;height:var(--standing-height,104px)}
@@ -45,3 +35,27 @@ main{container-type:inline-size}.cept-full body{overflow:hidden}.cept-full main{
 #cardDialog{background:#252732;color:#f6ead1;border:1px solid #a98d5c;border-radius:8px;width:min(400px,92vw);max-height:90dvh;overflow:auto}
 #cardDialog::backdrop{background:#080910bb}#closeCard{float:right}#catalogArt .card-face{width:auto;height:auto;max-width:100%;max-height:51dvh;margin:auto}
 .tile>.summoned.card-face{max-width:74%;object-fit:contain}#center>.card-face{max-height:60%;max-width:65%}
+
+/* Oblique orthographic ground plane. Sprites stay upright in screen space. */
+.atlas #map{display:block;transform:none;--pawn-height:calc(var(--half-tile)*1.32)}
+#map .tile{position:absolute;translate:-50% 0;width:calc(var(--half-tile)*2);height:var(--half-tile);padding:0;border:0;border-radius:0;background:none;box-shadow:none;outline:none;overflow:visible;pointer-events:none}
+#map .tile::before,#map .tile::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:auto}
+#map .tile::before{background:linear-gradient(90deg,color-mix(in srgb,var(--land),#15131a 55%) 50%,color-mix(in srgb,var(--land),#171513 30%) 50%);clip-path:polygon(0 47%,50% 0,100% 47%,100% 60%,50% 110%,0 60%);height:112%}
+#map .tile::after{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:linear-gradient(145deg,#fff3,transparent 49%,#0002),var(--land);box-shadow:none}
+#map .tile:is(:focus-visible,.chosen,.exit)::after{background:linear-gradient(125deg,#ffedb1,#af874b)}
+#map .tile>b,#map .tile>small{position:absolute;left:50%;translate:-50% 0;white-space:nowrap;font-size:clamp(8px,1.65cqw,13px);line-height:1.1}
+#map .tile>b{top:63%;z-index:0}#map .tile>small{top:85%;z-index:2}
+#map .tile .summoned{inset:auto;left:35%;top:55%;translate:-50% -100%;width:auto;max-width:72%;height:var(--pawn-height);object-fit:contain;object-position:center bottom}
+#map .pawns{position:absolute;inset:0;pointer-events:none}
+#map .pawn{position:absolute;display:block;translate:-50% -100%;height:var(--pawn-height);width:max-content}
+#map .pawn .standing-model,#map .walking-cepter{display:block;height:var(--pawn-height);width:auto;max-width:none;object-fit:contain}
+#map .pawn i{position:absolute;bottom:0;right:0;line-height:1;font-size:clamp(7px,1.4cqw,11px)}
+.atlas:not(.in-battle) #center{position:static;display:flex;flex-flow:row wrap;justify-content:center;gap:4px 8px;padding:5px;line-height:1.15}
+.atlas:not(.in-battle) #center>.cept-figure,.atlas:not(.in-battle) #center>.card-face{height:36px;width:auto;max-width:48px;flex:none}
+.atlas:not(.in-battle) #center b{font-size:clamp(15px,3cqw,22px)}
+
+#map .tile-surface{position:absolute;inset:2px 3px;z-index:-1;pointer-events:none;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:linear-gradient(150deg,#fff2,transparent 65%),var(--land)}
+#map .tile::after{z-index:-2;background:color-mix(in srgb,var(--land),#fff0b2 34%)}
+#map .tile::before{z-index:-3}
+#map .tile.special .tile-surface{background:repeating-linear-gradient(27deg,transparent 0 10px,#55493144 10px 11px),linear-gradient(150deg,#bda478,#776349)}
+#map .tile:is(:focus-visible,.chosen,.exit) .tile-surface{filter:brightness(1.35)}

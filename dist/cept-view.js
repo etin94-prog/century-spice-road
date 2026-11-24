@@ -98,20 +98,36 @@ const boardSizeObserver=new ResizeObserver(([entry])=>{
   if(height>0)entry.target.parentElement.style.setProperty('--standing-height',(height*104/360)+'px');
 });
 boardSizeObserver.observe($('map'));
+// Feet are points on the top diamond; all distances are fractions of the tile.
+function pawnFoot(tileId,seat,occupants){
+  const positions=[[],[[.5,.58]],[[.36,.50],[.64,.60]],[[.40,.42],[.64,.52],[.44,.70]],[[.29,.43],[.58,.35],[.45,.66],[.75,.56]]];
+  const [x,y]=positions[occupants.length][occupants.indexOf(seat)];
+  return [s.tiles[tileId].unit ? .60+x*.32 : x,y];
+}
 function map(){
-  const root=$('map'),m=C.board(s);root.replaceChildren();root.style.gridTemplate='repeat('+m.rows+',1fr) / repeat('+m.cols+',1fr)';root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
+  const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.rows+m.cols+.6;
+  const half=100/span;
+  root.style.setProperty('--half-tile',half+'cqw');
+  root.style.aspectRatio='100 / '+(18+.5*(m.rows+m.cols)*half);
+  root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
   s.tiles.forEach((t,n)=>{
     const name=C.elements[t.type]||t.type,owner=t.owner>=0?s.players[t.owner].name:'미점유';
     const b=btn('',()=>{if(s.phase==='fork'&&!pending&&(!room||room.seat===s.turn&&!room.busy)&&!s.players[s.turn].ai&&C.choices(s).some(a=>a[0]==='route'&&a[1]===n)){act(['route',n]);return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect?' chosen':''));
-    const [r,c]=m.position[n];b.style.gridRow=r;b.style.gridColumn=c;b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
-    b.append(el('b',(n+1)+' · '+name));
+    const [r,c]=m.position[n];b.style.left=((m.rows+c-r+.3)*half)+'%';
+    b.style.top=(11+(r+c-2)*half*.5)+'cqw';
+    b.style.zIndex=String(2*(r+c));b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
+    const surface=el('span',null,'tile-surface');surface.setAttribute('aria-hidden','true');
+    b.append(surface,el('b',(n+1)+' · '+name));
     if(s.phase==='fork'&&C.choices(s).some(a=>a[0]==='route'&&a[1]===n))b.classList.add('exit');
     if(t.unit){const miniature=creatureFigure(t.unit.id);miniature.classList.add('summoned');b.append(miniature);}
     if(t.unit)b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+C.toll(s,t)+'G'));
     const pawns=el('div',null,'pawns');
+    const occupants=s.players.flatMap((p,i)=>p.pos===n?[i]:[]);
     s.players.forEach((p,i)=>{
       if(p.pos!==n)return;
-      const mark=el('span',null,'pawn');mark.dataset.seat=i;mark.style.setProperty('--color',colors[i]);
+      const mark=el('span',null,'pawn');const [fx,fy]=pawnFoot(n,i,occupants);
+      mark.style.left=fx*100+'%';mark.style.top=fy*100+'%';
+      mark.dataset.seat=i;mark.style.setProperty('--color',colors[i]);
       mark.append(figure(i,p.name),el('i',(i+1)+'P'));pawns.append(mark);
     });
     b.append(pawns);root.append(b);
@@ -156,9 +172,16 @@ async function walkPath(move){
     if(pawn)pawn.style.visibility='hidden';
     for(let step=1;step<move.path.length;step++){
       const from=tiles[move.path[step-1]],to=tiles[move.path[step]];
-      const foot=tile=>[tile.offsetLeft+tile.offsetWidth/2,tile.offsetTop+tile.offsetHeight*.88];
-      const [x,y]=foot(from),[endX,endY]=foot(to);
-      sprite.style.width=Math.min(from.offsetWidth*1.18,from.offsetHeight*1.35)+'px';
+      const point=(tile,[fx,fy])=>[
+        tile.offsetLeft-tile.offsetWidth/2+tile.offsetWidth*fx,
+        tile.offsetTop+tile.offsetHeight*fy
+      ];
+      const start=step===1&&pawn?[parseFloat(pawn.style.left)/100,parseFloat(pawn.style.top)/100]:[.5,.58];
+      const destination=move.path[step];
+      const occupants=s.players.flatMap((p,i)=>p.pos===destination?[i]:[]);
+      const end=step===move.path.length-1?pawnFoot(destination,move.seat,occupants):[.5,.58];
+      const [x,y]=point(from,start),[endX,endY]=point(to,end);
+      sprite.style.zIndex=String(Math.max(+from.style.zIndex,+to.style.zIndex)+1);
       sprite.style.left=x+'px';sprite.style.top=y+'px';
       if(endX!==x)sprite.style.scale=endX<x?'-1 1':'1 1';
       walk.animation=sprite.animate([{left:x+'px',top:y+'px'},{left:endX+'px',top:endY+'px'}],{duration:480,fill:'forwards'});
