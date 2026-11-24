@@ -26,3 +26,7 @@
   .exp #mixTabs button{padding:3px;word-break:keep-all;line-height:1.1}
   .exp #mixTabs button:last-child:nth-child(odd){grid-column:1/-1}
 }
+.exp .site .goods span,.exp .land .site small,.exp .site small{font-size:12px;line-height:1.15}
+.exp .resourcePreview{display:block;font-size:13px;line-height:1.4;margin-top:2px}
+.exp .resourcePreview:empty{display:none}
+.exp .site strong{line-height:1.1}

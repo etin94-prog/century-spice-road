@@ -20,7 +20,7 @@ function lobby(){
   if(state)$('resume').textContent=modes[state.mode]+' 이어하기';
 }
 function seats(){const prior=$('humans').value;$('humans').replaceChildren();for(let i=1;i<=+$('count').value;i++)$('humans').add(new Option(i+'명 · AI '+(+$('count').value-i)+'명',i));if(prior&&+prior<=+$('count').value)$('humans').value=prior;}
-function enter(){waiting=state.phase!=='over'&&!state.players[Catan.actor(state)].ai&&state.players.filter(p=>!p.ai).length>1;$('lobby').hidden=true;$('game').hidden=false;$('settings').hidden=false;render();}
+function enter(){district=null;waiting=state.phase!=='over'&&!state.players[Catan.actor(state)].ai&&state.players.filter(p=>!p.ai).length>1;$('lobby').hidden=true;$('game').hidden=false;$('settings').hidden=false;render();}
 $('settings').onclick=lobby;$('edition').onchange=lobby;$('count').onchange=seats;
 $('config').onsubmit=e=>{e.preventDefault();if(state&&state.phase!=='over'&&!confirm('저장한 대국을 새 게임으로 교체할까요?'))return;state=Catan.start($('edition').value,+$('count').value,+$('humans').value);loadNotice='';save();enter();};
 const requestedMode=new URLSearchParams(location.search).get('mode');
@@ -30,7 +30,7 @@ function save(){try{localStorage.setItem(key,JSON.stringify(state));saveFailed=f
 function act(a){
   const prior=Catan.actor(state);
   if(!Catan.play(state,a))return;
-  selected=null;save();
+  selected=null;district=null;save();
   const next=Catan.actor(state);waiting=state.phase!=='over'&&next!==prior&&!state.players[next].ai&&state.players.filter(p=>!p.ai).length>1;render();
 }
 function button(txt,fn,cls=''){const b=document.createElement('button');b.type='button';b.textContent=txt;b.className=cls;b.onclick=fn;return b;}
@@ -55,10 +55,16 @@ function optionText([k,x,y,z]){
     default:return locationKinds.includes(k)?`${label[k]} · ${x+1}번`:label[k];
   }
 }
+let district=null;
 function board(interactive){
   const s=state,px=v=>300+v.x*55,py=v=>277+v.y*55;
   const box=s.mode==='sea'?'-155 -150 910 850':'0 0 600 550';
-  const bits=['<svg viewBox="'+box+'" aria-label="카탄 섬 지도">',islandRelief.defs];
+  const compact=interactive&&locationKinds.includes(selected)&&matchMedia('(orientation:landscape) and (max-height:600px)').matches;
+  const [left,top,w,h]=box.split(' ').map(Number),cw=w/3,ch=h/3;
+  const origin=n=>[left+(n%3)*cw,top+Math.floor(n/3)*ch];
+  const view=compact&&district!==null?[...origin(district).map(v=>v-20),cw+40,ch+40].join(' '):box;
+  const regions=new Set();
+  const bits=['<svg viewBox="'+view+'" aria-label="카탄 섬 지도">',islandRelief.defs];
   const mid=e=>({x:(s.nodes[e.a].x+s.nodes[e.b].x)/2,y:(s.nodes[e.a].y+s.nodes[e.b].y)/2});
   for(const [j,t] of s.tiles.entries()){
     const x=px(t),y=py(t),robbed=s.robber===j;
@@ -84,12 +90,25 @@ function board(interactive){
   if(interactive&&locationKinds.includes(selected))actions.forEach(([k,n],idx)=>{
     if(k!==selected)return;
     const v=['road','ship','sail','relocate'].includes(k)?mid(s.edges[n]):['robber','pirate'].includes(k)?s.tiles[n]:s.nodes[n];
+    if(compact){
+      const column=Math.max(0,Math.min(2,Math.floor((px(v)-left)/cw)));
+      const row=Math.max(0,Math.min(2,Math.floor((py(v)-top)/ch)));
+      const region=3*row+column;regions.add(region);if(region!==district)return;
+    }
     bits.push(`<g role="button" tabindex="0" data-index="${idx}" aria-label="${label[k]} ${n+1}번"><circle cx="${px(v)}" cy="${py(v)}" r="15" fill="transparent"/><circle class="spot" cx="${px(v)}" cy="${py(v)}" r="9"/><text x="${px(v)}" y="${py(v)}" font-size="9">${n+1}</text></g>`);
   });
+  if(compact&&district===null)for(const region of regions){
+    const [x,y]=origin(region),cx=x+cw/2,cy=y+ch/2;
+    bits.push(`<g role="button" tabindex="0" data-region="${region}" aria-label="${region+1}구역 확대"><rect x="${x+3}" y="${y+3}" width="${cw-6}" height="${ch-6}" rx="8" fill="#113d4025" stroke="#fff1b0"/><circle class="district" cx="${cx}" cy="${cy}" r="21"/><text class="districtLabel" x="${cx}" y="${cy}">${region+1}</text></g>`);
+  }
+  $('mapBack').hidden=!compact||district===null;
+  if(compact&&district===null)$('hint').append(' 지도에서 구역을 먼저 고르세요.');
   $('board').innerHTML=bits.join('')+'</svg>';
 }
-$('board').onclick=e=>{const target=e.target.closest('[data-index]');if(target)act(actions[+target.dataset.index]);};
-$('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const t=e.target.closest('[data-index]');if(t){e.preventDefault();act(actions[+t.dataset.index]);}}};
+$('mapBack').onclick=()=>{district=null;render();};
+window.addEventListener('resize',()=>{if(state&&!$('game').hidden)render();});
+$('board').onclick=e=>{const area=e.target.closest('[data-region]');if(area){district=Number(area.dataset.region);render();return;}const target=e.target.closest('[data-index]');if(target)act(actions[+target.dataset.index]);};
+$('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const t=e.target.closest('[data-index],[data-region]');if(t){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}}};
 function render(){
   clearTimeout(timer);
   const s=state,i=Catan.actor(s),p=s.players[i],over=s.phase==='over',interactive=!over&&!p.ai&&!waiting;
@@ -128,7 +147,7 @@ function render(){
   for(const k of kinds){
     const group=actions.filter(a=>a[0]===k);
     if(group[0].length===1){bar.append(button(label[k],()=>act(group[0]),k==='roll'?'primary':''));continue;}
-    if(kinds.length>1)bar.append(button(label[k],()=>{selected=k;render();},selected===k?'active':''));
+    if(kinds.length>1)bar.append(button(label[k],()=>{selected=k;district=null;render();},selected===k?'active':''));
   }
   if(selected&&actions.some(a=>a[0]===selected&&a.length>1)){
     const group=document.createElement('div'),select=document.createElement('select');group.className='group';select.setAttribute('aria-label',label[selected]);

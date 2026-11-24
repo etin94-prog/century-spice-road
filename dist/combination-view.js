@@ -131,7 +131,7 @@ function openMix(i,opts={}){
   const tile=combo===123?board.islands[opts.dest]:t;
   const buildFee=shown.some(({c})=>c.build)&&tile?.recipe&&!tile.owners?.includes(board.turn)?(tile.owners?.length||0)*(board.players.length===2?2:1):0;
   if(myTurn()&&(fee||buildFee||option?.fuel?.length))notes+='<button id="settle">지불 카드·재료 선택</button>';
-  modal(mixTileName(board,t,i),'<p>'+mixTileDetail(board,t,i)+'</p>'+notes+'<div class="actions">'+shown.map(({c,j})=>'<button data-option="'+j+'">'+mixLabel(board,c,t)+(c.kind==='refresh'?'':'<br>'+goods(c.bag,true))+'</button>').join('')+'</div>'+(!shown.length?'<p>'+(!myTurn()?seatName(g.turn)+'의 차례입니다.':'현재 비용이나 재료 조건을 충족하지 않습니다.')+'</p>':''));
+  modal(mixTileName(board,t,i),'<p>'+mixTileDetail(board,t,i)+'</p>'+notes+'<div class="actions">'+shown.map(({c,j})=>'<button data-option="'+j+'">'+mixLabel(board,c,t)+(c.kind==='refresh'?'':previewBag(p.bag,c.bag))+'</button>').join('')+'</div>'+(!shown.length?'<p>'+(!myTurn()?seatName(g.turn)+'의 차례입니다.':'현재 비용이나 재료 조건을 충족하지 않습니다.')+'</p>':''));
   if(el('mixPath'))el('mixPath').onclick=()=>mixRoute(board,i,opts);
   if(el('settle'))el('settle').onclick=()=>mixPayment(board,i,opts,fee,buildFee,option?.fuel?.length||0);
   el('body').querySelectorAll('[data-option]').forEach(b=>b.onclick=()=>{

@@ -45,6 +45,7 @@ function siteFace(t,i){
 }
 function exploreName(x){return /^\d+$/.test(x)?wordBag(unitBag(x)):x==='points'?'3점':x==='crew'?'정착민 +1':benefitNames[+x.at(-1)]+' 문양';}
 function render(){
+  announcePlayerTurn(myTurn());
   if(g.combo)return renderMix();
   const active=flightActor??g.turn,p=g.players[mySeat()]||g.players[0];
   el('status').textContent='Century '+(edition===2?'Ⅱ':'Ⅲ')+' · '+(g.departures?'출항':g.round+'R');
@@ -103,6 +104,12 @@ function optionsLabel(c,t){
   if(c.explore>=0)label+=' · '+siteName(g.tiles[c.explore],c.explore)+' 탐험 ('+exploreName(g.tiles[c.explore].cover)+')';
   return label;
 }
+function previewBag(before,after){
+  if(!Array.isArray(after))return '';
+  const spent=before.map((v,i)=>Math.max(0,v-after[i]));
+  const gained=after.map((v,i)=>Math.max(0,v-before[i]));
+  return '<span class="resourcePreview">'+(spent.some(Boolean)?'감소 '+goods(spent)+' ':'')+(gained.some(Boolean)?'증가 '+goods(gained):'')+(!spent.some(Boolean)&&!gained.some(Boolean)?'재료 변화 없음':'')+'</span>';
+}
 function openSite(i,opts={}){
   if(g.combo)return openMix(i,opts);
   const t=g.tiles[i],p=g.players[mySeat()],arrival=edition===2&&!g.departures?seaArrival(g,i,opts,mySeat()):null;
@@ -115,7 +122,7 @@ function openSite(i,opts={}){
     detail+='<p>항로 '+[p.boat,...path].map(n=>n+1).join(' → ')+' · '+(arrival?'항해 지불 '+arrival.paid.length+'개':'지불 재료 부족')+'</p>';
     if(myTurn())detail+='<button id="editRoute">항로·지불 재료 선택</button>';
   }else detail+='<p>필요한 정착민 '+workerCost(p,t)+'명 · 대기 '+p.ready+'명 · '+helpNames[t.help]+' 문양</p>'+(t.order?'<p>'+cardBenefit(t.order)+'</p>':'');
-  modal(siteName(t,i),detail+'<div class="actions">'+options.map((c,j)=>'<button data-option="'+j+'">'+optionsLabel(c,t)+'</button>').join('')+'</div>'+(!options.length?'<p>'+(myTurn()?'현재 이곳에서 수행할 수 있는 행동이 없습니다.':seatName(g.turn)+'의 차례입니다.')+'</p>':''));
+  modal(siteName(t,i),detail+'<div class="actions">'+options.map((c,j)=>'<button data-option="'+j+'">'+optionsLabel(c,t)+previewBag(p.bag,c.bag)+'</button>').join('')+'</div>'+(!options.length?'<p>'+(myTurn()?'현재 이곳에서 수행할 수 있는 행동이 없습니다.':seatName(g.turn)+'의 차례입니다.')+'</p>':''));
   draft={i,opts};if(el('editRoute'))el('editRoute').onclick=()=>editRoute(i,opts);
   el('body').querySelectorAll('[data-option]').forEach(b=>b.onclick=()=>{
     const option=+b.dataset.option,c=options[option],a={edition,i,option,kind:c.kind,...opts};

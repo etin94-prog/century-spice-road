@@ -15,6 +15,7 @@ const soloKey='splendor-solo-v1';
 let saveStatus='새 대국';
 function save(){
   if(online)return;
+  resumed=true;
   try{localStorage.setItem(soloKey,JSON.stringify(g));saveStatus='이 기기에 자동 저장';}
   catch{saveStatus='저장 공간 사용 불가 · 이번 대국만 플레이';}
 }
@@ -33,19 +34,21 @@ function seatTableau(p, i){
     piles[color<0?5:color].push(id);
   }
   const stacks=piles.map((ids,color)=>{
-    if(color===5&&!ids.length)return '';
+    if(color===5&&!ids.length)return '<span class="pile emptySpecial" aria-hidden="true"></span>';
     const count=color===5?ids.length:p.bonus[color];
     const label=color===5?'특수 카드 '+count+'장':gemNames[color]+' 할인 '+count+' · '+ids.length+'장';
     const cards=ids.map((id,j)=>'<i aria-hidden="true" style="--pos:'+ (ids.length===1?0:j/(ids.length-1))+';background-image:url(art/guild/'+id+'.webp)"></i>').join('');
     return '<span class="pile g'+color+'" title="'+label+'" aria-label="'+label+'"><span class="layers">'+cards+'</span><strong>'+gemSigns[color]+count+'</strong></span>';
   }).join('');
-  return '<button data-seat="'+i+'" class="'+((flightActor??g.turn)===i?'current':'')+'"><span class="seatHead"><b>'+name(i)+' · '+score(p)+'점</b><small>예약 '+p.held.length+'</small></span><span class="piles" aria-label="구매 카드와 영구 할인">'+stacks+'</span><span class="wallet">보석 '+(chips(p.tokens)||'없음')+'</span></button>';
+  const wallet=p.tokens.map((n,color)=>'<span class="gem g'+color+(n?'':' zero')+'" aria-label="'+gemNames[color]+' 토큰 '+n+'개">'+gemSigns[color]+n+'</span>').join('');
+  return '<button data-seat="'+i+'" class="'+((flightActor??g.turn)===i?'current':'')+'"><span class="seatHead"><b>'+name(i)+' · '+score(p)+'점</b><small>예약 '+p.held.length+'</small></span><span class="piles" aria-label="구매 카드와 영구 할인">'+stacks+'</span><span class="wallet" aria-label="보유 토큰">'+wallet+'</span></button>';
 }
 function render(){
+  announcePlayerTurn(myTurn());
   el('status').textContent=g.over?'대국 종료':(g.last?'마지막 라운드':g.round+'라운드')+' · '+name(flightActor??g.turn)+' 차례';
   el('seats').innerHTML=g.players.map(seatTableau).join('');
   el('market').innerHTML=[2,1,0].map(t=>'<div class="row"><button class="deck" data-deck="'+t+'">'+['Ⅰ','Ⅱ','Ⅲ'][t]+'<small>'+g.decks[t].length+'장</small></button>'+g.market[t].map(id=>card(id,'card')).join('')+'</div>').join('');
-  el('patrons').innerHTML=g.nobles.map(n=>'<span class="patron guildPatron" style="--scene:url(art/guild-'+Math.floor(n/5)+'-'+(n%5)+'.webp)">'+chips(patrons[n])+'</span>').join('')||'모두 방문했습니다';
+  el('patrons').innerHTML=g.nobles.map(n=>'<span class="patron guildPatron nobleTile" style="--scene:url(art/guild-'+Math.floor(n/5)+'-'+(n%5)+'.webp)"><b>3점</b><span class="nobleCost">'+chips(patrons[n])+'</span></span>').join('')||'모두 방문했습니다';
   if(g.mode){
     el('status').textContent=guildNames[g.mode]+' · '+el('status').textContent;
     if(g.mode==='orient'){
@@ -58,7 +61,7 @@ function render(){
     if(g.mode==='posts')el('patrons').innerHTML+='<p>내 문장　'+(g.players[mySeat()]?.posts||[]).map(i=>guildPowers[i]).join(' · ')+'</p>';
   }
   document.body.classList.toggle('orient',g.mode==='orient');
-  document.querySelector('aside h2').innerHTML=g.cities?'도시 <small>승리 조건</small>':'귀족 <small>방문 +3점</small>';
+  document.querySelector('.objectives').setAttribute('aria-label',g.cities?'도시 승리 조건':'귀족 방문 조건');
   el('bank').innerHTML=g.bank.map((v,i)=>'<button data-bank="'+i+'" aria-label="'+gemNames[i]+' '+v+'개">'+gem(i,v)+'</button>').join('');
   el('reserved').textContent='내 예약 카드 · '+g.players[mySeat()]?.held.length+'장';
   el('latestMove').textContent=g.log.length?name(g.log[0].actor)+' · '+g.log[0].msg:'대국 기록';
@@ -180,7 +183,12 @@ function setup(preferredMode){
   let mode=guildModes.includes(preferredMode)?preferredMode:(g.mode||'base'),count=g.players.length;const roles=[1,2,3].map(i=>g.players[i]?.level||'Medium');
   function draw(){modal('스플렌더 · 대국 설정','<label class="seat">게임 모드<select id="mode">'+guildModes.map(k=>'<option value="'+k+'" '+(k===mode?'selected':'')+'>'+guildNames[k]+'</option>').join('')+'</select></label><p>'+(guildRules[mode]||'보석을 모으고 개발 카드를 구매해 명성 15점을 달성하세요.')+'</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+'인</button>').join('')+'</div>'+roles.slice(0,count-1).map((l,j)=>'<label class="seat">AI '+(j+2)+'<select id="level'+j+'">'+levels.map(v=>'<option '+(v===l?'selected':'')+'>'+v+'</option>').join('')+'</select></label>').join('')+'<p><button class="primary" id="new">AI 대국 시작</button> <button id="friend">친구 초대 대전</button></p>');
     el('mode').onchange=e=>{mode=e.target.value;draw();};bind('count',n=>{count=n;draw();});roles.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>roles[j]=e.target.value);
-    el('new').onclick=()=>{g=newGame(roles.slice(0,count-1),Math.random,mode);close();save();render();schedule();};el('friend').onclick=()=>createOnline(mode);
+    function start(){g=newGame(roles.slice(0,count-1),Math.random,mode);close();save();render();schedule();}
+    el('new').onclick=()=>{
+      if(!resumed||g.over){start();return;}
+      modal('현재 대국을 교체할까요?','<p>'+guildNames[g.mode||'base']+' · '+g.round+'라운드가 이 기기에 저장되어 있습니다.</p><button id="continueGame" class="primary">현재 대국 이어하기</button> <button id="replaceGame">새 대국으로 교체</button>');
+      el('continueGame').onclick=close;el('replaceGame').onclick=start;
+    };el('friend').onclick=()=>createOnline(mode);
   }draw();
 }
 el('setupTop').onclick=setup;el('close').onclick=close;el('modal').onclose=schedule;

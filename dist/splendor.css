@@ -65,3 +65,45 @@
  #seats .wallet .gem{border:0;padding:0 1px;font-size:10px;line-height:12px;letter-spacing:-.4px}
  .personal #save{max-width:78px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 }
+
+header #reserved{width:auto;margin:0;white-space:nowrap}
+#bank{gap:4px}
+#bank button{min-width:44px;min-height:44px;padding:2px;border-radius:12px}
+#bank .gem{font-size:15px;padding:2px 4px}
+#patrons .nobleTile{width:50px;height:50px;padding:2px;display:flex;flex-direction:column;justify-content:space-between;align-items:start;white-space:normal}
+.nobleTile b{font-size:12px;background:#30291dd9;border-radius:3px;padding-inline:3px}
+.nobleCost{display:flex;gap:1px;flex-wrap:wrap}
+#patrons .nobleCost .gem{font:700 10px/12px system-ui;padding:0 1px}
+@media(orientation:landscape){
+ main{grid-template-columns:minmax(0,1fr) clamp(168px,30vw,380px)}
+ main aside{position:relative}
+ aside #save{position:absolute;right:4px;top:100%;font-size:9px;pointer-events:none}
+ #seats{padding-top:12px}
+}
+@media(orientation:landscape) and (max-height:540px){
+ #status{overflow:hidden;text-overflow:ellipsis}
+ aside #save{position:static;max-width:58px;line-height:1.1}
+ #seats{padding-top:0}
+}
+#seats .piles,#seats .wallet{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px}
+#seats .wallet .gem{justify-self:stretch;text-align:center;border-radius:12px;font-size:11px;line-height:14px}
+#seats .wallet .zero{opacity:.68}
+#seats .wallet .g5{outline:1px solid #ffdc85}
+header #reserved,header #options{min-height:44px;min-width:44px}
+@media(orientation:landscape){
+ .row{grid-template-columns:38px repeat(4,minmax(0,1fr))}
+ .orient .row{grid-template-columns:34px repeat(6,minmax(0,1fr)) 34px}
+ .row .deck{background-size:auto;border-inline:3px solid #2f514b}
+}
+@media(orientation:landscape) and (max-width:680px){
+ .orient .row .card{padding:1px;gap:0}
+ .orient .row .cost{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
+ .orient .row .cost .gem{padding:0;border:0;font-size:10px;line-height:11px;text-align:center}
+ .orient .row .ability{max-width:100%;padding:0 1px;font-size:10px;line-height:11px;white-space:normal}
+ .orient .row .face{font-size:12px}
+ .orient .row .face .gem{font-size:10px;padding:0 1px}
+}
+@media(orientation:landscape) and (min-width:667px){
+ .row{grid-template-columns:44px repeat(4,minmax(0,1fr))}
+ .orient .row{grid-template-columns:44px repeat(6,minmax(0,1fr)) 44px}
+}
