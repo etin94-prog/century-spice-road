@@ -18,10 +18,14 @@ const pokerRules='<p>52장 한 덱을 사용합니다. 내 카드 2장과 공용
 const hulaRules='<p>내 차례에는 더미에서 한 장 받거나 직전 버림패로 땡큐 등록을 하고, 원하는 만큼 등록·붙이기 후 한 장을 버립니다. 손을 비우면 훌라입니다.</p><p>같은 숫자 3장 이상, 같은 무늬의 연속 3장 이상, 또는 7 한 장을 등록할 수 있습니다. A는 낮거나 높게 쓰되 K-A-2로 잇지 않습니다. 7 한 장에는 같은 무늬의 이웃 숫자를 붙입니다. 내가 한 번 등록한 뒤에는 누구의 조합에나 붙일 수 있습니다.</p><p>이 테이블은 내 차례에만 땡큐를 허용합니다. 받기 전, 이미 등록했고 손패 합계가 2인 7점·3인 10점·4인 15점 이하면 스톱할 수 있습니다. 스톱이나 더미 소진 시 A=1부터 K=13까지 합산해 최저점자가 이깁니다. 동점은 공동 승리이며, 별도 배수 없이 5판의 승수를 겨룹니다.</p>';
 function finished(){return game.round>=5||(poker&&(game.players[0].chips===0||game.players.filter(p=>p.chips).length<2));}
 function changed(){
-  selected=[];render();
+  selected=[];renderCardMove(render);
   try{localStorage.setItem(key,JSON.stringify(game));}catch{$('msg').textContent+=' · 기기 저장 불가';}
 }
-function commit(action){if(engine.play(game,action))changed();}
+function commit(action,event){
+  if (!engine.play(game,action)) return;
+  confirmCardTouch(event);
+  changed();
+}
 function resultSummary(){
   if(!poker)return game.reason+' · '+game.winners.map(CardTable.seat).join(' / ')+' 승리';
   const sums=game.players.map((_,i)=>game.report.filter(r=>r.id===i).reduce((n,r)=>n+r.n,0));
@@ -77,14 +81,14 @@ document.addEventListener('click',e=>{
   if(!game)return;
   if(a==='next'&&game.phase==='result'){if(finished())setup();else{engine.deal(game);changed();}return;}
   if(game.turn!==0||game.phase==='result')return;
-  if(poker){commit(a);return;}
+  if(poker){commit(a,e);return;}
   if(a==='thanks'){
     const sets=Hula.thanks(game);
     modal('땡큐 · 등록할 조합',sets.map((s,i)=>btn('thank-'+i,s.map(short).join(' '))).join(''));return;
   }
-  if(a.startsWith('thank-')){const set=Hula.thanks(game)[Number(a.slice(6))];if(set){$('modal').close();commit({kind:'thanks',cards:set.filter(id=>id!==game.discard.at(-1))});}return;}
-  if(a.startsWith('attach-'))commit({kind:'attach',group:Number(a.slice(7)),cards:selected});
-  else commit({kind:a,cards:selected});
+  if(a.startsWith('thank-')){const set=Hula.thanks(game)[Number(a.slice(6))];if(set){$('modal').close();commit({kind:'thanks',cards:set.filter(id=>id!==game.discard.at(-1))},e);}return;}
+  if(a.startsWith('attach-'))commit({kind:'attach',group:Number(a.slice(7)),cards:selected},e);
+  else commit({kind:a,cards:selected},e);
 });
 $('guide').onclick=()=>modal(title+' · 테이블 규칙',poker?pokerRules:hulaRules);
 $('close').onclick=()=>$('modal').close();$('modal').onclose=schedule;$('modal').oncancel=e=>{if(!game)e.preventDefault();};

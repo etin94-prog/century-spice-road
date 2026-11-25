@@ -8,3 +8,24 @@ function card(id,animate=false,backLabel="뒷면 카드"){
   const center=rank<10?'<span class="pips">'+layouts[rank].map(i=>'<i style="left:'+points[i][0]+'%;top:'+points[i][1]+'%">'+sign+'</i>').join('')+'</span>':'<span class="center">'+['♞','♛','♚'][rank-10]+'</span>';
   return '<span role="img" aria-label="'+['스페이드','하트','클로버','다이아'][suit]+' '+face+'" class="card '+(suit%2?'red ':'')+(animate?'dealIn':'')+'"><span aria-hidden="true"><span class="corner">'+corner+'</span>'+center+'<span class="corner end">'+corner+'</span></span></span>';
 }
+
+// Each of these tables uses one deck. Compare within each pile so moving a
+// visible card from hand to table still produces a landing at the destination.
+function renderCardMove(paint) {
+  const piles = ['myCards', 'boardCards'].map(id => document.getElementById(id));
+  const cardsIn = pile => Array.from(pile.querySelectorAll('.card[aria-label]'));
+  const before = piles.map(pile => new Set(cardsIn(pile).map(face => face.getAttribute('aria-label'))));
+  paint();
+  piles.forEach((pile, index) => {
+    for (const face of cardsIn(pile)) {
+      if (!before[index].has(face.getAttribute('aria-label'))) face.classList.add('tableLanding');
+    }
+  });
+}
+
+function confirmCardTouch(event) {
+  if (event?.isTrusted && event.pointerType === 'touch' &&
+      !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    navigator.vibrate?.(10);
+  }
+}

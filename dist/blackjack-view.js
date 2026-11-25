@@ -11,7 +11,7 @@ function draw(changed=false){
   const bet=g.phase==='bet',end=g.phase==='result',open=['dealer','result'].includes(g.phase);
   const nextPaint=new Map();
   function spread(key,ids){
-    nextPaint.set(key,ids);
+    nextPaint.set(key,ids.slice());
     const old=painted.get(key)||[];
     return ids.map((id,i)=>card(id,changed&&id!==old[i])).join('');
   }
@@ -57,6 +57,7 @@ $('chips').onclick=$('controls').onclick=e=>{
     if(g.round>=5||g.chips<2)g=Blackjack.table(g.bots.length+1);
     else{g.phase='bet';g.stake=Math.min(g.stake,2*Math.floor(g.chips/2));g.hands=[];g.dealer=[];g.bots.forEach(b=>b.hand=null);}
   }else Blackjack.play(g,b.dataset.action);
+  if (b.dataset.action && b.dataset.action !== 'next') confirmCardTouch(e);
   draw(true);
   if(b.dataset.bet)$('chips').querySelector('[aria-pressed="true"]')?.focus({preventScroll:true});
 };

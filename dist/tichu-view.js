@@ -11,7 +11,7 @@ function btn(a,text,on=true){return '<button data-a="'+a+'" '+(on?'':'disabled')
 function modal(title,html){clearTimeout(timer);$('title').textContent=title;$('body').innerHTML=html;$('close').hidden=!g;if(!$('modal').open)$('modal').showModal();}
 function done(){return Math.max(...g.totals)>=1000&&g.totals[0]!==g.totals[1];}
 function save(){try{localStorage.setItem(key,JSON.stringify(g));}catch{$('msg').textContent+=' · 저장 불가';}}
-function changed(){sel=[];skipBomb=false;render();save();}
+function changed(){sel=[];skipBomb=false;renderCardMove(render);save();}
 function prep(){modal('티츄 · 팀 대전','<p>나와 맞은편 AI가 한 팀으로 두 상대 AI와 겨룹니다. 목표는 1,000점입니다.</p>'+btn('start','4인 대국 시작'));}
 const help='<p>8장을 본 뒤 그랜드 티츄(±200점)를, 첫 카드를 내기 전에는 스몰 티츄(±100점)를 선언할 수 있습니다. 선언한 사람이 첫 번째로 손을 비워야 성공합니다. 14장 중 왼쪽·파트너·오른쪽에게 한 장씩 교환합니다.</p><p>마작을 받은 사람이 선입니다. 싱글, 페어, 트리플, 풀하우스, 연속 페어, 5장 이상 스트레이트를 낼 수 있습니다. 같은 형태와 장수의 더 높은 조합으로 받거나 패스하세요.</p><p>마작은 1이며 숫자 하나를 소원으로 부를 수 있습니다. 차례에 그 숫자의 실제 카드를 합법적으로 낼 수 있으면 반드시 냅니다. 개는 선을 파트너에게 넘깁니다. 봉황은 일반 조합의 와일드이며 싱글로는 직전 카드보다 ½ 높습니다. 용은 최고 싱글이며 이긴 트릭은 상대에게 줍니다.</p><p>포 카드와 같은 무늬 스트레이트는 폭탄입니다. 장수, 그다음 최고 숫자 순으로 비교합니다. 내 차례 밖에도 폭탄 기회를 선택할 수 있습니다.</p><p>5는 5점, 10과 K는 10점, 용은 +25점, 봉황은 −25점입니다. 꼴찌는 획득 트릭을 1등에게, 남은 손패를 상대 팀에게 줍니다. 같은 팀이 1·2등이면 카드 점수 대신 200점입니다.</p>';
 function moves(){return g.phase==='play'?Tichu.legal(g,0):[];}
@@ -75,7 +75,10 @@ document.addEventListener('click',e=>{
   if(a==='play'){const m=matches(moves())[Number($('shape')?.value||0)];if(m)ok=Tichu.play(g,0,m,Number($('wish')?.value||0));}
   if(a.startsWith('gift'))ok=Tichu.gift(g,Number(a.slice(4)));
   if(a==='next'){if(done()){prep();return;}Tichu.deal(g);ok=true;}
-  if(ok)changed();
+  if(ok){
+    if (['exchange','play','gift1','gift3'].includes(a)) confirmCardTouch(e);
+    changed();
+  }
 });
 $('guide').onclick=()=>modal('티츄 규칙',help);$('close').onclick=()=>$('modal').close();$('modal').onclose=schedule;$('modal').oncancel=e=>{if(!g)e.preventDefault();};
 $('name').textContent='Tichu';document.body.className='tichu';if(g)render();else prep();

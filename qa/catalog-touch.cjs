@@ -97,7 +97,11 @@ async function audit(page, width) {
   await rules('.catalog-open', '#cardDialog', '#closeCard');
   await tap('#editor summary');
   await tap('#config .primary'); await showing('#game');
-  await tap('[data-zoom="1.8"]'); await tap('[data-zoom="1"]');
+  for (const zoom of ['1.8','1']) {
+    const choice = '[data-zoom="' + zoom + '"]';
+    if (!await page.locator(choice).isVisible()) await tap('#mapViews summary');
+    await tap(choice);
+  }
   await tap('#buttons button:enabled'); await tap('#setup'); await tap('#resume');
   await showing('#game');
 

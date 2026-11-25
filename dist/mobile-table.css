@@ -117,3 +117,33 @@
   width: 100%;
   min-width: 0;
 }
+
+/* The rim stays visible around the finger without changing the hit box. */
+@media (any-pointer: coarse) {
+  [data-table-pressed] {
+    outline: 2px solid #ffe1a1;
+    outline-offset: -2px;
+    filter: brightness(1.12);
+  }
+
+  #board [role="button"][data-table-pressed] :is(.spot, .district) {
+    stroke: #fff0bc;
+    stroke-width: 3px;
+  }
+}
+
+@media (any-pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  :is(.handBtn[data-table-pressed] .card, .chip[data-table-pressed], .casino[data-table-pressed]) {
+    scale: .97;
+  }
+}
+
+/* Applied once to incoming cards, only after a committed move. */
+@media (prefers-reduced-motion: no-preference) {
+  .tableLanding { animation: cardTableLand 190ms cubic-bezier(.2,.8,.35,1); }
+  @keyframes cardTableLand {
+    from { transform: translateY(-7px) rotate(-3deg); filter: brightness(1.14); }
+    75% { transform: translateY(1px) rotate(.4deg); }
+    to { transform: none; filter: none; }
+  }
+}
