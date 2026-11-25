@@ -1,0 +1,60 @@
+.card-screen-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.card-screen-controls button { white-space: nowrap; padding-inline: 7px; }
+.card-screen-controls [aria-pressed="true"] { background: #edd29c; color: #252e22; }
+
+.card-expanded main {
+  position: fixed;
+  inset: 0;
+  max-width: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-top: max(4px, env(safe-area-inset-top));
+}
+
+@media (max-width: 540px) {
+  html:not(.card-landscape) main > header { flex-wrap: wrap; }
+}
+
+@media (orientation: portrait) {
+  .card-landscape body { overflow: hidden; }
+
+  .card-landscape main {
+    position: fixed;
+    inset: 0 auto auto 0;
+    width: 100dvh;
+    height: 100dvw;
+    min-height: 0;
+    max-width: none;
+    overflow: auto;
+    overscroll-behavior: contain;
+    transform-origin: top left;
+    transform: translateX(100dvw) rotate(90deg);
+    padding: max(4px, env(safe-area-inset-right))
+             max(8px, env(safe-area-inset-bottom))
+             max(4px, env(safe-area-inset-left))
+             max(8px, env(safe-area-inset-top));
+  }
+
+  .card-landscape main > header { flex-wrap: wrap; }
+  .card-landscape .felt { min-height: 0; }
+  .card-landscape .players { flex-direction: row; }
+  .card-landscape footer { flex-wrap: nowrap; }
+  .card-landscape footer #controls { width: auto; justify-content: flex-end; }
+  .card-landscape .tichu #myCards { column-gap: 1px; }
+  .card-landscape .tichu .felt { padding-inline: 3px; }
+  .card-landscape .tichu .localSeat { padding-inline: 2px; }
+
+  .card-landscape dialog[open] {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    margin: 0;
+    width: min(440px, 94dvh);
+    max-height: 88dvw;
+    overflow: auto;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+}
