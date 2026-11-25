@@ -1,16 +1,17 @@
 /* Original card effects shared by human turns, CPU turns and match simulations. */
 const CepterCombos = (() => {
   const groups = {
-    land: 'barricade greed regeneration vitality disease peace landprotection mine vortex soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought',
+    land: 'barricade greed regeneration vitality disease peace landprotection mine vortex soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast',
     area: 'cramp reinforce insectswarm exorcism massphantasm sculpture desertstorm',
-    player: 'holyword0 grace pain silence haste despair antimagic changeling wizardeye mindseeker waste wordofrecall suppression drainmagic',
-    global: 'catastrophe tempest punisher demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker'
+    player: 'holyword0 grace pain silence haste despair antimagic changeling wizardeye mindseeker waste wordofrecall suppression drainmagic slow holyword3 holywordx echo dimensiondoor',
+    global: 'catastrophe tempest punisher demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker feast'
   };
   const type = Object.fromEntries(Object.entries(groups).flatMap(([group,names]) => names.split(' ').map(name => [name,group])));
   const key=c=>c?.catalog?.path.split('/').pop();
   const enchanted=u=>!!(u?.enchant||u?.poisoned||u?.confused);
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
   function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
+  const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
   function rules(cards,{board,draw,value,vacate,note}){
     const ids=new Map(cards.map((c,id)=>[key(c),id]));
     const max=u=>u.mhp??cards[u.id].hp;
@@ -29,15 +30,16 @@ const CepterCombos = (() => {
       const i=s.turn;
       if(type[e]==='area')return [...new Set(s.tiles.map(t=>t.area))].map(a=>['comboArea',a]);
       if(type[e]==='player'){
-        if(s.tiles.some(t=>name(t.unit)==='graniteidol')&&['pain','grace','wordofrecall','changeling','wizardeye','mindseeker','suppression','drainmagic'].includes(e))return [];
-        return s.players.flatMap((q,n)=>i===n&&['pain','silence','despair','changeling','mindseeker','waste','drainmagic'].includes(e)||e==='mindseeker'&&!(q.book?.length??q.bookCount)?[]:[['targetPlayer',n]]);
+        if(s.tiles.some(t=>name(t.unit)==='graniteidol')&&['pain','grace','wordofrecall','changeling','wizardeye','mindseeker','suppression','drainmagic','echo','dimensiondoor'].includes(e))return [];
+        return s.players.flatMap((q,n)=>allied(s,i,n)&&['pain','silence','despair','changeling','mindseeker','waste','drainmagic','echo'].includes(e)||e==='mindseeker'&&!(q.book?.length??q.bookCount)?[]:[['targetPlayer',n]]);
       }
       return s.tiles.flatMap((t,n)=>{
-        if(!t.unit||t.unit.enchant==='landprotection'||s.players[t.owner].invisible||['peri','caitsith'].includes(name(t.unit)))return [];
-        if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return (typeof d.type==='number'||['복합','무속성'].includes(d.type))&&d.owner!==t.owner&&d.unit?.enchant!=='peace';}))return [];
+        if(!t.unit||t.unit.enchant==='landprotection'||s.players[t.owner].invisible||['peri','caitsith','pegasus','grimalkin'].includes(name(t.unit)))return [];
+        if(['evilblast','shrink'].includes(e)&&allied(s,i,t.owner))return [];
+        if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return (typeof d.type==='number'||['복합','무속성'].includes(d.type))&&!allied(s,d.owner,t.owner)&&d.unit?.enchant!=='peace';}))return [];
         if(e==='exile'&&(!enchanted(t.unit)||cards[t.unit.id].catalog?.additionalCost))return [];
         if(['landtransfer','relief'].includes(e)&&t.owner!==i)return [];
-        if(e==='relief'&&(s.reliefFrom===n||!s.tiles.some((v,j)=>j!==n&&v.owner===i&&v.unit&&v.unit.enchant!=='landprotection'&&!['peri','caitsith'].includes(name(v.unit)))))return [];
+        if(e==='relief'&&(s.reliefFrom===n||!s.tiles.some((v,j)=>j!==n&&v.owner===i&&v.unit&&v.unit.enchant!=='landprotection'&&!['peri','caitsith','pegasus','grimalkin'].includes(name(v.unit)))))return [];
         return [['targetLand',n]];
       });
     }
@@ -51,7 +53,10 @@ const CepterCombos = (() => {
         else if(e==='relief'){
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
           const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;p.book.unshift(ids.get(e));
-        }else if(e==='weakness')u.st=0;
+        }else if(e==='evilblast')damage(s,t,30);
+        else if(e==='shrink'){u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)destroy(s,t);}
+        else if(e==='growthbody'){u.mhp=max(u)+10;u.hp+=10;}
+        else if(e==='weakness')u.st=0;
         else if(e==='temperance'){u.mhp=30;u.hp=Math.min(30,u.hp);}
         else if(e==='mutation'){
           clear(u);const next=Math.max(max(u),Math.min(80,max(u)+20));u.hp+=next-max(u);u.mhp=next;u.poisoned=true;
@@ -67,7 +72,7 @@ const CepterCombos = (() => {
           if(e==='sculpture'&&max(a)<=30)v.unit=morph(a,'statue');
         }
       }else if(type[e]==='player'){
-        if(e==='holyword0'){q.word=0;delete q.status;}
+        if(['holyword0','holyword3','holywordx'].includes(e)){q.word=e==='holywordx'?10:e==='holyword3'?3:0;delete q.status;}
         if(e==='suppression'){if(q.hand.some(id=>cards[id].kind==='spell')){s.spellTarget=x;return 'suppression';}return 'roll';}
         if(e==='antimagic')q.antiMagic=true;
         if(e==='waste')q.status=e;
@@ -78,12 +83,19 @@ const CepterCombos = (() => {
           const slots=q.book.map((_,i)=>i);
           for(let j=0;j<2&&slots.length;j++){const index=slots.splice(Math.floor(Math.random()*slots.length),1)[0];q.book[index]=ids.get('goblin');}
         }
+        if(e==='dimensiondoor'){
+          const dest=s.tiles.flatMap((v,j)=>j!==q.pos&&(typeof v.type==='number'||['무속성','복합'].includes(v.type))?[j]:[]);
+          if(dest.length){q.pos=dest[Math.floor(Math.random()*dest.length)];q.previous=null;q.dir=0;}
+          s.visited=[];s.remaining=0;s.die=0;return 'land';
+        }
         if(e==='wordofrecall'){q.pos=0;q.dir=0;q.previous=null;s.die=0;return 'land';}
         if(e==='grace')p.cash+=Math.floor(q.symbols.reduce((a,n,j)=>a+n*s.prices[j],0)*.15);
+        if(e==='echo')p.cash=Math.floor(q.cash/2);
         if(e==='drainmagic'){const amount=Math.floor(Math.max(0,q.cash)*.3);q.cash-=amount;p.cash+=amount;}
         if(e==='pain')q.cash=Math.max(0,q.cash-100);
-        if(['silence','haste','despair'].includes(e)){q.status=e;q.statusUntil=s.round+2;delete q.word;}
+        if(['silence','haste','despair','slow'].includes(e)){q.status=e;q.statusUntil=s.round+2;delete q.word;}
       }else{
+        if(e==='feast')for(const [j,player] of s.players.entries())player.cash+=50*s.tiles.filter(v=>v.owner===j).length;
         if(e==='earthshaker')for(const v of s.tiles)if(!levelLocked(v))v.level=Math.max(1,v.level-1);
         if(e==='shine'){if(!s.shineUntil)s.prices=s.prices.map(v=>Math.floor(v*1.5));s.shineUntil=s.round+2;}
         if(e==='goblinslair'){const v=s.tiles[p.pos];if(!v.unit&&(typeof v.type==='number'||['복합','무속성'].includes(v.type))){v.owner=i;v.unit=morph(null,'goblin');}p.hand.push(ids.get(e));}
@@ -112,11 +124,11 @@ const CepterCombos = (() => {
     function territoryTargets(s,from){
       const n=name(s.tiles[from].unit),cost=territoryCosts[n];
       if(cost==null||s.players[s.turn].cash<cost)return [];
-      if(['heatimp','windimp','witch'].includes(n))return s.tiles.some(v=>name(v.unit)==='graniteidol')?[]:s.players.flatMap((q,j)=>j===s.turn?[]:[['abilityPlayer',j]]);
+      if(['heatimp','windimp','witch'].includes(n))return s.tiles.some(v=>name(v.unit)==='graniteidol')?[]:s.players.flatMap((q,j)=>allied(s,j,s.turn)?[]:[['abilityPlayer',j]]);
       return s.tiles.flatMap((v,j)=>{
         if(['conjurer','goobaqueen'].includes(n))return !v.unit&&(typeof v.type==='number'||['복합','무속성'].includes(v.type))?[['abilityLand',j]]:[];
-        if(!v.unit||v.unit.enchant==='landprotection'||s.players[v.owner].invisible||['peri','caitsith'].includes(name(v.unit)))return [];
-        return n==='spittingcobra'||v.owner!==s.turn&&cards[v.unit.id].element!==v.type?[['abilityLand',j]]:[];
+        if(!v.unit||v.unit.enchant==='landprotection'||s.players[v.owner].invisible||['peri','caitsith','pegasus','grimalkin'].includes(name(v.unit)))return [];
+        return n==='spittingcobra'||!allied(s,v.owner,s.turn)&&cards[v.unit.id].element!==v.type?[['abilityLand',j]]:[];
       });
     }
     function territoryEffect(s,from,x){
@@ -249,12 +261,12 @@ const CepterCombos = (() => {
   }
   function planner(s,seat,cards,fx,deckGroups){
     const p=s.players[seat],names=p.hand.map(id=>key(cards[id])),tiles=s.tiles.filter(t=>t.unit);
-    const friendly=tiles.filter(t=>t.owner===seat),enemies=tiles.filter(t=>t.owner!==seat);
+    const friend=j=>allied(s,seat,j),friendly=tiles.filter(t=>friend(t.owner));
     const available=names.concat(friendly.map(t=>fx.name(t.unit)),friendly.map(t=>t.unit.enchant));
     const pair=(a,b)=>deckGroups.some(g=>g.some(row=>row.includes(a))&&g.some(row=>row.includes(b)&&!row.includes(a)));
     const ready=n=>deckGroups.some(g=>g.some(row=>row.includes(n))&&matches(g,available));
-    const hostile=new Set('disease weakness senility antielement exile temperance silence despair waste pain wizardeye mindseeker changeling'.split(' '));
-    const advantage=t=>t.owner===seat?1:-1;
+    const hostile=new Set('disease weakness senility antielement evilblast shrink slow exile temperance silence despair waste pain wizardeye mindseeker changeling'.split(' '));
+    const advantage=t=>friend(t.owner)?1:-1;
     function scoreTarget(e,x){
       if(type[e]==='area'){
         return tiles.filter(t=>t.area===x).reduce((v,t)=>{
@@ -266,21 +278,22 @@ const CepterCombos = (() => {
       if(type[e]==='player'){
         const q=s.players[x];
         if(e==='drainmagic')return q.antiMagic?-10:(Math.floor(q.cash*.3)-80)/6;
-        if(e==='suppression')return x===seat?-20:5;
-        if(e==='holyword0'){const tile=s.tiles[q.pos];return x!==seat&&tile.owner===seat?25+tile.level*5:-5;}
+        if(e==='suppression')return friend(x)?-20:5;
+        if(e==='holyword0'){const tile=s.tiles[q.pos];return !friend(x)&&friend(tile.owner)?25+tile.level*5:-5;}
         if(e==='grace')return q.symbols.reduce((v,n,j)=>v+n*s.prices[j],0)*.15/5;
-        if(e==='wordofrecall')return q.status==='waste'&&x!==seat?20:x===seat&&q.flags.length?5:1;
-        if(e==='mindseeker'||e==='despair')return x!==seat?(p.peek?.seat===x?13:6): -10;
-        return (hostile.has(e)?x!==seat:x===seat)?8:-12;
+        if(e==='wordofrecall')return q.status==='waste'&&!friend(x)?20:x===seat&&q.flags.length?5:1;
+        if(e==='mindseeker'||e==='despair')return !friend(x)?(p.peek?.seat===x?13:6): -10;
+        return (hostile.has(e)?!friend(x):friend(x))?8:-12;
       }
       const t=s.tiles[x],n=fx.name(t.unit);
-      if(e==='drought')return t.owner!==seat&&t.level<5&&!levelLocked(t)?12-t.level:-10;
+      if(e==='evilblast')return (t.unit.hp<=30?20*t.level:3)-Number(t.unit.enchant==='phantasm')*100;
+      if(e==='drought')return !friend(t.owner)&&t.level<5&&!levelLocked(t)?12-t.level:-10;
       if(e==='relief'){
         const other=s.tiles[s.reliefFrom];if(!other)return friendly.some(v=>v!==t&&pair(n,fx.name(v.unit)))?12:friendly.length>=2?1:-12;
         return pair(n,fx.name(other.unit))?15:0;
       }
       if(e==='landtransfer')return t.owner===seat&&(n==='gooba'||p.cash<75)?10:-8;
-      if(['disease','antielement','senility','weakness'].includes(e)&&t.owner!==seat){const attacker=names.some(card=>pair(e,card))||friendly.some(v=>pair(e,fx.name(v.unit)));return 5+(attacker?10:0)+(p.pos===x?2:0)+t.level;}
+      if(['disease','antielement','senility','weakness'].includes(e)&&!friend(t.owner)){const attacker=names.some(card=>pair(e,card))||friendly.some(v=>pair(e,fx.name(v.unit)));return 5+(attacker?10:0)+(p.pos===x?2:0)+t.level;}
       if(e==='telekinesis')return n==='leshy'&&t.owner===seat?12:1;
       const beneficial=!hostile.has(e)&&e!=='fog',sign=beneficial?advantage(t):-advantage(t);
       if(t.unit.enchant===e)return -8;
@@ -292,13 +305,14 @@ const CepterCombos = (() => {
         const opts=fx.targets(s,e);return opts.length?Math.max(...opts.map(a=>scoreTarget(e,a[1]))):-30;
       }
       if(['tempest','catastrophe','punisher'].includes(e))return tiles.reduce((v,t)=>v-advantage(t)*(e==='punisher'&&!enchanted(t.unit)?0:t.unit.hp<=20?15:5),0);
+      if(e==='feast')return tiles.reduce((v,t)=>v+advantage(t)*5,0);
       if(e==='earthshaker')return tiles.reduce((net,t)=>net-(t.level>1&&!levelLocked(t)?advantage(t)*(t.base||80)*2**(t.level-2):0),-300)/10;
       if(e==='raisedead')return s.lastDestroyed==null?-10:10;
       if(e==='permission')return p.flags.length?2:12;
       if(e==='goblinslair'){const t=s.tiles[p.pos];return !t.unit&&(typeof t.type==='number'||['복합','무속성'].includes(t.type))?20:-10;}
       if(e==='demonictrade')return friendly.length?friendly.reduce((v,t)=>v+(['goblin','powdereater','gooba'].includes(fx.name(t.unit))?12:2),0):-10;
       if(e==='gravity')return names.includes('scourge')?12:2;
-      if(e==='scourge')return s.players.reduce((v,q)=>v+(q===p?-1:1)*(q.status||q.word!=null||q.dream||q.invisible?q.cash*.035:0),0);
+      if(e==='scourge')return s.players.reduce((v,q)=>v+(friend(s.players.indexOf(q))?-1:1)*(q.status||q.word!=null||q.dream||q.invisible?q.cash*.035:0),0);
       if(['aurora','shine','pressure','disbelief'].includes(e)){
         const own=p.symbols.reduce((a,b)=>a+b,0),op=Math.max(...s.players.filter(q=>q!==p).map(q=>q.symbols.reduce((a,b)=>a+b,0)));
         return (['pressure','disbelief'].includes(e)?op-own:own-op)+(names.includes('grace')&&Math.max(own,op)>0?8:0);
@@ -329,6 +343,6 @@ const CepterCombos = (() => {
     }
     return {pair,ready,scoreTarget,cast,sequence};
   }
-  return {rules,type,key,clear,enchanted,levelLocked,recipes,matches,planner};
+  return {rules,type,key,allied,clear,enchanted,levelLocked,recipes,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;

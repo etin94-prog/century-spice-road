@@ -43,6 +43,15 @@ function showEntry(){
     const cards=Object.entries(row.cards),book=cards.flatMap(([path,n])=>Array(n).fill(cardIndex.get(path)));
     const ready=book.filter(id=>C.cards[id]&&!C.cards[id].catalogOnly).length;
     detail.append(el('p',book.length+'장 · 대전 지원 '+ready+'장'),sourceLink(row.url,'원작 덱 보기'));
+    const audit=adaptedBooks[index];
+    if(book.length!==50)detail.append(el('p','자료에 기록된 수량은 '+book.length+'장입니다. 대전용 북은 50장으로 맞췄습니다.'));
+    if(audit.replacements.length){
+      const changes=new Map();
+      for(const [from,to] of audit.replacements){const label=(from?comboCards([from])[0]:'보충')+' → '+(to?comboCards([to])[0]:'50장 한도 제외');changes.set(label,(changes.get(label)||0)+1);}
+      const list=el('details');list.append(el('summary','대전용 대체 카드 '+audit.replacements.length+'장'));
+      for(const [label,count] of changes)list.append(el('p',label+' ×'+count));
+      detail.append(list);
+    }
     if(C.validBook(book))detail.append(btn('이 북으로 대국 설정',()=>{
       customBook=book;const choice=$('bookChoice');choice.lastElementChild.disabled=false;choice.value='custom';
       try{localStorage.setItem(bookKey,JSON.stringify(book));}catch{}

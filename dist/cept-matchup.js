@@ -1,26 +1,4 @@
-const adaptedBooks=archive.books.map(row=>{
-  const pool=C.cards.flatMap((c,id)=>c.catalog&&!c.catalogOnly?[id]:[]);
-  const deck=[],missing=[];
-  for(const [path,n] of Object.entries(row.cards)){
-    const id=cardIndex.get(path);
-    for(let i=0;i<n;i++){
-      if(pool.includes(id)&&i<4&&deck.length<50)deck.push(id);
-      else missing.push(C.cards[id]);
-    }
-  }
-  const kept=deck.length;
-  function distance(c,source){
-    return 1000*(c.kind!==source.kind)+150*(c.catalog.category!==source.catalog.category)
-      +Math.abs(c.cost-source.cost)+Math.abs((c.st||0)-(source.st||0))+Math.abs((c.hp||0)-(source.hp||0));
-  }
-  while(deck.length<50){
-    const source=missing.shift()||C.cards[C.presets.fire[deck.length]];
-    const available=pool.filter(id=>deck.filter(x=>x===id).length<4);
-    available.sort((a,b)=>distance(C.cards[a],source)-distance(C.cards[b],source));
-    deck.push(available[0]);
-  }
-  return {name:row.name,group:row.group,kept,deck};
-});
+const adaptedBooks=archive.books.map(row=>adaptCepterBook(C,row));
 for(const [group,select] of [['Player',$('bookChoice')],['AI',$('aiChoice')]]){
   const list=document.createElement('optgroup');list.label=group+' 원작 기반 50장';
   adaptedBooks.forEach((b,i)=>{if(b.group===group)list.append(new Option(b.name+' · 유지 '+b.kept+'장','source-'+i));});
@@ -37,14 +15,17 @@ function refreshMatchup(){
   matchupWorker?.terminate();matchupWorker=null;
   const tier=tierBooks(),humanCount=Number($('humans').value),count=Number($('count').value);
   const usingAI=humanCount<count,same=$('tierChoice').value==='same';
+  const story=storyCastSelected(),cast=C.storyAlliances[$('mapChoice').value];
+  $('storyAllyLabel').hidden=!(story&&$('mapChoice').value==='ps2-14'&&humanCount<=2);
+  const castNames=story?cast.map((name,i)=>i<humanCount?null:i===2&&chosenAiBook()==='story-leo'?'Leo · Revenge':name).filter(Boolean).join(' / '):'';
   const describe=b=>b.practice?b.name:b.name+' (원본 유지 '+b.kept+'/50장)';
   $('aiChoice').disabled=!usingAI||same;
   const player=$('bookChoice').value==='recommend'?describe(tier.player):$('bookChoice').selectedOptions[0].text;
-  $('deckMatchNames').textContent='Player · '+player+' / AI · '+(!usingAI?'없음':same?'플레이어와 같은 북':describe(sourceBook($('aiChoice'))||tier));
+  $('deckMatchNames').textContent='Player · '+player+' / AI · '+(!usingAI?'없음':same?'플레이어와 같은 북':story?castNames:describe(sourceBook($('aiChoice'))||tier));
   $('deckOdds').textContent='';
   $('estimateDeck').disabled=false;
 }
-for(const id of ['mapChoice','count','humans','target','tierChoice','bookChoice','aiChoice']){
+for(const id of ['mapChoice','count','humans','target','alliance','storyAlly','tierChoice','bookChoice','aiChoice']){
   $(id).addEventListener('change',()=>{
     if(id==='tierChoice')$('aiChoice').value='tier';
     if(id==='tierChoice'&&$('bookChoice').value==='recommend'&&$('editor').open)bookEditor();
@@ -54,7 +35,7 @@ for(const id of ['mapChoice','count','humans','target','tierChoice','bookChoice'
 $('storeBook').addEventListener('click',refreshMatchup);
 $('estimateDeck').onclick=()=>{
   matchupWorker?.terminate();
-  const options={count:Number($('count').value),humans:Number($('humans').value),target:Number($('target').value),map:$('mapChoice').value,player:chosenBook(),opponent:chosenAiBook(),aiLevel:selectedAiLevel()};
+  const options={count:Number($('count').value),humans:Number($('humans').value),target:Number($('target').value),map:$('mapChoice').value,player:chosenBook(),opponent:chosenAiBook(),aiLevel:selectedAiLevel(),alliance:$('alliance').value};
   $('estimateDeck').disabled=true;
   $('deckOdds').textContent='모의 대국 계산 중…';
   function stop(){matchupWorker?.terminate();matchupWorker=null;$('estimateDeck').disabled=false;}

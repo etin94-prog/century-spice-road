@@ -9,13 +9,13 @@ function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.te
 function btn(text,fn,cls){const b=el('button',text,cls);b.type='button';b.onclick=fn;return b;}
 function save(){if(room)return;try{localStorage.setItem(storage,JSON.stringify(s));}catch{$('notice').textContent='저장 공간을 사용할 수 없어 이번 대국은 현재 창에서만 진행됩니다.';}}
 try{const raw=localStorage.getItem(storage);if(raw){const v=JSON.parse(raw);if(v.version===1&&[2,3,4].includes(v.players.length)&&C.board(v)?.types.length===v.tiles.length&&(v.phase==='over'||C.choices(v).length))s=v;else throw Error();}}catch{$('notice').textContent='저장한 대국을 읽을 수 없습니다.';}
-function seats(){const select=$('humans'),prior=+select.value||1;select.replaceChildren();for(let i=1;i<=+$('count').value;i++)select.add(new Option(i+'명 · AI '+(+$('count').value-i)+'명',i));select.value=Math.min(prior,+$('count').value);}
+function seats(){const select=$('humans'),prior=+select.value||1;select.replaceChildren();for(let i=1;i<=+$('count').value;i++)select.add(new Option(i+'명 · AI '+(+$('count').value-i)+'명',i));select.value=Math.min(prior,+$('count').value);const option=$('alliance').querySelector('[value="teams"]');option.disabled=+$('count').value!==4;if(option.disabled&&$('alliance').value==='teams')$('alliance').value='auto';}
 let seenMove=0,activeWalk=null;
 function lobby(){cancelMapEffect();stopWalk();if(room){location.assign(location.pathname);return;}clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;$('resume').hidden=!s||s.phase==='over';}
 function handoff(){return !room&&s.phase!=='over'&&!s.players[C.actor(s)].ai&&s.players.filter(p=>!p.ai).length>1;}
 function enter(){seenActionSound=s.actionSound?.sequence||0;cancelMapEffect();seenMapEffect=s.mapEffect?.sequence||0;stopWalk();seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;$('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;render();}
 $('count').onchange=seats;$('setup').onclick=lobby;$('resume').onclick=enter;
-$('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook(),chosenAiBook(),selectedAiLevel());save();enter();};
+$('config').onsubmit=e=>{e.preventDefault();if(s&&s.phase!=='over'&&!confirm('진행 중인 대국을 새 대국으로 바꿀까요?'))return;s=C.start(+$('count').value,+$('humans').value,+$('target').value,$('mapChoice').value,chosenBook(),chosenAiBook(),selectedAiLevel(),$('alliance').value);save();enter();};
 const handPanel=$('handPanel');
 try{const saved=localStorage.getItem('cept-hand-open');handPanel.open=saved===null?!matchMedia('(max-width:900px), (pointer:coarse)').matches:saved==='1';}catch{}
 handPanel.addEventListener('toggle',()=>{try{localStorage.setItem('cept-hand-open',handPanel.open?'1':'0');}catch{}});
@@ -28,7 +28,8 @@ function tierBooks(){
   const find=b=>adaptedBooks.find(v=>v.name===b.name)||b;
   return {...tier,...find(tier),player:find(tier.player)};
 }
-function chosenAiBook(){return $('tierChoice').value==='same'?chosenBook():(sourceBook($('aiChoice'))||tierBooks()).deck;}
+function storyCastSelected(){return $('count').value==='4'&&!!C.storyAlliances[$('mapChoice').value]&&$('alliance').value!=='duel'&&($('alliance').value==='teams'||$('target').value==='0')&&$('aiChoice').value==='tier'&&$('tierChoice').value!=='same';}
+function chosenAiBook(){if(storyCastSelected())return $('mapChoice').value==='ps2-14'&&$('storyAlly').value==='leo'?'story-leo':'story';return $('tierChoice').value==='same'?chosenBook():(sourceBook($('aiChoice'))||tierBooks()).deck;}
 function chosenBook(){if(/^(source|combo)-/.test($('bookChoice').value))return sourceBook($('bookChoice')).deck;if($('bookChoice').value==='recommend')return tierBooks().player.deck;return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
 const bookKey='cept-book-v1';
 try{const data=JSON.parse(localStorage.getItem(bookKey));if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}}catch{}
@@ -193,7 +194,7 @@ function map(){
       const label=name+' '+links+'연쇄';
       b.append(el('span',label,'chain-mark'));
       b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+label+' · 영지 가치 ×'+C.chainRate(s,t));
-      b.classList.toggle('chain-peer',inspect>=0&&C.sameChain(t,s.tiles[inspect]));
+      b.classList.toggle('chain-peer',inspect>=0&&C.sameChain(t,s.tiles[inspect],s));
     }
     const surface=el('span',null,'tile-surface');surface.setAttribute('aria-hidden','true');
     b.append(surface,el('b',(n+1)+' · '+name));
@@ -229,7 +230,7 @@ function map(){
     }else center.append(el('span',m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':t.type==='카드 상점'?'상점 상품 미확인':'점유 크리처 없음'));
     return;
   }
-  const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?p.name+' 승리':s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?winLabel():s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
 }
 function stopWalk(){
   if(!activeWalk)return;
@@ -280,6 +281,7 @@ async function walkPath(move){
   finally{if(activeWalk===walk){stopWalk();render();}}
 }
 
+function winLabel(){return s.teams?String.fromCharCode(65+s.teams[s.winner])+'팀 승리':s.players[s.winner].name+' 승리';}
 function render(){
   clearTimeout(timer);
   syncStageMusic();
@@ -298,8 +300,8 @@ function render(){
   const i=C.actor(s),p=s.players[i],over=s.phase==='over',local=!p.ai&&!pending&&!over&&(!room||room.seat===i&&!room.busy);
   $('mapName').textContent=C.board(s).name;
   $('round').textContent=s.round+'라운드 · 목표 '+s.target+'G';
-  $('seats').replaceChildren(...s.players.map((v,j)=>{const box=el('div',null,'seat'+(i===j?' active':''));box.style.setProperty('--color',colors[j]);box.append(figure(j,v.name),el('b',v.name),el('span','마력 '+v.cash+'G · 총 '+C.total(s,j)+'G'));if(s.mapId==='market'||C.board(s).special?.includes('Temple'))box.append(el('small',' 호부 '+v.symbols.reduce((a,b)=>a+b,0)+'장'));return box;}));
-  map();$('who').textContent=over?p.name+' 승리':p.name+' 차례';
+  $('seats').replaceChildren(...s.players.map((v,j)=>{const box=el('div',null,'seat'+(i===j?' active':''));box.style.setProperty('--color',colors[j]);box.append(figure(j,v.name),el('b',v.name+(s.teams?' · '+String.fromCharCode(65+s.teams[j])+'팀':'')),el('span','마력 '+v.cash+'G · '+(s.teams?'팀 총 ':'총 ')+C.total(s,j)+'G'));if(s.mapId==='market'||C.board(s).special?.includes('Temple'))box.append(el('small',' 호부 '+v.symbols.reduce((a,b)=>a+b,0)+'장'));return box;}));
+  map();$('who').textContent=over?winLabel():p.name+' 차례';
   $('hint').textContent=over?'목표 총마력을 가지고 성에 귀환했습니다.':pending?'다음 셉터에게 기기를 건네세요.':p.ai?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':hints[s.phase];
   const controls=$('buttons');controls.replaceChildren();
   if(pending)controls.append(btn('내 차례 확인',()=>{pending=false;render();},'primary'));
@@ -310,12 +312,12 @@ function render(){
       for(const id of s.reward){const c=C.cards[id];grid.append(archiveCard(c.catalog.path));}
       result.append(grid);controls.append(result);
     }
-    const retry=s.mapGoal&&C.board(s).storyGoal&&s.players.some(p=>!p.ai)&&s.players[s.winner].ai;
+    const retry=s.mapGoal&&C.board(s).storyGoal&&s.players.some(p=>!p.ai)&&!s.players.some((v,j)=>!v.ai&&C.allied(s,j,s.winner));
     const next=C.board(s).stage+(retry?0:1);
     if(!room&&C.maps['ps2-'+next])controls.append(btn((retry?'다시 도전 · ':'다음 스테이지 · ')+C.maps['ps2-'+next].name,()=>{
       const book=s.players[0].template;
       $('mapChoice').value='ps2-'+next;showStage();
-      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.mapGoal?0:s.target,'ps2-'+next,book,s.players.find(p=>p.ai)?.template||book,s.aiLevel||0);save();enter();
+      s=C.start(s.players.length,s.players.filter(v=>!v.ai).length,s.mapGoal?0:s.target,'ps2-'+next,book,C.storyAlliances['ps2-'+next]&&s.players.length===4&&s.mapGoal&&s.alliance!=='duel'&&(s.storyCast||s.aiLevel)?($('mapChoice').value==='ps2-14'&&$('storyAlly').value==='leo'?'story-leo':'story'):s.players.find(p=>p.ai)?.template||book,s.aiLevel||0,s.alliance||'auto');save();enter();
     },'primary'));
     controls.append(btn('대국 설정으로',lobby));
   }

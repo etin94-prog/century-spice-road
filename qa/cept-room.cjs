@@ -13,7 +13,7 @@ async function main(){
    p.on('pageerror',e=>errors.push(e.message));pages.push(p);
   }
   const host=pages[0];await host.goto(base+'/index.html#cept');await host.locator('[href="cept.html"]').click();
-  await host.selectOption('#humans','4');await host.locator('#editor summary').click();
+  await host.selectOption('#humans','4');if(process.argv.includes('--alliance'))await host.selectOption('#alliance','teams');await host.locator('#editor summary').click();
   await host.locator('#storeBook').click();assert.equal(await host.inputValue('#bookChoice'),'custom');
   await host.locator('#hostRoom').click();await host.locator('#roomWait input').waitFor();
   const shown=new URL(await host.inputValue('#roomWait input'));const invite=base+shown.pathname+shown.search;for(const p of pages.slice(1))await p.goto(invite);
@@ -22,7 +22,7 @@ async function main(){
   const id=new URL(invite).searchParams.get('ceptRoom'),url=base+'/api/cept/rooms/'+id;
   const tokens=await Promise.all(pages.map(p=>p.evaluate(id=>localStorage.getItem('cept-room-seat-'+id),id)));
   const request=async(seat,action)=>{const response=await fetch(url+(action?'/action':''),{method:action?'POST':'GET',headers:{Authorization:'Bearer '+tokens[seat],'Content-Type':'application/json'},body:action?JSON.stringify(action):undefined});return {status:response.status,data:await response.json()};};
-  let snap=(await request(0)).data;assert.equal(snap.game.players[1].hand.length,0);assert.equal(snap.game.players[0].book,undefined);
+  let snap=(await request(0)).data;if(process.argv.includes('--alliance'))assert.deepEqual(snap.game.teams,[0,1,0,1]);assert.equal(snap.game.players[1].hand.length,0);assert.equal(snap.game.players[0].book,undefined);
   const first={revision:snap.revision,action:['roll']};
   assert.equal((await request(1,first)).status,409);
   await host.getByRole('button',{name:'주사위 굴리기'}).click();await host.locator('.route-arrow').first().waitFor();
