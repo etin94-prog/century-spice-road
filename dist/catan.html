@@ -1,6 +1,6 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#123e42"><title>카탄 · 보드게임 테이블</title><link rel="stylesheet" href="catan.css"></head>
-<body><main><header><a href="index.html">← 게임 선택</a><button id="settings" hidden>새 게임</button></header>
+<html lang="ko" data-table="catan"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#123e42"><title>카탄 · 보드게임 테이블</title><link rel="stylesheet" href="catan.css"><link rel="stylesheet" href="mobile-table.css"></head>
+<body><main><header><a href="index.html#catan">← 게임 선택</a><button id="settings" hidden>새 게임</button></header>
 <section id="lobby"><div class="cover"><small lang="en">CATAN</small><h1>카탄</h1><p>섬에 첫 마을을 세우고, 길을 놓고, 이웃과 교역하세요.</p></div>
 <form id="config"><h2>게임 준비</h2><label>플레이 모드<select id="edition"><option value="classic">기본 카탄</option><option value="friendly">친절한 도둑</option><option value="ports">항구왕</option><option value="sea">항해자</option><option value="knights">도시와 기사</option></select></label><p id="summary"></p>
 <label>참가 인원<select id="count"><option>3</option><option>4</option></select></label><label>이 기기에서 플레이할 사람<select id="humans"></select></label><div class="buttons"><button class="primary">게임 시작</button><button type="button" id="resume" hidden>이전 게임 계속</button></div></form></section>

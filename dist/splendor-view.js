@@ -183,11 +183,18 @@ function setup(preferredMode){
   let mode=guildModes.includes(preferredMode)?preferredMode:(g.mode||'base'),count=g.players.length;const roles=[1,2,3].map(i=>g.players[i]?.level||'Medium');
   function draw(){modal('스플렌더 · 대국 설정','<label class="seat">게임 모드<select id="mode">'+guildModes.map(k=>'<option value="'+k+'" '+(k===mode?'selected':'')+'>'+guildNames[k]+'</option>').join('')+'</select></label><p>'+(guildRules[mode]||'보석을 모으고 개발 카드를 구매해 명성 15점을 달성하세요.')+'</p><div class="choices">'+[2,3,4].map(n=>'<button data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+'인</button>').join('')+'</div>'+roles.slice(0,count-1).map((l,j)=>'<label class="seat">AI '+(j+2)+'<select id="level'+j+'">'+levels.map(v=>'<option '+(v===l?'selected':'')+'>'+v+'</option>').join('')+'</select></label>').join('')+'<p><button class="primary" id="new">AI 대국 시작</button> <button id="friend">친구 초대 대전</button></p>');
     el('mode').onchange=e=>{mode=e.target.value;draw();};bind('count',n=>{count=n;draw();});roles.slice(0,count-1).forEach((_,j)=>el('level'+j).onchange=e=>roles[j]=e.target.value);
-    function start(){g=newGame(roles.slice(0,count-1),Math.random,mode);close();save();render();schedule();}
+    function syncMode(){
+      const url=new URL(location.href);
+      if(url.searchParams.has('mode')){
+        url.searchParams.set('mode',g.mode||'base');
+        history.replaceState(history.state,'',url);
+      }
+    }
+    function start(){g=newGame(roles.slice(0,count-1),Math.random,mode);syncMode();close();save();render();schedule();}
     el('new').onclick=()=>{
       if(!resumed||g.over){start();return;}
       modal('현재 대국을 교체할까요?','<p>'+guildNames[g.mode||'base']+' · '+g.round+'라운드가 이 기기에 저장되어 있습니다.</p><button id="continueGame" class="primary">현재 대국 이어하기</button> <button id="replaceGame">새 대국으로 교체</button>');
-      el('continueGame').onclick=close;el('replaceGame').onclick=start;
+      el('continueGame').onclick=()=>{syncMode();close();};el('replaceGame').onclick=start;
     };el('friend').onclick=()=>createOnline(mode);
   }draw();
 }
@@ -219,4 +226,4 @@ if(!room){
   }catch{saveStatus='저장된 대국을 읽을 수 없음';}
 }
 const requestedMode=new URLSearchParams(location.search).get('mode');
-render();if(room)enterOnline(room);else if(guildModes.includes(requestedMode))setup(requestedMode);else if(g.over)results();else if(!resumed)setup();else schedule();
+render();if(room)enterOnline(room);else if(guildModes.includes(requestedMode)&&(!resumed||requestedMode!==(g.mode||'base')))setup(requestedMode);else if(g.over)results();else if(!resumed)setup();else schedule();

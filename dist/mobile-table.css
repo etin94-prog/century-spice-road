@@ -1,0 +1,119 @@
+/* Phone controls follow each game's existing table palette. */
+@media (pointer: coarse), (max-width: 900px) {
+  :where(button, select, summary, header a, [role="tab"]) {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgb(244 206 128 / 24%);
+  }
+
+  :is(button, a, select, summary):focus-visible {
+    outline: 3px solid #ffda83;
+    outline-offset: -3px;
+  }
+
+  :where(button, a):active:not(:disabled) {
+    filter: brightness(1.13);
+  }
+
+  dialog:not(#playedCard) {
+    overscroll-behavior: contain;
+    scroll-padding-block: 12px;
+  }
+
+  dialog :is(#close, select, button.primary, #start),
+  :is([data-table="catan"], [data-table="cept"]) :is(#config select, summary),
+  #seating select {
+    min-height: 44px;
+  }
+
+  :is(#scores .current, #seats .current, .seat.active, .player.activeTurn,
+      .opponent.active, .localSeat.active, .hand.selected) {
+    box-shadow: inset 0 -4px #efc675;
+  }
+
+  :is(#controls, #seats, #scores, #hand, .boardTitle, .balance) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-table="index"] nav a {
+    background-image: linear-gradient(0deg, #091e1bf5 0%, #102522c9 36%, transparent 82%), var(--art);
+    box-shadow: 0 2px 6px #00151160;
+  }
+
+  [data-table="index"] nav h2 { line-height: 1.25; text-wrap: balance; }
+  [data-table="index"] nav p { line-height: 1.4; }
+  [data-table="vegas"] .casino:enabled { box-shadow: inset 3px 0 #ffda88; }
+
+  :is([data-table="card-table"], [data-table="tichu"]) #myCards {
+    gap: 4px;
+    row-gap: 8px;
+    padding-block: 5px 2px;
+  }
+
+  :is(.hula, .tichu) #myCards .handBtn {
+    min-width: 44px;
+    border-radius: 6px;
+    justify-content: center;
+  }
+
+  :is(.hula, .tichu) #myCards .handBtn .card { min-width: 44px; }
+  :is(.hula, .tichu) #myCards .handBtn[aria-pressed="true"] {
+    outline: 3px solid #ffd677;
+    outline-offset: 0;
+    box-shadow: 0 4px 0 #90641e;
+  }
+
+  .tichu :is([data-a="start"], [data-a="exchange"], [data-a="continue"],
+             [data-a="play"], [data-a="next"]):enabled {
+    background: #edd29c;
+    color: #252e22;
+    font-weight: 700;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 620px) {
+  [data-table="index"] [role="tablist"] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  [data-table="index"] [role="tab"] {
+    white-space: normal;
+    line-height: 1.15;
+    padding-inline: 3px;
+    font-size: 14px;
+  }
+
+  :is([data-table="card-table"], [data-table="tichu"]) footer #controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 550px) {
+  [data-table="index"] main {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  :is([data-table="card-table"], [data-table="tichu"]) .localSeat {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Keep fourteen touchable cards and the exchange action on short phones. */
+@media (orientation: landscape) and (min-width: 660px) and (max-height: 550px) {
+  .tichu .felt { padding-inline: 3px; }
+  .tichu .localSeat { padding-inline: 2px; }
+  .tichu #myCards { column-gap: 1px; }
+}
+
+/* Long deck names must stay within the field, including inside grid labels. */
+[data-table="cept"] #lobby label {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+[data-table="cept"] #lobby :is(select, input[type="search"]) {
+  width: 100%;
+  min-width: 0;
+}
