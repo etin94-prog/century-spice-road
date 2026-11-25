@@ -147,3 +147,12 @@
     to { transform: none; filter: none; }
   }
 }
+
+dialog .setupBack {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 10px;
+  color: inherit;
+  text-underline-offset: 3px;
+}

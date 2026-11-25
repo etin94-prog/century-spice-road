@@ -23,6 +23,13 @@ function renderCardMove(paint) {
   });
 }
 
+function redrawHandSelection(button, paint) {
+  const focused = document.activeElement === button;
+  const id = button.dataset.id;
+  paint();
+  if (focused) document.querySelector('.handBtn[data-id="' + id + '"]')?.focus({preventScroll:true});
+}
+
 function confirmCardTouch(event) {
   if (event?.isTrusted && event.pointerType === 'touch' &&
       !matchMedia('(prefers-reduced-motion: reduce)').matches) {

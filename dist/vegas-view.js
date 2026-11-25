@@ -10,7 +10,7 @@ function setup(){
   if(online){roomMenu();return;}
   const roles=game?game.players.slice(1).map(p=>p.level):['Medium'];let n=roles.length+1;
   function draw(){
-    modal('라스베가스 · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(k=>'<option '+(k===n?'selected':'')+'>'+k+'</option>').join('')+'</select></label>'+Array.from({length:n-1},(_,j)=>'<label>'+name(j+1)+' 난이도<select data-level="'+j+'">'+levels.map(l=>'<option '+(l===(roles[j]||'Medium')?'selected':'')+'>'+l+'</option>').join('')+'</select></label>').join('')+'<button id="start">AI 대국 시작</button><button id="friend">친구 초대 대전</button>');
+    modal('라스베가스 · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(k=>'<option '+(k===n?'selected':'')+'>'+k+'</option>').join('')+'</select></label>'+Array.from({length:n-1},(_,j)=>'<label>'+name(j+1)+' 난이도<select data-level="'+j+'">'+levels.map(l=>'<option '+(l===(roles[j]||'Medium')?'selected':'')+'>'+l+'</option>').join('')+'</select></label>').join('')+'<button id="start">AI 대국 시작</button><button id="friend">친구 초대 대전</button><a class="setupBack" href="./#vegas">게임 선택으로</a>');
     $('friend').onclick=()=>createOnline();
     $('count').onchange=e=>{n=Number(e.target.value);draw();};
     document.querySelectorAll('[data-level]').forEach(el=>el.onchange=()=>roles[Number(el.dataset.level)]=el.value);

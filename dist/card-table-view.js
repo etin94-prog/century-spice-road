@@ -12,7 +12,7 @@ function modal(heading,html){
   $('close').hidden=!game;if(!$('modal').open)$('modal').showModal();
 }
 function setup(){
-  modal(title+' · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(n=>'<option value="'+n+'" '+((game?.players.length||4)===n?'selected':'')+'>나 + AI '+(n-1)+'</option>').join('')+'</select></label><p>'+(poker?'200칩씩 시작 · 블라인드 5 / 10':'한 사람당 7장 · 정통 턴제')+' · 5판</p>'+btn('start','로컬 대국 시작',true,true));
+  modal(title+' · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(n=>'<option value="'+n+'" '+((game?.players.length||4)===n?'selected':'')+'>나 + AI '+(n-1)+'</option>').join('')+'</select></label><p>'+(poker?'200칩씩 시작 · 블라인드 5 / 10':'한 사람당 7장 · 정통 턴제')+' · 5판</p>'+btn('start','로컬 대국 시작',true,true)+'<a class="setupBack" href="./#worldwide">게임 선택으로</a>');
 }
 const pokerRules='<p>52장 한 덱을 사용합니다. 내 카드 2장과 공용 카드 5장 중 가장 강한 5장 조합이 이깁니다. 공용 카드만 사용할 수도 있습니다.</p><p>프리플롭과 플롭은 10칩, 턴과 리버는 20칩씩 올리는 고정 리밋입니다. 한 거리에서 베트와 레이즈를 합쳐 최대 4회입니다. 레이즈는 전액을 낼 수 있을 때 가능하며, 콜 금액이 부족하면 남은 칩만 올인합니다.</p><p>동점은 팟을 분할하고 나머지 칩은 버튼 왼쪽부터 받습니다. 올인한 사람은 자신이 기여한 범위의 팟만 겨룹니다. 5판 또는 내 칩 소진이나 한 명만 남으면 종료합니다.</p>';
 const hulaRules='<p>내 차례에는 더미에서 한 장 받거나 직전 버림패로 땡큐 등록을 하고, 원하는 만큼 등록·붙이기 후 한 장을 버립니다. 손을 비우면 훌라입니다.</p><p>같은 숫자 3장 이상, 같은 무늬의 연속 3장 이상, 또는 7 한 장을 등록할 수 있습니다. A는 낮거나 높게 쓰되 K-A-2로 잇지 않습니다. 7 한 장에는 같은 무늬의 이웃 숫자를 붙입니다. 내가 한 번 등록한 뒤에는 누구의 조합에나 붙일 수 있습니다.</p><p>이 테이블은 내 차례에만 땡큐를 허용합니다. 받기 전, 이미 등록했고 손패 합계가 2인 7점·3인 10점·4인 15점 이하면 스톱할 수 있습니다. 스톱이나 더미 소진 시 A=1부터 K=13까지 합산해 최저점자가 이깁니다. 동점은 공동 승리이며, 별도 배수 없이 5판의 승수를 겨룹니다.</p>';
@@ -66,7 +66,11 @@ function render(){
   if(end){
     if(finished()){
       const scores=g.players.map((p,i)=>({i,n:poker?p.chips:p.wins})).sort((a,b)=>b.n-a.n);
-      $('msg').textContent+=' · 최종 '+scores.map(p=>CardTable.seat(p.i)+' '+p.n+(poker?'칩':'승')).join(' / ');
+      $('msg').textContent+=' · 최종 '+scores.map((p,i)=>{
+        const rank=scores.findIndex(other=>other.n===p.n)+1;
+        const tied=scores[i-1]?.n===p.n||scores[i+1]?.n===p.n;
+        return (tied?'공동 ':'')+rank+'위 '+CardTable.seat(p.i)+' '+p.n+(poker?'칩':'승');
+      }).join(' / ');
     }
     $('controls').innerHTML=btn('next',finished()?'새 테이블':'다음 판',true,true);
   }
@@ -74,7 +78,7 @@ function render(){
 }
 document.addEventListener('click',e=>{
   const cardBtn=e.target.closest('[data-id]');
-  if(cardBtn){const id=+cardBtn.dataset.id;selected=selected.includes(id)?selected.filter(c=>c!==id):[...selected,id];render();return;}
+  if(cardBtn){const id=+cardBtn.dataset.id;selected=selected.includes(id)?selected.filter(c=>c!==id):[...selected,id];redrawHandSelection(cardBtn,render);return;}
   const el=e.target.closest('[data-act]');if(!el)return;
   const a=el.dataset.act;
   if(a==='start'){game=engine.start(+$('count').value);$('modal').close();changed();return;}

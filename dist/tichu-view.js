@@ -12,7 +12,7 @@ function modal(title,html){clearTimeout(timer);$('title').textContent=title;$('b
 function done(){return Math.max(...g.totals)>=1000&&g.totals[0]!==g.totals[1];}
 function save(){try{localStorage.setItem(key,JSON.stringify(g));}catch{$('msg').textContent+=' · 저장 불가';}}
 function changed(){sel=[];skipBomb=false;renderCardMove(render);save();}
-function prep(){modal('티츄 · 팀 대전','<p>나와 맞은편 AI가 한 팀으로 두 상대 AI와 겨룹니다. 목표는 1,000점입니다.</p>'+btn('start','4인 대국 시작'));}
+function prep(){modal('티츄 · 팀 대전','<p>나와 맞은편 AI가 한 팀으로 두 상대 AI와 겨룹니다. 목표는 1,000점입니다.</p>'+btn('start','4인 대국 시작')+'<a class="setupBack" href="./#worldwide">게임 선택으로</a>');}
 const help='<p>8장을 본 뒤 그랜드 티츄(±200점)를, 첫 카드를 내기 전에는 스몰 티츄(±100점)를 선언할 수 있습니다. 선언한 사람이 첫 번째로 손을 비워야 성공합니다. 14장 중 왼쪽·파트너·오른쪽에게 한 장씩 교환합니다.</p><p>마작을 받은 사람이 선입니다. 싱글, 페어, 트리플, 풀하우스, 연속 페어, 5장 이상 스트레이트를 낼 수 있습니다. 같은 형태와 장수의 더 높은 조합으로 받거나 패스하세요.</p><p>마작은 1이며 숫자 하나를 소원으로 부를 수 있습니다. 차례에 그 숫자의 실제 카드를 합법적으로 낼 수 있으면 반드시 냅니다. 개는 선을 파트너에게 넘깁니다. 봉황은 일반 조합의 와일드이며 싱글로는 직전 카드보다 ½ 높습니다. 용은 최고 싱글이며 이긴 트릭은 상대에게 줍니다.</p><p>포 카드와 같은 무늬 스트레이트는 폭탄입니다. 장수, 그다음 최고 숫자 순으로 비교합니다. 내 차례 밖에도 폭탄 기회를 선택할 수 있습니다.</p><p>5는 5점, 10과 K는 10점, 용은 +25점, 봉황은 −25점입니다. 꼴찌는 획득 트릭을 1등에게, 남은 손패를 상대 팀에게 줍니다. 같은 팀이 1·2등이면 카드 점수 대신 200점입니다.</p>';
 function moves(){return g.phase==='play'?Tichu.legal(g,0):[];}
 function matches(options){return options.filter(m=>m.cards.length===sel.length&&m.cards.every(c=>sel.includes(c)));}
@@ -42,8 +42,8 @@ function render(){
   $('boardCards').innerHTML=phase==='result'?'<strong>우리 '+g.delta[0]+'점 · 상대 '+g.delta[1]+'점</strong>':phase==='exchange'?['왼쪽','파트너','오른쪽'].map((t,j)=>'<span class="gift">'+t+' '+(sel[j]===undefined?'선택':show(sel[j]))+'</span>').join(''):g.top?g.top.cards.map(show).join(''):'';
   $('detail').textContent=phase==='result'?g.order.map((i,j)=>(j+1)+'등 '+who[i]).join(' · '):phase==='play'&&!g.p[0].played?'받은 카드　'+g.p[0].received.map(x=>who[x.from]+' '+compact(x.c)).join(' · '):'';
   const canSelect=phase==='exchange'||phase==='play'&&local;
-  $('myCards').innerHTML=g.p[0].hand.slice().sort((a,b)=>Tichu.rank(a)-Tichu.rank(b)||a-b).map(c=>'<button class="handBtn" data-id="'+c+'" aria-pressed="'+sel.includes(c)+'" '+(canSelect?'':'disabled')+'>'+show(c)+'</button>').join('');
-  $('handScore').textContent=g.p[0].hand.length+'장'+(g.p[0].call?' · 티츄 '+g.p[0].call:'');
+  $('myCards').innerHTML=g.p[0].hand.slice().sort((a,b)=>Tichu.rank(a)-Tichu.rank(b)||a-b).map(c=>'<button class="handBtn" data-id="'+c+'" aria-pressed="'+sel.includes(c)+'" '+(canSelect&&(phase!=='exchange'||sel.length<3||sel.includes(c))?'':'disabled')+'>'+show(c)+'</button>').join('');
+  $('handScore').textContent=g.p[0].hand.length+'장'+(phase==='exchange'?' · 선택 '+sel.length+'/3':'')+(g.p[0].call?' · 티츄 '+g.p[0].call:'');
   $('msg').textContent=phase==='grand'?'처음 8장을 보고 선언하세요.':phase==='exchange'?'왼쪽 → 파트너 → 오른쪽 순서로 한 장씩 선택하세요.':phase==='dragon'?who[g.turn]+'의 용 전달':phase==='result'?(done()?(g.totals[0]>g.totals[1]?'우리 팀 승리':'상대 팀 승리'):'라운드 종료'):windowOpen?'상대 차례 · 폭탄을 내거나 진행하세요.':who[g.turn]+' 차례'+(g.last?' · '+g.last:'');
   let controls='';
   if(phase==='grand')controls=btn('grand','그랜드 선언')+btn('continue','6장 더 받기');
@@ -62,7 +62,7 @@ function render(){
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.id!==undefined){const c=Number(b.dataset.id);if(sel.includes(c))sel=sel.filter(v=>v!==c);else if(g.phase!=='exchange'||sel.length<3)sel.push(c);render();return;}
+  if(b.dataset.id!==undefined){const c=Number(b.dataset.id);if(sel.includes(c))sel=sel.filter(v=>v!==c);else if(g.phase!=='exchange'||sel.length<3)sel.push(c);redrawHandSelection(b,render);return;}
   const a=b.dataset.a;if(!a)return;
   if(a==='start'){g=Tichu.start();$('modal').close();changed();return;}
   let ok=false;
