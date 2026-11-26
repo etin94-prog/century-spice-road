@@ -22,9 +22,34 @@ function changed(){
   try{localStorage.setItem(key,JSON.stringify(game));}catch{$('msg').textContent+=' · 기기 저장 불가';}
 }
 function commit(action,event){
+  const previousBoard = poker ? game.board.length : 0;
   if (!engine.play(game,action)) return;
+  if (poker) {
+    if (game.board.length > previousBoard) cardAudio.cue('deal', game.board.length - previousBoard);
+    else if (action === 'call' || action === 'raise') cardAudio.cue('chip');
+  } else if (action.kind === 'draw') cardAudio.cue('deal');
+  else if (action.kind !== 'stop') cardAudio.cue('land');
+  if (game.phase === 'result') announceResult();
   confirmCardTouch(event);
   changed();
+}
+function announceResult(){
+  let outcome;
+  if (!poker && !finished()) {
+    outcome = !game.winners.includes(0) ? 'loss' : game.winners.length === 1 ? 'win' : 'draw';
+  } else {
+    const scores = game.players.map(player => poker ? player.chips : player.wins);
+    if (poker && !finished()) {
+      scores.fill(0);
+      game.report.forEach(({id,n}) => {scores[id] += n;});
+      scores.forEach((score,i) => {scores[i] = score - game.players[i].paid;});
+      outcome = scores[0] > 0 ? 'win' : scores[0] < 0 ? 'loss' : 'draw';
+    } else {
+      const rival = Math.max(...scores.slice(1));
+      outcome = scores[0] > rival ? 'win' : scores[0] < rival ? 'loss' : 'draw';
+    }
+  }
+  cardAudio.result(outcome);
 }
 function resultSummary(){
   if(!poker)return game.reason+' · '+game.winners.map(CardTable.seat).join(' / ')+' 승리';
@@ -81,9 +106,9 @@ document.addEventListener('click',e=>{
   if(cardBtn){const id=+cardBtn.dataset.id;selected=selected.includes(id)?selected.filter(c=>c!==id):[...selected,id];redrawHandSelection(cardBtn,render);return;}
   const el=e.target.closest('[data-act]');if(!el)return;
   const a=el.dataset.act;
-  if(a==='start'){game=engine.start(+$('count').value);$('modal').close();changed();return;}
+  if(a==='start'){cardAudio.stopVoice();cardAudio.cue('deal',4);game=engine.start(+$('count').value);$('modal').close();changed();return;}
   if(!game)return;
-  if(a==='next'&&game.phase==='result'){if(finished())setup();else{engine.deal(game);changed();}return;}
+  if(a==='next'&&game.phase==='result'){cardAudio.stopVoice();if(finished())setup();else{engine.deal(game);cardAudio.cue('deal',4);changed();}return;}
   if(game.turn!==0||game.phase==='result')return;
   if(poker){commit(a,e);return;}
   if(a==='thanks'){

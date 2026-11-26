@@ -5,6 +5,23 @@ try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&Array.isArray(sa
 const labels={hit:'히트 · 한 장',stand:'스탠드',double:'더블',split:'스플릿',insure:'보험 가입',decline:'보험 패스'};
 function button(id,label,primary=false){return '<button data-action="'+id+'" class="'+(primary?'primary':'')+'">'+label+'</button>';}
 let painted=new Map();
+function updateWithAudio(action, isDeal=false){
+  const previousPhase=g.phase;
+  const cardCount=()=>g.dealer.length+g.hands.reduce((sum,hand)=>sum+hand.cards.length,0)
+    +g.bots.reduce((sum,bot)=>sum+(bot.hand?.cards.length||0),0);
+  const before=cardCount();
+  if(action()===false)return false;
+  const gained=cardCount()-before;
+  if(gained>0)cardAudio.cue('deal',isDeal?Math.min(gained,4):gained);
+  else if(previousPhase!=='dealer'&&g.phase==='dealer')cardAudio.cue('land');
+  if(previousPhase!=='result'&&g.phase==='result'){
+    const rival=Math.max(...g.bots.map(bot=>bot.chips));
+    const margin=(g.round===5||g.chips<2)&&g.bots.length?g.chips-rival:g.net;
+    cardAudio.result(margin>0?'win':margin<0?'loss':'draw');
+  }
+  draw(true);
+  return true;
+}
 function draw(changed=false){
   clearTimeout(timer);
   if(changed)try{localStorage.setItem(key,JSON.stringify(g));saveFailed=false;}catch{saveFailed=true;}
@@ -47,17 +64,18 @@ function draw(changed=false){
   $('seating').innerHTML=bet&&!g.round?'<label>참가자 <select id="count">'+[1,2,3,4].map(n=>'<option '+(n===g.bots.length+1?'selected':'')+' value="'+n+'">'+(n===1?'나 혼자':'나 + AI '+(n-1))+'</option>').join('')+'</select></label>':'';
   $('controls').innerHTML=bet?button('deal',g.stake+'칩 딜',true):end?button('next',finished?'새 테이블':'다음 베팅',true):Blackjack.actions(g).map(a=>button(a,labels[a],a==='stand'||a==='decline')).join('');
   if($('count'))$('count').onchange=e=>{const stake=g.stake;g=Blackjack.table(+e.target.value);g.stake=stake;draw(true);};
-  if(['bots','dealer'].includes(g.phase)&&!$('help').open)timer=setTimeout(()=>{Blackjack.dealerStep(g);draw(true);},450);
+  if(['bots','dealer'].includes(g.phase)&&!$('help').open)timer=setTimeout(()=>{updateWithAudio(()=>Blackjack.dealerStep(g));},450);
 }
 $('chips').onclick=$('controls').onclick=e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.bet&&g.phase==='bet')g.stake=+b.dataset.bet;
-  else if(b.dataset.action==='deal')Blackjack.deal(g);
+  else if(b.dataset.action==='deal'){if(updateWithAudio(()=>Blackjack.deal(g),true))confirmCardTouch(e);return;}
   else if(b.dataset.action==='next'&&g.phase==='result'){
+    cardAudio.stopVoice();
     if(g.round>=5||g.chips<2)g=Blackjack.table(g.bots.length+1);
     else{g.phase='bet';g.stake=Math.min(g.stake,2*Math.floor(g.chips/2));g.hands=[];g.dealer=[];g.bots.forEach(b=>b.hand=null);}
-  }else Blackjack.play(g,b.dataset.action);
-  if (b.dataset.action && b.dataset.action !== 'next') confirmCardTouch(e);
+  }else{if(updateWithAudio(()=>Blackjack.play(g,b.dataset.action)))confirmCardTouch(e);return;}
+  if(b.dataset.bet)cardAudio.cue('chip');
   draw(true);
   if(b.dataset.bet)$('chips').querySelector('[aria-pressed="true"]')?.focus({preventScroll:true});
 };

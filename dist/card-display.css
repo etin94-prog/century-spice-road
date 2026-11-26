@@ -58,3 +58,14 @@
     transform: translate(-50%, -50%) rotate(90deg);
   }
 }
+
+#cardAudioDialog h2 { margin-top: 0; }
+#cardAudioDialog label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  margin-block: 8px;
+}
+#cardAudioDialog input { grid-column: 1 / -1; width: 100%; min-height: 32px; margin: 0; }
+#cardAudioDialog output { font-variant-numeric: tabular-nums; }
+.card-audio-actions { display: flex; flex-wrap: wrap; gap: 8px; }
