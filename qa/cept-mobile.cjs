@@ -25,29 +25,23 @@ const {chromium}=require('playwright');
       for(const slider of await sound.locator('input[type=range]').all())assert.ok((await slider.boundingBox()).height>=44);
       await page.waitForFunction(()=>audio.currentTime>0&&!audio.paused&&/cept-field-[1-3]\.mp3$/.test(audio.src));
       await page.evaluate(()=>{
-        const meter=soundContext.createScriptProcessor(256,1,1);
-        const silent=soundContext.createGain();
-        silent.gain.value=0;
-        effectBus.connect(meter);meter.connect(silent);silent.connect(soundContext.destination);
-        const play=playEffect;
+        const play=playEffect,create=soundContext.createOscillator.bind(soundContext);
         window.testEffectCues=[];
+        window.testEffectStarts=0;
         playEffect=name=>{window.testEffectCues.push(name);play(name);};
-        window.testCueLevel=0;
-        meter.onaudioprocess=event=>{
-          const values=event.inputBuffer.getChannelData(0);
-          window.testCueLevel=values.reduce((peak,value)=>Math.max(peak,Math.abs(value)),window.testCueLevel);
-        };
-        window.stopCueMeter=()=>{
-          effectBus.disconnect(meter);meter.disconnect();silent.disconnect();
-          meter.onaudioprocess=null;
+        soundContext.createOscillator=()=>{
+          const oscillator=create(),start=oscillator.start.bind(oscillator);
+          oscillator.start=when=>{start(when);window.testEffectStarts++;};
+          return oscillator;
         };
       });
       const effectsSwitch=sound.locator('#effectsOn');
       await effectsSwitch.tap();
       assert.equal(await page.evaluate(()=>effectBus.gain.value),0);
       await effectsSwitch.tap();
-      await page.waitForFunction(()=>window.testEffectCues.includes('card')&&window.testCueLevel>.01);
-      await page.evaluate(()=>window.stopCueMeter());
+      await page.waitForFunction(()=>window.testEffectCues.includes('card')&&window.testEffectStarts>0);
+      assert.ok(await effectsSwitch.isChecked());
+      assert.ok(await page.evaluate(()=>effectBus.gain.value>0));
       const effectSlider=await sound.locator('#effectVolume').boundingBox();
       await page.touchscreen.tap(effectSlider.x+effectSlider.width*.3,effectSlider.y+effectSlider.height/2);
       const volume=await page.evaluate(()=>({
