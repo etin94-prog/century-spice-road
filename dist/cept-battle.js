@@ -16,17 +16,38 @@ function attackMotion(id,item){
   if(card.stationary||card.st===0)return 'magic';
   return ['ember','wave','crush','volley'][card.element]||'slash';
 }
+// Wind-up, strike and recoil. Offsets keep the hit on the impact beat (290ms into a 560ms move).
 function fighterMotion(kind,direction){
   const shift=percent=>'translateX('+direction*percent+'%)';
   const poses={
-    slash:[shift(-5)+' rotate('+direction*-8+'deg)',shift(12)+' rotate('+direction*8+'deg)'],
-    fang:[shift(-4)+' scale(.94)',shift(18)+' scale(1.14)'],
-    leap:[shift(4)+' translateY(-17%)',shift(15)+' translateY(-4%)'],
-    crush:['translateY(-8%) scale(1.1,.9)',shift(11)+' scale(.95,1.08)'],
-    volley:[shift(-7)+' rotate('+direction*-4+'deg)',shift(3)],
-    magic:['scale(.96)','scale(1.1)']
+    slash:[shift(-9)+' rotate('+direction*-10+'deg) scale(1.02)',shift(34)+' rotate('+direction*9+'deg) scale(1.08)',shift(20)+' rotate('+direction*4+'deg)'],
+    fang:[shift(-8)+' scale(.9)',shift(40)+' scale(1.18)',shift(24)+' scale(1.05)'],
+    leap:[shift(-4)+' translateY(4%) scale(.96)',shift(30)+' translateY(-22%) scale(1.1)',shift(22)+' translateY(0)'],
+    crush:['translateY(-14%) scale(1.12,.9)',shift(24)+' translateY(6%) scale(.94,1.12)',shift(14)],
+    volley:[shift(-12)+' rotate('+direction*-6+'deg)',shift(6)+' scale(1.05)',shift(2)],
+    magic:['scale(.94)','scale(1.14)','scale(1.04)']
   };
-  return ['none',...(poses[kind]||poses.magic),'none'].map(transform=>({transform}));
+  const [ready,strike,recoil]=poses[kind]||poses.magic;
+  return [
+    {transform:'none',offset:0},
+    {transform:ready,offset:.3,easing:'cubic-bezier(.5,0,.75,0)'},
+    {transform:strike,offset:.52,easing:'cubic-bezier(.2,.8,.3,1)'},
+    {transform:recoil,offset:.7,easing:'cubic-bezier(.3,0,.2,1)'},
+    {transform:'none',offset:1}
+  ];
+}
+const motionOK=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Sparks fly out from the struck card; the colour follows the attack.
+function battleSparks(frame,kind){
+  if(!motionOK())return;
+  const burst=el('i',null,'battle-sparks '+kind);
+  for(let i=0;i<10;i++){
+    const spark=el('b');const angle=i/10*Math.PI*2+Math.random()*.4,reach=38+Math.random()*34;
+    spark.style.setProperty('--dx',(Math.cos(angle)*reach).toFixed(1)+'px');
+    spark.style.setProperty('--dy',(Math.sin(angle)*reach).toFixed(1)+'px');
+    burst.append(spark);
+  }
+  frame.append(burst);setTimeout(()=>burst.remove(),700);
 }
 function battleReplayDuration(b){
   return b.strikes&&!matchMedia('(prefers-reduced-motion: reduce)').matches?1100+b.strikes.length*battleBeat:0;
@@ -50,11 +71,18 @@ function renderBattle(center,state){
     const pocket=el('div',null,'battle-pocket');pocket.setAttribute('aria-label','아이템 선택 대기');
     const title=el('strong',(i?'수비':'침략')+' · '+C.cards[id].name);
     const meter=el('meter');meter.min=0;meter.max=Math.max(1,base[i],b.startHP?.[i]||0);
-    const value=el('span'),power=el('small');
+    const bar=el('div',null,'battle-hp'),fill=el('i'),lag=el('i',null,'lag');bar.append(lag,fill);bar.setAttribute('aria-hidden','true');
+    const value=el('span',null,'battle-hp-value'),power=el('small',null,'battle-st');
     const unit=i?tile.unit:state.tiles[b.from]?.unit;
     power.textContent='ST '+(result?C.cards[id].st:unit?.st??C.cards[id].st);
-    const update=hp=>{meter.max=Math.max(meter.max,hp);meter.value=hp;value.textContent='HP '+hp;};
-    update(base[i]);frame.append(pocket);cell.append(title,frame,power,value,meter);versus.append(cell);
+    const update=hp=>{
+      meter.max=Math.max(meter.max,hp);meter.value=hp;value.textContent='HP '+hp;
+      const share=Math.max(0,Math.min(100,100*hp/meter.max))+'%';
+      fill.style.width=share;lag.style.width=share;bar.classList.toggle('low',hp<=meter.max*.3);
+    };
+    update(base[i]);frame.append(pocket);
+    const stats=el('div',null,'battle-stats');stats.append(power,value);
+    cell.append(title,frame,stats,bar,meter);versus.append(cell);
     return {cell,frame,pocket,power,title,illustration,update};
   });
   stage.append(caption,versus,status);center.replaceChildren(stage);
@@ -63,8 +91,14 @@ function renderBattle(center,state){
     status.textContent='장비 선택 전 · 수비 지형 HP +'+ground.hp;
     status.append(el('small','인접 지원 ST · 침략 +'+ground.attack+' / 수비 +'+ground.defense,'battle-support'));
     if(entering){
-      const banner=el('div',C.cards[b.inv].name+'  VS  '+C.cards[guard].name,'battle-versus');
+      const banner=el('div',null,'battle-versus');banner.append(el('b','VS'));
       banner.setAttribute('aria-hidden','true');stage.append(banner);
+      if(motionOK())fighters.forEach((f,i)=>{
+        const from=i?1:-1;
+        f.cell.animate([{transform:'translateX('+from*70+'%) rotate('+from*12+'deg) scale(.7)',opacity:0},
+          {transform:'translateX('+from*-4+'%) rotate('+from*-2+'deg) scale(1.04)',opacity:1,offset:.7},{transform:'none',opacity:1}],
+          {duration:620,delay:i*120,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'});
+      });
     }
     return;
   }
@@ -100,6 +134,7 @@ function renderBattle(center,state){
     fighters.forEach((f,i)=>{
       const sideWon=i===(b.won||empty?0:1);
       f.cell.prepend(el('span',draw?'격파':sideWon?'승리':'패배','battle-side-outcome '+(sideWon&&!draw?'won':'')));
+      f.cell.classList.toggle('victor',sideWon&&!draw);f.cell.classList.toggle('vanquished',draw||!sideWon);
     });
     playEffect(draw?'battleDraw':involved&&!victory?'battleLoss':'battleWin');
     const details=el('details',null,'battle-log');details.append(el('summary','전투 내역'));
@@ -117,8 +152,8 @@ function renderBattle(center,state){
     later(time,()=>{
       const left=strike.side===0;
       status.textContent=actionLabel+' · '+C.cards[ids[strike.side]].name;
-      const attack=attackMotion(ids[strike.side],items[strike.side]);
-      attacker.frame.animate(fighterMotion(attack,left?1:-1),{duration:490,easing:'ease-in-out'});
+      attacker.cell.classList.add('striking');later(560,()=>attacker.cell.classList.remove('striking'));
+      attacker.frame.animate(fighterMotion(attack,left?1:-1),{duration:560});
       playEffect(attack);
       if(['volley','magic','ember','wave'].includes(attack)){
         const shot=el('i',null,'battle-shot '+attack);shot.classList.toggle('from-right',!left);
@@ -127,6 +162,7 @@ function renderBattle(center,state){
       const fx=el('i',null,'battle-impact '+attack);
       defender.frame.append(fx);later(650,()=>fx.remove());
     });
+    const attack=attackMotion(ids[strike.side],items[strike.side]);
     later(time+290,()=>{
       playEffect(strike.effect||'hit');
       if(strike.notes.length)status.textContent=strike.notes.join(' · ');
@@ -138,9 +174,21 @@ function renderBattle(center,state){
       fighters.forEach((f,i)=>{
         f.update(strike.hp[i]);
         if(strike.hp[i]<before[i]){
-          f.frame.animate([{filter:'brightness(1.9)',translate:'-3% 0'},{translate:'3% 0'},{filter:'brightness(1)',translate:'0'}],{duration:300});
-          const damage=el('i','−'+(before[i]-strike.hp[i]),'battle-damage');
-          f.frame.append(damage);later(650,()=>damage.remove());
+          const lost=before[i]-strike.hp[i],heavy=lost>=30||!strike.hp[i];
+          f.frame.animate([{filter:'brightness(2.4) saturate(.4)',transform:'translateX(0) rotate(0)'},
+            {transform:'translateX('+(i?6:-6)+'%) rotate('+(i?4:-4)+'deg)',offset:.25},
+            {transform:'translateX('+(i?-3:3)+'%) rotate('+(i?-1.5:1.5)+'deg)',offset:.55},
+            {filter:'brightness(1)',transform:'none'}],{duration:380,easing:'ease-out'});
+          battleSparks(f.frame,attack);
+          if(motionOK()){
+            stage.animate([{transform:'none'},{transform:'translate('+(heavy?7:4)+'px,'+(heavy?-5:-2)+'px)'},
+              {transform:'translate(-'+(heavy?6:3)+'px,'+(heavy?4:2)+'px)'},{transform:'none'}],{duration:heavy?320:220,easing:'ease-out'});
+            const flash=el('i',null,'battle-flash'+(heavy?' heavy':''));stage.append(flash);later(420,()=>flash.remove());
+          }
+          const damage=el('i','−'+lost,'battle-damage'+(heavy?' heavy':''));
+          f.frame.append(damage);later(900,()=>damage.remove());
+        }else if(strike.hp[i]>before[i]){
+          const gain=el('i','+'+(strike.hp[i]-before[i]),'battle-damage heal');f.frame.append(gain);later(900,()=>gain.remove());
         }
         if(!strike.hp[i])f.frame.classList.add('defeated');
       });

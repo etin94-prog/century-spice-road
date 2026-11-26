@@ -14,15 +14,13 @@ body:has(#game:not([hidden])){overscroll-behavior:none}
 #game .atlas{width:100%;margin:0;padding:0;border:0;border-radius:0;min-height:0}
 #game #mapViewport{height:var(--play-height);max-height:none;border-radius:0;background:#151920}
 #game .atlas.in-battle{height:var(--play-height);min-height:0}
-#game:has(.atlas.in-battle){--battle-dock:min(190px,calc(var(--play-height) * .36))}
-#game .atlas.in-battle #center{inset:calc(var(--hud-height) + 1px) 0 var(--battle-dock)}
 
 /* Top bar */
 #matchHud{
   position:absolute;z-index:12;inset:0 0 auto;display:grid;
   grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) auto;gap:4px 10px;align-items:center;
   padding:max(3px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 4px max(8px,env(safe-area-inset-left));
-  color:#fff0d3;background:#111a23c4;border-bottom:1px solid #e9ce8654;backdrop-filter:blur(8px);
+  color:#fff0d3;background:linear-gradient(#121a24,#0f161f);border-bottom:1px solid #e9ce8638;box-shadow:0 2px 10px #05080ccc;
 }
 .match-identity{min-width:0;display:grid;gap:0}
 #gameTitle,#game #mapName{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -35,7 +33,8 @@ body:has(#game:not([hidden])){overscroll-behavior:none}
   min-width:0;min-height:44px;margin:0;padding:3px 4px;
   border-left-width:3px;background:#27313bc4;font-size:10px;line-height:1.16;
 }
-#matchHud .seat.active{background:#554432d9}
+#matchHud .seat{background:#1c2630}
+#matchHud .seat.active{background:#4a3c2b}
 #matchHud .seat .cept-figure{display:none}
 #matchHud .seat b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
 #matchHud .seat span{display:inline;margin:0}
@@ -228,10 +227,6 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 #game aside #handPanel summary{list-style:none}
 #game aside #handPanel summary::-webkit-details-marker{display:none}
 #game aside #handPanel #handCount{display:none}
-#game .table:has(.atlas.in-battle) aside.match-actions{
-  inset:auto var(--side-right) var(--foot) var(--side-left);width:auto;max-width:42rem;margin-inline:auto;
-  height:calc(var(--battle-dock) - var(--foot) - 4px);max-height:none;
-}
 
 /* Wide screens and the rotated layout: the docked panel keeps to the left and the hand to the right. */
 @container(min-width:620px){
@@ -239,14 +234,6 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
   #game .table:not(:has(.atlas.in-battle)) aside.match-actions:not(.action-menu):has(#buttons .match-standings){width:min(30rem,56%)}
   #game #mapViewport #handPanel[open]{width:min(32rem,58%);max-height:calc(var(--play-height) - var(--hud-height) - var(--foot) - 8px)}
   #game .atlas:not(.in-battle) #center:not(.turn-status){right:auto;width:min(30rem,52%)}
-  /* Battle: the stage keeps the full height and the choices move to the right. */
-  #game:has(.atlas.in-battle){--battle-side:min(21rem,40%)}
-  #game .atlas.in-battle #center{inset:calc(var(--hud-height) + 1px) var(--battle-side) 0 0}
-  #game .table:has(.atlas.in-battle) aside.match-actions{
-    inset:calc(var(--hud-height) + 6px) var(--side-right) var(--foot) auto;
-    width:calc(var(--battle-side) - var(--side-right) - 6px);max-width:none;height:auto;max-height:none;margin:0;
-  }
-  #game .table:has(.atlas.in-battle) aside.match-actions #buttons>.command{flex-basis:100%}
 }
 
 /* Labels on the map keep one readable size at every zoom. */
@@ -281,4 +268,105 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
   .turn-picker-card .card-face{height:64px}
   .turn-picker-detail{margin-bottom:4px}
   .turn-picker > .primary{min-height:44px;bottom:max(6px,env(safe-area-inset-bottom));margin:5px 0 max(6px,env(safe-area-inset-bottom))}
+}
+
+/* Battle: the stage fills the screen under the top bar; the choices float at the bottom. */
+#game .atlas.in-battle #center{inset:var(--hud-height) 0 0;padding:0;border:0;border-radius:0;background:#0d1016}
+#game .battle-stage{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;
+  gap:4px 4%;padding:6px 3% calc(var(--battle-bar,8px) + 6px);isolation:isolate}
+#game .battle-stage::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 60% 55% at 50% 52%,#ffe9b022,transparent 70%),radial-gradient(ellipse at 50% 120%,#000a,transparent 60%),linear-gradient(#0008,transparent 18%,transparent 80%,#000b)}
+#game .battle-stage>small{grid-column:1/-1;margin:0;text-align:center;font-size:11px;letter-spacing:.08em;color:#f3dfae;text-shadow:0 1px 3px #000}
+#game .battle-pair{display:contents}
+#game .battle-side{grid-row:2;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:auto;min-width:0;min-height:0;text-shadow:0 1px 3px #000}
+#game .battle-side:nth-child(2){grid-column:2}
+#game .battle-side>strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#fff1cf}
+#game .battle-face{flex:1 1 0;min-height:0;width:100%;height:auto;max-width:100%;aspect-ratio:auto;display:flex;align-items:center;justify-content:center;position:relative;overflow:visible}
+#game .battle-face>:is(.card-face,.custom-face){width:auto;height:auto;max-width:100%;max-height:100%;min-height:0;object-fit:contain;border-radius:6px;
+  box-shadow:0 0 0 2px #d6b874,0 0 0 4px #2a2116,0 10px 26px #000c;transition:filter .5s,box-shadow .5s}
+#game .battle-pocket{width:24%;top:4%;left:2%;border-radius:4px;z-index:2}
+#game .battle-side:nth-child(2) .battle-pocket{left:auto;right:2%}
+#game .battle-stats{position:relative;z-index:1;display:flex;gap:10px;align-items:baseline;font-variant-numeric:tabular-nums}
+#game .battle-st{font-size:11px;letter-spacing:.06em;color:#f2d79e}
+#game .battle-hp-value{font-size:13px;font-weight:700;color:#fff}
+#game .battle-side>meter{display:none}
+#game .battle-hp{position:relative;z-index:1;width:min(100%,12rem);height:7px;border-radius:99px;background:#0a0d12;box-shadow:inset 0 0 0 1px #ffffff2e;overflow:hidden}
+#game .battle-hp>i{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:linear-gradient(90deg,#7ad06a,#c8f28a);transition:width .35s cubic-bezier(.2,.8,.2,1)}
+#game .battle-hp>i.lag{background:#ffcf7a;transition:width .8s .35s ease-out}
+#game .battle-hp.low>i:not(.lag){background:linear-gradient(90deg,#e0563f,#ff9a6b)}
+#game .battle-caption{grid-column:1/-1;justify-self:center;width:min(100%,34rem);margin:0;padding:5px 10px;border:1px solid #c9a96a80;border-radius:10px;
+  background:#10141bd9;font-size:12.5px;font-weight:600;line-height:1.35;text-align:center;backdrop-filter:blur(4px)}
+#game .battle-caption .battle-outcome{margin-bottom:2px;font-size:17px;letter-spacing:.02em}
+#game .battle-caption .battle-support{font-size:11px;font-weight:500}
+#game .battle-side-outcome{position:relative;z-index:1;padding:1px 12px;border-radius:99px;font-size:13px;letter-spacing:.1em;background:#0c0f15d9}
+#game .battle-log{font-size:11.5px}
+#game .battle-log ol{max-height:4.6rem}
+#game .battle-versus{inset:38% auto auto 50%;translate:-50% 0;padding:0;border:0;background:none}
+#game .battle-versus b{display:block;font:900 clamp(30px,8cqw,64px)/1 Georgia,serif;font-style:italic;color:#ffe7a6;
+  text-shadow:0 0 18px #ff9a3c,0 0 4px #fff,0 3px 0 #6b3510;animation:battle-vs 1.5s .45s both}
+@keyframes battle-vs{0%{opacity:0;transform:scale(3) rotate(-12deg)}18%{opacity:1;transform:scale(.9) rotate(-6deg)}30%{transform:scale(1.05) rotate(-6deg)}75%{opacity:1}100%{opacity:0;transform:scale(1.2) rotate(-6deg)}}
+#game .battle-side.striking{z-index:5}
+#game .battle-side.striking .battle-face>:is(.card-face,.custom-face){box-shadow:0 0 0 2px #fff4c8,0 0 22px 6px #ffc35a,0 10px 26px #000c}
+#game .battle-side.victor .battle-face>:is(.card-face,.custom-face){animation:battle-victor 1.6s ease-in-out infinite}
+@keyframes battle-victor{50%{box-shadow:0 0 0 2px #fff1b8,0 0 26px 8px #ffcf5a,0 10px 26px #000c}}
+#game .battle-side.vanquished .battle-face{animation:battle-fall .7s ease-in both}
+@keyframes battle-fall{to{transform:translateY(6%) rotate(-3deg) scale(.94)}}
+#game .battle-face.defeated{opacity:1}
+#game .battle-face.defeated>:is(.card-face,.custom-face){filter:grayscale(1) brightness(.45)}
+#game .battle-flash{position:absolute;inset:0;z-index:6;pointer-events:none;background:radial-gradient(circle at 50% 50%,#fff8,transparent 60%);animation:battle-flash .4s ease-out both}
+#game .battle-flash.heavy{background:radial-gradient(circle at 50% 50%,#fffd,#ffd38a55 40%,transparent 75%)}
+@keyframes battle-flash{from{opacity:1}to{opacity:0}}
+#game .battle-sparks{position:absolute;left:50%;top:45%;z-index:4;pointer-events:none}
+#game .battle-sparks b{position:absolute;width:6px;height:6px;margin:-3px;border-radius:50%;background:#fff6c8;box-shadow:0 0 8px 2px #ffb347;animation:battle-spark .65s cubic-bezier(.1,.7,.3,1) both}
+#game .battle-sparks:is(.magic,.wave) b{background:#e6fbff;box-shadow:0 0 8px 2px #5cc8ff}
+#game .battle-sparks.ember b{background:#fff0b0;box-shadow:0 0 8px 3px #ff6a1a}
+#game .battle-sparks.volley b{background:#f2ffd4;box-shadow:0 0 8px 2px #a6e35a}
+@keyframes battle-spark{from{transform:translate(0,0) scale(1.3);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+#game .battle-damage{top:30%;z-index:5;padding:2px 10px;border:2px solid #ffd9a8;border-radius:10px;background:#7a1f22;font:900 clamp(18px,4cqw,30px)/1.15 system-ui;
+  text-shadow:0 2px 0 #3a0c0e;animation:battle-pop .9s cubic-bezier(.2,.9,.3,1.2) both}
+#game .battle-damage.heavy{background:#a3241d;font-size:clamp(22px,5cqw,36px)}
+#game .battle-damage.heal{background:#1f6a3a;border-color:#bff2c9}
+@keyframes battle-pop{0%{opacity:0;transform:translate(-50%,20%) scale(.4)}18%{opacity:1;transform:translate(-50%,-30%) scale(1.25)}35%{transform:translate(-50%,-25%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-90%) scale(.95)}}
+#game .battle-impact{z-index:4;mix-blend-mode:screen}
+@media(prefers-reduced-motion:reduce){#game .battle-side.victor .battle-face>*,#game .battle-side.vanquished .battle-face,#game .battle-versus b{animation:none}}
+
+@container(max-width:619px){
+  #game .battle-side{justify-content:center}
+  #game .battle-face{flex:0 1 auto}
+  #game .battle-face>:is(.card-face,.custom-face){max-height:calc(var(--play-height) * .46)}
+}
+
+/* Battle choices: a slim bar at the bottom; the hand stays out of the way. */
+#game .table:has(.atlas.in-battle) aside.match-actions{
+  inset:auto var(--side-right) var(--foot) var(--side-left);width:auto;max-width:36rem;height:auto;max-height:40%;margin-inline:auto;
+  display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:6px 8px;border-radius:14px;background:#10141be6;
+}
+#game .table:has(.atlas.in-battle) aside.match-actions:has(#buttons:empty){display:none}
+#game .table:has(.atlas.in-battle) aside #handPanel,#game .table:has(.atlas.in-battle) aside #who{display:none}
+#game .table:has(.atlas.in-battle) aside #hint{flex:1 1 100%;white-space:nowrap;font-size:11px}
+#game .table:has(.atlas.in-battle) aside #buttons{flex:1 1 100%;display:flex;flex-wrap:nowrap;gap:6px;margin:0}
+#game .table:has(.atlas.in-battle) aside #buttons>*{flex:1 1 0;min-width:0}
+#game .table:has(.atlas.in-battle) aside #buttons button{min-height:44px}
+#game .table:has(aside #buttons:not(:empty)) .atlas.in-battle{--battle-bar:96px}
+
+/* Wide screens: the two cards face each other across the stage and the choices sit between them. */
+@container(min-width:620px){
+  #game .battle-stage{grid-template-columns:minmax(0,1fr) minmax(11rem,15rem) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);padding:6px 2% 8px}
+  #game .battle-side:nth-child(2){grid-column:3}
+  #game .battle-caption{grid-column:2;grid-row:2;align-self:start;margin-top:8%;width:100%}
+  #game .table:has(.atlas.in-battle) aside.match-actions{left:50%;right:auto;translate:-50% 0;width:min(15rem,30%);max-width:none;margin:0}
+  #game .table:has(.atlas.in-battle) aside #buttons{flex-direction:column}
+  #game .table:has(.atlas.in-battle) aside #hint{white-space:normal}
+}
+
+/* Choice sheet: cards look like cards, with cost and strength on the face. */
+.turn-picker-cards button.turn-picker-card{position:relative;flex:0 0 clamp(96px,17vw,132px);display:grid;justify-items:center;gap:4px;padding:5px 5px 7px;
+  border:1px solid #6c5d42;border-radius:10px;background:linear-gradient(#2c2a2f,#1d1c22);font-size:12px;line-height:1.25;text-align:center}
+.turn-picker-card .card-face{width:100%;height:auto;aspect-ratio:4/5;object-fit:contain;margin:0;border-radius:5px;box-shadow:0 0 0 1px #c9ad74,0 4px 10px #000a}
+.turn-picker-cards button.turn-picker-card[aria-pressed=true]{background:linear-gradient(#5a4729,#33291b);outline:3px solid #ffd78c;outline-offset:-1px;translate:0 -3px;box-shadow:0 6px 16px #000b}
+.turn-picker-card .card-cost{position:absolute;top:2px;right:2px;padding:1px 7px;border-radius:99px;background:#16120c;border:1px solid #e2c27e;color:#ffe2a4;font-size:11px;font-weight:800}
+.turn-picker-card .card-power{font-size:10.5px;letter-spacing:0;color:#e9d3a3}
+@media(orientation:landscape) and (max-height:550px){
+  .turn-picker-cards button.turn-picker-card{flex-basis:clamp(86px,13vw,112px)}
+  .turn-picker-card .card-face{max-height:min(118px,30dvh);width:auto}
 }

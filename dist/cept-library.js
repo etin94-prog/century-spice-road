@@ -123,32 +123,42 @@ $('ps2Library').ontoggle=()=>{if($('ps2Library').open)listEntries();};
 let musicScene,currentTrack,missingTracks=new Set();
 const fieldMusic=['field-1','field-2','field-3'],battleMusic=['battle-1','battle-2','battle-3'];
 const musicScenes={field:fieldMusic,battle:battleMusic,over:fieldMusic};
-function setMusicTrack(key,url,title){
+let trackSwap=0;
+function setMusicTrack(key,url,title,fade){
   currentTrack=key;
   $('audioStatus').textContent='';
-  audio.src=url;audio.title=title;audio.loop=false;
-  startMusic();
+  const swap=++trackSwap;
+  const begin=()=>{
+    if(swap!==trackSwap)return;
+    audio.src=url;audio.title=title;audio.loop=false;
+    musicFade=fade?0:1;updateMusicLevel();startMusic();
+    if(fade)fadeMusic(1,900);
+  };
+  // A playing track fades out before the next one starts.
+  if(fade&&audio.src&&!audio.paused)fadeMusic(0,420,begin);else begin();
 }
 function playTrack(index){
   const [title,,url]=archive.music[index];
   setMusicTrack(index,url,title);
 }
-function nextTrack(){
+function nextTrack(fade){
   if(!$('musicOn').checked||!$('stageMusic').checked)return;
   const pool=(musicScenes[musicScene]||fieldMusic).filter(key=>!missingTracks.has(key));
   const available=pool.length>1?pool.filter(key=>key!==currentTrack):pool;
   const key=available[Math.floor(Math.random()*available.length)];
-  if(key)setMusicTrack(key,'art/cept-'+key+'.mp3',key.startsWith('battle')?'전투 배경음악':'지도 배경음악');
+  if(key)setMusicTrack(key,'art/cept-'+key+'.mp3',key.startsWith('battle')?'전투 배경음악':'지도 배경음악',fade);
 }
 function syncStageMusic(){
   if(!$('musicOn').checked||!$('stageMusic').checked||!s)return;
   const scene=s.phase==='over'?'over':s.battle?'battle':'field';
   if(musicScene===scene&&audio.src)return;
-  musicScene=scene;nextTrack();
+  const previous=musicScene;musicScene=scene;
+  if(scene==='battle'&&previous)playEffect('battleStart');
+  nextTrack(!!previous);
 }
-audio.addEventListener('ended',nextTrack);
+audio.addEventListener('ended',()=>nextTrack(false));
 audio.addEventListener('error',()=>{
   if(typeof currentTrack!=='string'||missingTracks.has(currentTrack))return;
-  missingTracks.add(currentTrack);nextTrack();
+  missingTracks.add(currentTrack);nextTrack(false);
 });
 $('stageMusic').onchange=()=>{saveAudioSettings();musicScene=null;if($('stageMusic').checked)syncStageMusic();};

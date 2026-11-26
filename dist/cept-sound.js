@@ -15,12 +15,23 @@ function saveAudioSettings(){
   const values=Object.fromEntries(soundFields.map(id=>[id,$(id).type==='checkbox'?$(id).checked:Number($(id).value)]));
   try{localStorage.setItem(audioKey,JSON.stringify(values));}catch{}
 }
-let duckUntil=-Infinity,duckFrame=0;
+let duckUntil=-Infinity,duckFrame=0,musicFade=1,fadeFrame=0;
 function updateMusicLevel(){
   const release=Math.min(1,Math.max(0,(performance.now()-duckUntil)/360));
   const effects=$('effectsOn').checked?Number($('effectVolume').value)/100:0;
   const depth=Math.min(.7,effects*1.2);
-  audio.volume=Number($('musicVolume').value)/100*(1-depth*(1-release));
+  audio.volume=Math.max(0,Math.min(1,Number($('musicVolume').value)/100*(1-depth*(1-release))*musicFade));
+}
+// Scene changes cross through silence: the old track fades out, the new one fades in.
+function fadeMusic(target,ms,done){
+  cancelAnimationFrame(fadeFrame);
+  const from=musicFade,start=performance.now();
+  function step(now){
+    const t=Math.min(1,(now-start)/Math.max(1,ms));
+    musicFade=from+(target-from)*t*t*(3-2*t);updateMusicLevel();
+    if(t<1)fadeFrame=requestAnimationFrame(step);else{fadeFrame=0;done?.();}
+  }
+  fadeFrame=requestAnimationFrame(step);
 }
 function duckMusic(seconds){
   duckUntil=Math.max(duckUntil,performance.now()+seconds*1000);
@@ -64,6 +75,7 @@ function previewEffect(){
   else playEffect('card');
 }
 document.addEventListener('click',unlockSound,true);
+document.addEventListener('touchend',unlockSound,{capture:true,passive:true});
 document.addEventListener('keydown',unlockSound,true);
 for(const id of ['musicVolume','effectVolume','musicOn','effectsOn']){
   $(id).addEventListener('input',()=>{
@@ -93,6 +105,7 @@ const cues={
   volley:['triangle',[[0,930,465,.095],[.09,1050,525,.11]]],
   ember:['sawtooth',[[0,180,640,.15],[.12,600,110,.21]]],
   wave:['sine',[[0,390,980,.17],[.14,760,240,.22]]],
+  battleStart:['sawtooth',[[0,98,196,.16],[.12,147,294,.16],[.24,196,392,.2],[.4,262,523,.34]]],
   battleWin:['triangle',[[0,392,494,.16],[.16,523,659,.16],[.32,784,784,.27]]],
   battleLoss:['triangle',[[0,440,350,.17],[.15,330,247,.18],[.31,220,165,.25]]],
   battleDraw:['sine',[[0,330,311,.23],[.21,349,330,.27]]],

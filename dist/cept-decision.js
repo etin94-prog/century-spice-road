@@ -119,13 +119,19 @@ function openTurnPicker(entries,title,preferred=-1){
       confirm.disabled=!!entry.blocked;confirm.hidden=false;
       option.scrollIntoView({block:'nearest',inline:'nearest'});
     };
-    const option=btn(entry.label,()=>{
+    // A card already shows its cost on its face, so the label keeps only the name and place.
+    const option=btn(card?entry.label.replace(/ · \d+G$/,''):entry.label,()=>{
       // A second tap on the chosen option confirms it.
       if(selected===entry&&!confirm.disabled){confirm.click();return;}
       choose();
     },card?'turn-picker-card':'turn-picker-action');
     option.setAttribute('aria-pressed','false');
-    if(card){const art=cardSeal(entry.id);art.alt='';option.prepend(art);}
+    if(card){
+      const art=cardSeal(entry.id);art.alt='';option.prepend(art);
+      const cost=card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
+      if(Number.isFinite(cost))option.append(el('small',cost+'G','card-cost'));
+      if(card.kind==='creature')option.append(el('small','ST '+card.st+' · HP '+card.hp,'card-power'));
+    }
     if(entry.blocked){option.classList.add('blocked');option.append(el('small',entry.blocked));}
     list.append(option);
     return choose;
