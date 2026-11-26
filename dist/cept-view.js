@@ -111,7 +111,7 @@ function tickInputClock(){
   const deadline=s?.deadlineAt,active=deadline&&!$('game').hidden&&!pending&&s.phase!=='over';
   inputClock.hidden=!active;
   if(!active)return;
-  const left=Math.max(0,Math.ceil((deadline-Date.now()-(room?.clockOffset||0))/1000));
+  const left=Math.max(0,Math.min(s.inputSeconds||Infinity,Math.ceil((deadline-Date.now()-(room?.clockOffset||0))/1000)));
   inputClock.textContent=left?'입력 '+left+'초':'시간 초과';
   inputClock.classList.toggle('urgent',left<=5);
   if(!left&&!room)localAction(null,true);
