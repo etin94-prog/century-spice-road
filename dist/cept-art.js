@@ -22,8 +22,14 @@ function figure(index,label){
   return node;
 }
 function creatureFigure(id){
-  if(id>42)return cardSeal(id);
-  return figure(id<8?18+id:4+id-13,Cepter.cards[id].name);
+  const card=Cepter.cards[id];
+  if(id<8)return figure(18+id,card.name);
+  if(id>=13&&id<=26)return figure(4+id-13,card.name);
+  const image=document.createElement('img');
+  image.className='cept-figure standing-model generated-model';
+  image.src=originalCreatureImage(Cepter.combo.key(card)||card.name,card.element);
+  image.alt=card.name;
+  return image;
 }
 function cardSeal(id){
   const c=Cepter.cards[id];

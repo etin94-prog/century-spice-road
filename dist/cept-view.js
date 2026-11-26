@@ -271,22 +271,68 @@ function pawnFoot(tileId,seat,occupants){
   const [x,y]=positions[occupants.length][occupants.indexOf(seat)];
   return [s.tiles[tileId].unit ? .60+x*.32 : x,y];
 }
+const viewport=$('mapViewport'),mapRoll=$('mapRoll');
+const touchMapLayout=matchMedia('(pointer:coarse), (max-width:740px), (orientation:landscape) and (max-height:550px)');
+function placeHandPanel(){
+  if(touchMapLayout.matches&&!s?.battle){
+    if(handPanel.parentElement!==viewport)viewport.append(handPanel);
+  }else if(handPanel.parentElement!==$('buttons').parentElement){
+    $('buttons').after(handPanel);
+  }
+}
+touchMapLayout.addEventListener('change',placeHandPanel);
+placeHandPanel();
 const mapViewButtons=[...$('mapViews').querySelectorAll('[data-zoom]')];
 let mapZoom='1.8',cameraTile=0;
 try{
   const saved=localStorage.getItem('cept-map-zoom');
   if(mapViewButtons.some(b=>b.dataset.zoom===saved))mapZoom=saved;
 }catch{}
+function mapOffset(offset,frame,canvas){
+  return canvas<=frame?(frame-canvas)/2:Math.max(frame-canvas,Math.min(0,offset));
+}
+function placeMapRoll(root,x,y,zoom){
+  if(mapRoll.hidden)return;
+  const pawn=root.querySelector('.pawn-action');
+  if(!pawn)return;
+  const tile=pawn.closest('.tile');
+  const tileLeft=tile.offsetLeft-tile.offsetWidth/2;
+  const feetY=y+(tile.offsetTop+pawn.offsetTop)*zoom;
+  const width=viewport.clientWidth,height=viewport.clientHeight;
+  const buttonWidth=mapRoll.offsetWidth,buttonHeight=mapRoll.offsetHeight;
+  const bounds=[...tile.querySelectorAll('.pawn')].map(piece=>{
+    const center=x+(tileLeft+piece.offsetLeft)*zoom;
+    const half=Math.max(piece.offsetWidth/2,piece.offsetHeight*.3)*zoom;
+    return [center-half,center+half];
+  });
+  const right=Math.max(...bounds.map(([,end])=>end))+8;
+  const before=Math.min(...bounds.map(([start])=>start))-buttonWidth-8;
+  const side=right+buttonWidth+4<=width?right:before;
+  const left=Math.max(4,Math.min(width-buttonWidth-4,side));
+  const top=feetY-Math.min(45,pawn.offsetHeight*zoom*.55)-buttonHeight/2;
+  const tools=$('mapViews'),menuHeight=tools.querySelector('summary').offsetHeight;
+  const minTop=left+buttonWidth+4>tools.offsetLeft?tools.offsetTop+menuHeight+4:4;
+  const handHeight=handPanel.parentElement===viewport?handPanel.querySelector('summary').offsetHeight+5:0;
+  const maxTop=Math.max(minTop,height-handHeight-buttonHeight-4);
+  mapRoll.style.left=left+'px';
+  mapRoll.style.top=Math.max(minTop,Math.min(maxTop,top))+'px';
+}
+function setMapCamera(root,x,y,zoom){
+  root.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')';
+  placeMapRoll(root,x,y,zoom);
+}
 function focusMapTile(index){
   cameraTile=index;
   const root=$('map'),tile=root.children[index];
-  if(!tile?.classList.contains('tile')||!root.clientWidth)return;
-  const z=Number(mapZoom),w=root.clientWidth,h=root.clientHeight;
-  $('mapViewport').classList.toggle('pannable',z>1);
-  root.style.setProperty('--camera-zoom',z);
-  const offset=(size,center,anchor)=>Math.min(0,Math.max(size*(1-z),size*anchor-center*z));
-  const x=offset(w,tile.offsetLeft,.5),y=offset(h,tile.offsetTop+tile.offsetHeight*.5,.58);
-  root.style.transform='translate('+x+'px,'+y+'px) scale('+z+')';
+  if(!tile?.classList.contains('tile')||!root.clientWidth||!viewport.clientHeight)return;
+  const w=root.clientWidth,h=root.clientHeight,viewWidth=viewport.clientWidth,viewHeight=viewport.clientHeight;
+  const overview=Number(mapZoom)===1;
+  const zoom=overview?Math.min(1,viewWidth/w,viewHeight/h):Number(mapZoom);
+  viewport.classList.toggle('pannable',!overview);
+  root.style.setProperty('--camera-zoom',zoom);
+  const x=mapOffset(viewWidth*.5-tile.offsetLeft*zoom,viewWidth,w*zoom);
+  const y=mapOffset(viewHeight*.58-(tile.offsetTop+tile.offsetHeight*.5)*zoom,viewHeight,h*zoom);
+  setMapCamera(root,x,y,zoom);
 }
 for(const button of mapViewButtons){
   button.setAttribute('aria-pressed',String(button.dataset.zoom===mapZoom));
@@ -297,12 +343,11 @@ for(const button of mapViewButtons){
     focusMapTile(cameraTile);
   };
 }
-new ResizeObserver(()=>focusMapTile(cameraTile)).observe($('mapViewport'));
-const viewport=$('mapViewport');
+new ResizeObserver(()=>focusMapTile(cameraTile)).observe(viewport);
 let drag=null,ignoreMapClick=false;
 viewport.addEventListener('pointerdown',e=>{
   ignoreMapClick=false;
-  if(!e.isPrimary||e.button!==0||e.target.closest('#mapViews')||Number(mapZoom)===1||s?.battle||activeWalk||mapPlayback)return;
+  if(!e.isPrimary||e.button!==0||e.target.closest('#mapViews,#mapRoll,#handPanel')||Number(mapZoom)===1||s?.battle||activeWalk||mapPlayback)return;
   const matrix=new DOMMatrixReadOnly(getComputedStyle($('map')).transform);
   drag={id:e.pointerId,x:e.clientX,y:e.clientY,tx:matrix.e,ty:matrix.f,started:false};
 });
@@ -312,8 +357,10 @@ viewport.addEventListener('pointermove',e=>{
   if(!drag.started&&Math.hypot(dx,dy)<7)return;
   if(!drag.started){viewport.setPointerCapture(e.pointerId);drag.started=true;viewport.classList.add('dragging');}
   if(document.documentElement.classList.contains('cept-wide')&&matchMedia('(orientation:portrait)').matches)[dx,dy]=[dy,-dx];
-  const map=$('map'),zoom=Number(mapZoom),bound=(n,size)=>Math.max(size*(1-zoom),Math.min(0,n));
-  map.style.transform='translate('+bound(drag.tx+dx,map.clientWidth)+'px,'+bound(drag.ty+dy,map.clientHeight)+'px) scale('+zoom+')';
+  const map=$('map'),zoom=Number(mapZoom);
+  const x=mapOffset(drag.tx+dx,viewport.clientWidth,map.clientWidth*zoom);
+  const y=mapOffset(drag.ty+dy,viewport.clientHeight,map.clientHeight*zoom);
+  setMapCamera(map,x,y,zoom);
 });
 function endDrag(e){if(drag?.id===e.pointerId){ignoreMapClick=drag.started;drag=null;viewport.classList.remove('dragging');}}
 viewport.addEventListener('pointerup',endDrag);viewport.addEventListener('pointercancel',endDrag);
@@ -474,6 +521,7 @@ async function walkPath(move){
 function winLabel(){return s.leaders?.length>1?'공동 1위':s.teams?String.fromCharCode(65+s.teams[s.winner])+'팀 승리':s.players[s.winner].name+' 승리';}
 function render(){
   clearTimeout(timer);
+  mapRoll.hidden=true;
   // Only a dedicated screen can keep its own hand visible during another seat's turn.
   const reader=room?room.seat:s.players.filter(q=>!q.ai).length===1?s.players.findIndex(q=>!q.ai):null;
   if(pending||C.isComputer(s,C.actor(s))||room&&room.seat!==C.actor(s)){
@@ -511,6 +559,7 @@ function render(){
     return box;
   }));
   if($('seatDialog').open)seatSummary(Number($('seatDialog').dataset.seat));
+  placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
   $('hint').textContent=over?(s.endReason==='roundLimit'?'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.':'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':hints[s.phase];
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
@@ -567,10 +616,15 @@ function render(){
   if(local&&p.peek)$('hint').textContent+=' · 위저드 아이로 본 순서 '+p.peek.ids.map(id=>C.cards[id].name).join(' → ');
   const choices=local?(room?room.choices:C.choices(s)):[];
   if(local&&s.phase==='shop')shopMenu(controls,choices,p);
+  const roll=choices.find(([kind])=>kind==='roll');
+  if(roll){
+    mapRoll.hidden=false;
+    mapRoll.onclick=()=>act(roll);
+    focusMapTile(cameraTile);
+  }
   const kinds=[...new Set(choices.map(a=>a[0]))];
-  if(kinds.includes('roll'))kinds.unshift(...kinds.splice(kinds.indexOf('roll'),1));
   for(const k of kinds){
-    if(k==='buyCard')continue;
+    if(k==='buyCard'||k==='roll')continue;
     const group=choices.filter(a=>a[0]===k);
     if(k==='direction'||k==='route'){drawRouteArrows(group);const routes=el('div',null,'route-options');routes.append(...group.map(routeOption));controls.append(routes);continue;}
     if(k==='buySymbol'||k==='sellSymbol'){
