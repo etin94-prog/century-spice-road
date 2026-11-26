@@ -66,8 +66,8 @@ function render(){
   el('reserved').textContent='내 예약 카드 · '+g.players[mySeat()]?.held.length+'장';
   el('latestMove').textContent=g.log.length?name(g.log[0].actor)+' · '+g.log[0].msg:'대국 기록';
   if(!online)el('save').textContent=saveStatus;
-  bind('card',id=>cardMenu(id,false));bind('seat',inventory);bind('deck',t=>{if(myTurn()&&g.decks[t].length)prepare({kind:'blind',i:t});});
-  bind('bank',i=>{if(myTurn())takeMenu(i<5&&g.bank[i]?[i]:[]);});
+  bind('card',id=>cardMenu(id,false));bind('seat',inventory);bind('deck',t=>{if(!myTurn())refuse(turnNote());else if(!g.decks[t].length)refuse('덱이 비었습니다.');else prepare({kind:'blind',i:t});});
+  bind('bank',i=>{if(myTurn())takeMenu(i<5&&g.bank[i]?[i]:[]);else refuse(turnNote());});
 }
 function inventory(i){
   const p=g.players[i];modal(name(i)+' · '+score(p)+'점','<p>보석　'+(chips(p.tokens)||'없음')+'</p><p>영구 할인　'+(chips(p.bonus)||'없음')+'</p><p>귀족 '+p.nobles.length+'명 · 개발 카드 '+p.cards.length+'장</p><div class="cards">'+p.cards.map(id=>card(id,'owned')).join('')+'</div><h2>예약 '+p.held.length+'장</h2>'+(i===mySeat()?'<div class="cards">'+p.held.map(id=>card(id,'held')).join('')+'</div>':''));
@@ -95,9 +95,13 @@ function takeMenu(selected){
   modal('보석 가져오기','<p>서로 다른 세 색 또는 은행에 4개 이상 있는 한 색에서 2개를 고르세요.</p><div class="choices">'+g.bank.slice(0,5).map((v,i)=>'<button data-pick="'+i+'" '+(options.some(o=>fits([...selected,i],o))?'':'disabled')+'>'+gem(i,v)+'</button>').join('')+'</div><p>선택　'+(selected.map(i=>gem(i)).join(' ')||'없음')+'</p><button id="reset">다시 선택</button> <button class="primary" id="take" '+(complete?'':'disabled')+'>가져오기</button>');
   bind('pick',i=>takeMenu([...selected,i]));el('reset').onclick=()=>takeMenu([]);el('take').onclick=()=>prepare({kind:'take',i:0,take:complete});
 }
+// Say why a tap did nothing instead of failing silently; the line returns to the turn status.
+function turnNote(){return g.over?'대국이 끝났습니다.':'지금은 '+name(g.turn)+' 차례입니다.';}
+function refusal(a){const p=g.players[mySeat()];if((a.kind==='blind'||a.kind==='reserve')&&p.held.length>=3)return '예약은 3장까지입니다.';if(a.kind==='buy'||a.kind==='held')return '보석이 부족합니다.';return '지금은 할 수 없는 행동입니다.';}
+function refuse(msg){const s=el('status'),prev=s.textContent;s.textContent=msg;s.dataset.refused='';clearTimeout(refuse.timer);refuse.timer=setTimeout(()=>{delete s.dataset.refused;if(s.textContent===msg)s.textContent=prev;},2600);}
 function prepare(a){
   if(g.mode){
-    const result=guildTurn(g,a);if(!result||!myTurn())return;
+    const result=guildTurn(g,a);if(!myTurn())return;if(!result){refuse(refusal(a));return;}
     if(result.prompt){
       modal(result.prompt.title,'<div class="choices">'+result.prompt.labels.map((s,i)=>'<button data-choice="'+i+'">'+s+'</button>').join('')+'</div>');
       bind('choice',i=>prepare({...a,choices:[...a.choices||[],i]}));
@@ -107,7 +111,7 @@ function prepare(a){
     }
     return;
   }
-  const v=preview(g,a);if(!v)return;
+  const v=preview(g,a);if(!v){refuse(refusal(a));return;}
   const drop=a.drop??zeros(),p=g.players[g.turn],bill=a.pay;
   const canSwap=bill&&p.tokens[5]>0&&sum(bill)>0;
   function submit(){if(!myTurn())return;close();if(online)submitOnline(a);else advance(a);}

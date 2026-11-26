@@ -156,3 +156,73 @@ dialog .setupBack {
   color: inherit;
   text-underline-offset: 3px;
 }
+
+/* Splendor: thumb-sized header and deck targets, legible costs, taller cards
+   in portrait where the board otherwise leaves the bottom of the screen empty. */
+@media (pointer: coarse), (max-width: 900px) {
+  [data-table="splendor"] header { gap: 8px; row-gap: 6px; }
+  [data-table="splendor"] header :is(a, button) {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  [data-table="splendor"] header a { font-size: 22px; padding-block: 0; }
+  [data-table="splendor"] .row .cost .gem { font-size: 13px; }
+  [data-table="splendor"] #patrons .nobleTile { width: 58px; height: 58px; }
+  [data-table="splendor"] #patrons .nobleCost .gem { font-size: 12px; line-height: 14px; }
+  [data-table="splendor"] :is(#seats .wallet .gem, #seats small, .deck small, header #reserved) { font-size: 12px; }
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  [data-table="splendor"] .row { grid-template-columns: 44px repeat(4, minmax(0, 1fr)); }
+  [data-table="splendor"] .card { min-height: 95px; }
+}
+
+/* Century I: the latest-move strip is a target of its own, kept clear of "새 대국". */
+@media (pointer: coarse), (max-width: 900px) {
+  [data-table="spice"] .mast { gap: 8px; row-gap: 6px; padding-block: 4px; }
+  [data-table="spice"] .mast :is(button, #options) { min-height: 44px; min-width: 44px; }
+  [data-table="spice"] .mast #reset { margin-left: auto; }
+  [data-table="spice"] .mast #status span { font-size: 12px; }
+}
+
+@media (max-width: 520px) {
+  [data-table="spice"] .mast #latestMove {
+    height: auto;
+    min-height: 44px;
+    margin-top: 2px;
+    border-top: 1px solid #57726c;
+    border-radius: 0;
+  }
+}
+
+/* Century II/III: toolbar, seat and manifest buttons at thumb size; island names
+   readable on a phone (they decide where the ship goes next). */
+@media (pointer: coarse), (max-width: 900px) {
+  [data-table="expedition"] .exp .mast { gap: 8px; row-gap: 6px; }
+  [data-table="expedition"] .exp .mast :is(button, #options) { min-height: 44px; min-width: 44px; }
+  [data-table="expedition"] .player { min-height: 44px; }
+  [data-table="expedition"] :is(.exp #manifest button, .exp .actions button, .series a) { min-height: 44px; }
+  [data-table="expedition"] :is(.exp .actions, .series) { gap: 8px; }
+  [data-table="expedition"] .site strong { font-size: clamp(12px, 1.9vw, 15px); }
+  [data-table="expedition"] :is(.site small, .piece, .player b, .player small) { font-size: 12px; }
+}
+
+/* Short landscape: the island tiles are the main targets, so the wide seat strips
+   give back their extra height and the map border thins to keep tiles >=44 px. */
+@media (orientation: landscape) and (max-height: 550px) {
+  [data-table="expedition"] .player { min-height: 36px; }
+  [data-table="expedition"] .exp #atlas { padding: 3px; gap: 2px; }
+  [data-table="expedition"] .exp .mast { padding-block: 0 3px; }
+  [data-table="expedition"] .exp #expBoard { gap: 4px; padding-top: 4px; }
+}
+
+/* Card games: the corner suit is what tells ♠ from ♣ at hand size. */
+.card .corner small {
+  font-size: max(11px, .78em);
+}
+.opponent .card .corner small { font-size: .78em; }
+.progress #round { font-size: 12px; }
+[data-table="splendor"] #status[data-refused] { color: #ffc38f; font-weight: 700; white-space: normal; line-height: 1.15; }
