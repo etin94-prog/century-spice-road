@@ -341,7 +341,8 @@ function map(){
   const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.stage?1:m.rows+m.cols+.6;
   const half=m.stage?m.half:100/span;
   root.classList.toggle('source-map',!!m.stage);
-  root.style.backgroundImage=m.stage?'url("art/cept-maps/'+m.image+'.webp")':'';
+  root.style.setProperty('--board-art',m.stage?'url("art/cept-maps/'+m.image+'.webp")':'none');
+  root.style.backgroundImage='var(--board-art)';
   root.style.setProperty('--half-tile',half+'cqw');
   root.style.aspectRatio=m.stage?'3 / 2':'100 / '+(18+.5*(m.rows+m.cols)*half);
   root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
@@ -357,6 +358,9 @@ function map(){
     b.style.top=(11+(r+c-2)*half*.5)+'cqw';
     if(m.stage){
       b.style.left=r+'%';b.style.top='calc('+c+'% - '+half*.5+'cqw)';
+      // Crop the tile from the same 3:2 artwork that the board uses.
+      b.style.setProperty('--tile-art-x',(half-r)+'cqw');
+      b.style.setProperty('--tile-art-y',(half*.5-c*2/3)+'cqw');
       b.classList.toggle('altered',t.type!==m.types[n]);b.dataset.fort=m.forts.includes(n)?'true':'false';
     }
     b.style.zIndex=String(m.stage?Math.round(c):2*(r+c));b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
