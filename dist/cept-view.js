@@ -314,8 +314,8 @@ function placeMapRoll(root,x,y,zoom){
   const minTop=left+buttonWidth+4>tools.offsetLeft?tools.offsetTop+menuHeight+4:4;
   const handHeight=handPanel.parentElement===viewport?handPanel.querySelector('summary').offsetHeight+5:0;
   const maxTop=Math.max(minTop,height-handHeight-buttonHeight-4);
-  mapRoll.style.left=left+'px';
-  mapRoll.style.top=Math.max(minTop,Math.min(maxTop,top))+'px';
+  mapRoll.style.setProperty('--roll-left',left+'px');
+  mapRoll.style.setProperty('--roll-top',Math.max(minTop,Math.min(maxTop,top))+'px');
 }
 function setMapCamera(root,x,y,zoom){
   root.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')';

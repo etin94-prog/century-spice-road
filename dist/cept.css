@@ -137,9 +137,10 @@
 
 #mapViewport{position:relative;overflow:clip;border-radius:6px;isolation:isolate}
 #mapViewport #map{transform-origin:0 0;transition:transform .46s ease-in-out}
-#mapRoll{position:absolute;z-index:3;min-height:44px;max-width:calc(100% - 8px);padding:5px 10px;font-size:.86rem;line-height:1.25;box-shadow:0 2px 8px #161119bc;transition:left .46s ease-in-out,top .46s ease-in-out}
+#mapRoll{position:absolute;left:var(--roll-left,4px);top:var(--roll-top,4px);z-index:3;min-height:44px;max-width:calc(100% - 8px);padding:5px 10px;font-size:.86rem;line-height:1.25;box-shadow:0 2px 8px #161119bc;transition:left .46s ease-in-out,top .46s ease-in-out}
 #mapViewport.dragging #mapRoll{transition:none}
-#mapViewport:has(#mapViews[open],#handPanel[open]) #mapRoll{visibility:hidden}
+#mapViewport:has(#mapViews[open]) #mapRoll{visibility:hidden}
+#mapViewport:has(#handPanel[open]) #mapRoll{left:4px;top:4px;transition:none}
 #mapViews{position:absolute;top:5px;right:5px;z-index:2;display:flex;gap:1px;padding:2px;border:1px solid #e9d6a55e;border-radius:7px;background:#151923b8}
 #mapViews button{min-width:42px;min-height:34px;margin:0;padding:3px 6px;border:0;background:transparent;color:#fff;font:inherit;font-size:12px;border-radius:4px}
 #mapViews button[aria-pressed=true]{background:#e1c78ed9;color:#241d10;font-weight:700}
@@ -384,7 +385,7 @@ html:not(.cept-full,.cept-wide) main:has(#game:not([hidden])){max-width:1440px}
   #game .table{grid-template-columns:minmax(0,1fr)}
   #game .table aside{max-height:none;overflow:visible}
   #mapViewport #handPanel{position:absolute;right:4px;bottom:4px;z-index:4;width:max-content;max-width:calc(100% - 8px);max-height:calc(100% - 8px);margin:0;overflow:auto;overscroll-behavior:contain;background:#21242fee}
-  #mapViewport #handPanel[open]{width:min(38rem,100% - 8px);background:#21242f}
+  #mapViewport #handPanel[open]{width:min(38rem,100% - 8px);max-height:calc(100% - 56px);background:#21242f}
   #mapViewport #handPanel summary{position:sticky;top:0;z-index:1;background:inherit}
   #game #handPanel .card-face{max-height:108px}
 }
