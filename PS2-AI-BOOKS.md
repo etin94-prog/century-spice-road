@@ -1,6 +1,6 @@
 # PS2 원작 AI 북 검증
 
-42개 북, 원본 카드 2097/2100장, 완전 원본 북 36개. 동일 북 대전 252판 완주, Hard 170승.
+42개 북, 원본 카드 2098/2100장, 완전 원본 북 37개. 동일 북 대전 252판 완주, Hard 162승.
 
 듀난에서 목표 5,000G로 중간 AI와 Hard AI가 같은 북을 사용했다. 북마다 세 개의 난수 시드로 두 좌석을 교대했다. 북당 6판은 행동 회귀 검사 표본이며 사람 승률이나 PS2 CPU의 승률을 추정하는 자료로 쓰기 어렵다.
 
@@ -11,7 +11,7 @@
 | Aldha · Meditation | 50 | 50/50 | — | 3/6 |
 | Aldha · Wiseman's | 50 | 50/50 | — | 2/6 |
 | Balberit · Dragon Tamer | 50 | 50/50 | — | 3/6 |
-| Balberit · The Abyss | 49 | 49/50 | — | 4/6 |
+| Balberit · The Abyss | 50 | 50/50 | — | 4/6 |
 | Gamygin · Detonation | 50 | 50/50 | — | 4/6 |
 | Gamygin · Inferno | 50 | 50/50 | — | 3/6 |
 | Luthien · Angel Dance | 50 | 50/50 | — | 4/6 |
@@ -20,20 +20,20 @@
 | Zeneth · Ruedo | 50 | 50/50 | — | 5/6 |
 | Pickett · Commoners | 50 | 50/50 | — | 3/6 |
 | Pickett · I Won't Lose | 50 | 50/50 | — | 5/6 |
-| Gemmory · Cruelty | 50 | 50/50 | — | 6/6 |
+| Gemmory · Cruelty | 50 | 50/50 | — | 5/6 |
 | Gemmory · Ruin | 49 | 49/50 | — | 3/6 |
 | Zagol · Beat You! | 50 | 50/50 | — | 5/6 |
 | Zagol · Crush You! | 50 | 50/50 | — | 5/6 |
 | Zagol · Smack You! | 50 | 50/50 | — | 6/6 |
 | Selena · Castle Guard | 50 | 50/50 | — | 3/6 |
 | Selena · Cats  1 | 50 | 50/50 | — | 4/6 |
-| Selena · Cats  2 | 49 | 49/50 | — | 5/6 |
+| Selena · Cats  2 | 49 | 49/50 | — | 3/6 |
 | Selena · Gladiator | 50 | 50/50 | — | 3/6 |
 | Dr. Morroc · Demonic | 50 | 50/50 | — | 5/6 |
 | Dr. Morroc · Science | 50 | 50/50 | — | 2/6 |
-| Dr. Morroc · Truth | 50 | 50/50 | — | 4/6 |
+| Dr. Morroc · Truth | 50 | 50/50 | — | 3/6 |
 | Mullyn · Frozen Bind | 50 | 50/50 | — | 4/6 |
-| Mullyn · Waves | 50 | 50/50 | — | 5/6 |
+| Mullyn · Waves | 50 | 50/50 | — | 4/6 |
 | Whirlwind · Arrow | 50 | 50/50 | — | 3/6 |
 | Whirlwind · Fard's | 50 | 50/50 | — | 5/6 |
 | Leo · Cyclone | 50 | 50/50 | — | 4/6 |
@@ -41,14 +41,14 @@
 | Leo · Revenge | 50 | 50/50 | — | 5/6 |
 | Leo · Whirlwind | 50 | 50/50 | — | 3/6 |
 | Goligan · For Practice | 50 | 50/50 | — | 4/6 |
-| Goligan · Idols | 50 | 50/50 | — | 4/6 |
+| Goligan · Idols | 50 | 50/50 | — | 5/6 |
 | Goligan · Staff of God | 51 | 50/50 | — | 5/6 |
 | Ryvern · Always Kill | 50 | 50/50 | — | 5/6 |
-| Ryvern · Always Win | 50 | 50/50 | — | 4/6 |
+| Ryvern · Always Win | 50 | 50/50 | — | 2/6 |
 | Ryvern · Conserve | 50 | 50/50 | — | 4/6 |
 | Ryvern · Constant Win | 50 | 50/50 | — | 3/6 |
-| Ryvern · No Enemies | 53 | 50/50 | — | 5/6 |
-| Ryvern · Strong | 50 | 50/50 | — | 4/6 |
+| Ryvern · No Enemies | 53 | 50/50 | — | 4/6 |
+| Ryvern · Strong | 50 | 50/50 | — | 3/6 |
 | Ryvern · Strongest | 50 | 50/50 | — | 4/6 |
 
 ## 북별 구성과 대전 결과
@@ -79,11 +79,11 @@
 
 ### Balberit · The Abyss
 
-[참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/442-cps2-aidecks-balberit) · 자료에 기록된 수량 49장
+[참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/442-cps2-aidecks-balberit) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Bind 17회, 주문 · Goblin's Lair 14회, 주문 · Haste 13회, 주문 · Waste 13회, 주문 · Drain Magic 10회
+6판에서 자주 선택한 행동 · 주문 · Goblin's Lair 21회, 주문 · Haste 17회, 주문 · Waste 17회, 주문 · Bind 16회, 주문 · Evil Blast 10회
 
-보충 → Holy Word 6 ×1
+원본 50장 전부 사용 가능.
 
 ### Gamygin · Detonation
 
@@ -121,7 +121,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/445-cps2-aidecks-najaran) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Peace 22회, 주문 · Weakness 17회, 주문 · Shatter 16회, 주문 · Silence 16회, 주문 · Fly 12회
+6판에서 자주 선택한 행동 · 주문 · Peace 18회, 주문 · Shatter 15회, 주문 · Silence 15회, 주문 · Weakness 15회, 주문 · Magic Bolt 11회
 
 원본 50장 전부 사용 가능.
 
@@ -153,7 +153,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/449-cps2-aidecks-gemmory) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Disease 18회, 주문 · Pain 17회, 주문 · Parasite 16회, 주문 · Changeling 14회, 주문 · Replace 13회
+6판에서 자주 선택한 행동 · 주문 · Pain 17회, 주문 · Parasite 16회, 주문 · Disease 15회, 주문 · Changeling 15회, 주문 · Replace 13회
 
 원본 50장 전부 사용 가능.
 
@@ -209,7 +209,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/451-cps2-aidecks-selena) · 자료에 기록된 수량 49장
 
-6판에서 자주 선택한 행동 · 주문 · Holy Word 6 31회, 주문 · Fog 21회, 주문 · Shatter 20회, 주문 · Shrink 19회, 주문 · Silence 18회
+6판에서 자주 선택한 행동 · 주문 · Holy Word 6 29회, 주문 · Shrink 18회, 주문 · Silence 18회, 주문 · Fog 17회, 주문 · Shatter 16회
 
 보충 → Holy Word 6 ×1
 
@@ -217,7 +217,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/451-cps2-aidecks-selena) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Shatter 16회, 주문 · Holy Word 6 14회, 주문 · Shrink 14회, 주문 · Holy Word 3 13회, 주문 · Silence 12회
+6판에서 자주 선택한 행동 · 주문 · Shatter 18회, 주문 · Holy Word 3 15회, 주문 · Shrink 15회, 주문 · Holy Word 6 14회, 주문 · Wing 13회
 
 원본 50장 전부 사용 가능.
 
@@ -241,7 +241,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/452-cps2-aidecks-drmorroc) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 장비 · Gaseous Form 11회, 주문 · Mass Phantasm 8회, 침략 · Cait Sith 8회, 주문 · Drain Magic 7회, 침략 · Ninja 5회
+6판에서 자주 선택한 행동 · 주문 · Mass Phantasm 10회, 주문 · Drain Magic 8회, 장비 · Gaseous Form 7회, 침략 · Colossus 7회, 침략 · Ninja 5회
 
 원본 50장 전부 사용 가능.
 
@@ -257,7 +257,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/453-cps2-aidecks-mullyn) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Lake Leap 22회, 주문 · Drought 22회, 주문 · Land Protection 20회, 주문 · Anti Element 20회, 주문 · Slow 18회
+6판에서 자주 선택한 행동 · 주문 · Lake Leap 22회, 주문 · Drought 21회, 주문 · Land Protection 21회, 주문 · Anti Element 20회, 주문 · Slow 19회
 
 원본 50장 전부 사용 가능.
 
@@ -265,7 +265,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/454-cps2-aidecks-whirlwind) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Magic Bolt 18회, 주문 · Influence 16회, 주문 · Weathering 14회, 주문 · Haste 14회, 주문 · Silence 14회
+6판에서 자주 선택한 행동 · 주문 · Magic Bolt 18회, 주문 · Influence 14회, 주문 · Haste 14회, 주문 · Silence 14회, 주문 · Mutation 13회
 
 원본 50장 전부 사용 가능.
 
@@ -313,7 +313,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/504-cps2-aidecks-goligan) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Weakness 18회, 주문 · Manna 18회, 주문 · Dimension Door 16회, 장비 · Leather Armor 10회, 주문 · Slow 10회
+6판에서 자주 선택한 행동 · 주문 · Weakness 18회, 주문 · Manna 18회, 주문 · Dimension Door 16회, 주문 · Slow 11회, 장비 · Mace 10회
 
 원본 50장 전부 사용 가능.
 
@@ -321,7 +321,7 @@ Punisher → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/504-cps2-aidecks-goligan) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Relief 26회, 주문 · Silence 24회, 주문 · Waste 22회, 주문 · Manna 20회, 주문 · Goblin's Lair 14회
+6판에서 자주 선택한 행동 · 주문 · Silence 24회, 주문 · Manna 22회, 주문 · Relief 21회, 주문 · Waste 20회, 주문 · Goblin's Lair 18회
 
 원본 50장 전부 사용 가능.
 
@@ -337,7 +337,7 @@ Temperance → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/505-cps2-aidecks-ryvern) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Dream Terrain 21회, 주문 · Mine 19회, 주문 · Slow 18회, 주문 · Magic Bolt 14회, 주문 · Fly 12회
+6판에서 자주 선택한 행동 · 주문 · Dream Terrain 22회, 주문 · Mine 20회, 주문 · Slow 18회, 주문 · Magic Bolt 14회, 주문 · Fly 13회
 
 원본 50장 전부 사용 가능.
 
@@ -345,7 +345,7 @@ Temperance → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/505-cps2-aidecks-ryvern) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 장비 · Boomerang 21회, 주문 · Magic Bolt 21회, 주문 · Slow 19회, 주문 · Weakness 17회, 주문 · Dream Terrain 16회
+6판에서 자주 선택한 행동 · 장비 · Boomerang 23회, 주문 · Magic Bolt 21회, 주문 · Slow 16회, 주문 · Weakness 16회, 주문 · Dream Terrain 15회
 
 원본 50장 전부 사용 가능.
 
@@ -353,7 +353,7 @@ Temperance → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/505-cps2-aidecks-ryvern) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 침략 · Skeleton 23회, 주문 · Manna 18회, 주문 · Fly 16회, 장비 · Mace 13회, 주문 · Weakness 12회
+6판에서 자주 선택한 행동 · 침략 · Skeleton 22회, 주문 · Manna 18회, 주문 · Fly 16회, 장비 · Mace 13회, 주문 · Weakness 12회
 
 원본 50장 전부 사용 가능.
 
@@ -369,7 +369,7 @@ Temperance → 50장 한도 제외 ×1
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/505-cps2-aidecks-ryvern) · 자료에 기록된 수량 53장
 
-6판에서 자주 선택한 행동 · 주문 · Magic Bolt 16회, 주문 · Disease 15회, 주문 · Slow 10회, 침략 · Master Monk 8회, 침략 · Wereboar 8회
+6판에서 자주 선택한 행동 · 주문 · Disease 15회, 주문 · Magic Bolt 14회, 주문 · Slow 10회, 침략 · Griffon 7회, 장비 · Air Slasher 7회
 
 Slow → 50장 한도 제외 ×1, Weakness → 50장 한도 제외 ×2
 
@@ -377,7 +377,7 @@ Slow → 50장 한도 제외 ×1, Weakness → 50장 한도 제외 ×2
 
 [참고 북 목록](https://culdceptcentral.com/ii/culdcept-ii-ps2-dc/culdcept-ps2dc-ai-decks/505-cps2-aidecks-ryvern) · 자료에 기록된 수량 50장
 
-6판에서 자주 선택한 행동 · 주문 · Magic Bolt 18회, 주문 · Slow 16회, 주문 · Mine 16회, 주문 · Fly 12회, 주문 · Weakness 11회
+6판에서 자주 선택한 행동 · 주문 · Slow 16회, 주문 · Mine 16회, 주문 · Magic Bolt 15회, 주문 · Fly 12회, 주문 · Weakness 10회
 
 원본 50장 전부 사용 가능.
 

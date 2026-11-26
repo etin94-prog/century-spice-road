@@ -1133,5 +1133,7 @@ function createCepter(edition="ps2"){
   return {edition,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
-const Cepter=createCepter(['dc','saturn','ps1'].includes(editionParam)?editionParam:'ps2');
+// The newer editions start only when their data file is on the page; otherwise the PS2 game opens.
+const modernEditionsReady=typeof module!=='undefined'||typeof CepterEditionModern!=='undefined';
+const Cepter=createCepter(['dc','saturn','ps1'].includes(editionParam)||modernEditionsReady&&['saga','revolt','begins'].includes(editionParam)?editionParam:'ps2');
 if(typeof module!=='undefined'){module.exports=Cepter;module.exports.createEdition=createCepter;}

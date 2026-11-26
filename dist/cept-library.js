@@ -11,11 +11,15 @@ else{
     if(group.children.length)stageSelect.append(group);
   }
   document.title=document.querySelector('.intro h1').textContent=CepterEditions.names[C.edition];
-  document.querySelector('.intro [lang=en]').textContent=C.edition==='dc'?'CULDCEPT SECOND':'CULDCEPT';
+  const modernEdition={saga:'CULDCEPT SAGA',revolt:'CULDCEPT REVOLT',begins:'CULDCEPT BEGINS'}[C.edition];
+  document.querySelector('.intro [lang=en]').textContent=modernEdition||(C.edition==='dc'?'CULDCEPT SECOND':'CULDCEPT');
   const profile={dc:'2nd',saturn:'1st',ps1:'1ex'}[C.edition];
   const references=el('details');references.append(el('summary','판본 자료'));
-  const list=el('p');list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
-  if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
+  const list=el('p');
+  if(modernEdition)list.append(sourceLink('https://culdceptcentral.com/culdcept-'+C.edition,'판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+C.edition+'/table','지도 목록'));
+  else list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
+  if(modernEdition);
+  else if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
   else list.append(' · ',sourceLink('https://culdceptcentral.com/culdcept-ps2dc/culdcept-ps2dc-guides/706-cps2-guides-dcfaq','DC판 공략'));
   references.append(list);$('config').before(references);
   $('alliance').options[0].textContent='개인전';

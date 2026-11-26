@@ -33,6 +33,13 @@ function creatureFigure(id){
 }
 function cardSeal(id){
   const c=Cepter.cards[id];
+  if(c.editionArt){
+    // Saga, Revolt and Begins use their own card faces; a card shared with PS2 falls back to the local PS2 face.
+    const img=document.createElement('img');img.className='card-face';img.alt=c.catalog.name;img.width=400;img.height=500;
+    img.src='https://culdceptcentral.com/images/cards_sm/'+c.editionArt+'.jpg';
+    img.onerror=()=>{img.onerror=null;if(c.hasArt)img.src=id>42?'art/cept-catalog/'+c.catalog.path+'.webp':'art/cept-card-'+id+'.webp';};
+    return img;
+  }
   if(c.firstArt){
     const img=document.createElement('img');img.className='card-face';img.alt=c.catalog.name;img.width=400;img.height=500;
     img.src='https://culdceptcentral.com/images/cards_sm/ceps1/'+c.firstArt+'.jpg';
