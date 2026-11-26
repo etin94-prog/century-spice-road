@@ -21,6 +21,11 @@ for(const mode of ['cities','posts','orient','forts'])for(const seats of [2,3,4]
 const city=newGame(['Medium'],()=>.4,'cities'),p=city.players[0];
 p.cards=catalog.filter(c=>c.vp===5).slice(0,3).map(c=>c.id);p.bonus=[0,0,4,0,0];
 assert.equal(cityEligible(p,8),false);p.bonus[0]=4;assert(cityEligible(p,8));
+// Tied city holders are separated by fewer development cards, as in the base game.
+const tie=newGame(['Medium'],()=>.4,'cities'),five=catalog.filter(c=>c.vp===5).map(c=>c.id),zero=catalog.filter(c=>c.vp===0).map(c=>c.id);
+tie.players[0].cards=[...five.slice(0,3),...zero.slice(0,2)];tie.players[0].city=0;
+tie.players[1].cards=five.slice(0,3);tie.players[1].city=1;
+assert.deepEqual(rankings(tie).map(r=>[r.i,r.rank]),[[1,1],[0,2]]);
 const post=newGame(['Medium'],()=>.4,'posts').players[0];
 post.posts=[2];post.tokens=[0,0,0,0,0,1];
 assert(guildBills(post,{cost:[2,0,0,0,0]}).length);assert.equal(guildBills(post,{cost:[1,1,0,0,0]}).length,0);

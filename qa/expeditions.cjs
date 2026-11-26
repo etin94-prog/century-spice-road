@@ -13,3 +13,14 @@ for(const edition of [2,3])for(const n of [2,3,4]){
   console.log(edition,n,turns,g.players.map(p=>p.won.length),expRanks(g));
  assert(g.over);assert.deepEqual(g,copy);
 }
+
+// Building that completes a row stays legal after every bonus tile is taken.
+{
+ const {actionsAt}=Function(lib+';return {actionsAt}')();
+ let seed=7;const g=newExpedition(2,['Medium'],()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296));
+ delete g.departures;g.turn=0;
+ const i=g.tiles.findIndex(t=>!t.port&&t.suit===0),p=g.players[0];
+ p.boat=i;p.bag=[5,3,1,1];p.tracks=[0,1,1,1];g.stocks=[0,0,0,0,0];
+ const build=actionsAt(g,i,{path:[]}).find(c=>c.kind==='build');
+ assert(build&&!build.prize,'build blocked by empty bonus stock');
+}

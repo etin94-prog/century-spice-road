@@ -78,8 +78,8 @@ function apply(g,a){
 }
 function rankings(g){
   if(g.mode==='cities'){
-    const rows=g.players.map((p,i)=>({i,points:score(p),cards:p.cards.length,city:p.city!=null})).sort((a,b)=>Number(b.city)-Number(a.city)||b.points-a.points);
-    rows.forEach((r,i)=>{const prev=rows[i-1];r.rank=prev&&prev.city===r.city&&prev.points===r.points?prev.rank:i+1;});return rows;
+    const rows=g.players.map((p,i)=>({i,points:score(p),cards:p.cards.length,city:p.city!=null})).sort((a,b)=>Number(b.city)-Number(a.city)||b.points-a.points||a.cards-b.cards);
+    rows.forEach((r,i)=>{const prev=rows[i-1];r.rank=prev&&prev.city===r.city&&prev.points===r.points&&prev.cards===r.cards?prev.rank:i+1;});return rows;
   }
   const rows=g.players.map((p,i)=>({i,points:score(p),cards:p.cards.length})).sort((a,b)=>b.points-a.points||a.cards-b.cards);
   rows.forEach((r,i)=>{const prev=rows[i-1];r.rank=prev&&r.points===prev.points&&r.cards===prev.cards?prev.rank:i+1;});return rows;

@@ -104,7 +104,8 @@ function actionsAt(g,i,options={},base=false){
       const price=t.owners.length*(g.players.length===2?2:1),paid=minPaid(raw,price,options.buildPay);
       if(paid){
         const tracks=p.tracks.slice();tracks[t.suit]++;
-        const prizes=Math.min(...tracks)>Math.min(...p.tracks)?bonTypes.filter((x,k)=>g.stocks[k]>0):[''];
+        let prizes=Math.min(...tracks)>Math.min(...p.tracks)?bonTypes.filter((x,k)=>g.stocks[k]>0):[''];
+        if(!prizes.length)prizes=[''];
         for(const prize of prizes){
           const upgrades=p.bonus.filter(x=>x==='upgrade').length+(prize==='upgrade'?1:0);
           for(const choice of [{bag:paid.left,steps:[]},...upgradeOptions(paid.left,upgrades)]){
