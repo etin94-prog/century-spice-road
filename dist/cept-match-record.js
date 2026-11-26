@@ -2,10 +2,13 @@
 const CepterMatchRecord=(()=>{
   const tileState=t=>[t.type,t.owner,t.level,t.unit?.id??null,t.unit?.hp??null,t.unit?.mhp??null,t.unit?.st??null,t.unit?.enchant??null];
   function frame(s,total){
-    return {
+    const f={
       round:s.round,turn:s.turn,phase:s.phase,die:s.die||0,winner:s.winner,
       players:s.players.map((p,i)=>[p.pos,p.cash,total(s,i)]),
     };
+    // A tied round limit has no winner; the record names the seats that shared first place.
+    if(s.phase==='over'&&s.leaders?.length>1)f.leaders=s.leaders.slice();
+    return f;
   }
   function begin(s,total,board){
     s.replay={version:1,edition:s.edition,map:s.mapId,layout:s.layoutRevision||0,

@@ -168,6 +168,13 @@ function createCepter(edition="ps2"){
   const territoryType=type=>typeof type==='number'||type==='복합'||type==='무속성';
   const landBonus=(unit,t)=>unit.element===t.type||t.type==='복합'&&unit.element>=0?10*t.level:0;
   const allied=combo.allied;
+  // One verdict for every screen and record. A shared top total at the round limit has no winner.
+  // Saves written before this rule kept the first tied seat in `winner`, so `leaders` decides.
+  function outcome(s){
+    const over=s.phase==='over',tie=over&&s.leaders?.length>1;
+    return {over,tie,leaders:tie?s.leaders.slice():[],
+      winners:over&&!tie?s.players.flatMap((_,i)=>allied(s,i,s.winner)?[i]:[]):[]};
+  }
   const sameChain=(a,b,s)=>a.owner>=0&&typeof a.type==='number'&&allied(s,a.owner,b.owner)&&a.type===b.type&&a.area===b.area;
   const chain=(s,t)=>t.owner<0||typeof t.type!=='number'?1:Math.min(5,s.tiles.filter(v=>sameChain(t,v,s)).length);
   const chainRates=[0,10,15,18,20,22];
@@ -882,7 +889,7 @@ function createCepter(edition="ps2"){
       if(s.suddenDeath&&s.leaders.length>1){
         delete s.endReason;delete s.leaders;s.overtime=true;
         note(s,'서든데스 · 한 라운드 더 진행합니다.');nextTurn(s);
-      }else s.winner=s.leaders[0];
+      }else s.winner=s.leaders.length>1?-1:s.leaders[0];
     }
     const cue=s.phase==='over'?'victory':({pay:'coin',sell:'coin',buyCard:'coin',buySymbol:'coin',sellSymbol:'coin',liquidate:'coin',equip:'card',discard:'card',fortuneDraw:'card'})[k];
     if(cue)s.actionSound={sequence:(s.actionSound?.sequence||0)+1,cue};
@@ -1123,7 +1130,7 @@ function createCepter(edition="ps2"){
     for(const id of presets.fire)if(book.length<50&&book.filter(v=>v===id).length<4)book.push(id);
     return book;
   }
-  return {edition,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,personalTotal,total,toll,value,levelCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 const Cepter=createCepter(['dc','saturn','ps1'].includes(editionParam)?editionParam:'ps2');

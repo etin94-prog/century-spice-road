@@ -34,6 +34,78 @@ const map='classic',deck=C.presets.intro;
   assert.equal(game.replay.steps.length,2);
 }
 {
+  // A shared top total at the round limit has no winner in any seat layout.
+  const finishLimit=game=>{
+    Object.assign(game,{round:game.roundLimit,turn:game.players.length-1,phase:'land'});
+    assert.ok(C.play(game,['pass']));return game;
+  };
+  const limited=(alliance,mapId=map,humans=4,target=7000)=>
+    C.configureMatch(C.start(4,humans,target,mapId,deck,deck,0,alliance,20),{recordReplay:true});
+  const duel=finishLimit(limited('duel'));
+  assert.equal(duel.phase,'over');assert.equal(duel.endReason,'roundLimit');
+  assert.equal(duel.winner,-1);assert.deepEqual(duel.leaders,[0,1,2,3]);
+  assert.deepEqual(C.outcome(duel),{over:true,tie:true,leaders:[0,1,2,3],winners:[]});
+  const last=duel.replay.steps.at(-1);
+  assert.equal(last.winner,-1);assert.deepEqual(last.leaders,[0,1,2,3]);
+  assert.equal(duel.actionSound.cue,'victory');
+  assert.equal(C.play(duel,['pass']),false);
+
+  const partial=limited('duel');partial.players[0].cash-=100;partial.players[3].cash-=50;finishLimit(partial);
+  assert.equal(partial.winner,-1);assert.deepEqual(partial.leaders,[1,2]);
+  assert.deepEqual(C.outcome(partial).winners,[]);
+
+  const solo=limited('duel');solo.players[2].cash++;finishLimit(solo);
+  assert.equal(solo.winner,2);assert.deepEqual(solo.leaders,[2]);
+  assert.deepEqual(C.outcome(solo),{over:true,tie:false,leaders:[],winners:[2]});
+  assert.equal(solo.replay.steps.at(-1).winner,2);assert.equal(solo.replay.steps.at(-1).leaders,undefined);
+
+  for(const [alliance,teams] of [['teams-12',[0,0,1,1]],['teams',[0,1,0,1]],['teams-14',[0,1,1,0]]]){
+    const tied=finishLimit(limited(alliance));
+    assert.deepEqual(tied.teams,teams);assert.equal(tied.winner,-1);
+    assert.deepEqual(tied.leaders,[0,teams.indexOf(1)]);assert.deepEqual(C.outcome(tied).winners,[]);
+    assert.deepEqual(tied.replay.steps.at(-1).leaders,tied.leaders);
+    const ahead=limited(alliance),mate=teams.lastIndexOf(1);ahead.players[mate].cash++;finishLimit(ahead);
+    assert.equal(ahead.winner,teams.indexOf(1));
+    assert.deepEqual(C.outcome(ahead).winners,teams.flatMap((team,i)=>team?[i]:[]));
+  }
+
+  // PS2 story stage 16: a human who only shares first place has not cleared the map.
+  const story=finishLimit(limited('auto','ps2-16',1,0));
+  assert.equal(story.mapGoal,true);assert.equal(C.board(story).stage,16);
+  assert.equal(story.winner,-1);assert.equal(C.outcome(story).winners.includes(0),false);
+  const cleared=limited('auto','ps2-16',1,0);cleared.players[0].cash++;finishLimit(cleared);
+  assert.deepEqual(C.outcome(cleared).winners,[0]);
+
+  // Sudden death plays on until one side leads, then records that side.
+  const sudden=C.configureMatch(C.start(4,4,7000,map,deck,deck,0,'duel',20),{suddenDeath:true,recordReplay:true});
+  finishLimit(sudden);
+  assert.equal(sudden.round,21);assert.equal(sudden.turn,0);assert.equal(sudden.overtime,true);assert.equal(sudden.winner,-1);
+  assert.equal(sudden.leaders,undefined);assert.equal(C.outcome(sudden).over,false);
+  Object.assign(sudden,{turn:3,phase:'land'});assert.ok(C.play(sudden,['pass']));
+  assert.equal(sudden.round,22);assert.equal(sudden.turn,0);assert.notEqual(sudden.phase,'over');
+  sudden.players[3].cash++;Object.assign(sudden,{turn:3,phase:'land'});assert.ok(C.play(sudden,['pass']));
+  assert.equal(sudden.phase,'over');assert.equal(sudden.winner,3);assert.deepEqual(C.outcome(sudden).winners,[3]);
+  assert.equal(sudden.replay.steps.at(-1).leaders,undefined);
+
+  // A match saved before this rule kept the first tied seat as the winner.
+  const legacy={...duel,winner:0};
+  assert.deepEqual(C.outcome(legacy).winners,[]);assert.equal(C.outcome(legacy).tie,true);
+  assert.equal(Campaign.complete(0,{...legacy,campaign:{chapter:0}}),0);
+
+  // A goal victory is unaffected.
+  const goal=C.start(4,4,3000,map,deck,deck,0,'teams-12');
+  goal.phase='over';goal.winner=1;
+  assert.deepEqual(C.outcome(goal),{over:true,tie:false,leaders:[],winners:[0,1]});
+  assert.deepEqual(C.outcome(C.start(2,2,3000,map,deck)),{over:false,tie:false,leaders:[],winners:[]});
+
+  // The web campaign does not advance on a shared first place.
+  const chapter=Campaign.start(C,0,deck,{recordReplay:true});
+  Object.assign(chapter,{round:chapter.roundLimit,turn:chapter.players.length-1,phase:'land'});
+  assert.ok(C.play(chapter,['pass']));
+  assert.equal(chapter.winner,-1);assert.deepEqual(chapter.leaders,[0,1]);
+  assert.equal(Campaign.complete(0,chapter),0);
+}
+{
   const game=C.configureMatch(C.start(2,1,3000,map,deck),{inputSeconds:30});
   game.phase='land';C.armClock(game,100);
   assert.ok(C.play(game,['pass'],200));assert.equal(game.turn,1);
@@ -53,4 +125,4 @@ const map='classic',deck=C.presets.intro;
     assert.equal(Campaign.complete(progress,game),progress);
   }
 }
-console.log('Clock expiry, replay privacy, team overtime, campaign progression and replay settings OK');
+console.log('Clock expiry, replay privacy, team overtime, round-limit ties, campaign progression and replay settings OK');

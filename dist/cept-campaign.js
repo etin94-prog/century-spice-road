@@ -74,9 +74,9 @@ function campaignResult(controls,game){
     try{localStorage.setItem(campaignSaveKey,String(campaignProgress));}catch{/* The current tab retains progress. */}
     paintCampaign();
   }
-  const won=game.winner===0&&!(game.leaders?.length>1);
+  const verdict=C.outcome(game),won=verdict.winners.includes(0);
   const final=index===CepterCampaign.chapters.length-1;
-  const message=won?(final?'항로의 마지막 등불을 밝혔다. 캠페인 완료!':chapter.title+' 완료 · 다음 장 해금'):chapter.title+' · 다시 도전할 수 있습니다.';
+  const message=won?(final?'항로의 마지막 등불을 밝혔다. 캠페인 완료!':chapter.title+' 완료 · 다음 장 해금'):chapter.title+(verdict.tie?' · 공동 1위는 완료로 인정되지 않습니다.':'')+' · 다시 도전할 수 있습니다.';
   controls.append(el('p',message,'campaign-notice'));
   if(won&&chapter.map.startsWith('campaign-'))controls.append(el('p',C.maps[chapter.map].name+' 자유 대전 해금'));
   if(won&&!final)controls.append(btn('다음 장',()=>startCampaignChapter(index+1),'primary'));

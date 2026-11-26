@@ -12,8 +12,9 @@ self.onmessage=({data})=>{
         s.players.unshift(...s.players.splice(count-seat));
         s.players[0].hand.push(s.players[0].book.pop());
       }
-      for(let step=0;s.winner<0&&step<9000;step++)Cepter.play(s,Cepter.ai(s));
-      if(s.winner>=0){finished[seat]++;if((s.leaders||[s.winner]).some(winner=>Cepter.allied(s,winner,seat)))wins[seat]++;}
+      for(let step=0;s.phase!=='over'&&step<9000;step++)Cepter.play(s,Cepter.ai(s));
+      // A tied round limit is a finished match that nobody won.
+      if(s.phase==='over'){finished[seat]++;if(Cepter.outcome(s).winners.includes(seat))wins[seat]++;}
     }
     if(sample%40===0)postMessage({wins,finished,sample,done:sample===160});
   }

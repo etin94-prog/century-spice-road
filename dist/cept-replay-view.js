@@ -6,6 +6,15 @@ const replayActionNames={
 function replayBoard(replay){
   return C.board({mapId:replay.map,layoutRevision:replay.layout});
 }
+// The last frame of a finished match carries the same verdict as the result screen.
+function replayVerdict(replay,f){
+  if(f.phase!=='over')return null;
+  const seat=i=>Number.isInteger(i)&&i>=0&&i<replay.names.length;
+  const side=i=>Array.isArray(replay.teams)&&Number.isInteger(replay.teams[i])?String.fromCharCode(65+replay.teams[i])+'팀':replay.names[i];
+  const tied=Array.isArray(f.leaders)?f.leaders.filter(seat):[];
+  if(tied.length>1)return '공동 1위 · '+tied.map(side).join(', ')+' · 승자 없음';
+  return seat(f.winner)?side(f.winner)+' 승리':'승자 없음';
+}
 function validateReplay(replay){
   if(replay?.version!==1||replay.edition!==C.edition||typeof replay.map!=='string'||
       !Object.hasOwn(C.maps,replay.map)||typeof replay.title!=='string')return false;
@@ -51,7 +60,7 @@ function showReplay(replay){
     if(next.disabled)stop();
     status.textContent=[step+'/'+replay.steps.length,f.round+'라운드',step?replay.names[f.seat]:'대전 시작',
       f.timeout?'시간 초과':null,replayActionNames[f.action]||labels[f.action]||f.action,
-      f.die?'주사위 '+f.die:null,f.effect?.[1]].filter(Boolean).join(' · ');
+      f.die?'주사위 '+f.die:null,f.effect?.[1],replayVerdict(replay,f)].filter(Boolean).join(' · ');
     wealth.replaceChildren(...f.players.map(([at,cash,total],i)=>el('li',replay.names[i]+' · '+(at+1)+'번 칸 · '+cash+'G · 총 '+total+'G')));
     const details=Array.isArray(f.battle?.lines)?f.battle.lines:Array.isArray(f.notes)?f.notes:[];
     log.replaceChildren(...details.map(line=>el('li',String(line))));
