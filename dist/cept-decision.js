@@ -14,27 +14,25 @@ function routeOption(action){
   return button;
 }
 
+// A command with many options is one button that opens the choice sheet.
+function openerButton(kind,text,count,open){
+  const button=btn('',open,'command-open');
+  button.dataset.open=kind;button.setAttribute('aria-haspopup','dialog');
+  button.append(el('span',text),el('small',String(count)));
+  return button;
+}
+
 function shopMenu(controls,choices,p){
-  const stock=C.shopStock(s);
-  const box=el('div',null,'command'),field=el('label','판매 카드'),select=el('select');
-  const preview=el('small',null,'decision-preview'),buy=btn('',()=>act(['buyCard',Number(select.value)]),'primary');
-  select.dataset.action='buyCard';buy.dataset.action='buyCard';
-  for(const id of stock){
-    const card=C.cards[id];
-    select.add(new Option(card.name+' · '+card.cost+'G'+(card.cost>p.cash?' · 마력 부족':''),id));
-  }
-  const affordable=choices.find(a=>a[0]==='buyCard');
-  if(affordable)select.value=affordable[1];
-  function refresh(){
-    const card=C.cards[Number(select.value)],balance=p.cash-card.cost;
-    buy.disabled=balance<0;
-    buy.textContent=buy.disabled?(-balance)+'G 부족':card.cost+'G에 구매 · 잔액 '+balance+'G';
-    preview.textContent=[localAbility(card)||card.catalog?.ability||stats(card),p.hand.length>=6?'구매 후 손패 1장을 버립니다.':''].filter(Boolean).join(' · ');
-  }
-  select.onchange=refresh;refresh();field.append(select);box.append(field,preview,buy);controls.append(box);
-  if(choices.some(a=>a[0]==='buyCard'))box.append(btn('상품 그림 보기',()=>openTurnPicker(
-    choices.filter(a=>a[0]==='buyCard').map(action=>({action,id:action[1],label:C.cards[action[1]].name+' · '+C.cards[action[1]].cost+'G'})),
-    '상점 카드'),'picture-select'));
+  const entries=C.shopStock(s).map(id=>{
+    const card=C.cards[id],short=card.cost-p.cash;
+    return {action:['buyCard',id],id,label:card.name+' · '+card.cost+'G',blocked:short>0?short+'G 부족':'',
+      confirm:card.cost+'G에 구매 · 잔액 '+(p.cash-card.cost)+'G',note:p.hand.length>=6?'구매 후 손패 1장을 버립니다.':''};
+  });
+  if(!entries.length)return;
+  const box=el('div',null,'command');box.dataset.kind='buyCard';
+  const open=openerButton('buyCard','카드 구매',entries.length,()=>openTurnPicker(entries,'상점 카드',entries.findIndex(e=>!e.blocked)));
+  if(choices.some(a=>a[0]==='buyCard'))open.classList.add('primary');
+  box.append(open);controls.append(box);
 }
 
 function decisionText(action,p){
@@ -82,7 +80,13 @@ function actionCard(action,p){
   if(['breakCard','wormDiscard','suppressCard'].includes(kind))return s.players[s.spellTarget]?.hand[x];
 }
 
-function openTurnPicker(entries,title){
+function cardSummary(card){
+  const base=stats(card),ability=localAbility(card)||card.catalog?.ability;
+  return card.kind==='spell'||!ability||ability===base?base:base+' · '+ability;
+}
+
+// Entries are {action,id,label} plus optional blocked (why it cannot be chosen), confirm (button text) and note.
+function openTurnPicker(entries,title,preferred=-1){
   document.querySelector('#turnPicker')?.remove();
   const openedState=s,openedRevision=room?.revision,openedPhase=s.phase,openedTurn=s.turn;
   const dialog=el('dialog',null,'turn-picker');dialog.id='turnPicker';
@@ -90,79 +94,116 @@ function openTurnPicker(entries,title){
   dialog.setAttribute('aria-labelledby',heading.id);
   const close=btn('닫기',()=>dialog.close());
   const list=el('div',null,'turn-picker-cards');
+  if(!entries.some(entry=>C.cards[entry.id]))list.classList.add('turn-picker-options');
   const detail=el('p',null,'turn-picker-detail');
   let selected;
+  const actorSeat=s.players[C.actor(s)];
   const confirm=btn('확정',()=>{
-    const choices=room?room.choices:C.choices(s);
-    if(!selected||s!==openedState||s.phase!==openedPhase||s.turn!==openedTurn||room?.revision!==openedRevision||
+    const choices=room?room.choices:C.choices(s),action=selected?.action;
+    if(!action||selected.blocked||s!==openedState||s.phase!==openedPhase||s.turn!==openedTurn||room?.revision!==openedRevision||
         pending||C.isComputer(s,C.actor(s))||room&&(room.busy||room.seat!==C.actor(s))||
-        !choices.some(a=>a.length===selected.length&&a.every((v,i)=>v===selected[i]))){dialog.close();return;}
-    dialog.close();act(selected);
+        !choices.some(a=>a.length===action.length&&a.every((v,i)=>v===action[i]))){dialog.close();return;}
+    dialog.close();act(action);
   },'primary');
   confirm.hidden=true;
-  for(const {action,id,label} of entries){
-    const card=C.cards[id],option=btn(label,()=>{
-      selected=action;for(const item of list.children)item.setAttribute('aria-pressed',String(item===option));
-      detail.textContent=card?(localAbility(card)||card.catalog?.ability||stats(card)):label;
-      confirm.textContent=(labels[action[0]]||'행동')+' 확정';confirm.hidden=false;
+  const options=entries.map(entry=>{
+    const card=C.cards[entry.id];
+    const choose=()=>{
+      selected=entry;for(const item of list.children)item.setAttribute('aria-pressed',String(item===option));
+      const outcome=actorSeat?decisionText(entry.action,actorSeat):'';
+      detail.replaceChildren();
+      if(card||!outcome)detail.append(el('span',card?cardSummary(card):entry.label));
+      if(outcome)detail.append(el('strong',outcome));
+      if(entry.note)detail.append(el('span',entry.note));
+      confirm.textContent=entry.blocked||entry.confirm||(labels[entry.action[0]]||'행동')+' 확정';
+      confirm.disabled=!!entry.blocked;confirm.hidden=false;
+      option.scrollIntoView({block:'nearest',inline:'nearest'});
+    };
+    const option=btn(entry.label,()=>{
+      // A second tap on the chosen option confirms it.
+      if(selected===entry&&!confirm.disabled){confirm.click();return;}
+      choose();
     },card?'turn-picker-card':'turn-picker-action');
     option.setAttribute('aria-pressed','false');
-    if(card){const art=cardSeal(id);art.alt='';option.prepend(art);}
+    if(card){const art=cardSeal(entry.id);art.alt='';option.prepend(art);}
+    if(entry.blocked){option.classList.add('blocked');option.append(el('small',entry.blocked));}
     list.append(option);
-  }
+    return choose;
+  });
   dialog.append(heading,close,list,detail,confirm);dialog.addEventListener('close',()=>dialog.remove(),{once:true});
   document.querySelector('main').append(dialog);dialog.showModal();
+  options[entries.length===1?0:preferred]?.();
 }
 
+// The character opens and closes its own action menu; a lone roll happens at once.
 function launchPawnActions(){
-  const seat=C.actor(s),p=s.players[seat];
   const choices=room?room.choices:C.choices(s);
   if(choices.length===1&&choices[0][0]==='roll'){act(choices[0]);return;}
-  const entries=choices.filter(([k])=>!['route','direction','buySymbol','sellSymbol','liquidate'].includes(k))
-    .map(action=>({action,id:actionCard(action,p),label:action[0]==='buyCard'?C.cards[action[1]].name+' · '+C.cards[action[1]].cost+'G':
-      [labels[action[0]],action.length>1?opts(action,p):''].filter(Boolean).join(' · ')}));
-  if(entries.length)openTurnPicker(entries,p.name+' 행동');
-  else $('buttons').querySelector('button,select')?.focus();
+  if(handPanel.open&&handPanel.parentElement===viewport){handPanel.open=false;setActionMenu(true);return;}
+  setActionMenu(actionToggle.getAttribute('aria-expanded')!=='true');
 }
 
+// One option acts at once. A few plain options sit side by side. Cards and long lists open the choice sheet.
 function commandGroup(group,p,controls){
   const [kind]=group[0],single=group.length===1;
-  const box=el('div',null,'command'),preview=el('small',null,'decision-preview');
-  const button=btn('',()=>act(selected()),['roll','continue'].includes(kind)?'primary':'');
-  button.dataset.action=kind;
-  let select;
-  const selected=()=>single?group[0]:group[+select.value];
-  if(single){
-    button.textContent=group[0].length>1?labels[kind]+' · '+opts(group[0],p):labels[kind];
-  }else{
-    const label=el('label',labels[kind]);select=el('select');select.dataset.action=kind;
-    group.forEach((a,j)=>select.add(new Option(opts(a,p),j)));
-    if(['summon','invade','equip','cast','discard'].includes(kind)){
-      const j=group.findIndex(a=>a[1]===focusCard);if(j>=0)select.value=j;
+  const box=el('div',null,'command');box.dataset.kind=kind;
+  const pictured=group.some(a=>actionCard(a,p)!=null),territory=['level','element','exchange','transfer'].includes(kind);
+  if(single||!pictured&&!territory&&group.length<=3){
+    if(!single)box.append(el('small',labels[kind],'command-title'));
+    for(const action of group){
+      const button=btn('',()=>act(action),['roll','continue'].includes(kind)?'primary':'');
+      button.dataset.action=kind;
+      button.append(el('span',single?(action.length>1?labels[kind]+' · '+opts(action,p):labels[kind]):opts(action,p)));
+      const outcome=decisionText(action,p);
+      if(outcome)button.append(el('small',outcome,'decision-preview'));
+      box.append(button);
     }
-    label.append(select);box.append(label);button.textContent=labels[kind]+' 확정';
-    select.onchange=()=>refresh();
+  }else{
+    // A land picked on the map narrows its commands to that land; a card picked in the hand is chosen first.
+    const here=territory&&inspect>=0?group.filter(a=>a[1]===inspect):[],listed=here.length?here:group;
+    const entries=listed.map(action=>({action,id:actionCard(action,p),label:opts(action,p)}));
+    const preferred=['summon','invade','equip','cast','discard'].includes(kind)?listed.findIndex(a=>a[1]===focusCard):-1;
+    const title=labels[kind]+(here.length?' · '+(inspect+1)+'번 칸':'');
+    box.append(openerButton(kind,title,listed.length,()=>openTurnPicker(entries,title,preferred)));
   }
-  if(!single&&group.some(a=>actionCard(a,p)!=null)){
-    const picture=btn('그림으로 고르기',()=>openTurnPicker(group.map(action=>({action,id:actionCard(action,p),label:opts(action,p)})),labels[kind]),'picture-select');
-    box.append(picture);
-  }
-  function refresh(){preview.textContent=decisionText(selected(),p);preview.hidden=!preview.textContent;}
-  refresh();box.append(button,preview);controls.append(box);
+  controls.append(box);
+}
+
+// A tapped hand card shows its own actions in a bubble above the card.
+function placeCardPopup(){
+  const panel=$('detail'),hand=$('hand'),card=hand.querySelectorAll('.card')[focusCard];
+  if(!card||!panel.classList.contains('card-popup')||!panel.childElementCount)return;
+  const center=handPanel.offsetLeft+card.offsetLeft-hand.scrollLeft+card.offsetWidth/2;
+  const width=panel.offsetWidth,left=Math.max(6,Math.min(viewport.clientWidth-width-6,center-width/2));
+  panel.style.left=left+'px';
+  panel.style.bottom=(viewport.clientHeight-handPanel.offsetTop+10)+'px';
+  panel.style.setProperty('--arrow',Math.max(16,Math.min(width-16,center-left))+'px');
+}
+function closeCardPopup(){
+  focusCard=-1;$('detail').replaceChildren();
+  for(const card of $('hand').querySelectorAll('.card')){card.classList.remove('active');card.setAttribute('aria-pressed','false');}
 }
 
 function showHandSelection(p,choices){
   const panel=$('detail');panel.replaceChildren();
-  const id=p.hand[focusCard],c=C.cards[id];if(!c)return;
+  // Over the map the bubble floats above the tray; in battle it stays inside the tray.
+  const floating=handPanel.parentElement===viewport,home=floating?viewport:handPanel;
+  if(panel.parentElement!==home)home.append(panel);
+  panel.classList.toggle('card-popup',floating);
+  const id=p.hand[focusCard],c=C.cards[id];if(!c||floating&&!handPanel.open)return;
   const actions=choices.filter(([k,x])=>['cast','summon','invade','equip','discard','sacrifice'].includes(k)&&x===focusCard);
   const name=el('strong',c.name),buttons=el('div',null,'hand-actions');
-  panel.append(name,el('span',localAbility(c)||c.catalog?.ability||stats(c)));
+  panel.append(name,el('span',cardSummary(c)));
   if(!actions.length&&C.price(p,c,s)>p.cash){
     panel.append(el('small','현재 마력 '+p.cash+'G · 사용 비용까지 '+(C.price(p,c,s)-p.cash)+'G 부족'));
   }
   buttons.append(btn('카드 상세',()=>showCatalogCard(c,id)));
   for(const action of actions)buttons.append(btn(labels[action[0]],()=>act(action),'primary'));
   panel.append(buttons);
+  if(floating){
+    const close=btn('✕',closeCardPopup,'card-popup-close');close.setAttribute('aria-label','카드 선택 닫기');
+    panel.append(close);placeCardPopup();
+  }
 }
 
 function seatSummary(seat){

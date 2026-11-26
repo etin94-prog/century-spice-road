@@ -33,9 +33,15 @@ const {chromium}=require('playwright');
             const label=[...document.querySelectorAll('#buttons label')].find(l=>l.textContent.startsWith(labels[kind]));
             const [asset,quantity]=label.querySelectorAll('select');asset.value=x;asset.onchange();quantity.value=y;label.querySelector('button').click();
           }else{
-            const select=document.querySelector('select[data-action="'+kind+'"]');
-            if(select){select.value=index;select.onchange();}
-            document.querySelector('button[data-action="'+kind+'"]').click();
+            // One button per option acts at once; cards and long lists open the choice sheet.
+            const direct=document.querySelectorAll('button[data-action="'+kind+'"]');
+            if(direct.length)direct[direct.length>1?index:0].click();
+            else{
+              if(document.querySelector('#buttons select[data-action]'))throw Error('드롭다운 명령이 남아 있음');
+              document.querySelector('#buttons [data-open="'+kind+'"]').click();
+              document.querySelectorAll('#turnPicker .turn-picker-cards button:not(.blocked)')[index].click();
+              document.querySelector('#turnPicker > .primary')?.click();
+            }
           }
           return kind;
         });

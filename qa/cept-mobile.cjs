@@ -85,11 +85,13 @@ const {chromium}=require('playwright');
       await page.tap('#mapViews summary');await page.tap('#mapViews [data-zoom="2.8"]');
       await page.tap('#mapViews summary');await page.tap('#mapHome');
       await page.evaluate(()=>{s.players[0].word=1;});
+      // The character rolls at once when rolling is the only choice; otherwise it opens its action menu.
+      const onlyRoll=await page.evaluate(()=>C.choices(s).length===1);
       await page.locator('#map .pawn-action').tap();
-      const pawnMenu=page.locator('#turnPicker');
-      if(await pawnMenu.isVisible()){
-        await pawnMenu.getByRole('button',{name:'주사위 굴리기',exact:true}).tap();
-        await pawnMenu.getByRole('button',{name:'주사위 굴리기 확정',exact:true}).tap();
+      if(!onlyRoll){
+        assert.equal(await page.locator('#matchActionsToggle').getAttribute('aria-expanded'),'true');
+        assert.ok(await page.locator('#buttons [data-action],#buttons [data-open]').first().isVisible());
+        await page.locator('#mapRoll').tap();
       }
       await page.locator('.route-option').first().waitFor();
       const at=await page.evaluate(()=>C.routePreview(s,C.choices(s)[0]).at);
@@ -105,10 +107,11 @@ const {chromium}=require('playwright');
         const choice=C.choices(s).filter(a=>a[0]==='level').at(-1);
         return {cost:C.levelCost(tile,choice[2]),tile:at,level:choice[2]};
       });
-      const levels=page.locator('select[data-action=level]');
-      await levels.selectOption({index:await levels.locator('option').count()-1});
-      assert.ok((await levels.locator('xpath=ancestor::div[contains(@class,"command")][1]').innerText()).includes('잔액 '+(3000-expected.cost)+'G'));
-      await page.locator('button[data-action=level]').tap();
+      await page.locator('[data-open=level]').tap();
+      const levels=page.locator('#turnPicker');
+      await levels.locator('.turn-picker-cards button').last().tap();
+      assert.ok((await levels.locator('.turn-picker-detail').innerText()).includes('잔액 '+(3000-expected.cost)+'G'));
+      await levels.locator('.primary').tap();
       assert.equal(await page.evaluate(at=>s.tiles[at].level,expected.tile),expected.level);
       if(edition==='ps2'){
         await page.evaluate(()=>{
@@ -117,11 +120,12 @@ const {chromium}=require('playwright');
           Object.assign(s.players[0],{pos:C.board(s).links[17][0],previous:null,cash:25,hand:[]});
           s.phase='fork';s.remaining=1;C.play(s,['route',17]);seenMove=s.lastMove.sequence;render();
         });
-        const shelf=page.locator('select[data-action=buyCard]'),buy=page.locator('button[data-action=buyCard]');
-        assert.equal(await shelf.locator('option').count(),4);
-        await shelf.selectOption({index:1});assert.equal(await buy.isDisabled(),true);
+        await page.locator('[data-open=buyCard]').tap();
+        const shelf=page.locator('#turnPicker .turn-picker-cards button'),buy=page.locator('#turnPicker > .primary');
+        assert.equal(await shelf.count(),4);
+        await shelf.nth(1).tap();assert.equal(await buy.isDisabled(),true);
         assert.match(await buy.innerText(),/35G 부족/);
-        await shelf.selectOption({index:3});assert.equal(await buy.isDisabled(),false);
+        await shelf.nth(3).tap();assert.equal(await buy.isDisabled(),false);
         assert.match(await buy.innerText(),/25G에 구매 · 잔액 0G/);
         assert.ok((await buy.boundingBox()).height>=44);
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -136,11 +140,11 @@ const {chromium}=require('playwright');
         });
         await page.locator('#matchActionsToggle').tap();
         await page.tap('button[data-action=cast]');
-        const options=page.locator('select[data-action=targetLand]');
-        await options.selectOption({index:1});assert.equal(await options.locator('option').count(),2);
-        assert.match(await page.locator('#buttons .decision-preview').innerText(),/적 영지.*셉터 4.*HP 20\/30 → 0.*격파/);
-        assert.ok((await page.locator('button[data-action=targetLand]').boundingBox()).height>=44);
-        await page.tap('button[data-action=targetLand]');
+        const options=page.locator('button[data-action=targetLand]');
+        await options.first().waitFor();assert.equal(await options.count(),2);
+        assert.match(await options.nth(1).innerText(),/적 영지.*셉터 4.*HP 20\/30 → 0.*격파/);
+        assert.ok((await options.nth(1).boundingBox()).height>=44);
+        await options.nth(1).tap();
         assert.equal(await page.evaluate(()=>s.tiles[4].unit),null);
         const wanted=await page.evaluate(()=>{
           cancelMapEffect();stopWalk();clearTimeout(timer);
@@ -151,10 +155,8 @@ const {chromium}=require('playwright');
         });
         await page.locator('#matchActionsToggle').tap();
         await page.tap('button[data-action=cast]');
-        const draw=page.locator('select[data-action=foresightCard]');
-        await draw.waitFor();
-        assert.equal(await draw.locator('option').count(),6);
-        await page.locator('#buttons .command').filter({has:draw}).getByRole('button',{name:'그림으로 고르기'}).tap();
+        const draw=page.locator('[data-open=foresightCard]');
+        await draw.waitFor();await draw.tap();
         const picker=page.locator('#turnPicker');
         assert.equal(await picker.locator('.turn-picker-card .card-face').count(),6);
         await picker.locator('.turn-picker-card').nth(3).tap();
@@ -195,7 +197,40 @@ const {chromium}=require('playwright');
           return {controls:boxes.length,overlap:boxes.some((a,i)=>boxes.slice(i+1).some(b=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top)),
             overflow:document.documentElement.scrollWidth>innerWidth};
         });
-        assert.ok(layout.controls>=8);assert.equal(layout.overlap,false);assert.equal(layout.overflow,false);
+        assert.ok(layout.controls>=4);assert.equal(layout.overlap,false);assert.equal(layout.overflow,false);
+        // The action menu opens beside the cepter without covering it. Nothing is a drop-down; long lists open a sheet.
+        const menu=await page.evaluate(()=>{
+          const box=e=>e.getBoundingClientRect(),panel=box(document.querySelector('.match-actions')),pawn=box(document.querySelector('#map .pawn-action'));
+          return {selects:document.querySelectorAll('#buttons select').length,openers:document.querySelectorAll('#buttons [data-open]').length,
+            covered:pawn.left<panel.right&&pawn.right>panel.left&&pawn.top<panel.bottom&&pawn.bottom>panel.top,
+            inside:panel.left>=0&&panel.right<=innerWidth&&panel.top>=0&&panel.bottom<=innerHeight};
+        });
+        assert.equal(menu.selects,0);assert.ok(menu.openers>=2,JSON.stringify(menu));
+        assert.equal(menu.covered,false,JSON.stringify(menu));assert.equal(menu.inside,true,JSON.stringify(menu));
+        await page.locator('#map .pawn-action').tap();
+        assert.equal(await page.locator('#buttons').isVisible(),false);
+        await page.locator('#map .pawn-action').tap();
+        await page.locator('[data-open=invade]').tap();
+        const sheet=page.locator('#turnPicker');
+        await sheet.locator('.turn-picker-card').first().tap();
+        const confirm=await sheet.locator('.primary').boundingBox();
+        assert.ok(confirm.y>=0&&confirm.y+confirm.height<=390,'choice sheet confirm '+JSON.stringify(confirm));
+        assert.match(await sheet.locator('.turn-picker-detail').innerText(),/통행료/);
+        await page.touchscreen.tap(422,20);
+        await sheet.waitFor({state:'detached'});
+        // A hand card opens a bubble above itself with the actions for that card.
+        await page.locator('#seats .seat').first().tap();
+        await page.locator('#hand .card').first().tap();
+        const bubble=page.locator('#detail.card-popup');
+        assert.ok(await bubble.getByRole('button',{name:'영지 침략',exact:true}).isVisible());
+        assert.ok(await page.evaluate(()=>{
+          const box=document.querySelector('#detail').getBoundingClientRect(),tray=document.querySelector('#handPanel').getBoundingClientRect();
+          return box.top>=0&&box.bottom<=tray.top&&box.left>=0&&box.right<=innerWidth;
+        }),'card bubble sits above the tray');
+        await page.touchscreen.tap(30,150);
+        await page.waitForFunction(()=>!document.querySelector('#detail').childElementCount);
+        await page.locator('#seats .seat').first().tap();
+        assert.equal(await page.locator('#handPanel').evaluate(panel=>panel.open),false);
         const tracks=await page.evaluate(()=>{
           const first=currentTrack;
           audio.dispatchEvent(new Event('ended'));return [first,currentTrack,audio.loop];

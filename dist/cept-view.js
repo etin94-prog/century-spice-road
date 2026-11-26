@@ -80,10 +80,16 @@ function setupMatchInfo(){
   $('closeMatchInfo').onclick=()=>dialog.close();
 }
 setupMatchInfo();
-$('matchActionsToggle').onclick=event=>{
-  const button=event.currentTarget;
-  button.setAttribute('aria-expanded',String(button.getAttribute('aria-expanded')!=='true'));
-};
+// The action menu opens beside the active cepter. The choice to fold it lasts for the current decision.
+const actionMenu=$('buttons').closest('aside'),actionToggle=$('matchActionsToggle');
+let menuState={game:null,key:'',open:false};
+function setActionMenu(open){
+  menuState.open=open;
+  actionToggle.setAttribute('aria-expanded',String(open));
+  actionToggle.setAttribute('aria-label',open?'행동 메뉴 접기':'행동 메뉴 열기');
+  focusMapTile(cameraTile);
+}
+actionToggle.onclick=()=>setActionMenu(actionToggle.getAttribute('aria-expanded')!=='true');
 function lobby(){
   cancelMapEffect();stopWalk();
   if(room){location.assign(location.pathname+(C.edition==='ps2'?'':'?edition='+C.edition));return;}
@@ -124,7 +130,10 @@ try{handPanel.open=localStorage.getItem('cept-hand-open')==='1';}catch{}
 handPanel.addEventListener('toggle',()=>{
   try{localStorage.setItem('cept-hand-open',handPanel.open?'1':'0');}catch{}
   $('seats').querySelector('[aria-controls=handPanel]')?.setAttribute('aria-expanded',String(handPanel.open));
+  if(!handPanel.open&&$('detail').classList.contains('card-popup'))closeCardPopup();
+  if(s&&!s.battle&&!$('game').hidden)focusMapTile(cameraTile);
 });
+$('hand').addEventListener('scroll',()=>placeCardPopup(),{passive:true});
 seats();lobby();
 function act(a){
   if(room){roomAction(a);return;}
@@ -319,34 +328,73 @@ try{
   const saved=localStorage.getItem('cept-map-zoom');
   if(mapViewButtons.some(b=>b.dataset.zoom===saved))mapZoom=saved;
 }catch{}
-function mapOffset(offset,frame,canvas){
-  return canvas<=frame?(frame-canvas)/2:Math.max(frame-canvas,Math.min(0,offset));
+// The map may slide until its edge meets the free area, so edge tiles never sit under a panel.
+function mapOffset(offset,start,end,canvas){
+  return canvas<=end-start?start+(end-start-canvas)/2:Math.max(end-canvas,Math.min(start,offset));
 }
+let mapFree={left:0,top:0,right:0,bottom:0};
+function measureMapFree(){
+  const width=viewport.clientWidth,height=viewport.clientHeight;
+  const free={left:0,top:matchHud.offsetHeight,right:width,bottom:height};
+  const dock=document.querySelector('#game .match-actions');
+  const panels=[];
+  if(handPanel.parentElement===viewport&&handPanel.open)panels.push(handPanel);
+  if(dock&&!dock.classList.contains('action-menu')&&dock.offsetHeight>64&&getComputedStyle(dock).visibility!=='hidden')panels.push(dock);
+  for(const panel of panels){
+    if(panel.offsetWidth>width*.62)free.bottom=Math.min(free.bottom,panel.offsetTop);
+    else if(panel.offsetLeft<width*.3)free.left=Math.max(free.left,panel.offsetLeft+panel.offsetWidth);
+    else free.right=Math.min(free.right,panel.offsetLeft);
+  }
+  if(free.bottom-free.top<96)free.bottom=height;
+  if(free.right-free.left<140){free.left=0;free.right=width;}
+  return mapFree=free;
+}
+function actionMenuShown(){
+  return actionMenu.classList.contains('action-menu')&&actionMenu.offsetHeight>0&&getComputedStyle(actionMenu).visibility!=='hidden';
+}
+// The roll button and the action menu form one stack: beside the figures when a side has room,
+// otherwise under their feet, never over them.
 function placeMapRoll(root,x,y,zoom){
-  if(mapRoll.hidden)return;
   const pawn=root.querySelector('.pawn-action');
-  if(!pawn)return;
+  actionMenu.style.maxHeight='';
+  const rollShown=!mapRoll.hidden,menuShown=actionMenuShown();
+  if(!pawn||!rollShown&&!menuShown)return;
   const tile=pawn.closest('.tile');
   const tileLeft=tile.offsetLeft-tile.offsetWidth/2;
-  const feetY=y+(tile.offsetTop+pawn.offsetTop)*zoom;
+  const feetY=y+(tile.offsetTop+pawn.offsetTop)*zoom,pawnHeight=pawn.offsetHeight*zoom;
   const width=viewport.clientWidth,height=viewport.clientHeight;
-  const buttonWidth=mapRoll.offsetWidth,buttonHeight=mapRoll.offsetHeight;
+  const rollWidth=rollShown?mapRoll.offsetWidth:0,rollHeight=rollShown?mapRoll.offsetHeight:0;
+  const menuWidth=menuShown?actionMenu.offsetWidth:0,menuHeight=menuShown?actionMenu.offsetHeight:0;
+  const gap=rollShown&&menuShown?6:0,stackWidth=Math.max(rollWidth,menuWidth),stackHeight=rollHeight+gap+menuHeight;
   const bounds=[...tile.querySelectorAll('.pawn')].map(piece=>{
     const center=x+(tileLeft+piece.offsetLeft)*zoom;
     const half=Math.max(piece.offsetWidth/2,piece.offsetHeight*.3)*zoom;
     return [center-half,center+half];
   });
-  const right=Math.max(...bounds.map(([,end])=>end))+8;
-  const before=Math.min(...bounds.map(([start])=>start))-buttonWidth-8;
-  const side=right+buttonWidth+4<=width?right:before;
-  const left=Math.max(4,Math.min(width-buttonWidth-4,side));
-  const top=feetY-Math.min(45,pawn.offsetHeight*zoom*.55)-buttonHeight/2;
-  const tools=$('mapViews'),menuHeight=tools.querySelector('summary').offsetHeight;
-  const minTop=left+buttonWidth+4>tools.offsetLeft?tools.offsetTop+menuHeight+4:matchHud.offsetHeight+5;
-  const handHeight=handPanel.parentElement===viewport?handPanel.querySelector('summary').offsetHeight+12:0;
-  const maxTop=Math.max(minTop,height-handHeight-buttonHeight-4);
-  mapRoll.style.setProperty('--roll-left',left+'px');
-  mapRoll.style.setProperty('--roll-top',Math.max(minTop,Math.min(maxTop,top))+'px');
+  const groupStart=Math.min(...bounds.map(([start])=>start)),groupEnd=Math.max(...bounds.map(([,end])=>end));
+  const right=groupEnd+10,before=groupStart-stackWidth-10;
+  // While another tile is inspected, or route arrows surround the cepter, the stack waits at the edge.
+  const away=cameraTile!==s.players[s.turn].pos||!rollShown&&['fork','direction'].includes(s.phase),wideView=width>height*1.1;
+  const side=away?0:right+stackWidth+4<=width?1:before>=4?-1:0;
+  const tools=$('mapViews'),toolsHeight=tools.querySelector('summary').offsetHeight;
+  const left=Math.max(4,Math.min(width-stackWidth-4,away?(wideView?tools.offsetLeft-stackWidth-6:(width-stackWidth)/2):side>0?right:side<0?before:(groupStart+groupEnd-stackWidth)/2));
+  const status=$('center'),underStatus=status.offsetHeight&&left<status.offsetLeft+status.offsetWidth+4?status.offsetTop+status.offsetHeight+4:0;
+  const minTop=Math.max(underStatus,left+stackWidth+4>tools.offsetLeft?tools.offsetTop+toolsHeight+4:matchHud.offsetHeight+5);
+  const floor=handPanel.parentElement===viewport&&(handPanel.open||left+stackWidth+4>handPanel.offsetLeft)?handPanel.offsetTop-6:height-4;
+  const bubble=$('detail'),underBubble=bubble.classList.contains('card-popup')&&bubble.offsetHeight&&left<bubble.offsetLeft+bubble.offsetWidth&&left+stackWidth>bubble.offsetLeft;
+  const maxTop=Math.max(minTop,(underBubble?Math.min(floor,bubble.offsetTop-6):floor)-stackHeight);
+  const body=feetY-Math.min(45,pawnHeight*.55);
+  let top=away?(wideView?minTop:maxTop):side?body-(menuShown?stackHeight:rollHeight)/2:feetY+10;
+  // Under the feet is full: use the space over the heads when the stack fits there.
+  if(!away&&!side&&top>maxTop&&feetY-pawnHeight-8-stackHeight>=minTop)top=feetY-pawnHeight-8-stackHeight;
+  top=Math.max(minTop,Math.min(maxTop,top));
+  const align=size=>left+(side>0?0:side<0?stackWidth-size:(stackWidth-size)/2);
+  mapRoll.style.setProperty('--roll-left',align(rollWidth)+'px');
+  mapRoll.style.setProperty('--roll-top',top+'px');
+  actionMenu.style.setProperty('--menu-left',align(menuWidth)+'px');
+  actionMenu.style.setProperty('--menu-top',(top+rollHeight+gap)+'px');
+  // A long menu scrolls inside itself instead of leaving the screen.
+  if(menuShown)actionMenu.style.maxHeight=Math.max(96,floor-top-rollHeight-gap)+'px';
 }
 function setMapCamera(root,x,y,zoom){
   root.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')';
@@ -357,17 +405,19 @@ function focusMapTile(index){
   const root=$('map'),tile=root.children[index];
   if(!tile?.classList.contains('tile')||!root.clientWidth||!viewport.clientHeight)return;
   const w=root.clientWidth,h=root.clientHeight,viewWidth=viewport.clientWidth,viewHeight=viewport.clientHeight;
-  const header=matchHud.offsetHeight;
-  const playableHeight=Math.max(40,viewHeight-header-28);
+  const free=measureMapFree(),freeWidth=free.right-free.left,freeHeight=free.bottom-free.top;
   const overview=Number(mapZoom)===1;
   const cover=Math.max(viewWidth/w,viewHeight/h);
-  const zoom=overview?Math.min(1,viewWidth/w,playableHeight/h):
+  const zoom=overview?Math.min(1,freeWidth/w,freeHeight/h):
     Math.max(Number(mapZoom),cover*Number(mapZoom)/1.8);
   viewport.classList.toggle('pannable',!overview);
   root.style.setProperty('--camera-zoom',zoom);
-  const x=mapOffset(viewWidth*.5-tile.offsetLeft*zoom,viewWidth,w*zoom);
-  const y=overview?header+(playableHeight-h*zoom)/2:
-    mapOffset(header+playableHeight*.48-(tile.offsetTop+tile.offsetHeight*.5)*zoom,viewHeight,h*zoom);
+  // The pawn stands above its tile, so the tile sits a little below the middle of the free area.
+  // An open action menu takes the right half on a wide screen and the lower part on a tall one.
+  const menuOpen=actionMenuShown()&&actionToggle.getAttribute('aria-expanded')==='true';
+  const wide=freeWidth>freeHeight*1.1;
+  const x=mapOffset(free.left+freeWidth*(menuOpen&&wide?.36:.5)-tile.offsetLeft*zoom,free.left,free.right,w*zoom);
+  const y=mapOffset(free.top+freeHeight*(menuOpen&&!wide?.3:.56)-(tile.offsetTop+tile.offsetHeight*.5)*zoom,free.top,free.bottom,h*zoom);
   setMapCamera(root,x,y,zoom);
 }
 for(const button of mapViewButtons){
@@ -383,6 +433,21 @@ function adjustMatchHud(){
   $('game').style.setProperty('--hud-height',matchHud.offsetHeight+'px');
   focusMapTile(cameraTile);
 }
+// A short pulse confirms a tap on phones that support it; it follows the sound-effect switch.
+document.addEventListener('click',e=>{
+  if(e.isTrusted&&$('effectsOn')?.checked&&e.target.closest?.('#game button,#turnPicker button'))navigator.vibrate?.(8);
+},true);
+// Sheets and drop-down menus close when the map behind them is tapped.
+document.addEventListener('click',e=>{
+  const target=e.target;
+  if(target instanceof HTMLDialogElement&&target.open&&target.matches('#turnPicker,#seatDialog,#cardDialog,#matchInfo,#musicPanel')){
+    const box=target.getBoundingClientRect();
+    if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom)target.close();
+  }
+  for(const menu of [$('matchMenu'),$('mapViews')])if(menu.open&&!menu.contains(target))menu.open=false;
+  const bubble=$('detail');
+  if(bubble.classList.contains('card-popup')&&bubble.childElementCount&&!target.closest?.('#detail,#hand .card,dialog'))closeCardPopup();
+});
 const matchResize=new ResizeObserver(adjustMatchHud);
 matchResize.observe(viewport);matchResize.observe(matchHud);
 let drag=null,ignoreMapClick=false;
@@ -399,8 +464,8 @@ viewport.addEventListener('pointermove',e=>{
   if(!drag.started){viewport.setPointerCapture(e.pointerId);drag.started=true;viewport.classList.add('dragging');}
   if(document.documentElement.classList.contains('cept-wide')&&matchMedia('(orientation:portrait)').matches)[dx,dy]=[dy,-dx];
   const map=$('map'),zoom=drag.zoom;
-  const x=mapOffset(drag.tx+dx,viewport.clientWidth,map.clientWidth*zoom);
-  const y=mapOffset(drag.ty+dy,viewport.clientHeight,map.clientHeight*zoom);
+  const x=mapOffset(drag.tx+dx,mapFree.left,mapFree.right,map.clientWidth*zoom);
+  const y=mapOffset(drag.ty+dy,mapFree.top,mapFree.bottom,map.clientHeight*zoom);
   setMapCamera(map,x,y,zoom);
 });
 function endDrag(e){if(drag?.id===e.pointerId){ignoreMapClick=drag.started;drag=null;viewport.classList.remove('dragging');}}
@@ -491,7 +556,8 @@ function map(){
   if(s.chainNotice)center.append(el('span',s.chainNotice,'chain-notice'));
   if(inspect>=0){
     const t=s.tiles[inspect],u=t.unit;
-    center.append(el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type));
+    const closeInspect=btn('✕',()=>{inspect=-1;render();},'inspect-close');closeInspect.setAttribute('aria-label','칸 정보 닫기');
+    center.append(closeInspect,el('small',(inspect+1)+'번 칸'),el('b',C.elements[t.type]||t.type));
     if(u){
       const c=C.cards[u.id],effect=C.cards.find(card=>u.enchant&&C.combo.key(card)===u.enchant);
       const status=u.poisoned?'독':u.confused?'혼란':u.enchant==='paralysis'?'마비':u.enchant==='phantasm'?'판타즘':effect?.name;
@@ -504,7 +570,8 @@ function map(){
     if(targets.has(inspect)){const action=targets.get(inspect);center.append(btn((inspect+1)+'번 · '+labels[action[0]]+' 확정',()=>act(action),'primary'));}
     return;
   }
-  const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.winner>=0?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.winner>=0?winLabel():s.die?'주사위 '+s.die:m.name),el('span','경유 요새 '+p.flags.length+' / '+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.phase==='over'?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.phase==='over'?winLabel():s.die?'주사위 '+s.die:m.name),el('span','요새 '+p.flags.length+'/'+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  center.dataset.rolled=String(!!s.die||s.phase==='over');
 }
 function stopWalk(){
   if(!activeWalk)return;
@@ -559,7 +626,11 @@ async function walkPath(move){
   finally{if(activeWalk===walk){stopWalk();render();}}
 }
 
-function winLabel(){return s.leaders?.length>1?'공동 1위':s.teams?String.fromCharCode(65+s.teams[s.winner])+'팀 승리':s.players[s.winner].name+' 승리';}
+function sideName(j){return s.teams?String.fromCharCode(65+s.teams[j])+'팀':s.players[j].name;}
+function winLabel(){
+  const result=C.outcome(s);
+  return result.winners.length?sideName(result.winners[0])+' 승리':result.tie?'공동 1위 · 승자 없음':'승자 없음';
+}
 function render(){
   clearTimeout(timer);
   mapRoll.hidden=true;
@@ -605,8 +676,10 @@ function render(){
     }else box.setAttribute('aria-haspopup','dialog');
     box.setAttribute('aria-label',v.name+' · 총마력 '+wealth+'G · '+(ownHand?'손패':'셉터 정보'));
     box.style.setProperty('--color',colors[j]);box.style.setProperty('--progress',Math.max(0,Math.min(100,100*wealth/s.target))+'%');
-    const name=el('b',v.name+(s.teams?' · '+String.fromCharCode(65+s.teams[j])+'팀':''));name.title=name.textContent;
-    box.append(figure(j,v.name),name,el('span','마력 '+v.cash+'G'),el('span',(s.teams?'팀 총 ':'총 ')+wealth+'G','seat-wealth'));
+    const name=el('b',v.name);name.title=v.name+(s.teams?' · '+String.fromCharCode(65+s.teams[j])+'팀':'');
+    if(s.teams)name.append(el('em',String.fromCharCode(65+s.teams[j])+'팀','seat-team'));
+    const cash=el('span',null,'seat-cash');cash.append(el('i','마력 '),v.cash+'G');
+    box.append(figure(j,v.name),name,cash,el('span',(s.teams?'팀 총 ':'총 ')+wealth+'G','seat-wealth'));
     if(wealth>=s.target)box.append(el('small','성 귀환 시 승리','castle-goal'));
     const symbols=v.symbols.reduce((a,b)=>a+b,0);if(symbols)box.append(el('small','호부 '+symbols));
     return box;
@@ -614,7 +687,7 @@ function render(){
   if($('seatDialog').open)seatSummary(Number($('seatDialog').dataset.seat));
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
-  $('hint').textContent=over?(s.endReason==='roundLimit'?'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.':'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':hints[s.phase];
+  $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':hints[s.phase];
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
   const controls=$('buttons');controls.replaceChildren();
   if(pending){
@@ -625,6 +698,7 @@ function render(){
     if((s.replay?.steps.length||s.replayAvailable)&&typeof replayResult==='function')
       replayResult(controls,s.replay,room?.id);
     if(s.campaign&&typeof campaignResult==='function')campaignResult(controls,s);
+    const verdict=C.outcome(s);
     const standings=el('ol',null,'match-standings');
     standings.setAttribute('aria-label','최종 순위');
     const totals=s.players.flatMap((p,j)=>!s.teams||s.teams.indexOf(s.teams[j])===j?[[j,C.total(s,j)]]:[]);
@@ -633,8 +707,7 @@ function render(){
     let rank=1;
     totals.forEach(([j,wealth],i)=>{
       if(i&&(totals[i-1][1]!==wealth||goalWinner(totals[i-1][0])))rank=i+1;
-      const name=s.teams?String.fromCharCode(65+s.teams[j])+'팀':s.players[j].name;
-      const row=el('li');row.append(el('span',rank+'위 · '+name),el('strong',wealth+'G'));standings.append(row);
+      const row=el('li');row.append(el('span',(rank===1&&verdict.tie?'공동 ':'')+rank+'위 · '+sideName(j)),el('strong',wealth+'G'));standings.append(row);
     });
     controls.append(standings);
     if(s.reward){
@@ -643,7 +716,7 @@ function render(){
       for(const id of s.reward){const c=C.cards[id];grid.append(archiveCard(c.catalog.path));}
       result.append(grid);controls.append(result);
     }
-    const retry=s.mapGoal&&C.board(s).storyGoal&&s.players.some(p=>!p.ai)&&!s.players.some((v,j)=>!v.ai&&C.allied(s,j,s.winner));
+    const retry=s.mapGoal&&C.board(s).storyGoal&&s.players.some(p=>!p.ai)&&!s.players.some((v,j)=>!v.ai&&verdict.winners.includes(j));
     const storyFinished=C.edition==='ps2'&&s.mapGoal&&C.board(s).stage===16&&!retry;
     if(storyFinished)controls.append(el('p','스토리 맵 최종전 클리어','primary story-complete'));
     const nextId=retry?s.mapId:storyFinished?null:C.edition==='ps2'?'ps2-'+(C.board(s).stage+1):C.board(s).next;
@@ -670,9 +743,17 @@ function render(){
   const choices=local?(room?room.choices:C.choices(s)):[];
   if(local&&s.phase==='shop')shopMenu(controls,choices,p);
   const roll=choices.find(([kind])=>kind==='roll');
-  const actionDock=$('buttons').closest('aside'),optional=!!roll&&choices.some(([kind])=>kind!=='roll');
-  actionDock.classList.toggle('optional-actions',optional);
-  $('matchActionsToggle').setAttribute('aria-expanded','false');
+  // A decision that must be made opens the menu; beside a roll it waits folded until asked for.
+  const optional=!!roll&&choices.some(([kind])=>kind!=='roll'),anchored=choices.length>0&&!s.battle;
+  actionMenu.classList.toggle('action-menu',anchored);
+  const menuKey=[s.round,s.turn,s.phase,s.logSequence||0,room?.revision||0,optional].join(':');
+  if(menuState.game!==s||menuState.key!==menuKey){
+    menuState={game:s,key:menuKey,open:!optional};
+    // A card bubble left open from reading the hand must not cover a new decision.
+    if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;
+  }
+  actionToggle.setAttribute('aria-expanded',String(anchored&&menuState.open));
+  actionToggle.setAttribute('aria-label',anchored&&menuState.open?'행동 메뉴 접기':'행동 메뉴 열기');
   if(roll){
     mapRoll.hidden=false;
     mapRoll.onclick=()=>act(roll);
@@ -716,5 +797,6 @@ function render(){
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
   if(owner&&typeof showHandCombos==='function')showHandCombos(hand,owner.hand);
   $('log').replaceChildren(...(s.log.length?s.log:['아직 진행 기록이 없습니다.']).map(t=>el('li',t)));
+  if(!s.battle)focusMapTile(cameraTile);
   if(!room&&!over&&C.isComputer(s,i))timer=setTimeout(()=>act(C.ai(s)),550+(s.phase==='result'?battleReplayDuration(s.battle):0));
 }
