@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
       const url=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));
       url.searchParams.set('edition',edition);await page.goto(url.href);
       await page.locator('#editor summary').tap();
-      assert.equal(await page.locator('.catalog-entry').count(),24);
+      await page.waitForFunction(()=>document.querySelectorAll('.catalog-entry').length===24);
       await page.tap('#nextCards');assert.match(await page.locator('#cardResults').innerText(),/25–48/);
       await page.selectOption('#cardScope','deck');assert.ok(await page.locator('.catalog-entry').count()>0);
       await page.locator('#editor summary').tap();
