@@ -1,5 +1,36 @@
 {
   "rules": {
+    "ceptRooms": {
+      "$id": {
+        ".read": "auth != null && auth.uid === data.child('meta/host').val()",
+        ".write": "auth != null && $id.matches(/^[a-f0-9]{32}$/) && ((!data.exists() && newData.child('meta/host').val() === auth.uid && newData.child('seats/s0').val() === auth.uid && newData.child('revision').val() === 0) || data.child('meta/host').val() === auth.uid)",
+        "meta": {
+          ".read": "auth != null",
+          ".validate": "newData.hasChildren(['host','edition','needed']) && newData.child('needed').isNumber() && newData.child('needed').val() >= 2 && newData.child('needed').val() <= 4 && (!data.exists() || (data.child('host').val() === newData.child('host').val() && data.child('edition').val() === newData.child('edition').val() && data.child('needed').val() === newData.child('needed').val()))"
+        },
+        "seats": {
+          ".read": "auth != null",
+          "$slot": {
+            ".write": "auth != null && !data.exists() && newData.val() === auth.uid && root.child('ceptRooms').child($id).child('meta').exists() && ($slot === 's1' || ($slot === 's2' && root.child('ceptRooms').child($id).child('meta/needed').val() >= 3) || ($slot === 's3' && root.child('ceptRooms').child($id).child('meta/needed').val() === 4)) && data.parent().child('s0').val() !== auth.uid && data.parent().child('s1').val() !== auth.uid && data.parent().child('s2').val() !== auth.uid && data.parent().child('s3').val() !== auth.uid",
+            ".validate": "newData.isString()"
+          }
+        },
+        "connections": { ".read": "auth != null" },
+        "replay": {
+          ".read": "auth != null && (data.parent().child('seats/s0').val() === auth.uid || data.parent().child('seats/s1').val() === auth.uid || data.parent().child('seats/s2').val() === auth.uid || data.parent().child('seats/s3').val() === auth.uid)",
+          ".validate": "newData.isString()"
+        },
+        "views": {
+          "$slot": { ".read": "auth != null && root.child('ceptRooms').child($id).child('seats').child($slot).val() === auth.uid" }
+        },
+        "pending": {
+          ".write": "auth != null && !data.exists() && newData.exists() && root.child('ceptRooms').child($id).child('views').exists() && root.child('ceptRooms').child($id).child('seats').child('s' + newData.child('seat').val()).val() === auth.uid && newData.child('seat').val() === root.child('ceptRooms').child($id).child('actor').val() && newData.child('revision').val() === root.child('ceptRooms').child($id).child('revision').val()",
+          ".validate": "newData.hasChildren(['seat','revision','action']) && newData.child('action').isString() && newData.child('action').val().length <= 128",
+          "seat": {}, "revision": {}, "action": {},
+          "$other": { ".validate": false }
+        }
+      }
+    },
     "rooms": {
       "$room": {
         ".read": "auth != null && (data.child('host').val() === auth.uid || data.child('guest').val() === auth.uid)",

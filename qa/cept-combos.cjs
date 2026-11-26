@@ -10,6 +10,22 @@ const cast=(s,n,target)=>{s.phase='spell';s.players[s.turn].hand.unshift(id(n));
 assert.equal(C.combo.recipes.length,108);
 assert.equal(C.combo.matches(C.combo.recipes[70],['catastrophe']),false);
 assert.equal(C.combo.matches(C.combo.recipes[4],['gnome','greed']),true);
+assert.equal(C.combo.matches(C.combo.recipes[20],['quetzalcoatl','clawoftheghoul']),false);
+for(const [spell,element] of [['icestorm',0],['fireexplosion',1],['thunderstorm',2],['deathcloud',3]]){
+  const s=C.start(4,4,5000,'classic',C.presets.fire,C.presets.fire,2,'teams');
+  const names=['chimera','kelpie','dryad','wyvern'],creature=names[element];
+  for(let i=1;i<=4;i++){land(s,i,creature,i-1);s.tiles[i].type=(element+1)%4;s.tiles[i].unit.hp=i===2?10:30;}
+  s.tiles[4].unit.enchant='phantasm';land(s,5,names[(element+1)%4],1);
+  const otherHP=s.tiles[5].unit.hp;s.players[0].cash=2000;
+  cast(s,spell);assert.deepEqual(s.mapEffect.hits.map(h=>[h.at,h.damage,h.defeated]),[[1,20,false],[2,10,true],[3,20,false]]);
+  assert.equal(s.tiles[4].unit.hp,30);assert.equal(s.tiles[5].unit.hp,otherHP);
+}
+{
+  const s=C.start(2,2);s.players[0].cash=1000;land(s,1,'chimera',0);land(s,2,'goblin',1);
+  const hp=s.tiles[1].unit.hp;cast(s,'sonicwave');assert.equal(s.tiles[1].unit.hp,hp-20);assert.equal(s.tiles[2].unit.hp,card('goblin').hp);
+  s.players[0].flags=C.board(s).forts.slice();s.players[0].pos=1;s.remaining=1;s.phase='fork';s.tiles[1].unit.st=75;
+  play(s,'route',0);assert.equal(s.tiles[1].unit.st,80);
+}
 {
  const s=C.start(2,0,3000,'classic',C.practiceBook(4),C.practiceBook(4),2);
  land(s,1,'boggart',0);land(s,2,'goblin',1);s.players[0].hand=[id('greed')];
@@ -48,7 +64,19 @@ function fight(att,guard,attackGear,guardGear,setup=()=>{}){
  }
  return s;
 }
+{
+ const s=fight('fighter','ninja',null,'clawoftheghoul',game=>{game.battle.invHP=80;});
+ assert.deepEqual(s.battle.strikes.map(hit=>hit.side),[1]);
+ assert.ok(s.battle.lines.some(line=>line.includes('마비')));
+ const idol=fight('fighter','goblin',null,null,game=>land(game,7,'silveridol',0));
+ assert.equal(idol.battle.strikes[0].side,1);
+ assert.equal(card('silveridol').first,false);
+}
 assert.equal(fight('executor','caitsith',null,'buckler').battle.finalHP[1],30);
+{
+ const s=fight('manticore','goblin',null,null,s=>{s.players[0].hand=[id('goblin'),id('manna'),id('manna')];});
+ assert.equal(s.battle.attackST,30);assert.equal(s.battle.startHP[0],30);
+}
 assert.equal(fight('goblin','caitsith',null,'buckler').battle.finalHP[1],30);
 assert.equal(fight('cerberus','goblin','rathunter').battle.finalHP[1],0);
 assert.equal(fight('executor','cornfolk',null,'goldengoose').players[1].cash,1600-card('goldengoose').cost);
@@ -95,5 +123,66 @@ for(let i=0;i<108;i++){
    assert.ok(s.players.every(p=>Number.isFinite(p.cash)),'cash '+i);
  }
  assert.ok(s.winner>=0,'no winner for combo '+(i+1));
+}
+{
+ const s=C.start(2,2),q=s.players[1],goblin=id('goblin');
+ s.players[0].cash=5000;
+ q.template=[id('fighter'),id('knight'),id('manna')];
+ q.book=q.template.slice();q.hand=[];
+ const previous=Math.random;
+ try{
+   Math.random=()=>0;
+   cast(s,'changeling',['targetPlayer',1]);
+   assert.equal(q.book.filter(n=>n===goblin).length,2);
+   assert.deepEqual(q.template,[id('fighter'),id('knight'),id('manna')]);
+   assert.equal(require('../dist/cept-room-state').view(C,s,0).game.players[1].recycleTemplate,undefined);
+   q.book=[];s.phase='land';play(s,'pass');
+   assert.equal([...q.hand,...q.book].filter(n=>n===goblin).length,2);
+   q.pos=2;q.hand=[goblin];s.phase='land';
+   assert.ok(C.choices(s).some(([kind])=>kind==='summon'));
+   land(s,8,'marbleidol',0);land(s,9,'goblin',0);
+   assert.ok(!C.choices(s).some(([kind])=>kind==='summon'));
+   s.turn=0;cast(s,'revival',['targetPlayer',1]);
+   assert.equal(q.book.filter(n=>n===goblin).length,0);
+   assert.equal(q.recycleTemplate,undefined);
+ }finally{Math.random=previous;}
+}
+for(const [size,expected] of [[9,30],[10,50],[4,30]]){
+ const s=fight('larvae','fighter',null,null,game=>{
+   game.players[0].book=Array(size).fill(id('fighter'));
+   game.players[1].book=Array(7).fill(id('fighter'));
+ });
+ assert.equal(s.battle.attackST,expected,'PS2 Larvae deck difference '+size);
+ assert.equal(s.battle.startHP[0],expected+20,'PS2 Larvae opening HP '+size);
+}
+{
+ const s=C.start(4,4),q=s.players[0];
+ land(s,1,'brassidol',3);s.turn=3;s.players[3].cash=5000;
+ q.hand=[];q.book=Array(8).fill(id('fighter'));
+ cast(s,'despair',['targetPlayer',0]);
+ s.phase='land';play(s,'pass');
+ assert.equal(s.turn,0);assert.equal(q.book.length,6);assert.equal(q.hand.length,0);
+ for(let i=0;i<4;i++){s.phase='land';play(s,'pass');}
+ assert.equal(s.turn,0);assert.equal(q.book.length,4);assert.equal(q.hand.length,0);
+ for(let i=0;i<4;i++){s.phase='land';play(s,'pass');}
+ assert.equal(s.turn,0);assert.equal(q.status,undefined);assert.equal(q.hand.length,2);
+}
+{
+ const s=C.start(2,2);s.players[0].cash=3000;
+ cast(s,'haste',['targetPlayer',0]);
+ const random=Math.random;
+ try{
+   Math.random=()=>.9999;
+   play(s,'roll');assert.equal(s.die,8);
+   s.phase='land';play(s,'pass');s.phase='land';play(s,'pass');
+   cast(s,'fly');play(s,'roll');assert.equal(s.die,16);
+ }finally{Math.random=random;}
+}
+{
+ const s=C.start(2,2),q=s.players[1];
+ s.players[0].cash=5000;q.pos=3;q.flags=[...C.board(s).forts];
+ cast(s,'waste',['targetPlayer',1]);
+ cast(s,'wordofrecall',['targetPlayer',1]);
+ assert.equal(q.pos,0);assert.equal(q.lap,0);assert.equal(q.status,'waste');
 }
 console.log('108 combo practice books and seeded matches completed; targeted effect and AI scenarios passed.');

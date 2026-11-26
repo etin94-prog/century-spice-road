@@ -14,4 +14,12 @@ for(let element=0;element<4;element++){
  assert.equal(C.toll(s,s.tiles[1]),20);assert.equal(C.value(s,s.tiles[5]),100);
  for(const type of ['복합','무속성']){own(1,0,type,0);own(5,0,type,0);assert.equal(C.chain(s,s.tiles[1]),1);}
 }
+{
+ const s=C.start(4,4,5000,'ps2-3'),at=s.tiles.findIndex(t=>typeof t.type==='number');
+ const t=s.tiles[at],symbol=t.area*4+t.type,p=s.players[0];
+ Object.assign(t,{base:80,owner:0,unit:{id:0,hp:30}});
+ p.pos=at;p.cash=3000;
+ s.phase='land';assert.ok(C.play(s,['level',at,2]));assert.equal(s.prices[symbol],10);
+ s.turn=0;s.phase='land';assert.ok(C.play(s,['level',at,3]));assert.equal(s.prices[symbol],12);
+}
 console.log('Four elements: ownership, area boundaries, multipliers, capture/release notices and non-element lands OK');

@@ -1,6 +1,6 @@
 function adaptCepterBook(C,row){
   const cardIndex=new Map(C.cards.map((c,i)=>[c.catalog?.path,i]));
-  const pool=C.cards.flatMap((c,id)=>c.catalog&&!c.catalogOnly?[id]:[]);
+  const pool=C.cards.flatMap((c,id)=>c.catalog&&!c.catalogOnly&&!c.generatedOnly?[id]:[]);
   const deck=[],missing=[],replacements=[];
   for(const [path,n] of Object.entries(row.cards)){
     const id=cardIndex.get(path);

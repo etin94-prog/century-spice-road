@@ -20,6 +20,15 @@ s.players[2].pos=toward;s.players[2].previous=null;s.remaining=1;action(s,'route
 assert.equal(s.winner,2);assert.ok(C.allied(s,s.winner,0));
 assert.equal(C.start(4,0,0,'ps2-8',C.presets.fire,C.presets.fire,2,'duel').teams,null);
 assert.throws(()=>C.start(3,1,5000,'classic',C.presets.fire,C.presets.fire,2,'teams'));
+{
+ const limited=C.start(4,4,7000,'classic',C.presets.fire,C.presets.fire,0,'teams-12',20);
+ assert.deepEqual(limited.teams,[0,0,1,1]);
+ limited.round=20;limited.turn=2;limited.phase='land';
+ action(limited,'pass');assert.equal(limited.turn,3);assert.equal(limited.round,20);
+ limited.players[3].cash=limited.players[0].cash+1;
+ limited.phase='land';action(limited,'pass');
+ assert.equal(limited.endReason,'roundLimit');assert.equal(limited.winner,2);
+}
 const game=C.start(2,0,5000,'classic',C.presets.fire,C.presets.fire,3),p=game.players[0];
 own(game,1,1,'goblin');game.tiles[1].level=5;game.phase='direction';game.die=1;p.pos=0;
 assert.deepEqual(C.ai(game),['direction',-1]);
@@ -45,10 +54,11 @@ Object.assign(finish.players[2],{pos:14,previous:13});
 assert.deepEqual(C.ai(finish),['cast',0]);action(finish,'cast',0);
 assert.deepEqual(C.ai(finish),['targetPlayer',2]);
 
-function battle(att,def,atkGear,defGear){
+function battle(att,def,atkGear,defGear,setup){
  const g=C.start(2,2);own(g,1,1,def);g.tiles[1].type='무속성';
  g.players[0].cash=g.players[1].cash=1000;
  g.players[0].hand=atkGear?[id(atkGear)]:[];g.players[1].hand=defGear?[id(defGear)]:[];
+ setup?.(g);
  g.battle={at:1,inv:id(att),atkItem:null,defItem:null};g.phase='attack';
  for(const gear of [atkGear,defGear])if(gear)action(g,'equip',0);else action(g,'bare');
  return g;
@@ -60,3 +70,52 @@ assert.equal(battle('hellhound','kelpie').battle.strikes[0].hp[1],C.cards[id('ke
 
 assert.equal(battle('nightmare','bunyip').battle.strikes[0].effect,'block');
 assert.ok(battle('goblin','bunyip').battle.strikes[0].hp[1]<C.cards[id('bunyip')].hp);
+
+assert.equal(battle('sorcerer','carbuncle').battle.strikes[0].effect,'reflect');
+assert.equal(battle('sorcerer','bunyip').battle.strikes[0].hp[1],10);
+assert.equal(battle('wendigo','dwarf').tiles[1].unit.enchant,'fog');
+assert.equal(battle('goblin','wendigo').tiles[1].unit.enchant,'fog');
+assert.notEqual(battle('wendigo','dwarf','buckler').tiles[1].unit.enchant,'fog');
+assert.equal(battle('valkyria','goblin').tiles[1].unit.st,40);
+assert.equal(battle('paladin','goblin').battle.strikes[0].hp[1],0);
+assert.equal(battle('bunyip','sprite').battle.strikes[0].effect,'block');
+const camo=battle('goblin','bunyip',null,null,g=>{
+  g.tiles[1].type=0;g.tiles[1].level=3;g.phase='spell';g.players[0].hand=[id('camouflage')];
+  action(g,'cast',0);action(g,'targetLand',1);
+});
+assert.equal(camo.battle.landHP,30);
+const protect=C.start(4,1,5000,'classic',C.presets.fire,C.presets.fire,3,'teams');
+own(protect,1,0,'domovikha');own(protect,2,2,'goblin');own(protect,3,1,'goblin');
+protect.tiles[2].level=4;protect.players[0].cash=200;protect.phase='territoryTarget';protect.abilityFrom=1;
+assert.deepEqual(C.ai(protect),['abilityLand',2]);action(protect,'abilityLand',2);
+assert.equal(protect.players[0].cash,130);assert.equal(protect.tiles[2].unit.enchant,'landprotection');
+protect.turn=0;protect.abilityFrom=1;protect.phase='territoryTarget';
+assert.ok(!C.choices(protect).some(([,j])=>j===2));
+protect.players[0].cash=69;assert.deepEqual(C.choices(protect),[]);
+
+const squeeze=C.start(2,1);squeeze.phase='spell';
+squeeze.players[0].hand=[id('squeeze')];squeeze.players[1].hand=[id('goblin'),id('paladin')];
+const before=squeeze.players[1].cash;
+action(squeeze,'cast',0);assert.deepEqual(C.choices(squeeze),[['targetPlayer',1]]);
+action(squeeze,'targetPlayer',1);assert.deepEqual(C.ai(squeeze),['breakCard',1]);
+action(squeeze,'breakCard',1);assert.deepEqual(squeeze.players[1].hand,[id('goblin')]);
+assert.equal(squeeze.players[1].cash,before+150);assert.equal(squeeze.phase,'roll');
+assert.equal(battle('sorcerer','bunyip','windcutter').battle.strikes[0].hp[1],0);
+
+const reserve=C.start(2,0,5000,'classic',C.presets.fire,C.presets.fire,3);
+own(reserve,1,0,'goblin');own(reserve,2,1,'goblin');reserve.tiles[2].level=4;
+Object.assign(reserve.players[0],{pos:2,cash:C.toll(reserve,reserve.tiles[2])+5,hand:[]});
+reserve.visited=[1,2];reserve.phase='land';
+assert.ok(C.choices(reserve).some(([action])=>action==='level'));
+assert.deepEqual(C.ai(reserve),['pay']);
+for(const edition of ['ps2','dc','ps1','saturn']){
+ const rules=edition==='ps2'?C:C.createEdition(edition);
+ const map=edition==='ps2'?'ps2-1':edition+'-1';
+ const state=rules.start(2,2,5000,map,rules.presets.fire);
+ state.phase='direction';state.die=3;
+ for(const action of rules.choices(state)){
+  const before=structuredClone(state),preview=rules.routePreview(state,action);
+  assert.deepEqual(state,before);
+  assert.ok(rules.play(before,action));assert.equal(before.players[0].pos,preview.at);
+ }
+}

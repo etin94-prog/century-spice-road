@@ -3,6 +3,35 @@ const id=name=>{const i=g.cards.findIndex(c=>c.name===name);assert.ok(i>=0,name)
 const play=(s,...a)=>assert.ok(g.play(s,a),s.phase+' '+a);
 const own=(s,n,i,name,hp)=>{const k=id(name);Object.assign(s.tiles[n],{owner:i,unit:{id:k,hp:hp??g.cards[k].hp}});};
 let seed=2202;Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
+// Second's enemy-only Bolt and Shatter differ from the first game's untargeted allegiance on Bolt.
+for(const edition of ['ps2','dc','saturn','ps1']){
+  const engine=edition==='ps2'?g:g.createEdition(edition);
+  const game=engine.start(4,2,5000,edition+'-1',engine.presets.fire,engine.presets.fire,2,'teams');
+  const goblin=engine.cards.findIndex(c=>engine.combo.key(c)==='goblin');
+  const gear=engine.presets.fire.find(id=>engine.cards[id].kind==='item');
+  for(let i=0;i<4;i++){
+    Object.assign(game.tiles[i+1],{owner:i,unit:{id:goblin,hp:15}});
+    game.players[i].hand=[gear];
+  }
+  game.phase='spellTarget';game.spellEffect='bolt';
+  const second=['ps2','dc'].includes(edition);
+  assert.deepEqual(engine.choices(game).map(a=>a[1]),second?[2,4]:[1,2,3,4]);
+  if(second)assert.equal(engine.play(game,['targetLand',3]),false);
+  game.spellEffect='shatter';assert.deepEqual(engine.choices(game),[['targetPlayer',1],['targetPlayer',3]]);
+  game.players[1].hand=game.players[3].hand=[goblin];assert.deepEqual(engine.choices(game),[['fizzle']]);
+  game.tiles[1].unit.enchant='phantasm';game.spellEffect='heal';
+  assert.ok(engine.play(game,['targetLand',1]));assert.equal(game.tiles[1].unit.hp,15);
+}
+{
+  const room=require('../dist/cept-room-state'),game=g.start(4,2),guard=id('고블린'),item=id('레더 아머');
+  own(game,1,1,'고블린');game.turn=2;game.phase='defend';
+  game.battle={at:1,inv:guard,atkItem:item,defItem:null,attackerSeat:3,teleport:true};
+  assert.equal(room.view(g,game,2).game.battle.atkItem,null);
+  assert.equal(room.view(g,game,3).game.battle.atkItem,item);
+  play(game,'bare');assert.equal(g.actor(game),1);
+  assert.equal(room.runAI(g,game),0);assert.deepEqual(room.view(g,game,1).choices,[['continue']]);
+  play(game,'continue');assert.equal(game.turn,2);assert.equal(game.phase,'roll');
+}
 assert.ok(g.validBook(g.presets.fire));assert.equal(new Set(g.presets.fire).size,26);
 assert.ok(!g.validBook(g.presets.fire.slice(1)));assert.ok(!g.validBook(Array(50).fill(13)));
 function battle(att,def,atkItem,defItem,{land=0,level=1,hp}={}){

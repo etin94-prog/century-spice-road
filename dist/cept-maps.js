@@ -13,8 +13,18 @@ const CepterMaps=(()=>{
   const dunnanPositions=[[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[2,6],[3,6],[4,6],[5,6],[5,5],[5,4],[5,3],[5,2],[5,1],[4,1],[3,1],[2,1]];
   const dunnan=map('듀난',dunnanPositions,['성',2,2,2,2,3,3,3,3,'남쪽 요새',0,0,0,0,1,1,1,1],[9],80,6,loop(18),Array(18).fill(0));
   dunnan.fortBonus=100;
+  // These routes belong to the local campaign.
+  const campaignMaps={
+    'campaign-reef':map('유리여울',ring,['성',1,1,'무속성','북쪽 요새',3,3,1,1,2,2,3,'남쪽 요새',0,0,2],[4,12],90,6,loop(16),ring.map(()=>0)),
+    'campaign-watch':map('바람 감시령',ring,['성',3,3,2,'북쪽 요새',2,0,'복합',3,3,0,0,'남쪽 요새',1,1,2],[4,12],100,6,[...loop(16),[3,11],[7,15]],ring.map(()=>0),240),
+    'campaign-lantern':map('등불 군도',[...ring,[2,3],[3,3],[4,3]],
+      ['성',1,3,3,'북쪽 요새',0,0,2,2,1,3,3,'남쪽 요새',2,0,1,1,'신전',2],[4,12],110,7,
+      [...loop(16),[2,16],[16,17],[17,18],[18,10],[6,17],[14,17]],
+      [...ring,[2,3],[3,3],[4,3]].map(([,col])=>col>3?1:0),260),
+  };
+  campaignMaps['campaign-lantern'].areaCount=2;
   const stages=typeof module==='undefined'?CepterStages:require('./cept-stage-data.js');
-  const maps={classic,dunnan,market};
+  const maps={classic,dunnan,market,...campaignMaps};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];

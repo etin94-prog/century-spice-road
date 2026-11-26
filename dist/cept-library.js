@@ -2,12 +2,33 @@ const stageSelect=$('mapChoice');
 const originalStages=document.createElement('optgroup');
 originalStages.label='PS2 스테이지';
 for(const stage of CepterStages)originalStages.append(new Option(stage.stage+' · '+stage.name,'ps2-'+stage.stage));
-stageSelect.prepend(originalStages);
-stageSelect.value='ps2-1';
+if(C.edition==='ps2'){stageSelect.prepend(originalStages);stageSelect.value='ps2-1';}
+else{
+  stageSelect.replaceChildren();
+  for(const [kind,label] of [['story','스토리'],['arena','대전'],['memory','추가 지도']]){
+    const group=document.createElement('optgroup');group.label=label;
+    for(const [id,m] of Object.entries(C.maps))if(m.section===kind)group.append(new Option(m.name,id));
+    if(group.children.length)stageSelect.append(group);
+  }
+  document.title=document.querySelector('.intro h1').textContent=CepterEditions.names[C.edition];
+  document.querySelector('.intro [lang=en]').textContent=C.edition==='dc'?'CULDCEPT SECOND':'CULDCEPT';
+  const profile={dc:'2nd',saturn:'1st',ps1:'1ex'}[C.edition];
+  const references=el('details');references.append(el('summary','판본 자료'));
+  const list=el('p');list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
+  if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
+  else list.append(' · ',sourceLink('https://culdceptcentral.com/culdcept-ps2dc/culdcept-ps2dc-guides/706-cps2-guides-dcfaq','DC판 공략'));
+  references.append(list);$('config').before(references);
+  $('alliance').options[0].textContent='개인전';
+}
 const stageFeatureLabels={'Temple':'신전','Shrine':'성소','Fortune-Teller':'점술관','Fortune Teller':'점술관','Card Shop':'카드 상점','none':'없음'};
 function showStage(){
   const m=C.maps[stageSelect.value],preview=$('stagePreview');
   $('target').querySelector('[value="0"]').textContent=(m.storyGoal?'스토리 목표 · ':'기본 목표 · ')+(m.storyGoal||5000)+'G';
+  if(m.graph){
+    preview.hidden=false;preview.querySelector('img').hidden=true;
+    preview.querySelector('figcaption').replaceChildren(m.types.length+'칸 · 요새 '+m.forts.length+'곳 · ',sourceLink(m.source,'원작 지도'));
+    return;
+  }
   preview.hidden=!m.stage;
   if(!m.stage)return;
   const image=preview.querySelector('img');image.src='art/cept-maps/'+m.image+'.webp';image.alt=m.name;
@@ -41,7 +62,7 @@ function showEntry(){
   const index=+select.value,row=archive[kind][index];
   if(kind==='books'){
     const cards=Object.entries(row.cards),book=cards.flatMap(([path,n])=>Array(n).fill(cardIndex.get(path)));
-    const ready=book.filter(id=>C.cards[id]&&!C.cards[id].catalogOnly).length;
+    const ready=book.filter(id=>C.cards[id]&&!C.cards[id].catalogOnly&&!C.cards[id].generatedOnly).length;
     detail.append(el('p',book.length+'장 · 대전 지원 '+ready+'장'),sourceLink(row.url,'원작 덱 보기'));
     const audit=adaptedBooks[index];
     if(book.length!==50)detail.append(el('p','자료에 기록된 수량은 '+book.length+'장입니다. 대전용 북은 50장으로 맞췄습니다.'));
@@ -58,7 +79,7 @@ function showEntry(){
       bookEditor();refreshMatchup();lobby();$('config').scrollIntoView({block:'center'});
     }));
     else if(ready)detail.append(btn('지원 카드로 북 편집 시작',()=>{
-      draft=C.cards.map((c,id)=>c.catalogOnly?0:Math.min(4,book.filter(n=>n===id).length));
+      draft=C.cards.map((c,id)=>c.catalogOnly||c.generatedOnly?0:Math.min(4,book.filter(n=>n===id).length));
       lobby();$('editor').open=true;$('cardScope').value='usable';$('cardSearch').value='';$('cardKind').value='';
       filterBook();tallyBook();$('bookCount').append(' · '+row.name+'에서 가져옴');$('editor').scrollIntoView();
     }));
@@ -82,6 +103,7 @@ function showEntry(){
   else detail.append(sourceLink(row[1],row[0]));
 }
 function showHandCombos(container,hand){
+  if(C.edition==="saturn"||C.edition==="ps1")return;
   const held=hand.map(id=>C.combo.key(C.cards[id]));
   const matches=C.combo.recipes.flatMap((g,i)=>C.combo.matches(g,held)?[i]:[]);
   if(!matches.length)return;
@@ -98,15 +120,35 @@ function listEntries(){
 $('libraryKind').onchange=listEntries;$('libraryQuery').oninput=listEntries;$('libraryResults').onchange=showEntry;
 $('ps2Library').ontoggle=()=>{if($('ps2Library').open)listEntries();};
 
-function playTrack(index){
-  $('musicPanel').hidden=false;
-  audio.src=archive.music[index][2];audio.title=archive.music[index][0];audio.loop=true;
+let musicScene,currentTrack,missingTracks=new Set();
+const fieldMusic=['field-1','field-2','field-3'],battleMusic=['battle-1','battle-2','battle-3'];
+const musicScenes={field:fieldMusic,battle:battleMusic,over:fieldMusic};
+function setMusicTrack(key,url,title){
+  currentTrack=key;
+  $('audioStatus').textContent='';
+  audio.src=url;audio.title=title;audio.loop=false;
   startMusic();
+}
+function playTrack(index){
+  const [title,,url]=archive.music[index];
+  setMusicTrack(index,url,title);
+}
+function nextTrack(){
+  if(!$('musicOn').checked||!$('stageMusic').checked)return;
+  const pool=(musicScenes[musicScene]||fieldMusic).filter(key=>!missingTracks.has(key));
+  const available=pool.length>1?pool.filter(key=>key!==currentTrack):pool;
+  const key=available[Math.floor(Math.random()*available.length)];
+  if(key)setMusicTrack(key,'art/cept-'+key+'.mp3',key.startsWith('battle')?'전투 배경음악':'지도 배경음악');
 }
 function syncStageMusic(){
   if(!$('musicOn').checked||!$('stageMusic').checked||!s)return;
-  const first=[2,5,8,11,14,17,20,14,23,23,23,26,29,32,35,38][C.board(s).stage-1];
-  const track=s.phase==='over'?41:first==null?49:first+(s.battle?2:s.players.some((_,i)=>C.total(s,i)>=s.target/2)?1:0);
-  if(audio.src!==archive.music[track][2])playTrack(track);
+  const scene=s.phase==='over'?'over':s.battle?'battle':'field';
+  if(musicScene===scene&&audio.src)return;
+  musicScene=scene;nextTrack();
 }
-$('stageMusic').onchange=()=>{saveAudioSettings();if($('stageMusic').checked)syncStageMusic();};
+audio.addEventListener('ended',nextTrack);
+audio.addEventListener('error',()=>{
+  if(typeof currentTrack!=='string'||missingTracks.has(currentTrack))return;
+  missingTracks.add(currentTrack);nextTrack();
+});
+$('stageMusic').onchange=()=>{saveAudioSettings();musicScene=null;if($('stageMusic').checked)syncStageMusic();};

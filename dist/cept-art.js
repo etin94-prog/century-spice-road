@@ -27,6 +27,13 @@ function creatureFigure(id){
 }
 function cardSeal(id){
   const c=Cepter.cards[id];
+  if(c.firstArt){
+    const img=document.createElement('img');img.className='card-face';img.alt=c.catalog.name;img.width=400;img.height=500;
+    img.src='https://culdceptcentral.com/images/cards_sm/ceps1/'+c.firstArt+'.jpg';
+    img.onerror=()=>{img.onerror=null;if(c.hasArt)img.src=id>42?'art/cept-catalog/'+c.catalog.path+'.webp':'art/cept-card-'+id+'.webp';};
+    return img;
+  }
+  if(c.hasArt===false){const face=document.createElement('span');face.className='custom-face';face.textContent=c.catalog.name;return face;}
   if(id>=13){
     const img=document.createElement('img');
     img.className='card-face';img.src=id>42?'art/cept-catalog/'+c.catalog.path+'.webp':'art/cept-card-'+id+'.webp';

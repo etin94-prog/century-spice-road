@@ -1,6 +1,8 @@
 const audio=$('soundtrack'),audioKey='cept-audio-v1';
 const soundFields=['musicOn','effectsOn','musicVolume','effectVolume','stageMusic'];
 let soundContext,effectBus,seenActionSound=0,retryMusic=false;
+$('openSound').onclick=()=>$('musicPanel').showModal();
+$('closeSound').onclick=()=>$('musicPanel').close();
 try{
   const saved=JSON.parse(localStorage.getItem(audioKey)||'{}');
   for(const id of soundFields){
@@ -40,10 +42,10 @@ function setLevels(){
 function startMusic(){
   if(!$('musicOn').checked||!audio.src)return;
   const src=audio.src;
-  audio.play().then(()=>{retryMusic=false;}).catch(e=>{
+  audio.play().then(()=>{retryMusic=false;$('audioStatus').textContent='';}).catch(e=>{
     if(audio.src!==src||e.name==='AbortError')return;
     retryMusic=e.name==='NotAllowedError';
-    if(!retryMusic)$('notice').textContent='배경음악을 불러올 수 없습니다.';
+    if(!retryMusic)$('audioStatus').textContent='배경음악을 불러올 수 없습니다.';
   });
 }
 function unlockSound(){
@@ -79,6 +81,14 @@ const cues={
   bolt:['sawtooth',[[0,930,80,.18]]],shatter:['square',[[0,1250,420,.07],[.07,740,150,.11]]],
   invade:['triangle',[[0,196,147,.16],[.12,165,82,.23]]],
   slash:['sawtooth',[[0,540,85,.12]]],fang:['triangle',[[0,210,60,.11],[.07,150,44,.1]]],
+  leap:['triangle',[[0,190,690,.18],[.19,450,120,.13]]],
+  crush:['sine',[[0,136,34,.28],[.12,75,30,.24]]],
+  volley:['triangle',[[0,930,465,.095],[.09,1050,525,.11]]],
+  ember:['sawtooth',[[0,180,640,.15],[.12,600,110,.21]]],
+  wave:['sine',[[0,390,980,.17],[.14,760,240,.22]]],
+  battleWin:['triangle',[[0,392,494,.16],[.16,523,659,.16],[.32,784,784,.27]]],
+  battleLoss:['triangle',[[0,440,350,.17],[.15,330,247,.18],[.31,220,165,.25]]],
+  battleDraw:['sine',[[0,330,311,.23],[.21,349,330,.27]]],
   hit:['triangle',[[0,120,35,.14]]],block:['square',[[0,660,410,.09]]],
   reflect:['sine',[[0,495,990,.12],[.07,740,1480,.15]]],
   coin:['sine',[[0,990,990,.08],[.07,1485,1485,.18]]],

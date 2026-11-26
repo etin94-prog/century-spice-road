@@ -45,6 +45,13 @@ function presentMapEffect(event){
     }else layer.classList.add('settled');
   }else{
     anchor.append(fx);layer.append(anchor);
+    for(const hit of event.hits||[]){
+      if(!tiles[hit.at])continue;
+      const [hx,hy]=point(tiles[hit.at]),marker=el('strong','−'+hit.damage,'map-damage');
+      marker.style.left=hx+'px';marker.style.top=hy+'px';
+      marker.setAttribute('aria-label',(hit.at+1)+'번 영지 '+hit.damage+' 피해'+(hit.defeated?' · 격파':''));
+      layer.append(marker);
+    }
     if(event.type==='invade'||event.type==='heal'||event.type==='word'){
       const sigil=el('i',event.type==='invade'?'⚔':event.type==='heal'?'+':event.label.split(' ').at(-1),'map-sigil');
       sigil.setAttribute('aria-hidden','true');anchor.append(sigil);
@@ -60,7 +67,7 @@ function presentMapEffect(event){
   if(rolling)$('mapViewport').append(layer);
   else{focusMapTile(event.tile);map.append(layer);}
   $('game').classList.add('showing-map-effect');$('game').inert=true;
-  if(!quiet&&matchMedia('(max-width:900px), (pointer:coarse)').matches)$('mapViewport').scrollIntoView({block:'nearest',inline:'nearest'});
+  if(!quiet&&!C.isComputer(s,s.turn)&&(!room||room.seat===s.turn)&&matchMedia('(max-width:900px), (pointer:coarse)').matches)$('mapViewport').scrollIntoView({block:'nearest',inline:'nearest'});
   const end=setTimeout(()=>{cancelMapEffect();render();},quiet?420:rolling?1190:960);
   mapPlayback={layer,end,spin};
   return true;

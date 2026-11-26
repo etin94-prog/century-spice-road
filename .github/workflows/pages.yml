@@ -28,6 +28,18 @@ jobs:
         run: node qa/splendor.cjs
       - name: Replay four Splendor expansions with 2–4 seats
         run: node qa/splendor-expansions.cjs
+      - name: Verify Culdcept cards, alliances and edition maps
+        run: |
+          node qa/cept-original.cjs
+          node qa/cept-alliance.cjs
+          node qa/cept-combos.cjs
+          node qa/cept-extra-battle.cjs
+          node qa/cept-extra-spells.cjs
+          node qa/cept-extra-territories.cjs
+          node qa/cept-session.cjs
+          node qa/cept-shops.cjs
+          node qa/cept-stages.cjs
+          node qa/cept-editions.cjs
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -46,7 +58,10 @@ jobs:
           node qa/review-mobile.cjs
           node qa/guild-mobile.cjs
           node qa/combination-mobile.cjs
-          "$RUNNER_TEMP/qa/node_modules/.bin/firebase" emulators:exec --only auth,database --project demo-century 'node qa/rejoin-release.cjs && node qa/guild-mobile.cjs --rooms'
+          node qa/cept-mobile.cjs
+          node qa/cept-campaign-mobile.cjs
+          node qa/cept-hotseat.cjs
+          "$RUNNER_TEMP/qa/node_modules/.bin/firebase" emulators:exec --only auth,database --project demo-century 'node qa/rejoin-release.cjs && node qa/guild-mobile.cjs --rooms && node qa/cept-cloud-room.cjs'
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
