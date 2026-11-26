@@ -53,10 +53,41 @@ function updateSeatBooks(){
 }
 let seenMove=0,activeWalk=null;
 function resetScroll(){document.querySelector('main').scrollTop=0;window.scrollTo(0,0);}
+function setMatchChrome(active){
+  const screenButtons=['full','wide','setup'].map($);
+  (active?$('matchScreenControls'):$('lobbyScreenControls')).append(...screenButtons);
+  const sound=$('openSound');
+  (active?$('matchSound'):$('lobbyScreenControls')).append(sound);
+  sound.textContent=active?'♪':'소리';
+  sound.setAttribute('aria-label','소리');
+  $('siteHeader').hidden=active;
+  $('libraryHome').hidden=active;
+  $('matchMenu').open=false;
+}
+function setupMatchInfo(){
+  const menu=$('matchMenu'),dialog=$('matchInfo'),body=$('matchInfoBody');
+  for(const button of menu.querySelectorAll('[data-match-info]')){
+    button.onclick=()=>{
+      const panel=$(button.dataset.matchInfo),previous=panel.parentElement,wasOpen=panel.open;
+      $('matchInfoTitle').textContent=panel.querySelector('summary').textContent;
+      menu.open=false;panel.open=true;body.append(panel);
+      dialog.addEventListener('close',()=>{
+        previous.append(panel);panel.open=wasOpen;menu.querySelector('summary').focus();
+      },{once:true});
+      dialog.showModal();
+    };
+  }
+  $('closeMatchInfo').onclick=()=>dialog.close();
+}
+setupMatchInfo();
+$('matchActionsToggle').onclick=event=>{
+  const button=event.currentTarget;
+  button.setAttribute('aria-expanded',String(button.getAttribute('aria-expanded')!=='true'));
+};
 function lobby(){
   cancelMapEffect();stopWalk();
   if(room){location.assign(location.pathname+(C.edition==='ps2'?'':'?edition='+C.edition));return;}
-  clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;
+  clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;setMatchChrome(false);
   $('resume').hidden=!s;$('resume').textContent=s?.phase==='over'?'저장한 대국 결과':'저장한 대국 계속';
   resetScroll();
 }
@@ -64,7 +95,7 @@ function handoff(){return !room&&s.phase!=='over'&&!C.isComputer(s,C.actor(s))&&
 function enter(){
   seenActionSound=s.actionSound?.sequence||0;cancelMapEffect();seenMapEffect=s.mapEffect?.sequence||0;stopWalk();
   seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;
-  $('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;
+  $('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;setMatchChrome(true);
   if(!room&&!pending&&C.armClock(s))save();
   render();resetScroll();
 }
@@ -89,8 +120,11 @@ $('config').onsubmit=e=>{
   save();enter();
 };
 const handPanel=$('handPanel');
-try{const saved=localStorage.getItem('cept-hand-open');handPanel.open=saved===null?!matchMedia('(max-width:900px), (pointer:coarse)').matches:saved==='1';}catch{}
-handPanel.addEventListener('toggle',()=>{try{localStorage.setItem('cept-hand-open',handPanel.open?'1':'0');}catch{}});
+try{handPanel.open=localStorage.getItem('cept-hand-open')==='1';}catch{}
+handPanel.addEventListener('toggle',()=>{
+  try{localStorage.setItem('cept-hand-open',handPanel.open?'1':'0');}catch{}
+  $('seats').querySelector('[aria-controls=handPanel]')?.setAttribute('aria-expanded',String(handPanel.open));
+});
 seats();lobby();
 function act(a){
   if(room){roomAction(a);return;}
@@ -271,17 +305,14 @@ function pawnFoot(tileId,seat,occupants){
   const [x,y]=positions[occupants.length][occupants.indexOf(seat)];
   return [s.tiles[tileId].unit ? .60+x*.32 : x,y];
 }
-const viewport=$('mapViewport'),mapRoll=$('mapRoll');
-const touchMapLayout=matchMedia('(pointer:coarse), (max-width:740px), (orientation:landscape) and (max-height:550px)');
+const viewport=$('mapViewport'),mapRoll=$('mapRoll'),matchHud=$('matchHud');
 function placeHandPanel(){
-  if(touchMapLayout.matches&&!s?.battle){
+  if(!s?.battle){
     if(handPanel.parentElement!==viewport)viewport.append(handPanel);
   }else if(handPanel.parentElement!==$('buttons').parentElement){
     $('buttons').after(handPanel);
   }
 }
-touchMapLayout.addEventListener('change',placeHandPanel);
-placeHandPanel();
 const mapViewButtons=[...$('mapViews').querySelectorAll('[data-zoom]')];
 let mapZoom='1.8',cameraTile=0;
 try{
@@ -311,8 +342,8 @@ function placeMapRoll(root,x,y,zoom){
   const left=Math.max(4,Math.min(width-buttonWidth-4,side));
   const top=feetY-Math.min(45,pawn.offsetHeight*zoom*.55)-buttonHeight/2;
   const tools=$('mapViews'),menuHeight=tools.querySelector('summary').offsetHeight;
-  const minTop=left+buttonWidth+4>tools.offsetLeft?tools.offsetTop+menuHeight+4:4;
-  const handHeight=handPanel.parentElement===viewport?handPanel.querySelector('summary').offsetHeight+5:0;
+  const minTop=left+buttonWidth+4>tools.offsetLeft?tools.offsetTop+menuHeight+4:matchHud.offsetHeight+5;
+  const handHeight=handPanel.parentElement===viewport?handPanel.querySelector('summary').offsetHeight+12:0;
   const maxTop=Math.max(minTop,height-handHeight-buttonHeight-4);
   mapRoll.style.setProperty('--roll-left',left+'px');
   mapRoll.style.setProperty('--roll-top',Math.max(minTop,Math.min(maxTop,top))+'px');
@@ -326,12 +357,17 @@ function focusMapTile(index){
   const root=$('map'),tile=root.children[index];
   if(!tile?.classList.contains('tile')||!root.clientWidth||!viewport.clientHeight)return;
   const w=root.clientWidth,h=root.clientHeight,viewWidth=viewport.clientWidth,viewHeight=viewport.clientHeight;
+  const header=matchHud.offsetHeight;
+  const playableHeight=Math.max(40,viewHeight-header-28);
   const overview=Number(mapZoom)===1;
-  const zoom=overview?Math.min(1,viewWidth/w,viewHeight/h):Number(mapZoom);
+  const cover=Math.max(viewWidth/w,viewHeight/h);
+  const zoom=overview?Math.min(1,viewWidth/w,playableHeight/h):
+    Math.max(Number(mapZoom),cover*Number(mapZoom)/1.8);
   viewport.classList.toggle('pannable',!overview);
   root.style.setProperty('--camera-zoom',zoom);
   const x=mapOffset(viewWidth*.5-tile.offsetLeft*zoom,viewWidth,w*zoom);
-  const y=mapOffset(viewHeight*.58-(tile.offsetTop+tile.offsetHeight*.5)*zoom,viewHeight,h*zoom);
+  const y=overview?header+(playableHeight-h*zoom)/2:
+    mapOffset(header+playableHeight*.48-(tile.offsetTop+tile.offsetHeight*.5)*zoom,viewHeight,h*zoom);
   setMapCamera(root,x,y,zoom);
 }
 for(const button of mapViewButtons){
@@ -343,13 +379,18 @@ for(const button of mapViewButtons){
     focusMapTile(cameraTile);
   };
 }
-new ResizeObserver(()=>focusMapTile(cameraTile)).observe(viewport);
+function adjustMatchHud(){
+  $('game').style.setProperty('--hud-height',matchHud.offsetHeight+'px');
+  focusMapTile(cameraTile);
+}
+const matchResize=new ResizeObserver(adjustMatchHud);
+matchResize.observe(viewport);matchResize.observe(matchHud);
 let drag=null,ignoreMapClick=false;
 viewport.addEventListener('pointerdown',e=>{
   ignoreMapClick=false;
   if(!e.isPrimary||e.button!==0||e.target.closest('#mapViews,#mapRoll,#handPanel')||Number(mapZoom)===1||s?.battle||activeWalk||mapPlayback)return;
   const matrix=new DOMMatrixReadOnly(getComputedStyle($('map')).transform);
-  drag={id:e.pointerId,x:e.clientX,y:e.clientY,tx:matrix.e,ty:matrix.f,started:false};
+  drag={id:e.pointerId,x:e.clientX,y:e.clientY,tx:matrix.e,ty:matrix.f,zoom:matrix.a,started:false};
 });
 viewport.addEventListener('pointermove',e=>{
   if(!drag||e.pointerId!==drag.id)return;
@@ -357,7 +398,7 @@ viewport.addEventListener('pointermove',e=>{
   if(!drag.started&&Math.hypot(dx,dy)<7)return;
   if(!drag.started){viewport.setPointerCapture(e.pointerId);drag.started=true;viewport.classList.add('dragging');}
   if(document.documentElement.classList.contains('cept-wide')&&matchMedia('(orientation:portrait)').matches)[dx,dy]=[dy,-dx];
-  const map=$('map'),zoom=Number(mapZoom);
+  const map=$('map'),zoom=drag.zoom;
   const x=mapOffset(drag.tx+dx,viewport.clientWidth,map.clientWidth*zoom);
   const y=mapOffset(drag.ty+dy,viewport.clientHeight,map.clientHeight*zoom);
   setMapCamera(map,x,y,zoom);
@@ -548,9 +589,21 @@ function render(){
   $('mapViews').hidden=!!s.battle;
   $('mapName').textContent=C.board(s).name;
   $('round').textContent=(s.overtime?'서든데스 · ':'')+(s.roundLimit&&!s.overtime?s.round+'/'+s.roundLimit:s.round)+'라운드 · 목표 '+s.target+'G';
+  $('gameTitle').textContent=$('editionChoice').selectedOptions[0].textContent;
+  const handSeat=over?null:reader??(local?i:null);
+  if(pending||over)handPanel.open=false;
+  $('seats').style.setProperty('--seat-count',s.players.length);
+  const openSeat=j=>{seatSummary(j);$('seatDialog').dataset.seat=j;$('seatDialog').showModal();};
+  $('handSeatInfo').hidden=handSeat==null;
+  $('handSeatInfo').onclick=()=>openSeat(handSeat);
   $('seats').replaceChildren(...s.players.map((v,j)=>{
-    const box=btn('',()=>{seatSummary(j);$('seatDialog').dataset.seat=j;$('seatDialog').showModal();},'seat'+(i===j?' active':'')),wealth=C.total(s,j);
-    box.setAttribute('aria-haspopup','dialog');box.setAttribute('aria-label',v.name+' · 총마력 '+wealth+'G · 셉터 정보');
+    const ownHand=j===handSeat;
+    const box=btn('',()=>{if(ownHand)handPanel.open=!handPanel.open;else openSeat(j);},'seat'+(i===j?' active':'')),wealth=C.total(s,j);
+    if(ownHand){
+      box.setAttribute('aria-controls','handPanel');
+      box.setAttribute('aria-expanded',String(handPanel.open));
+    }else box.setAttribute('aria-haspopup','dialog');
+    box.setAttribute('aria-label',v.name+' · 총마력 '+wealth+'G · '+(ownHand?'손패':'셉터 정보'));
     box.style.setProperty('--color',colors[j]);box.style.setProperty('--progress',Math.max(0,Math.min(100,100*wealth/s.target))+'%');
     const name=el('b',v.name+(s.teams?' · '+String.fromCharCode(65+s.teams[j])+'팀':''));name.title=name.textContent;
     box.append(figure(j,v.name),name,el('span','마력 '+v.cash+'G'),el('span',(s.teams?'팀 총 ':'총 ')+wealth+'G','seat-wealth'));
@@ -617,6 +670,9 @@ function render(){
   const choices=local?(room?room.choices:C.choices(s)):[];
   if(local&&s.phase==='shop')shopMenu(controls,choices,p);
   const roll=choices.find(([kind])=>kind==='roll');
+  const actionDock=$('buttons').closest('aside'),optional=!!roll&&choices.some(([kind])=>kind!=='roll');
+  actionDock.classList.toggle('optional-actions',optional);
+  $('matchActionsToggle').setAttribute('aria-expanded','false');
   if(roll){
     mapRoll.hidden=false;
     mapRoll.onclick=()=>act(roll);
@@ -636,8 +692,9 @@ function render(){
     }
     commandGroup(group,p,controls);
   }
-  const owner=over?null:reader!=null?s.players[reader]:local?p:null;
+  const owner=handSeat==null?null:s.players[handSeat];
   const hand=$('hand'),handScroll=hand.scrollLeft;hand.replaceChildren();$('handTitle').textContent=owner?owner.name+'의 손패 · '+owner.hand.length+'장':'손패';
+  $('handCount').textContent=owner?String(owner.hand.length):'';
   $('detail').textContent='';
   if(owner){owner.hand.forEach((id,j)=>{const c=C.cards[id],b=btn('',()=>{
       focusCard=j;
@@ -658,6 +715,6 @@ function render(){
     showHandSelection(owner,choices);hand.scrollLeft=handScroll;
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
   if(owner&&typeof showHandCombos==='function')showHandCombos(hand,owner.hand);
-  $('log').replaceChildren(...s.log.map(t=>el('li',t)));
+  $('log').replaceChildren(...(s.log.length?s.log:['아직 진행 기록이 없습니다.']).map(t=>el('li',t)));
   if(!room&&!over&&C.isComputer(s,i))timer=setTimeout(()=>act(C.ai(s)),550+(s.phase==='result'?battleReplayDuration(s.battle):0));
 }

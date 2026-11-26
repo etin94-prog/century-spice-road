@@ -58,8 +58,12 @@ const {chromium}=require('playwright');
       await sound.getByRole('button',{name:'닫기'}).tap();
       assert.equal(await sound.isVisible(),false);
       await page.locator('#seats .seat').first().tap();
+      assert.ok(await page.locator('#handPanel').evaluate(panel=>panel.open));
+      await page.locator('#handSeatInfo').tap();
       assert.match(await page.locator('#seatStats').innerText(),/이번 주회 남은 요새/);
       await page.locator('#seatDialog button').tap();
+      await page.locator('#seats .seat').first().tap();
+      assert.equal(await page.locator('#handPanel').evaluate(panel=>panel.open),false);
       const hand=page.locator('#handPanel summary');
       const metrics=await page.evaluate(()=>({
         hand:document.querySelector('#handPanel summary').getBoundingClientRect().bottom,
@@ -130,6 +134,7 @@ const {chromium}=require('playwright');
           for(let i=0;i<4;i++)Object.assign(s.tiles[i+1],{owner:i,unit:{id,hp:20}});
           s.players[0].hand=[C.cards.findIndex(c=>c.effect==='bolt')];render();
         });
+        await page.locator('#matchActionsToggle').tap();
         await page.tap('button[data-action=cast]');
         const options=page.locator('select[data-action=targetLand]');
         await options.selectOption({index:1});assert.equal(await options.locator('option').count(),2);
@@ -144,6 +149,7 @@ const {chromium}=require('playwright');
           p.hand=[find('foresight')];p.book=['goblin','skeleton','fate','manna','banshee','holygrail'].map(find);
           render();return find('fate');
         });
+        await page.locator('#matchActionsToggle').tap();
         await page.tap('button[data-action=cast]');
         const draw=page.locator('select[data-action=foresightCard]');
         await draw.waitFor();

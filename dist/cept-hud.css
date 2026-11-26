@@ -1,0 +1,123 @@
+/* A full-viewport board with compact controls over the map. */
+html:not(.cept-full,.cept-wide) main:has(#game:not([hidden])){max-width:none}
+main:has(#game:not([hidden])){padding:0;background:#151920}
+#game{--play-height:100dvh;--hud-height:50px;--foot:calc(8px + env(safe-area-inset-bottom));position:relative;min-height:var(--play-height)}
+@media(orientation:portrait){
+  .cept-wide #game{--play-height:100dvw}
+  .cept-wide #game #mapViewport{max-height:none}
+  .cept-wide #game .atlas.in-battle{height:var(--play-height);min-height:0}
+  .cept-wide main:has(#game:not([hidden])){padding:0}
+}
+#game .table{display:block;position:relative}
+#game .atlas{width:100%;margin:0;padding:0;border:0;border-radius:0;min-height:0}
+#game #mapViewport{height:var(--play-height);max-height:none;border-radius:0;background:#151920}
+#game .atlas.in-battle{height:var(--play-height);min-height:0}
+#game:has(.atlas.in-battle){--battle-dock:min(138px,calc(var(--play-height) * .34))}
+#game .atlas.in-battle #center{inset:calc(var(--hud-height) + 1px) 0 var(--battle-dock)}
+
+#matchHud{
+  position:absolute;z-index:12;inset:0 0 auto;display:grid;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) auto;gap:4px 10px;align-items:center;
+  padding:max(3px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 4px max(8px,env(safe-area-inset-left));
+  color:#fff0d3;background:#111a23c4;border-bottom:1px solid #e9ce8654;backdrop-filter:blur(8px);
+}
+.match-identity{min-width:0;display:grid;gap:0}
+#gameTitle,#game #mapName{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#gameTitle{font-size:10px;font-weight:600;letter-spacing:.04em;line-height:1.2;color:#e7c483}
+#game #mapName{margin:0;font-size:clamp(13px,2cqw,18px);line-height:1.2}
+.match-progress{display:flex;gap:6px;align-items:center;white-space:nowrap;min-width:0;line-height:1.15}
+#matchHud :is(#round,.input-clock){overflow:hidden;text-overflow:ellipsis;font-size:10px}
+#matchHud #seats{margin:0;display:grid;grid-template-columns:repeat(var(--seat-count,4),minmax(0,1fr));gap:4px;align-items:stretch}
+#matchHud .seat{
+  min-width:0;min-height:44px;margin:0;padding:3px 4px;
+  border-left-width:3px;background:#27313bc4;font-size:10px;line-height:1.16;
+}
+#matchHud .seat.active{background:#554432d9}
+#matchHud .seat .cept-figure{display:none}
+#matchHud .seat b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+#matchHud .seat span{display:inline;margin:0}
+#matchHud .seat .seat-wealth{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#matchHud .seat small{display:none}
+.match-tools{display:flex;gap:4px;align-items:center}
+#matchMenu{position:relative;margin:0;padding:0;border:0}
+#matchMenu summary,#matchSound button{
+  display:grid;place-items:center;min-width:44px;min-height:44px;padding:0;
+  border:1px solid #e0bd7959;border-radius:7px;background:#242c38e6;color:#fff0cf;font-size:19px;line-height:1;
+}
+#matchMenu summary,#mapViewport #handPanel summary{list-style:none}
+#matchMenu summary::-webkit-details-marker,#mapViewport #handPanel summary::-webkit-details-marker{display:none}
+.match-menu-items{
+  position:absolute;right:0;top:calc(100% + 4px);display:grid;gap:4px;
+  width:min(13rem,80cqw);max-height:calc(var(--play-height) - 61px);overflow:auto;
+  padding:6px;background:#181f2af5;border:1px solid #bc9d68;border-radius:8px;box-shadow:0 6px 18px #0009;
+}
+.match-menu-items :is(button,a){display:flex;align-items:center;gap:8px;text-align:left;min-height:44px;padding:5px 8px;font-size:13px}
+.match-menu-items button span{display:inline-grid;place-items:center;width:20px;color:#f0cf88;font-weight:700}
+#matchScreenControls{display:grid;gap:4px}
+
+@container(max-width:550px){
+  #matchHud{grid-template-columns:minmax(0,1fr) auto}
+  #matchHud #seats{grid-column:1 / -1;grid-row:2}
+  #matchHud .match-tools{grid-column:2;grid-row:1}
+}
+
+#game #mapViews{top:calc(var(--hud-height) + 4px);right:max(5px,env(safe-area-inset-right))}
+#game #mapViews summary{min-width:58px;padding:9px 7px;font-size:11px}
+#game #mapViewport:has(#handPanel[open]) #mapRoll{top:calc(var(--hud-height) + 4px)}
+#game #mapViewport #handPanel{
+  position:absolute;z-index:5;inset:auto max(5px,env(safe-area-inset-right)) calc(var(--foot) + 28px) auto;
+  width:max-content;max-width:calc(100% - 10px);margin:0;padding:0;background:#1e2831ec;
+  overflow:auto;overscroll-behavior:contain;border-color:#c3a66d7a;
+}
+#game #mapViewport #handPanel[open]{
+  width:min(35rem,100% - 10px);max-height:calc(100% - var(--hud-height) - var(--foot) - 86px);background:#212731f5;
+}
+#game #mapViewport #handPanel summary{
+  position:sticky;z-index:1;top:0;display:flex;align-items:center;justify-content:center;gap:5px;
+  min-width:44px;min-height:44px;padding:4px 8px;background:inherit;
+}
+.hand-glyph{font-size:18px;color:#f1d18d}
+#handCount{font-size:12px}
+#mapViewport #handPanel:not([open]) #handTitle{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#game #mapViewport #handPanel[open] summary{justify-content:flex-start;padding-right:92px}
+#game #mapViewport #handSeatInfo{position:absolute;right:3px;top:1px;z-index:2;padding:4px 7px;font-size:11px}
+#game #handPanel .card-face{max-height:100px}
+
+#game .atlas:not(.in-battle) #center{
+  position:absolute;z-index:1;inset:auto max(6px,env(safe-area-inset-right)) var(--foot) max(6px,env(safe-area-inset-left));
+  min-height:26px;max-height:70px;margin:0;padding:3px 7px;border-color:#bda16c69;
+  background:#151b23d4;font-size:11px;pointer-events:none;
+}
+#game .atlas:not(.in-battle) #center b{font:700 13px/1.2 system-ui}
+#game .atlas:not(.in-battle) #center>.standing-model{display:none}
+#game .table aside.match-actions{
+  position:absolute;z-index:6;display:block;
+  inset:auto auto calc(var(--foot) + 30px) max(5px,env(safe-area-inset-left));
+  width:min(25rem,100% - 62px);max-height:calc((var(--play-height) - var(--hud-height)) * .50);
+  margin:0;padding:5px;overflow:auto;overscroll-behavior:contain;border-color:#b69a6470;background:#1a202bea;
+}
+#game .table aside.match-actions:has(#buttons:empty):not(:has(#handPanel)){display:none}
+#game:has(#mapViewport #handPanel[open]) .match-actions{visibility:hidden}
+#game .match-actions #who{font-size:12px;margin:0 0 2px}
+#game .match-actions #hint{font-size:11px;line-height:1.2;margin:0 0 4px}
+#game .match-actions #buttons{gap:4px}
+#game .match-actions #buttons .command{gap:3px}
+#game .match-actions #buttons button{padding:4px 7px}
+#game .match-actions:has(#buttons .match-standings){width:min(38rem,100% - 12px)}
+main:has(#game:not([hidden])) #roomConnection:not(:empty){position:absolute;z-index:14;right:0;bottom:0;margin:0;padding:3px 6px;font-size:11px}
+main:has(#game:not([hidden])) #notice:not(:empty){position:absolute;z-index:14;left:0;bottom:0;margin:0;padding:3px 6px;font-size:11px;background:#29231e}
+#matchInfo{width:min(43rem,calc(100% - 20px));max-height:84dvh;overflow:auto;padding:12px;color:#fff0d6;background:#202731;border:1px solid #b69a64;border-radius:10px}
+#matchInfo::backdrop{background:#0c1119c2}
+#matchInfo .sound-heading{position:sticky;top:-12px;z-index:1;background:#202731}
+#matchInfoBody>details{margin:0;padding:0;border:0}
+#matchInfoBody>details>summary{display:none}
+#matchInfoBody #log{padding-left:1.7rem}
+main:has(#game:not([hidden])) #notice:empty{display:none}
+
+#matchActionsToggle{display:none}
+#game aside.optional-actions #matchActionsToggle{display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:12px}
+#game aside.optional-actions:has(#matchActionsToggle[aria-expanded=false]){width:max-content;padding:0;border-color:transparent;background:transparent}
+#game aside.optional-actions:has(#matchActionsToggle[aria-expanded=false]) :is(#who,#hint,#buttons){display:none}
+#game .table:has(.atlas.in-battle) aside.match-actions{
+  inset:auto 5px var(--foot);width:min(42rem,100% - 10px);max-height:calc(var(--battle-dock) - 12px);
+}
