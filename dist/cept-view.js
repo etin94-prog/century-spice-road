@@ -345,6 +345,7 @@ function map(){
   root.style.setProperty('--half-tile',half+'cqw');
   root.style.aspectRatio=m.stage?'3 / 2':'100 / '+(18+.5*(m.rows+m.cols)*half);
   root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
+  const standing=s.phase==='over'?-1:s.players[s.turn].pos;
   const canTarget=!pending&&!C.isComputer(s,C.actor(s))&&(!room||room.seat===C.actor(s)&&!room.busy);
   const targets=new Map(canTarget&&['spellTarget','territoryTarget','teleMove'].includes(s.phase)?
     (room?room.choices:C.choices(s)).filter(a=>['targetLand','abilityLand','teleTo'].includes(a[0])).map(a=>[a[1],a]):[]);
@@ -368,6 +369,7 @@ function map(){
     }
     const surface=el('span',null,'tile-surface');surface.setAttribute('aria-hidden','true');
     b.append(surface,el('b',(n+1)+' · '+name));
+    if(n===standing)b.classList.add('current-step');
     if(exits.has(n))b.classList.add('exit');
     if(targets.has(n))b.classList.add('targetable');
     if(t.unit){const miniature=creatureFigure(t.unit.id);miniature.classList.add('summoned');b.append(miniature);}
@@ -435,6 +437,8 @@ async function walkPath(move){
     if(activeWalk!==walk)return;
     root.append(sprite);
     if(pawn)pawn.style.visibility='hidden';
+    root.querySelector('.current-step')?.classList.remove('current-step');
+    tiles[move.path[0]].classList.add('current-step');
     for(let step=1;step<move.path.length;step++){
       const from=tiles[move.path[step-1]],to=tiles[move.path[step]];
       const point=(tile,[fx,fy])=>[
@@ -455,6 +459,8 @@ async function walkPath(move){
       const frames=jumping?[{left:x+'px',top:y+'px',opacity:1},{left:x+'px',top:y+'px',opacity:0,offset:.49},{left:endX+'px',top:endY+'px',opacity:0,offset:.5},{left:endX+'px',top:endY+'px',opacity:1}]:[{left:x+'px',top:y+'px'},{left:endX+'px',top:endY+'px'}];
       walk.animation=sprite.animate(frames,{duration:480,fill:'forwards'});
       await walk.animation.finished;
+      from.classList.remove('current-step');
+      to.classList.add('current-step');
       walk.animation.cancel();
     }
   }catch{/* A cancelled walk or missing sprite falls back to the current board. */}
