@@ -49,26 +49,33 @@ function startMusic(){
   });
 }
 function unlockSound(){
+  let resume;
   const Context=window.AudioContext||window.webkitAudioContext;
   if(Context&&$('effectsOn').checked){
     if(!soundContext){soundContext=new Context();effectBus=soundContext.createGain();effectBus.connect(soundContext.destination);setLevels();}
-    if(soundContext.state!=='running')soundContext.resume().catch(()=>{});
+    if(soundContext.state!=='running')resume=soundContext.resume().catch(()=>{});
   }
   if(retryMusic)startMusic();
+  return resume;
+}
+function previewEffect(){
+  const resume=unlockSound();
+  if(resume)resume.then(()=>playEffect('card'));
+  else playEffect('card');
 }
 document.addEventListener('click',unlockSound,true);
 document.addEventListener('keydown',unlockSound,true);
 for(const id of ['musicVolume','effectVolume','musicOn','effectsOn']){
   $(id).addEventListener('input',()=>{
     setLevels();saveAudioSettings();
-    if(id==='effectsOn'&&$('effectsOn').checked){unlockSound();playEffect('card');}
+    if(id==='effectsOn'&&$('effectsOn').checked)previewEffect();
     if(id==='musicOn'){
       if(!$('musicOn').checked){audio.pause();retryMusic=false;}
       else{if($('stageMusic').checked&&s)syncStageMusic();if(audio.paused)startMusic();}
     }
   });
 }
-$('effectVolume').addEventListener('change',()=>{unlockSound();playEffect('card');});
+$('effectVolume').addEventListener('change',previewEffect);
 setLevels();
 // Frequencies are swept from start to end, with each voice fading before it stops.
 const cues={
