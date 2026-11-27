@@ -55,6 +55,36 @@ const CepterEditions=(()=>{
     }
     return result;
   }
+  function modernBooks(cards){
+    const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
+    function build(creatures,items,attackWeight){
+      const groups={creature:[],item:[],spell:[]};
+      for(const id of pool)groups[cards[id].kind].push(id);
+      const score=id=>{
+        const c=cards[id],requirements=(c.catalog?.additionalCost||'').split(',').filter(Boolean).length;
+        return (c.st||0)*attackWeight+(c.hp||0)*(1-attackWeight)+(c.first?8:0)-c.cost*.4-requirements*18;
+      };
+      for(const group of Object.values(groups))group.sort((a,b)=>score(b)-score(a)||a-b);
+      const deck=[];
+      function add(group,count){
+        const choices=group.filter(id=>deck.filter(card=>card===id).length<4).slice(0,Math.ceil(count/2));
+        for(let copy=0;copy<4&&count>0;copy++){
+          for(const id of choices){
+            if(count===0)break;
+            if(deck.filter(card=>card===id).length<4){deck.push(id);count--;}
+          }
+        }
+      }
+      add(groups.spell,50-creatures-items);
+      add(groups.item,items);
+      add(groups.creature,creatures);
+      add(groups.creature,50-deck.length);
+      add(groups.item,50-deck.length);
+      add(groups.spell,50-deck.length);
+      return deck;
+    }
+    return {intro:build(28,10,.5),fire:build(30,12,.78),stronghold:build(26,14,.25)};
+  }
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
@@ -65,7 +95,8 @@ const CepterEditions=(()=>{
       const traits={'援護':'support','再生':'regenerate','先制':'first','後手':'last','防御型':'stationary'};
       const clauses=r.ability.split(' ; ');
       const basicCreature=kind==='creature'&&clauses.every(v=>v==='-'||traits[v]);
-      const basicGear=kind==='item'&&clauses.every(v=>/^(ST|HP)[+-]\d+$/.test(v)||v==='先制');
+      const gearClauses=modernSets[edition]?clauses.map(v=>v.replace(/^AT(?=[+-]\d+$)/,'ST')):clauses;
+      const basicGear=kind==='item'&&gearClauses.every(v=>/^(ST|HP)[+-]\d+$/.test(v)||v==='先制'||!!modernSets[edition]&&v==='後手');
       const simple=basicCreature||basicGear;
       const first=edition==='saturn'||edition==='ps1';
       const variant=first&&['dragon','pan','hornet','holyword1','holyword6','magicbolt','steamgear','golem','sorcerer','manticore','armadillo','coati','darkelf','elf','knight','samurai','deathgaze','goldengoose','wallofice','giantspider','giantsnake','stonehail','cure'].includes(slug);
@@ -79,9 +110,9 @@ const CepterEditions=(()=>{
       if(kind==='creature'){c.st=r.st;c.hp=r.hp;delete c.landBan;}
       if(kind==='creature')for(const clause of clauses)if(traits[clause])c[traits[clause]]=true;
       if(basicGear){
-        c.st=Number(r.ability.match(/ST([+-]\d+)/)?.[1]||0);
-        c.hp=Number(r.ability.match(/HP([+-]\d+)/)?.[1]||0);
-        c.first=clauses.includes('先制');
+        c.st=Number(gearClauses.find(v=>v.startsWith('ST'))?.slice(2)||0);
+        c.hp=Number(gearClauses.find(v=>v.startsWith('HP'))?.slice(2)||0);
+        c.first=gearClauses.includes('先制');c.last=gearClauses.includes('後手');
       }
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}
       if(first&&slug==='giantspider'){c.paralyze=true;c.statusRaces=['rh','rb'];}
@@ -95,6 +126,10 @@ const CepterEditions=(()=>{
       if(id===undefined)cards.push(c);else cards[id]=c;
     }
     for(const c of cards)if(c.unlisted)c.catalogOnly=true;
+    if(modernSets[edition]){
+      Object.assign(presets,modernBooks(cards));
+      return;
+    }
     function build(preferred){
       const pool=cards.flatMap((c,i)=>!c.catalogOnly?[i]:[]),deck=[];
       for(const id of preferred)if(deck.length<50&&pool.includes(id)&&deck.filter(n=>n===id).length<4)deck.push(id);

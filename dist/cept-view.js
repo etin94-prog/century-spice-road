@@ -32,10 +32,11 @@ function seats(){
   if(count!==4&&alliance.value.startsWith('teams'))alliance.value='auto';
   updateSeatBooks();
 }
+const modernBookNames={intro:'균형 북',fire:'공격 북',stronghold:'방어 북'};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){
-    if(C.validBook(template))select.add(new Option(key==='intro'?'기본 북':key==='fire'?'화·지 북':key,key));
+    if(C.validBook(template))select.add(new Option(C.presets.stronghold?modernBookNames[key]:key==='intro'?'기본 북':key==='fire'?'화·지 북':key,key));
   }
   if(customBook)select.add(new Option('이 기기의 저장 북','custom'));
 }
@@ -162,6 +163,11 @@ function tickInputClock(){
 setInterval(tickInputClock,250);
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){
+  if(C.presets.stronghold){
+    const key=['intro','fire','stronghold'][Number($('tierChoice').value)]||'intro';
+    return {name:modernBookNames[key],deck:C.presets[key],practice:true,
+      player:{name:modernBookNames.intro,deck:C.presets.intro,practice:true}};
+  }
   if(C.edition!=='ps2'){
     const player={name:'화·지 기반 북',deck:C.presets.fire,practice:true};
     return {name:'수·풍 기반 북',deck:C.presets.intro,practice:true,player};

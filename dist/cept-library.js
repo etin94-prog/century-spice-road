@@ -109,7 +109,7 @@ function showEntry(){
   else detail.append(sourceLink(row[1],row[0]));
 }
 function showHandCombos(container,hand){
-  if(C.edition==="saturn"||C.edition==="ps1")return;
+  if(C.presets.stronghold||C.edition==="saturn"||C.edition==="ps1")return;
   const held=hand.map(id=>C.combo.key(C.cards[id]));
   const matches=C.combo.recipes.flatMap((g,i)=>C.combo.matches(g,held)?[i]:[]);
   if(!matches.length)return;

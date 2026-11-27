@@ -1,20 +1,32 @@
 const firstSeries=['saturn','ps1'].includes(C.edition);
-const adaptedBooks=(firstSeries?[]:archive.books).map(row=>adaptCepterBook(C,row));
+const modernSeries=!!C.presets.stronghold;
+const adaptedBooks=(firstSeries||modernSeries?[]:archive.books).map(row=>adaptCepterBook(C,row));
 for(const [group,select] of [['Player',$('bookChoice')],['AI',$('aiChoice')]]){
   const list=document.createElement('optgroup');list.label=group+' 원작 기반 50장';
   adaptedBooks.forEach((b,i)=>{if(b.group===group)list.append(new Option(b.name+' · 유지 '+b.kept+'장','source-'+i));});
   select.insertBefore(list,select.querySelector('[value="custom"]'));
 }
-const practiceBooks=(firstSeries?[]:C.combo.recipes).map((_,i)=>({name:'콤보 '+(i+1)+' · '+comboLabel(i),deck:C.practiceBook(i),practice:true}));
+const practiceBooks=(firstSeries||modernSeries?[]:C.combo.recipes).map((_,i)=>({name:'콤보 '+(i+1)+' · '+comboLabel(i),deck:C.practiceBook(i),practice:true}));
 for(const select of [$('bookChoice'),$('aiChoice')]){
   const list=document.createElement('optgroup');list.label='콤보 연습 북';
   practiceBooks.forEach((b,i)=>{if(b.deck)list.append(new Option(b.name,'combo-'+i));});select.insertBefore(list,select.querySelector('[value="custom"]'));
 }
 if(C.edition!=='ps2'){
   $('bookChoice').querySelector('[value="recommend"]').remove();
-  $('bookChoice').querySelector('[value="fire"]').textContent='화·지 기반 북';
-  $('bookChoice').querySelector('[value="intro"]').textContent='수·풍 기반 북';
-  $('bookChoice').value='fire';
+  const player=$('bookChoice'),ai=$('aiChoice');
+  if(modernSeries){
+    for(const [key,name] of Object.entries(modernBookNames)){
+      const option=player.querySelector('option[value="'+key+'"]');
+      if(option)option.textContent=name;
+      else player.insertBefore(new Option(name,key),player.lastElementChild);
+      ai.add(new Option(name,key));
+    }
+    player.value='intro';
+  }else{
+    player.querySelector('[value="fire"]').textContent='화·지 기반 북';
+    player.querySelector('[value="intro"]').textContent='수·풍 기반 북';
+    player.value='fire';
+  }
   if(firstSeries){
     for(const [key,title] of [['fire','화·지 초기 북'],['intro','수·풍 초기 북']]){$('bookChoice').querySelector('[value='+key+']').textContent=title;$('aiChoice').add(new Option(title,key));}
     const titles={fireAir:'화·풍 초기 북',waterEarth:'수·지 초기 북',Stopper:'통행 저지',Earth:'지속성',Air:'풍속성',Fire:'화속성',Water:'수속성'};
@@ -23,10 +35,10 @@ if(C.edition!=='ps2'){
       $('aiChoice').add(new Option(title.includes('초기 북')?title:title+' · 공략 기반 북',key));
     }
     $('ps2Library').hidden=true;$('aiChoice').options[0].textContent='판본별 기본 북';}
-  else $('ps2Library').querySelector('summary').textContent='세컨드 공통 자료실 · PS2/DC';
+  else if(!modernSeries)$('ps2Library').querySelector('summary').textContent='세컨드 공통 자료실 · PS2/DC';
 }
 function sourceBook(select){const value=select.value;
-  if(firstSeries&&select.id==='aiChoice'&&C.presets[value])return {name:select.selectedOptions[0].text,deck:C.presets[value],practice:true};if(value.startsWith('combo-'))return practiceBooks[Number(value.slice(6))];return value.startsWith('source-')?adaptedBooks[Number(value.slice(7))]:null;}
+  if((firstSeries||modernSeries)&&select.id==='aiChoice'&&C.presets[value])return {name:select.selectedOptions[0].text,deck:C.presets[value],practice:true};if(value.startsWith('combo-'))return practiceBooks[Number(value.slice(6))];return value.startsWith('source-')?adaptedBooks[Number(value.slice(7))]:null;}
 let matchupWorker=null;
 function refreshMatchup(){
   matchupWorker?.terminate();matchupWorker=null;

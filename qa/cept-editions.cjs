@@ -22,6 +22,29 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold']);
+    assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,3);
+    for(const deck of Object.values(C.presets)){
+      assert.ok(deck.every(id=>!C.cards[id].unlisted));
+      assert.deepEqual(new Set(deck.map(id=>C.cards[id].kind)),new Set(['creature','item','spell']));
+    }
+    const fighter=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.kind==='creature'&&!c.first&&!c.last&&c.category==='neutral');
+    const mace=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='mace');
+    const armor=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='diamondarmor');
+    const checkGear=(gear,st,hp,first)=>{
+      const s=C.start(2,2,5000,edition+'-1');
+      s.players[0].cash=5000;s.players[0].hand=[gear];
+      Object.assign(s.tiles[1],{owner:1,type:'무속성',unit:{id:fighter,hp:C.cards[fighter].hp}});
+      s.players[0].pos=1;s.phase='attack';
+      s.battle={at:1,inv:fighter,atkItem:null,defItem:null};
+      assert.ok(C.play(s,['equip',0]));
+      assert.ok(C.play(s,['bare']));
+      assert.equal(s.battle.attackST,Math.max(0,C.cards[fighter].st+st));
+      assert.equal(s.battle.startHP[0],C.cards[fighter].hp+hp);
+      assert.equal(s.battle.strikes[0].side,first);
+    };
+    if(edition==='begins')checkGear(mace,20,0,0);
+    else checkGear(armor,-30,60,1);
   }
   for(const [id,map] of Object.entries(C.maps)){
     assert.equal(map.types[0],'성');
