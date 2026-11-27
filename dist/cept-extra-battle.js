@@ -117,6 +117,7 @@ const CepterExtraBattle=(()=>{
         case 'astralqueen':a.hp+=5*s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===-1).length;break;
         case 'leoknight':a.st=10*s.tiles.filter(v=>v.owner===d.seat).length;a.hp=10*lands.length;break;
         case 'pyrallis':a.st+=10*lands.filter(v=>v.type===0).length;if(lands.some(v=>v.type===1))a.hp-=20;break;
+        case 'flamegoetia':if(s.players[a.seat].book.length>s.players[d.seat].book.length){a.st+=20;a.hp+=20;}break;
         case 'anubias':a.hp=5*(s.destroyedCount||0);break;
         case 'kraken':if(lands.some(v=>v.type===0))a.hp-=20;break;
         case 'grassstrider':a.st+=s.players[d.seat].hand.length*10;break;

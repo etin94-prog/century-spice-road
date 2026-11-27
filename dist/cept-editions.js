@@ -131,7 +131,7 @@ const CepterEditions=(()=>{
       antielement:'antielement',disease:'disease',drought:'drought',fog:'fog',greed:'greed',vitality:'vitality',weakness:'weakness',
       peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze'}
   };
-  function modernBooks(cards,edition,bookSize){
+  function modernBooks(cards,edition,bookSize,copyLimit){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
     function build(creatures,items,attackWeight,spells){
       const favored=spells.split(' ');
@@ -149,11 +149,11 @@ const CepterEditions=(()=>{
       for(const group of Object.values(groups))group.sort((a,b)=>score(b)-score(a)||a-b);
       const deck=[];
       function add(group,count){
-        const choices=group.filter(id=>deck.filter(card=>card===id).length<4).slice(0,Math.ceil(count/2));
+        const choices=group.filter(id=>deck.filter(card=>card===id).length<copyLimit(cards[id])).slice(0,Math.ceil(count/2));
         for(let copy=0;copy<4&&count>0;copy++){
           for(const id of choices){
             if(count===0)break;
-            if(deck.filter(card=>card===id).length<4){deck.push(id);count--;}
+            if(deck.filter(card=>card===id).length<copyLimit(cards[id])){deck.push(id);count--;}
           }
         }
       }
@@ -326,8 +326,9 @@ const CepterEditions=(()=>{
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},
     aeroacolyte:{innateScroll:30,scrollCriticalElements:[3]},
-    aquagoetia:{innateScroll:40,half:true}
+    aquagoetia:{innateScroll:40,half:true},flamegoetia:{innateScroll:40},aerogoetia:{innateScroll:40,first:true},abyssalmonarch:{innateScroll:50}
   };
+  const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y'};
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},
     batteringram:{st:20},gremlinamulet:{},boomerang:{st:20,hp:10},
@@ -380,7 +381,7 @@ const CepterEditions=(()=>{
     corrosiveknife:{},deathchoker:{st:30,pierceAll:true},doomneedle:{st:20},neutralcloak:{hp:20},metamorphosebelt:{},bladeofculdra:{st:40,hp:40},
     necroscarab:{},tombstone:{},cursedseal:{}
   };
-  function configure(edition,cards,presets,bookSize){
+  function configure(edition,cards,presets,bookSize,copyLimit){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
     for(const [i,r] of data.cards[edition].entries()){
@@ -402,7 +403,7 @@ const CepterEditions=(()=>{
       const element=pair?-2:battleElements.indexOf(category);
       const format=(arr,lookup)=>arr.map(k=>lookup[k]).filter(Boolean).join(',');
       const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:edition==='3ds'?handheldRefs.cards:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
-        ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
+        ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:(edition==='begins'&&beginsExtraTerritories[slug])||format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
       const c={...(compatible?base:{}),name,catalog,element,kind,category,cost:r.cost,ban:r.ban.map(k=>equipment[k].toLowerCase()),catalogOnly:!(compatible||variant||simple),unlisted:false,hasArt:!!base,...(modernSets[edition]?{editionArt:r.image}:{firstArt:r.image})};
       if(kind==='spell'&&modernSets[edition]){
         const effect=modernSpellEffects[edition][slug]||(edition!=='3ds'&&sharedModernSpells.includes(slug)?slug:null);
@@ -466,7 +467,7 @@ const CepterEditions=(()=>{
     }
     for(const c of cards)if(c.unlisted)c.catalogOnly=true;
     if(modernSets[edition]){
-      Object.assign(presets,edition==='3ds'?handheldBooks(cards):modernBooks(cards,edition,bookSize));
+      Object.assign(presets,edition==='3ds'?handheldBooks(cards):modernBooks(cards,edition,bookSize,copyLimit));
       return;
     }
     function build(preferred){

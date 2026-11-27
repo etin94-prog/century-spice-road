@@ -89,7 +89,8 @@ function createCepter(edition="ps2"){
     gear.kind==='creature'&&(unit.support||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
   const bookSize=edition==='begins'?40:50;
-  if(editions)editions.configure(edition,cards,presets,bookSize);
+  const copyLimit=card=>edition==='begins'&&card?.catalog?.rarity==='E'?1:4;
+  if(editions)editions.configure(edition,cards,presets,bookSize,copyLimit);
   const evo=revolt?(typeof module==='undefined'?CepterEvo:require('./cept-evo')):null;
   if(evo)cards=evo.catalog(cards);
   const modern=!!presets.stronghold;
@@ -109,13 +110,13 @@ function createCepter(edition="ps2"){
     });
     s.phase='spellCircle';
   }
-  function validateBookSize(book,size){
-    if(!Array.isArray(book)||book.length!==size||size!==bookSize&&!(edition==='begins'&&size===50))return false;
+  function validateBookSize(book,size,limit=copyLimit){
+    if(!Array.isArray(book)||book.length!==size)return false;
     const counts=new Map(),evoSlots=new Set();
     for(const id of book){
       if(!Number.isSafeInteger(id))return false;
       const card=cards[id],count=(counts.get(id)||0)+1;
-      if(!card||card.catalogOnly||card.generatedOnly||count>4)return false;
+      if(!card||card.catalogOnly||card.generatedOnly||count>limit(card))return false;
       if(card.evo){
         if(evoSlots.has(card.evoSlot))return false;
         evoSlots.add(card.evoSlot);
@@ -125,7 +126,7 @@ function createCepter(edition="ps2"){
     return true;
   }
   const validBook=book=>validateBookSize(book,bookSize);
-  const validLegacyBook=book=>edition==='begins'&&validateBookSize(book,50);
+  const validLegacyBook=book=>edition==='begins'&&Array.isArray(book)&&[40,50].includes(book.length)&&validateBookSize(book,book.length,()=>4);
   function shuffledBook(template=starter){
     const book=template.slice();
     for(let i=book.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[book[i],book[j]]=[book[j],book[i]];}
@@ -172,7 +173,9 @@ function createCepter(edition="ps2"){
   }
   function setOpeningBook(s,seat,template){
     const p=s.players[seat];
-    if(!p||p.ai||s.round!==1||s.turn!==0||s.phase!=='spell'||!validateBookSize(template,p.template?.length??bookSize))return false;
+    if(!p||p.ai||s.round!==1||s.turn!==0||s.phase!=='spell')return false;
+    const usesOldBook=edition==='begins'&&p.template?.length===50;
+    if(usesOldBook?template?.length!==50||!validLegacyBook(template):!validBook(template))return false;
     dealOpeningBook(p,seat,template);
     if(evo&&s.teams){
       p.explicitOpening=true;
@@ -628,6 +631,17 @@ function createCepter(edition="ps2"){
   function towerTargets(s){
     return s.tiles.flatMap((_,at)=>towerCards(s,at).length?[['towerTo',at]]:[]);
   }
+  function territoryDestinations(s,from){
+    const {unit,area,owner}=s.tiles[from],name=fx.name(unit),links=board(s).links;
+    const nearby=name==='roadrunner'?links[from].flatMap(j=>links[j]).filter(j=>j!==from):links[from];
+    const remote=s.tiles.flatMap((tile,j)=>{
+      if(name==='aerogoetia'&&unit.enchant!=='paralysis'&&tile.type===3&&tile.owner>=0&&!allied(s,owner,tile.owner))return [j];
+      if(tile.owner>=0||tile.area!==area||!territoryType(tile.type))return [];
+      const unrestricted=unit.enchant==='spiritwalk'||name==='blynx';
+      return unrestricted||tile.type===3&&['holyllama','wyvern'].includes(name)||tile.type===2&&name==='dryad'?[j]:[];
+    });
+    return new Set([...nearby,...remote]);
+  }
   function choices(s){
     if(s.phase==='over')return [];
     const follow=extra?.choices(s);if(follow)return follow.length?follow:[['fizzle']];
@@ -713,7 +727,7 @@ function createCepter(edition="ps2"){
             const v=s.tiles[n];if(!revolt&&fx.territoryTargets(s,n).length)options.push(['ability',n]);if(!revolt&&fx.name(v.unit)==='goldentotem'&&fx.canUseAbility(s,v))options.push(['totem',n]);for(let level=v.level+1;level<=5;level++){
               if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
-            if(!leadIdol)for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
+            if(!leadIdol)for(const dest of territoryDestinations(s,n)){
               if(v.unit.enchant!=='thornfetter'&&canInvade(s,v.owner,s.tiles[dest].owner)&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld||revolt?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
             }
             if(p.cash>=elementCost(v))elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
@@ -741,7 +755,7 @@ function createCepter(edition="ps2"){
   }
   function terrainHP(t,unit,card,name,muted){
     if(unit.enchant==='antielement')return 0;
-    const any=!muted&&(name==='hornedchameleon'||unit.enchant==='camouflage');
+    const any=!muted&&(['hornedchameleon','abyssalmonarch'].includes(name)||unit.enchant==='camouflage');
     return any&&(typeof t.type==='number'||t.type==='복합')?10*t.level:landBonus(card,t);
   }
   function battleGround(s,b){
@@ -775,9 +789,10 @@ function createCepter(edition="ps2"){
         extra.itemStart(a,d);
         const destroy=a.n==='gremlin'||['talisman','gremlinamulet'].includes(a.g)||a.g==='stinkbottle'&&(d.gear?.category==='tool'||d.gear?.kind==='creature');
         const target=d.gear?.category;
+        const monarch=a.n==='abyssalmonarch'&&d.gear?.kind==='item'&&['weapon','tool'].includes(target);
         const gremlin=a.g==='gremlinclaw'&&['weapon','scroll','tool'].includes(target)||
           a.g==='gremlintooth'&&(['armor','tool'].includes(target)||d.gear?.kind==='creature');
-        if((destroy||gremlin)&&!extra.protectedGear(d))useGear(d);
+        if((destroy||gremlin||monarch)&&!extra.protectedGear(d))useGear(d);
       }
       const originalIds=sides.map(a=>a.u.id);
       extra.forms(A,originalIds[1]);extra.forms(D,originalIds[0]);
@@ -1762,7 +1777,7 @@ function createCepter(edition="ps2"){
           return Math.max(...gear.map(id=>{const out=forecast(battle,id,false);
             return (out.won?value(s,s.tiles[p.pos])+100:out.noToll?toll(s,s.tiles[p.pos]):-60)-c.cost*.5-(cards[id]?.cost||0)*.5;}));
         }
-        if(skill===3&&k==='transfer'&&s.tiles[y].owner>=0){
+        if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia')){
           const src=s.tiles[x],out=forecast({at:y,from:x,inv:src.unit.id,invHP:src.unit.hp,attackerSeat:src.owner},null,false);
           return out.won?value(s,s.tiles[y])*1.4-value(s,src)+25:-100;
         }
@@ -1840,7 +1855,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,bookSize,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
+  return {edition,bookSize,copyLimit,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

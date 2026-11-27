@@ -207,7 +207,7 @@ try{
   if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}
   else if(C.validLegacyBook(data))legacyBook=data;
 }catch{}
-$('bookHelp').textContent='카드를 합계 '+C.bookSize+'장, 종류별 최대 4장까지 담으세요.';
+$('bookHelp').textContent='카드를 합계 '+C.bookSize+'장, 종류별 최대 4장까지 담으세요.'+(C.edition==='begins'?' E 등급은 같은 카드 한 장까지 담을 수 있습니다.':'');
 const cardElements=c=>c.elements?.map(e=>C.elements[e]).join('·')||C.elements[c.element]||'무';
 const catalogTypes={dual:'복합 속성',neutral:'무속성',fire:'화속성',water:'수속성',earth:'지속성',air:'풍속성',weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구',sflash:'단일 즉시 주문',mflash:'복수 즉시 주문',senchant:'단일 지속 주문',menchant:'복수 지속 주문'};
 function showCatalogCard(c,id){
@@ -229,7 +229,7 @@ function showCatalogCard(c,id){
 $('closeCard').onclick=()=>$('cardDialog').close();
 function tallyBook(){
   const total=draft.reduce((a,b)=>a+b,0)+draftEvos.length;
-  $('bookCount').textContent=total+' / '+C.bookSize+'장';$('storeBook').disabled=total!==C.bookSize;
+  $('bookCount').textContent=total+' / '+C.bookSize+'장';$('storeBook').disabled=total!==C.bookSize||draft.some((count,id)=>count>C.copyLimit(C.cards[id]));
 }
 const cardsPerPage=24;
 let bookPage=0;
@@ -252,7 +252,8 @@ function filterBook(page=0){
     if(c.catalogOnly||c.generatedOnly){row.append(el('small',c.generatedOnly?'대전 중 생성':'도감 전용'));}
     else{
       const input=el('select');input.setAttribute('aria-label',c.name+' 수량');
-      for(let i=0;i<=4;i++)input.add(new Option(i+'장',i));
+      for(let i=0;i<=C.copyLimit(c);i++)input.add(new Option(i+'장',i));
+      if(draft[id]>C.copyLimit(c)){const prior=new Option(draft[id]+'장 · 수량 줄이기',draft[id]);prior.disabled=true;input.add(prior);}
       input.value=draft[id];input.onchange=()=>{draft[id]=+input.value;tallyBook();if(scope==='deck'&&!draft[id])filterBook(bookPage);};row.append(input);
     }
     return row;
@@ -274,7 +275,7 @@ $('prevCards').onclick=()=>filterBook(bookPage-1);$('nextCards').onclick=()=>fil
 function bookEditor(){loadBookDraft(chosenBook());}
 $('editor').ontoggle=()=>{if($('editor').open&&!draft.length)bookEditor();};
 $('bookChoice').onchange=bookEditor;
-const legacyBookButton=legacyBook?btn('이전 50장 북 불러오기',()=>loadBookDraft(legacyBook)):null;
+const legacyBookButton=legacyBook?btn(legacyBook.length===50?'이전 50장 북 불러오기':'이전 저장 북 불러오기',()=>loadBookDraft(legacyBook)):null;
 if(legacyBookButton)$('bookHelp').after(legacyBookButton);
 $('storeBook').onclick=()=>{
   const book=[...draft.flatMap((n,id)=>Array(n).fill(id)),...draftEvos];if(!C.validBook(book))return;

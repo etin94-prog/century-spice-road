@@ -3,6 +3,9 @@ const CepterCreatureText=(()=>{
   const battle={
     ambermosquito:'전투에 들어가면 티라노사우루스 또는 자이언트 랫으로 변신합니다.',
     archbishop:'장비가 파괴되거나 빼앗기지 않습니다.',
+    abyssalmonarch:'전투가 시작되면 상대의 무기 또는 도구를 파괴합니다. 속성이 다른 영지에서도 방어 시 지형 HP 보너스를 받습니다.',
+    aerogoetia:'영지 이동으로 떨어진 적의 풍 영지에 침략할 수 있습니다.',
+    flamegoetia:'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 각각 20 오릅니다.',
     astralqueen:'맵에 배치된 무속성 크리처 한 마리당 전투 HP가 5 오릅니다.',
     baldanders:'전투에 들어가면 무작위 크리처로 변신합니다.',
     bandit:'일반 공격으로 준 피해량의 두 배에 해당하는 마력을 상대에게서 빼앗습니다.',
