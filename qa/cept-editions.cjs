@@ -1295,5 +1295,63 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   barometz.players[0].lap=2;
   assert.ok(C.play(barometz,['ability',8]));
   assert.equal(barometz.players[0].cash,1090);
-  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, four territory abilities and reflect timing OK');
+  function landAbility(name,cost,verify,prepare,owner=1){
+    const s=command(name);
+    Object.assign(s.tiles[3],{owner,unit:{id:id('minotaur'),hp:30}});
+    prepare?.(s);
+    assert.equal(C.territoryAbilityCost(C.cards[id(name)]),cost);
+    assert.ok(C.play(s,['ability',8]));
+    assert.ok(C.play(s,['abilityLand',3]));
+    assert.equal(s.players[0].cash,1000-cost);
+    verify(s);
+  }
+  landAbility('archer',20,s=>assert.equal(s.tiles[3].unit.hp,20));
+  landAbility('healer',10,s=>assert.equal(s.tiles[3].unit.hp,40),null,0);
+  landAbility('fanatic',50,s=>assert.deepEqual([s.tiles[3].unit.hp,s.tiles[8].unit.hp],[10,10]));
+  landAbility('archbishop',30,s=>assert.equal(s.tiles[3].unit.enchant,undefined),s=>{s.tiles[3].unit.enchant='landprotection';},0);
+  landAbility('domovikha',80,s=>assert.equal(s.tiles[3].unit.enchant,'landprotection'),null,0);
+  landAbility('domovoi',30,s=>assert.equal(s.tiles[3].unit.enchant,'phantasm'),null,0);
+  landAbility('hyde',50,s=>assert.equal(s.tiles[3].unit.enchant,'paralysis'));
+  landAbility('spittingcobra',10,s=>assert.ok(s.tiles[3].unit.poisoned));
+
+  const growth=command('algasphere');
+  Object.assign(growth.tiles[8].unit,{hp:45,mhp:90});
+  assert.ok(C.play(growth,['ability',8]));
+  assert.deepEqual([growth.players[0].cash,growth.tiles[8].unit.hp,growth.tiles[8].unit.mhp],[940,55,100]);
+  const totem=command('goldentotem');
+  assert.ok(C.play(totem,['totem',8]));
+  assert.deepEqual([totem.players[0].cash,totem.tiles[8].owner],[1200,-1]);
+  const doll=command('dancingdoll');
+  doll.prices=[10,30,56,80];
+  assert.ok(C.play(doll,['ability',8]));
+  assert.deepEqual(doll.prices,[8,24,44,64]);
+  const banshee=command('banshee');
+  Object.assign(banshee.tiles[3],{owner:1,unit:{id:id('minotaur'),hp:40}});
+  assert.ok(C.play(banshee,['ability',8]));
+  assert.deepEqual([banshee.tiles[8].unit.hp,banshee.tiles[3].unit.hp],[30,30]);
+  const cleanse=command('sharazad');
+  cleanse.players[0].status='slow';cleanse.players[1].status='haste';
+  assert.ok(C.play(cleanse,['ability',8]));
+  assert.ok(cleanse.players.every(p=>!p.status));
+
+  for(const [name,field,value] of [['clockworkowl','chooseDirection',true],['holyllama','word',6]]){
+    const s=command(name);
+    assert.ok(C.play(s,['ability',8]));
+    assert.ok(C.play(s,['abilityPlayer',1]));
+    assert.equal(s.players[1][field],value);
+  }
+  const witch=command('witch');
+  witch.players[1].cash=200;
+  witch.players[1].hand=[id('goblin'),id('battleaxe'),id('countershield')];
+  assert.ok(C.play(witch,['ability',8]));
+  assert.ok(C.play(witch,['abilityPlayer',1]));
+  assert.deepEqual(witch.players.map(p=>p.cash),[1030,140]);
+  const worm=command('bookworm');
+  worm.players[1].hand=[id('goblin'),id('battleaxe')];
+  assert.ok(C.play(worm,['ability',8]));
+  assert.ok(C.play(worm,['abilityPlayer',1]));
+  assert.equal(worm.phase,'bookWorm');
+  assert.ok(C.play(worm,['wormDiscard',1]));
+  assert.ok(!worm.players[1].hand.includes(id('battleaxe')));
+  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, 21 territory abilities and reflect timing OK');
 }

@@ -181,7 +181,10 @@ const CepterEditions=(()=>{
     mindripper:{revenge:'hand',st:40,hp:0},soulcorrupter:{revenge:'symbols',st:40,hp:0},
     powercrown:{revenge:'fossil',protectItem:true,st:0,hp:0},
     ixtol:{revenge:'destroy'},kodama:{revenge:'shrink',support:true},lifestealer:{revenge:'shrink',st:40,hp:0},
-    greatfossil:{stationary:true,freeToll:true},metalbug:{},sakuya:{support:true},barometz:{stationary:true}
+    greatfossil:{stationary:true,freeToll:true},metalbug:{},sakuya:{support:true},barometz:{stationary:true},
+    archbishop:{},clockworkowl:{},dancingdoll:{},domovikha:{},domovoi:{},fanatic:{},
+    sharazad:{support:true},algasphere:{stationary:true},banshee:{},bookworm:{},hyde:{},
+    healer:{regenerate:true},spittingcobra:{},archer:{},holyllama:{},witch:{},goldentotem:{stationary:true}
   };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));

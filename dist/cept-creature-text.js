@@ -233,8 +233,14 @@ const CepterCreatureText=(()=>{
   };
   const elements=['화','수','지','풍'],races={rh:'인간형',rb:'야수형',rd:'용형',ru:'불사형'};
   const targets=ids=>ids.map(i=>elements[i]||'무').join('·')+' 속성';
+  const handheldTerritory={
+    fanatic:'고른 크리처에게 20 피해를 주고 이 크리처의 HP도 10 줄어듭니다.',
+    algasphere:'자신의 최대 HP와 현재 HP를 최대 20씩 올립니다. 최대 HP 상한은 100입니다.',
+    goldentotem:'200G를 얻고 이 크리처는 파괴됩니다.',
+    witch:'고른 적의 손패에 있는 주문과 장비 한 장당 30G를 빼앗습니다.'
+  };
   function territorySummary(C,card){
-    const effect=territory[C.combo.key(card)],cost=C.territoryAbilityCost(card);
+    const key=C.combo.key(card),effect=(C.edition==='3ds'?handheldTerritory[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
   function describe(C,card){

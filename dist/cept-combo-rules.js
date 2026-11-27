@@ -179,7 +179,10 @@ const CepterCombos = (() => {
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
     const sagaTerritory={fontaciel:50,gogma:200,warlock:60};
-    const handheldTerritory={metalbug:80,sakuya:120,barometz:0,heatimp:50};
+    const handheldTerritory={
+      metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
+      fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30
+    };
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','barometz','quakebeast']);
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl']);
@@ -238,10 +241,11 @@ const CepterCombos = (() => {
       else if(n==='clockworkowl'){q.chooseDirection=true;}
       else if(n==='dancingdoll'){s.prices=s.prices.map(price=>Math.max(1,Math.floor(price*.8)));}
       else if(n==='domovoi'||n==='hyde'){clear(v.unit);v.unit.enchant=n==='domovoi'?'phantasm':'paralysis';}
-      else if(n==='fanatic'){damage(s,v,20);if(src.unit)damage(s,src,20);}
+      else if(n==='fanatic'){damage(s,v,20);if(src.unit)damage(s,src,s.edition==='3ds'?10:20);}
       else if(n==='sharazad'){for(const who of s.players)clearCepter(who);}
       else if(n==='algasphere'&&!immuneHP(src)){
-        const gain=Math.max(0,Math.min(10,80-max(src.unit)));src.unit.mhp=max(src.unit)+gain;src.unit.hp+=gain;
+        const handheld=s.edition==='3ds',gain=Math.max(0,Math.min(handheld?20:10,(handheld?100:80)-max(src.unit)));
+        src.unit.mhp=max(src.unit)+gain;src.unit.hp+=gain;
       }
       else if(n==='banshee'){for(const t of s.tiles)if(t.unit)damage(s,t,Math.floor(max(t.unit)/4));}
       else if(n==='bookworm'){s.spellTarget=x;return 'bookWorm';}
@@ -253,7 +257,7 @@ const CepterCombos = (() => {
       else if(n==='holyllama'){clearCepter(q);q.word=6;}
       else if(n==='windimp')q.cash-=Math.floor(q.cash/2);
       else if(n==='heatimp'){const j=q.symbols.indexOf(Math.max(...q.symbols));q.symbols[j]-=Math.floor(q.symbols[j]*.4);}
-      else if(n==='witch'){const amount=Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*20);p.cash+=amount;q.cash-=amount;}
+      else if(n==='witch'){const amount=Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*(s.edition==='3ds'?30:20));p.cash+=amount;q.cash-=amount;}
       else if(n==='domovikha'){clear(v.unit);v.unit.enchant='landprotection';}
       else if(n==='tetramorph')damage(s,v,20);
       else if(n==='spittingcobra'){clear(v.unit);v.unit.poisoned=true;}

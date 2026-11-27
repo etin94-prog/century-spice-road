@@ -1192,7 +1192,7 @@ function createCepter(edition="ps2"){
       case 'fizzle':delete s.reliefFrom;mapEffect('cast','대상 없음');s.phase='roll';break;
       case 'roll':{const {faces,total,sides,zeroBased,haste}=movementRoll(s,p);if(haste&&!--p.hasteRolls)fx.clearCepter(p);s.die=total;if(revolt)s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(pathSwitch(s,p.pos,p.previous)){delete p.reverse;move(s,p.dir||1);break;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
-      case 'totem':p.cash+=300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
+      case 'totem':p.cash+=handheld?200:300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
       case 'switchFlip':flipPaths(s,'방향 변경');s.phase='land';break;
       case 'switchKeep':s.phase='land';break;
       case 'towerAim':s.phase='towerTarget';break;
@@ -1350,6 +1350,7 @@ function createCepter(edition="ps2"){
         if(n==='holyllama')return alliedWordTarget(x,6);
         if(n==='clockworkowl')return friend&&q.previous!=null&&!q.chooseDirection?15:-10;
         if(n==='bookworm')return friend?-60:Math.max(0,...q.hand.map(id=>(cards[id]?.cost||0)*.6));
+        if(handheld&&n==='witch')return friend?-60:Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*30);
         return friend?-100:q.cash/20;
       }
       if(kind==='abilityLand'){
@@ -1361,7 +1362,7 @@ function createCepter(edition="ps2"){
           return total(trial,seat)-total(s,seat)+(cards[u.id].element===2?20:0);
         }
         if(n==='archer'||n==='tetramorph')return damageValue(t,n==='archer'?10:20);
-        if(n==='fanatic')return damageValue(t,20)+damageValue(src,20);
+        if(n==='fanatic')return damageValue(t,20)+damageValue(src,handheld?10:20);
         if(n==='healer')return fx.immuneHP(t)?0:sign(t)*Math.min(30,fx.max(u)-u.hp);
         if(n==='archbishop'){
           const curse=u.poisoned||u.confused||['paralysis','senility','disease','drought','antielement'].includes(u.enchant);
@@ -1375,7 +1376,7 @@ function createCepter(edition="ps2"){
       if(n==='quakebeast')return board(s).links[from].reduce((a,j)=>{
         const t=s.tiles[j];return a-(t.owner>=0&&t.level>1&&!fx.blockedLevel(s,t)?sign(t)*value(s,t)*.4:0);
       },-value(s,src)*.6);
-      if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<80?20:0;
+      if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld?100:80)?handheld?40:20:0;
       if(n==='fate')return p.hand.length<5?30:0;
       if(n==='barometz')return (p.lap+1)*30;
       if(n==='astralqueen')return s.tiles.reduce((a,t)=>a+(t.unit&&t.unit.enchant!=='camouflage'&&cards[t.unit.id].element!==t.type?sign(t)*t.level*10:0),0);
