@@ -454,7 +454,10 @@ function selectingSecretPlayer(){
 function selectingTerritoryMove(){
   return s?.territoryMove||s?.phase==='territoryTarget'&&C.combo.key(C.cards[s.tiles[s.abilityFrom]?.unit?.id])==='sleipnir';
 }
-function selectingMapTarget(){return selectingSpellMapTarget()||s?.phase==='secretTarget'&&!selectingSecretPlayer()||s?.phase==='towerTarget'||selectingTerritoryMove();}
+function selectingBeginsAbility(){
+  return C.edition==='begins'&&s?.phase==='territoryTarget'&&(room?room.choices:C.choices(s)).some(([kind])=>kind==='abilityLand');
+}
+function selectingMapTarget(){return selectingSpellMapTarget()||s?.phase==='secretTarget'&&!selectingSecretPlayer()||s?.phase==='towerTarget'||selectingTerritoryMove()||selectingBeginsAbility();}
 function focusMapTile(index){
   cameraTile=index;
   const root=$('map'),tile=root.children[index];
@@ -896,7 +899,7 @@ function render(){
     const specialOnMap=selectingSpellMapTarget()&&(landTarget||s.phase==='teleMove');
     const beginsOnMap=C.edition==='begins'&&(
       landTarget&&['camouflage','chariot','relief','mutation','removecurse','turntothewall','replace'].includes(s.spellEffect)||
-      s.spellEffect==='chariot'&&choices.some(([kind])=>kind==='teleTo')
+      s.spellEffect==='chariot'&&choices.some(([kind])=>kind==='teleTo')||selectingBeginsAbility()
     );
     const spellOnMap=C.hasLandDamage(s.spellEffect)&&landTarget||beginsOnMap;
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';

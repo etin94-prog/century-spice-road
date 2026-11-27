@@ -267,7 +267,7 @@ const CepterCombos = (() => {
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
       fate:40,mystic:30,necromancer:30,conjurer:80,goobaqueen:20,sleipnir:60
     };
-    const beginsTerritory={sakuya:120,fay:50,algasphere:60,healer:10};
+    const beginsTerritory={sakuya:120,fay:50,algasphere:60,healer:10,archbishop:30,domovikha:80,archer:20};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','necromancer','barometz','quakebeast']);
     const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
@@ -320,7 +320,7 @@ const CepterCombos = (() => {
       return s.tiles.flatMap((v,j)=>{
         if(['conjurer','goobaqueen'].includes(n))return !v.unit&&territoryType(v.type)?[['abilityLand',j]]:[];
         if(!targetable(s,v,enchantAbilities.has(n)?'senchant':'sflash',n==='archbishop'))return [];
-        if(n==='archer'&&allied(s,v.owner,s.turn))return [];
+        if(n==='archer'&&s.edition!=='begins'&&allied(s,v.owner,s.turn))return [];
         if(n==='tetramorph'&&(allied(s,v.owner,s.turn)||hasElement(cards[v.unit.id],v.type)))return [];
         return [['abilityLand',j]];
       });
@@ -406,7 +406,7 @@ const CepterCombos = (() => {
       else if(n==='holyllama'){clearCepter(q);q.word=6;}
       else if(n==='windimp')q.cash-=Math.floor(q.cash/2);
       else if(n==='heatimp'){const j=q.symbols.indexOf(Math.max(...q.symbols));q.symbols[j]-=Math.floor(q.symbols[j]*.4);}
-      else if(n==='witch'){const amount=Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*(s.edition==='3ds'?30:20));p.cash+=amount;q.cash-=amount;}
+      else if(n==='witch'){const amount=Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*(['3ds','begins'].includes(s.edition)?30:20));p.cash+=amount;q.cash-=amount;}
       else if(n==='domovikha'){clear(v.unit);v.unit.enchant='landprotection';}
       else if(n==='tetramorph')damage(s,v,20);
       else if(n==='spittingcobra'){clear(v.unit);v.unit.poisoned=true;}

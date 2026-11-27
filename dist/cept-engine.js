@@ -597,7 +597,7 @@ function createCepter(edition="ps2"){
             if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit)))continue;
             const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+(begins?10:Math.floor(max/5)));
             if(fx.name(v.unit)==='chimera'){
-              const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(handheld?100:80,st+10));
+              const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(handheld||begins?100:80,st+10));
             }
           }
           note(s,p.name+' · '+p.lap+'주 완주');
@@ -925,7 +925,7 @@ function createCepter(edition="ps2"){
       if(a.n==='pyrodrake'&&!a.gear){a.st+=20;a.hp+=20;}
       if(a.n==='mastermonk'&&!a.gear){a.st+=30;a.hp-=30;}
       if(a.n==='lilith')a.st=owner.hand.length*10;
-      if(revolt&&a.n==='pulgasari'&&a.gear)a.st+=20;
+      if((revolt||begins)&&a.n==='pulgasari'&&a.gear)a.st+=20;
       if(a.n==='drool')a.st=count(1)*10;
       if(handheld&&a.n==='shadefolk')a.st=s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===d.element).length*10;
       if(a.n==='undine')a.hp=count(1)*20;
@@ -1043,7 +1043,7 @@ function createCepter(edition="ps2"){
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||
           matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=40||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
-          d.n==='caitsith'&&fx.strength(a.u)>=40||revolt&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
+          d.n==='caitsith'&&fx.strength(a.u)>=40||(revolt||begins)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&blocks){lines.push('공격 무효');return 'block';}
         if(!orb&&d.c.partialReflect){
@@ -1088,8 +1088,10 @@ function createCepter(edition="ps2"){
         if(revolt&&a.g==='goldenhammer'&&d.hp>0){s.players[a.seat].cash+=200;lines.push('골든 해머 · 200G 획득');}
         if(revolt&&a.g==='moonscimitar'){combo.clear(d.u);d.u.enchant='sleep';}
         if(attacker==='berserker'){combo.clear(a.u);a.u.confused=true;}
-        if(!revolt&&attacker==='samurai'&&(firstEdition?d.c.catalog?.race==='rh':fx.max(d.u)<=30)&&!s.predict&&Math.random()<(firstEdition?.3:.6))d.hp=0;
-        if(attacker==='cleric'&&d.element===-1&&!s.predict&&Math.random()<.8)d.hp=0;
+        if(!revolt&&attacker==='samurai'&&!s.predict&&
+          (firstEdition?d.c.catalog?.race==='rh':begins?fx.strength(d.u)>=40:fx.max(d.u)<=30)&&
+          Math.random()<(firstEdition?.3:begins?.7:.6))d.hp=0;
+        if(attacker==='cleric'&&d.element===-1&&(begins||!s.predict&&Math.random()<.8))d.hp=0;
         if(attacker==='willothewisp'||attacker==='amazon'&&!a.gear){
           const available=s.players[d.seat].cash;
           const amount=begins&&attacker==='willothewisp'?Math.max(0,a.hp)*2:Math.min(available,attacker==='amazon'?(s.players[a.seat].lap+1)*(s.edition==='revolt'?30:20):Math.min(a.hp,a.u.hp)*2);
@@ -1102,10 +1104,10 @@ function createCepter(edition="ps2"){
         if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
-        if((revolt||begins)&&a.g==='ringofthesuccubus'||revolt&&attacker==='shadowgeist'){
+        if((revolt||begins)&&a.g==='ringofthesuccubus'||revolt&&attacker==='shadowgeist'||begins&&attacker==='succubus'){
           const fixed=d.gear?.category==='scroll'||d.g==='petrifystone'||d.c.evoBattle==='landST'||d.n==='spectre'||d.n==='gargoyle'&&d.defending||d.u.enchant==='liquidform'||begins&&['manticore','lilith'].includes(d.n);
           if(!fixed)d.st=Math.max(0,d.st-fx.strength(d.u));
-          d.u.st=0;lines.push((attacker==='shadowgeist'?a.c.name:'서큐버스 링')+' · 상대 기본 ST 0');
+          d.u.st=0;lines.push((['shadowgeist','succubus'].includes(attacker)?a.c.name:'서큐버스 링')+' · 상대 기본 ST 0');
         }else if(attacker==='succubus'||!revolt&&!begins&&a.g==='ringofthesuccubus'||creatureEffects&&a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
         if(a.g==='ringofthevampire')a.hp+=damage;
         if(attacker==='bandit'||a.g==='banditsglove'){
@@ -1265,7 +1267,8 @@ function createCepter(edition="ps2"){
         a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-20;
         if(begins)lines.push('좀비 · 기본 HP 20 감소');
       }
-      if(['behemoth','baal','remora'].includes(a.n)&&(!(revolt||begins)||a.n!=='baal'||a.hp>0)){
+      const needsSurvivor=(revolt||begins)&&a.n==='baal'||begins&&a.n==='behemoth';
+      if(['behemoth','baal','remora'].includes(a.n)&&(!needsSurvivor||a.hp>0)){
         const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;
         if(hand.length){
           hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);
@@ -1413,6 +1416,13 @@ function createCepter(edition="ps2"){
       if(revolt&&itemEnd&&a.hp>0&&a.g==='soulray'&&!alreadyRecycled&&hasHandSpace(s.players[a.seat]))s.players[a.seat].hand.push(a.item);
       if(begins&&creatureEnd&&a.hp>0){
         if(a.n==='triton'&&a.gear?.kind==='item')draw(s.players[a.seat],s);
+        if(a.n==='pulgasari'&&opponent.gear?.kind==='item'){
+          const max=fx.max(a.u),gain=Math.min(10,100-max);
+          if(gain>0){
+            a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
+            lines.push(a.c.name+' · 최대 HP +'+gain);
+          }
+        }
         if(a.n==='gelatinouswall'&&a.receivedDamage>0){
           const gain=a.receivedDamage*5;
           s.players[a.seat].cash+=gain;
@@ -1487,7 +1497,7 @@ function createCepter(edition="ps2"){
       }else if(onLand(A))s.tiles[b.from].unit=A.u;
     }
     if(t.unit&&sides.some(a=>a.g==='rainbowpiece'&&a.hp>0))combo.clear(t.unit);
-    if(b.from!=null&&(won||!onLand(A))&&(handheld&&b.teleport||fx.name(s.tiles[b.from].unit)!=='powdereater'))vacate(s.tiles[b.from]);
+    if(b.from!=null&&(won||!onLand(A))&&((handheld||begins)&&b.teleport||fx.name(s.tiles[b.from].unit)!=='powdereater'))vacate(s.tiles[b.from]);
     s.phase='result';note(s,b.lines.at(-1));
   }
   function configureMatch(s,{inputSeconds=0,suddenDeath=false,recordReplay=false}={}){
@@ -1588,7 +1598,7 @@ function createCepter(edition="ps2"){
         s.phase='attack';
       }else{
         claim(dst,src.owner,{...src.unit});combo.clear(dst.unit);
-        if(handheld&&!territoryMove||fx.name(src.unit)!=='powdereater')vacate(src);
+        if((handheld||begins)&&!territoryMove||fx.name(src.unit)!=='powdereater')vacate(src);
         if(label)mapEffect('cast',label+' 이동',at,{source:from});
         if(territoryMove)afterTerritory(s);else s.phase='roll';
       }
@@ -2020,7 +2030,7 @@ function createCepter(edition="ps2"){
         if(n==='holyllama'||n==='hypnosloth')return alliedWordTarget(x,n==='hypnosloth'?1:6);
         if(n==='clockworkowl')return friend&&q.previous!=null&&!q.chooseDirection?15:-10;
         if(n==='bookworm')return friend?-60:Math.max(0,...q.hand.map(id=>(cards[id]?.cost||0)*.6));
-        if(handheld&&n==='witch')return friend?-60:Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*30);
+        if((handheld||begins)&&n==='witch')return friend?-60:Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*30);
         return friend?-100:q.cash/20;
       }
       if(kind==='abilityLand'){
@@ -2184,7 +2194,7 @@ function createCepter(edition="ps2"){
           if(c.synthesizedForm&&sacrificeRequired(s,c))return Math.max(...p.hand.flatMap((_,i)=>i===x?[]:[invasionValue(at,x,i)]));
           return invasionValue(at,x);
         }
-        if(handheld&&k==='transfer'&&fx.name(s.tiles[x].unit)==='powdereater'&&s.tiles[y].owner<0){
+        if((handheld||begins)&&k==='transfer'&&fx.name(s.tiles[x].unit)==='powdereater'&&s.tiles[y].owner<0){
           return 26+value(s,s.tiles[y])/15+(s.tiles[y].type===3?4:0);
         }
         if((revolt||begins)&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);

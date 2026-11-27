@@ -3689,7 +3689,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }
   assert.deepEqual(playable,['1339-infernal-vacation','1344-kelpez','1345-budget-raging-river','1347-power-surge','1348-esupports#main',
     '1349-willowisp#main','1349-willowisp#alternate','1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead',
-    '1356-support-deck-for-chapter-15','1366-selenear']);
+    '1356-support-deck-for-chapter-15','1366-selenear','1372-bonzey-buddy','1374-mosquito-water']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -4242,6 +4242,136 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     player.cash=70;
     assert.ok(C.play(printed,['cast',0]));
     assert.equal(player.cash,0);
+  }
+
+
+  {
+    const added='archbishop cleric doppelganger samurai thief chimera domovikha domovoi salamander sharazad apsaras behemoth charon kraken madclown seabonze vodyanoi angostura giantspider goobaqueen vampire archer dhampir holyllama mothman myrmecoleo nue powdereater pulgasari succubus witch';
+    for(const name of added.split(' '))assert.ok(creature(name)>=0,name);
+    const wispBook=enemy.book,priorRandom=Math.random;
+    try{
+      const samurai=creature('samurai');
+      Math.random=()=>.69;
+      assert.ok(duel(samurai,fighter,null,null,100,2).won);
+      Math.random=()=>.7;
+      assert.equal(duel(samurai,fighter,null,null,100,2).won,false);
+      assert.ok(duel(creature('cleric'),fighter,null,null,100,2).won);
+      assert.ok(!duel(creature('cleric'),creature('dwarf'),null,null,100,2).won);
+      assert.equal(duel(creature('doppelganger'),fighter,null,null,100,2).forms[0],fighter);
+      const theft=duel(creature('thief'),fighter,null,axe,100,2);
+      assert.deepEqual([theft.attackST,theft.defendST],[C.cards[creature('thief')].st+40,40]);
+      const drained=duel(creature('succubus'),fighter,null,axe,100,2);
+      assert.equal(land.unit.st,0);
+      assert.match(drained.strikes.find(hit=>hit.side===1).notes.join(' '),/40 피해/);
+
+      const giant=creature('behemoth');
+      for(const [weapon,battleLoss] of [[null,false],[axe,true]]){
+        Object.assign(creatures,{phase:'attack',battle:{at:2,inv:fighter,atkItem:null,defItem:null}});
+        Object.assign(land,{owner:1,type:2,level:1,unit:{id:giant,hp:60}});
+        creatures.players[0].cash=200;enemy.cash=200;
+        creatures.players[0].hand=weapon==null?[]:[weapon];enemy.hand=[goblin,fighter];
+        assert.ok(C.play(creatures,weapon==null?['bare']:['equip',0])&&C.play(creatures,['bare']));
+        assert.equal(creatures.battle.won,battleLoss);
+        assert.equal(enemy.hand.length,battleLoss?2:1);
+      }
+      const ferryman=duel(fighter,creature('charon'),null,null,30,2);
+      assert.equal(ferryman.strikes[0].effect,'block');
+      assert.equal(enemy.cash,120);
+      assert.equal(duel(creature('minotaur'),creature('salamander'),null,null,40,2).strikes[0].effect,'heal');
+      assert.equal(duel(fighter,creature('kraken'),null,null,50,2).strikes[0].effect,'block');
+      assert.equal(duel(fighter,creature('seabonze'),axe,null,40,2).attackST,40);
+      const hpBless=creatures.tiles[6],savedLand={...hpBless};
+      Object.assign(hpBless,{type:0,owner:1,unit:{id:goblin,hp:30}});
+      assert.equal(duel(fighter,creature('kraken'),null,null,50,2).startHP[1],30);
+      hpBless.unit={id:creature('madclown'),hp:20};
+      assert.equal(duel(goblin,fighter,null,null,40,2).startHP[1],50);
+      hpBless.unit={id:creature('nue'),hp:50};
+      assert.equal(duel(fighter,goblin,null,null,30,2).attackST,30);
+      hpBless.unit={id:goblin,hp:30};
+      assert.equal(duel(creature('mothman'),goblin,null,null,30,2).attackST,40);
+      Object.assign(hpBless,savedLand);
+      Math.random=()=>.79;
+      assert.equal(duel(fighter,creature('vodyanoi'),null,null,40,1).finalHP[0],0);
+      assert.equal(duel(goblin,creature('angostura'),null,null,70,2).finalHP[0],0);
+      assert.equal(duel(creature('giantspider'),fighter,null,null,100,2).strikes.length,1);
+      assert.equal(land.unit.enchant,'paralysis');
+      const healed=duel(goblin,creature('vampire'),null,null,15,2);
+      assert.ok(healed.finalHP[1]>15);
+      assert.equal(duel(creature('dwarf'),creature('dhampir'),null,null,40,2).strikes[0].effect,'block');
+
+      const myrmecoleo=creature('myrmecoleo');
+      const revived=duel(fighter,myrmecoleo,axe,null,40,2);
+      assert.equal(revived.finalForms[1],creature('dragonfly'));
+      assert.equal(land.unit.id,creature('dragonfly'));
+      duel(goblin,creature('pulgasari'),creature('mace'),vest,40,2);
+      assert.equal(land.unit.mhp,50);
+
+      const angel=creature('apsaras');
+      for(const [level,expected] of [[2,'hit'],[3,'block']]){
+        Object.assign(creatures,{phase:'attack',battle:{at:2,inv:goblin,atkItem:null,defItem:null}});
+        Object.assign(land,{owner:1,type:1,level,unit:{id:angel,hp:30}});
+        enemy.hand=[];
+        assert.ok(C.play(creatures,['bare'])&&C.play(creatures,['bare']));
+        assert.equal(creatures.battle.strikes[0].effect,expected);
+      }
+    }finally{Math.random=priorRandom;enemy.book=wispBook;}
+
+    function command(unit){
+      const s=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+      Object.assign(s.players[0],{pos:2,cash:300});
+      Object.assign(s.tiles[2],{owner:0,unit:{id:creature(unit),hp:40}});
+      s.phase='land';
+      return s;
+    }
+    const lap=command('chimera');
+    Object.assign(lap,{phase:'roll'});
+    Object.assign(lap.players[0],{pos:1,previous:2,dir:1,word:1,flags:C.board(lap).forts.slice()});
+    lap.tiles[2].unit.st=95;
+    assert.ok(C.play(lap,['roll']));
+    assert.deepEqual([lap.players[0].lap,lap.tiles[2].unit.st],[1,100]);
+    const priest=command('archbishop');
+    const blessed=priest.tiles[3];
+    Object.assign(blessed,{owner:0,unit:{id:fighter,hp:40,enchant:'landprotection'}});
+    assert.ok(C.play(priest,['ability',2])&&C.play(priest,['abilityLand',3]));
+    assert.deepEqual([priest.players[0].cash,blessed.unit.enchant],[270,undefined]);
+    for(const [unit,enchant,cost] of [['domovikha','landprotection',80],['domovoi','phantasm',30]]){
+      const m=command(unit);
+      Object.assign(m.tiles[3],{owner:0,unit:{id:fighter,hp:40}});
+      assert.ok(C.play(m,['ability',2])&&C.play(m,['abilityLand',3]));
+      assert.deepEqual([m.players[0].cash,m.tiles[3].unit.enchant],[300-cost,enchant]);
+    }
+    const ranged=command('archer');
+    Object.assign(ranged.tiles[3],{owner:2,unit:{id:fighter,hp:35}});
+    assert.ok(C.play(ranged,['ability',2])&&C.play(ranged,['abilityLand',3]));
+    assert.deepEqual([ranged.players[0].cash,ranged.tiles[3].unit.hp],[280,25]);
+    const gem=command('sharazad');
+    gem.players[0].status='slow';gem.players[1].status='haste';
+    assert.ok(C.play(gem,['ability',2]));
+    assert.deepEqual([gem.players[0].cash,gem.players[0].status,gem.players[1].status],[270,undefined,undefined]);
+    const queen=command('goobaqueen');
+    assert.ok(C.play(queen,['ability',2])&&C.play(queen,['abilityLand',3]));
+    assert.deepEqual([queen.tiles[3].owner,queen.tiles[3].unit.id,queen.players[0].cash],[0,creature('gooba'),280]);
+    assert.equal(queen.tiles[2].unit.id,creature('goobaqueen'));
+    const llama=command('holyllama');
+    assert.ok(C.choices(llama).some(([kind,from,at])=>kind==='transfer'&&from===2&&at===15));
+    assert.ok(C.play(llama,['ability',2])&&C.play(llama,['abilityPlayer',1]));
+    assert.deepEqual([llama.players[0].cash,llama.players[1].word],[270,6]);
+    const drain=command('witch');
+    drain.players[1].hand=[goblin,axe,creature('gift')];
+    drain.players[1].cash=100;
+    assert.ok(C.play(drain,['ability',2])&&C.play(drain,['abilityPlayer',1]));
+    assert.deepEqual([drain.players[0].cash,drain.players[1].cash],[330,40]);
+
+    const split=command('powdereater'),powder=creature('powdereater');
+    assert.ok(C.play(split,['transfer',2,3]));
+    assert.deepEqual([split.tiles[2].unit.id,split.tiles[3].unit.id],[powder,powder]);
+    const moveSpell=command('powdereater');
+    Object.assign(moveSpell,{phase:'spell'});
+    Object.assign(moveSpell.players[0],{hand:[creature('chariot')],pos:3});
+    moveSpell.tiles[3].unit=moveSpell.tiles[2].unit;
+    moveSpell.tiles[3].owner=0;moveSpell.tiles[2].owner=-1;moveSpell.tiles[2].unit=null;
+    assert.ok(C.play(moveSpell,['cast',0])&&C.play(moveSpell,['targetLand',3])&&C.play(moveSpell,['teleTo',5]));
+    assert.deepEqual([moveSpell.tiles[3].unit,moveSpell.tiles[5].unit.id],[null,powder]);
   }
 
   const curse=C.start(2,2,6000,'begins-original-ford');

@@ -149,6 +149,7 @@ const CepterExtraBattle=(()=>{
         if(a.n==='magmaavatar'||a.n==='stormavatar')a.st=a.hp=owned*15;
       }
       switch(a.n){
+        case 'mothman':if(s.edition==='begins')a.st+=5*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],-1)).length;break;
         case 'astralqueen':a.hp+=5*s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===-1).length;break;
         case 'leoknight':a.st=10*s.tiles.filter(v=>v.owner===d.seat).length;a.hp=10*lands.length;break;
         case 'pyrallis':a.st+=10*lands.filter(v=>v.type===0).length;if(lands.some(v=>v.type===1))a.hp-=20;break;
