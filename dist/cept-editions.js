@@ -470,6 +470,7 @@ const CepterEditions=(()=>{
     gascloud:{half:true},woodfolk:{support:true},bandit:{support:true},borgess:{},ninja:{first:true,scrollCritical:true},
     statue:{stationary:true},trojanhorse:{support:true},caitsith:{spellWard:true},baal:{first:true},firedrake:{},
     amphibianwarrior:{immutableHP:true},cockatrice:{},apsaras:{},lilith:{first:true},
+    livinghelmet:{itemCreature:true},livingarmor:{itemCreature:true,battleST:50},
     grimalkin:{support:true,supportElements:[0,2],spellWard:true},
     phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},phoenix:{},
     scylla:{blocksAttackAbilities:true},greattusker:{blocksFirst:true},

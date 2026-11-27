@@ -1,3 +1,5 @@
+const archive=CepterArchive;
+const cardIndex=new Map(C.cards.flatMap((c,id)=>c.catalog?[[c.catalog.path,id]]:[]));
 const stageSelect=$('mapChoice');
 const originalStages=document.createElement('optgroup');
 originalStages.label='PS2 스테이지';
@@ -64,6 +66,7 @@ else{
       selectMap.hidden=!supported;
     };
     pick.onchange=show;show();archive.append(pick,values,selectMap);references.append(list,archive);
+    if(C.edition==='revolt')references.append(revoltBookArchive());
   }else{
     list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
     if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
@@ -95,8 +98,6 @@ function showStage(){
   if(m.source)caption.append(' · ',sourceLink(m.source,'칸 배치 원문'));
 }
 stageSelect.onchange=showStage;showStage();
-const archive=CepterArchive;
-const cardIndex=new Map(C.cards.flatMap((c,id)=>c.catalog?[[c.catalog.path,id]]:[]));
 const comboCards=paths=>paths.map(path=>C.cards[cardIndex.get(path)]?.catalog.name||path);
 const pathByName=new Map([...cardIndex.keys()].map(path=>[path.split('/').pop(),path]));
 function comboLabel(i){return C.combo.recipes[i].map(group=>group.length>4?'조건에 맞는 크리처 ('+group.length+'종)':comboCards(group.map(n=>pathByName.get(n))).join(' 또는 ')).join(' + ');}
@@ -113,6 +114,49 @@ function archiveCard(path,qty){
   if(!c)return el('span',path);
   const button=btn((c.catalog?.name||c.name)+(qty?' ×'+qty:''),()=>showCatalogCard(c,id),'archive-card');
   const im=cardSeal(id);im.loading='lazy';button.prepend(im);return button;
+}
+function useArchiveBook(book){
+  customBook=book;const choice=$('bookChoice');choice.lastElementChild.disabled=false;choice.value='custom';
+  try{localStorage.setItem(bookKey,JSON.stringify(book));}catch{}
+  bookEditor();refreshMatchup();lobby();$('config').scrollIntoView({block:'center'});
+}
+function revoltBookArchive(){
+  const entries=CepterRevoltBookArchive;
+  const paths=new Map(C.cards.flatMap(c=>c.catalog&&!c.unlisted?[[C.combo.key(c),c.catalog.path]]:[]));
+  const archive=el('details',null,'revolt-book-archive');
+  archive.append(el('summary','스토리 북 자료 · '+entries.length+'개'));
+  const pick=el('select');pick.setAttribute('aria-label','리볼트 스토리 북 자료');
+  const groups=new Map();
+  entries.forEach(([character,name],i)=>{
+    if(!groups.has(character)){
+      const group=el('optgroup');group.label=character;
+      groups.set(character,group);pick.append(group);
+    }
+    groups.get(character).append(new Option(name,i));
+  });
+  const summary=el('p');summary.setAttribute('aria-live','polite');
+  const link=el('p'),grid=el('div',null,'archive-cards');
+  let selected=[];
+  const use=btn('대전용 북으로 선택',()=>{
+    useArchiveBook(selected);
+    $('bookChoice').focus({preventScroll:true});
+  });
+  const update=()=>{
+    const [character,name,source,recipe]=entries[+pick.value];
+    const counts=Object.entries(recipe).map(([slug,n])=>[paths.get(slug),n]);
+    selected=counts.flatMap(([path,n])=>Array(n).fill(cardIndex.get(path)));
+    const ready=selected.filter(id=>C.cards[id]&&!C.cards[id].catalogOnly&&!C.cards[id].generatedOnly).length;
+    const valid=C.validBook(selected);
+    const status=valid?'대전 가능':selected.length!==C.bookSize?'원문 수량 확인 필요':'미지원 카드 포함';
+    summary.textContent=character+' · '+name+' · '+selected.length+'장 · 대전 지원 '+ready+'장 · '+status;
+    link.replaceChildren(sourceLink('https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/'+source,'북 구성 원문'));
+    grid.replaceChildren(...counts.map(([path,n])=>archiveCard(path,n)));
+    use.hidden=!valid;
+  };
+  pick.onchange=update;
+  archive.addEventListener('toggle',()=>{if(archive.open&&!summary.textContent)update();});
+  archive.append(pick,summary,use,link,grid);
+  return archive;
 }
 function showEntry(){
   const kind=$('libraryKind').value,select=$('libraryResults'),detail=$('libraryDetail');
@@ -131,11 +175,7 @@ function showEntry(){
       for(const [label,count] of changes)list.append(el('p',label+' ×'+count));
       detail.append(list);
     }
-    if(C.validBook(book))detail.append(btn('이 북으로 대국 설정',()=>{
-      customBook=book;const choice=$('bookChoice');choice.lastElementChild.disabled=false;choice.value='custom';
-      try{localStorage.setItem(bookKey,JSON.stringify(book));}catch{}
-      bookEditor();refreshMatchup();lobby();$('config').scrollIntoView({block:'center'});
-    }));
+    if(C.validBook(book))detail.append(btn('이 북으로 대국 설정',()=>useArchiveBook(book)));
     else if(ready)detail.append(btn('지원 카드로 북 편집 시작',()=>{
       draft=C.cards.map((c,id)=>c.catalogOnly||c.generatedOnly?0:Math.min(4,book.filter(n=>n===id).length));
       lobby();$('editor').open=true;$('cardScope').value='usable';$('cardSearch').value='';$('cardKind').value='';

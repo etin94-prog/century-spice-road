@@ -315,6 +315,7 @@ const CepterCreatureText=(()=>{
     if(card.first)pieces.push('선제');
     if(card.last)pieces.push('후공');
     if(card.stationary)pieces.push('방어 전용. 손패에서 침략하거나 영지 이동에 사용할 수 없습니다.');
+    if(card.itemCreature)pieces.push('아이템 크리처. 장비로 사용하면 이 카드의 기본 ST·HP를 더합니다.');
     if(card.supportElements?.length)pieces.push('지원. '+card.supportElements.map(e=>C.elements[e]||'무').join('·')+' 속성 크리처를 장비로 사용할 수 있습니다.');
     else if(card.support&&!(firstEdition&&key==='sorcerer'))pieces.push('지원. 장비를 고를 때 크리처를 사용할 수 있습니다.');
     if(card.regenerate&&!['greenmold','healer'].includes(key))pieces.push('생존하면 전투가 끝날 때 HP를 최대치까지 회복합니다.');

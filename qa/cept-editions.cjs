@@ -1115,6 +1115,28 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       return [slug,Number(n)];
     })));
   }
+  const archive=require('../dist/cept-revolt-book-archive.js');
+  const bySlug=new Map(revoltCatalog.cards.flatMap((c,id)=>!c.unlisted&&c.catalog?[[revoltCatalog.combo.key(c),id]]:[]));
+  assert.equal(archive.length,75);
+  assert.equal(new Set(archive.map(([, ,source])=>source)).size,75);
+  const uneven=[],ready=[];
+  for(const [character,name,source,recipe] of archive){
+    assert.match(source,/^\d+-[a-z-]+#[a-z0-9-]+$/);
+    const original=Object.entries(recipe).flatMap(([slug,n])=>{
+      assert.ok(bySlug.has(slug),slug);
+      assert.ok(n>=1&&n<=4,slug);
+      return Array(n).fill(bySlug.get(slug));
+    });
+    if(original.length!==50)uneven.push(original.length);
+    if(revoltCatalog.validBook(original))ready.push(character+' · '+name);
+  }
+  assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
+  assert.equal(ready.length,13);
+  assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
+  const helmet=revolt('livinghelmet','livingarmor','fighter','fighter').s.battle;
+  assert.deepEqual([helmet.attackST,helmet.startHP[0],helmet.startHP[1]],[60,70,80]);
+  const living=revolt(null,null,'livingarmor','fighter').s.battle;
+  assert.equal(living.attackST,50);
   const dealt=({s})=>s.battle.startHP[1]-s.battle.strikes[0].hp[1];
   assert.equal(revolt(null,null,'fighter','caitsith').s.battle.strikes[0].effect,'block');
   const armedGoblin=revolt('longsword',null,'goblin','caitsith').s.battle;
