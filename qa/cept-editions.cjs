@@ -4459,7 +4459,11 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(catalog.every(c=>!c.editionArt));
   assert.equal(names.length,3);
   assert.ok(Object.values(C.presets).every(C.validBook));
-  assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,7);
+  assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,8);
+  const online=playerBooks.find(([, ,source])=>source==='956-c3ds-playerdecks-osf20130125');
+  const onlineBook=C.presets['handheld-'+online[2]];
+  assert.ok(C.validBook(onlineBook));
+  assert.deepEqual([...onlineBook].sort(),Object.entries(online[3]).flatMap(([slug,n])=>Array(n).fill(id(slug))).sort());
   const starters={
     handheldStarterFireEarth:'cyclops:2 fighter:2 giantrat:1 wolf:2 dragonfly:2 gascloud:2 kobold:2 minotaur:2 pillarofflame:2 dwarf:2 pan:2 tigerbeetle:2 wallofstone:2 woodfolk:2 battleaxe:1 chainmail:2 flametongue:1 leatherarmor:1 longsword:1 mace:1 scalearmor:1 stonehail:1 fly:2 holyword1:2 holyword6:2 magicbolt:2 manna:3 shatter:2 windofhope:1',
     handheldStarterWaterAir:'cyclops:2 fighter:2 giantrat:1 wolf:2 giantamoeba:2 kingtortoise:2 lizardman:2 merfolk:2 wallofice:2 giantbat:2 harpy:2 hornet:2 hurricane:2 spectre:2 battleaxe:1 chainmail:2 leatherarmor:1 longsword:1 mace:1 scalearmor:1 icicle:1 windcutter:1 fly:2 holyword1:2 holyword6:2 magicbolt:2 manna:3 shatter:2 windofhope:1',
@@ -4811,6 +4815,20 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   };
   const poisoned=fight('hornet',null,null,null,asDefender('tyrannosaurus',{st:0}));
   assert.ok(poisoned.battle.won&&poisoned.battle.lines.some(line=>line.includes('독 · 30 피해')));
+  const drake=fight('firedrake',null,null,null,s=>{
+    for(const at of [5,6])Object.assign(s.tiles[at],{owner:1,unit:{id:id('goblin'),hp:50,mhp:50}});
+    s.tiles[5].unit.id=id('minotaur');
+  });
+  assert.equal(drake.battle.attackST,40);
+  const general=fight('generalguan',null,null,null,s=>{
+    for(const at of [5,6])Object.assign(s.tiles[at],{owner:1,unit:{id:id('goblin'),hp:50,mhp:50}});
+  });
+  assert.equal(general.battle.attackST,40);
+  const golem=fight('goblin',null,null,null,asDefender('golem'));
+  assert.deepEqual([golem.tiles[3].unit.st,golem.tiles[3].unit.hp],[30,30]);
+  const flame=fight('flamelord','stonehail',null,null,asDefender('goblin'));
+  assert.equal(flame.players[0].cash,880);
+  assert.ok(flame.battle.strikes[0].notes.some(s=>s.includes('45 피해')));
   const haze=fight('minotaur',null,null,null,asDefender('gascloud'));
   assert.equal(haze.battle.strikes[0].hp[1],10);
   const hazeScroll=fight('minotaur','stonehail',null,null,asDefender('gascloud'));
@@ -4925,6 +4943,37 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.play(loot,C.choices(loot)[0]));
     assert.deepEqual(loot.players[0].hand,[id('manna')]);
     assert.deepEqual(loot.players[1].hand,[id('fighter')]);
+
+    const scrollOnly=spell('antielement');
+    place(scrollOnly,1,'minotaur',1,3);
+    cast(scrollOnly,'targetLand',1);
+    assert.equal(scrollOnly.tiles[1].unit.enchant,'antielement');
+    assert.deepEqual(scrollOnly.players[0].hand,[id('fly')]);
+
+    const quake=spell('earthshaker');
+    quake.players[0].hand.push(id('manna'));
+    place(quake,1,'goblin',1,3);place(quake,2,'minotaur',1,3);place(quake,3,'minotaur',1,3);
+    quake.tiles[3].unit.enchant='drought';
+    assert.ok(C.play(quake,['cast',0])&&C.play(quake,['sacrifice',1]));
+    assert.deepEqual(quake.tiles.slice(1,4).map(t=>t.level),[3,2,3]);
+
+    const permit=spell('permission');
+    cast(permit);
+    assert.deepEqual(permit.players[0].flags,C.board(permit).forts);
+    const recall=spell('wordofrecall');
+    recall.players[0].pos=6;
+    recall.players[0].flags=C.board(recall).forts.slice();
+    cast(recall);
+    assert.deepEqual([recall.players[0].pos,recall.players[0].lap,recall.die,recall.phase],[0,1,0,'land']);
+
+    const dream=spell('dreamterrain');
+    cast(dream);
+    assert.equal(dream.players[0].enchantDeadline,20);
+    Object.assign(dream,{phase:'fork',remaining:1,die:1});
+    Object.assign(dream.players[0],{pos:15,previous:14});
+    assert.ok(C.play(dream,['route',0]));
+    assert.equal(dream.players[0].dream,true);
+    assert.equal(dream.players[0].enchantDeadline,20);
 
     const command=spell('telegnosis');
     place(command,2,'minotaur',0);

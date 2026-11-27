@@ -556,7 +556,7 @@ function createCepter(edition="ps2"){
       p.previous=p.pos;p.pos=next;s.remaining--;
       const t=s.tiles[next];if(t.unit?.enchant==='quicksand'&&(!revolt||s.remaining)){s.remaining=0;combo.clear(t.unit);}
       if(!allied(s,t.owner,s.turn)&&((fx.name(t.unit)==='kelpie'&&t.type===1)||(fx.name(t.unit)==='oldwillow'&&t.type===0)))s.remaining=0;
-      if(t.type==='성'){if(!revolt&&edition!=='begins')delete p.dream;if(['fairylight','torture'].includes(p.status))extraSpells?.clearCepter(p);if(p.status==='waste')delete p.status;}
+      if(t.type==='성'){if(!revolt&&!begins&&!handheld)delete p.dream;if(['fairylight','torture'].includes(p.status))extraSpells?.clearCepter(p);if(p.status==='waste')delete p.status;}
       if(t.owner===s.turn)s.visited.push(next);
       if(revolt){
         if(m.gates[next]!=null)passGate(s,m,next);
@@ -588,7 +588,7 @@ function createCepter(edition="ps2"){
             if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit)))continue;
             const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+(begins?10:Math.floor(max/5)));
             if(fx.name(v.unit)==='chimera'){
-              const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(80,st+10));
+              const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(handheld?100:80,st+10));
             }
           }
           note(s,p.name+' · '+p.lap+'주 완주');
@@ -1232,7 +1232,7 @@ function createCepter(edition="ps2"){
         if(edition==='saga'&&d.hp>0)d.defeatedByOpponent=true;
         a.hp=d.hp=0;
       }
-      if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition&&!begins)a.hp=Math.min(a.hp,a.u.hp)-10;}
+      if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition&&!begins&&!handheld)a.hp=Math.min(a.hp,a.u.hp)-10;}
       if(a.g==='boomerang'&&edition!=='saga'&&edition!=='begins'&&!firstEdition&&(!revolt||a.n!=='centaur'||a.hp<=0)&&hasHandSpace(s.players[a.seat]))s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0){
         a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-20;
@@ -1273,7 +1273,7 @@ function createCepter(edition="ps2"){
     }
     if(edition==='ps2')for(const a of sides)if(a.hp<=0)revive(a);
     for(const a of sides)if(creatureEnd&&a.hp<=0&&a.n==='sulfurousballoon'){
-      const d=a===A?D:A,loss=revolt?40:30;
+      const d=a===A?D:A,loss=revolt||handheld?40:30;
       d.hp=Math.min(d.hp,d.u.hp)-loss;
       if(revolt)lines.push(a.c.name+' · 상대 기본 HP −'+loss);
     }

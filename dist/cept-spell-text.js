@@ -222,7 +222,8 @@ const describeCepterSpell=(()=>{
       if(e==='reinforce')return '고른 지역의 모든 크리처의 기본 ST를 최대 100까지 10 올립니다.';
       if(e==='dispelmagic')return '고른 셉터의 저주를 해제합니다. 사용한 주문은 북으로 돌아갑니다.';
     }
-    if(edition==='3ds'&&['drought','fog'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
+    if(edition==='3ds'&&['antielement','drought','fog'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
+    if(edition==='3ds'&&e==='earthshaker')return '최대 HP가 40 이상인 크리처가 배치된 모든 영지의 레벨을 1 낮춥니다. 최저 Lv.1.';
     if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
     if(edition==='revolt'&&e==='vortex')return '대상 크리처의 영지에서 전투 능력과 장비 효과를 무효화하고 카드 한 장을 뽑습니다.';
     if(edition==='revolt'&&e==='mindseeker')return '적의 북 맨 위 카드 최대 6장을 보고 한 장을 파괴한 뒤, 내 북에서 한 장을 뽑습니다.';
@@ -243,7 +244,7 @@ const describeCepterSpell=(()=>{
     }
     if(C.edition==='revolt'&&C.combo.worlds[e])return '전장 저주 · 6라운드. '+C.combo.worlds[e].description;
     switch(e){
-      case 'dreamterrain':if(edition==='revolt'||edition==='begins')return '5라운드 동안 다른 셉터가 통행료를 받을 때마다 그 절반을 얻습니다. 내가 낸 통행료에도 적용됩니다.';break;
+      case 'dreamterrain':if(['revolt','begins','3ds'].includes(edition))return '5라운드 동안 다른 셉터가 통행료를 받을 때마다 그 절반을 얻습니다. 내가 낸 통행료에도 적용됩니다.';break;
       case 'quicksand':if(edition==='revolt')return '2라운드 안에 이 영지를 통과하려는 첫 셉터를 멈춰 세웁니다. 주사위 눈에 맞춰 도착하면 효과가 남습니다.';break;
       case 'greed':if(edition==='revolt'||edition==='3ds')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';break;
       case 'growthbody':if(edition==='revolt')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';break;

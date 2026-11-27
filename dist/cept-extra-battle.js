@@ -103,7 +103,6 @@ const CepterExtraBattle=(()=>{
           a.st+=synergy.st;a.hp+=synergy.hp||0;
         }
         if(a.n==='armedpaladin')a.st=10*s.tiles.filter((v,i)=>i!==b.from&&v.unit&&[0,2].includes(cards[v.unit.id].element)).length;
-        if(a.n==='firedrake')a.st+=5*s.tiles.filter((v,j)=>j!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
         if(a.n==='amphibianwarrior'&&[1,3].includes(t.type))a.st+=20;
         if(a.n==='nessie'&&t.type===1)a.hp+=t.level*10;
         if(a.n==='lonebeast')a.hp+=fx.strength(a.u);
@@ -126,6 +125,8 @@ const CepterExtraBattle=(()=>{
           a.st+=count*(a.g==='clawofshade'?10:5);
         }
       }
+      if(['revolt','3ds'].includes(s.edition)&&a.n==='firedrake')a.st+=5*s.tiles.filter((v,i)=>i!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
+      if(s.edition==='3ds'&&a.n==='generalguan')a.st+=5*s.tiles.filter((v,i)=>i!==b.from&&v.unit&&fx.max(v.unit)>=50).length;
       if(s.edition==='saga'){
         if(a.n==='pangolin'){
           if(s.predict)a.hp=Math.floor((a.hp+30)/2);

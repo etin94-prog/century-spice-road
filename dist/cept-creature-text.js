@@ -356,7 +356,7 @@ const CepterCreatureText=(()=>{
     if(card.synergy)pieces.push('감응. '+C.elements[card.synergy.element]+' 크리처가 지도에 있으면 전투 ST +'+card.synergy.st+(card.synergy.hp?' · HP +'+card.synergy.hp:'')+'.');
     if(C.edition==='revolt'&&key==='pulgasari')pieces.push('장비 사용 시 전투 ST +20. 상대가 장비를 쓴 전투에서 살아남으면 최대 HP +10. 최대 100.');
     if(C.edition==='revolt'&&key==='madharlequin')pieces.push('지도에 배치돼 있으면 내 다른 크리처가 싸울 때 인접한 내 영지 한 곳당 ST·HP +20.');
-    if(C.edition==='revolt'&&key==='firedrake')pieces.push('지도에 배치된 화 크리처 한 마리마다 전투 ST +5.');
+    if(['revolt','3ds'].includes(C.edition)&&key==='firedrake')pieces.push('지도에 배치된 화 크리처 한 마리마다 전투 ST +5.');
     if(C.edition==='revolt'&&key==='uriel')pieces.push('저주가 걸린 상대에게 강타합니다.');
     if(C.edition==='revolt'&&key==='dwarvenminer')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
     if(card.immediate)pieces.push('즉시. 이 크리처가 소환되거나 교체돼 배치된 영지에 교체를 제외한 영지 명령을 사용할 수 있습니다.');
@@ -369,6 +369,7 @@ const CepterCreatureText=(()=>{
     if(card.blocksFirst)pieces.push('선제 능력이 있는 크리처의 일반 공격을 무효화합니다.');
     if(card.blocksSmall)pieces.push('최대 HP 30 이하인 상대의 일반 공격을 무효화합니다.');
     if(card.criticalMHP)pieces.push('최대 HP '+card.criticalMHP+' 이하인 상대를 일반 공격하면 강타합니다.');
+    if(C.edition==='3ds'&&key==='generalguan')pieces.push('배치된 최대 HP 50 이상 크리처 한 마리마다 전투 ST +5.');
     if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
     if(C.edition==='revolt'&&card.innateScroll==='base')pieces.push('장비 없이 공격하면 기본 ST만큼 두루마리 피해를 줍니다.');
@@ -403,8 +404,8 @@ const CepterCreatureText=(()=>{
       const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
-    const special=(C.edition==='revolt'||C.edition==='3ds'&&key==='pyromancer')&&revoltBattle[key]?revoltBattle[key]:
-      (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba'].includes(key))&&beginsBattle[key]?beginsBattle[key]:
+    const special=(C.edition==='revolt'||C.edition==='3ds'&&['chimera','pyromancer','sulfurousballoon'].includes(key))&&revoltBattle[key]?revoltBattle[key]:
+      (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba','golem'].includes(key))&&beginsBattle[key]?beginsBattle[key]:
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':

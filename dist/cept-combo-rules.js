@@ -164,7 +164,7 @@ const CepterCombos = (() => {
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
         if(s.edition==='begins'&&e==='camouflage')returnToBook(s,i,ids.get(e));
         if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||
-          s.edition==='3ds'&&['drought','fog'].includes(e)||s.edition==='revolt'&&e==='vortex'||
+          s.edition==='3ds'&&['antielement','drought','fog'].includes(e)||s.edition==='revolt'&&e==='vortex'||
           s.edition==='begins'&&['antielement','disease','drought','fog','greed','vitality','weakness'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){
@@ -226,7 +226,9 @@ const CepterCombos = (() => {
         }
       }else{
         if(e==='feast')for(const [j,player] of s.players.entries())player.cash+=50*s.tiles.filter(v=>v.owner===j).length;
-        if(e==='earthshaker')for(const v of s.tiles)if(!blockedLevel(s,v))v.level=Math.max(1,v.level-1);
+        if(e==='earthshaker')for(const v of s.tiles){
+          if(!blockedLevel(s,v)&&(s.edition!=='3ds'||v.unit&&max(v.unit)>=40))v.level=Math.max(1,v.level-1);
+        }
         if(e==='shine'){if(!s.shineUntil)s.prices=s.prices.map(v=>Math.floor(v*1.5));s.shineUntil=s.round+2;}
         if(e==='goblinslair'){const v=s.tiles[p.pos];if(!v.unit&&territoryType(v.type))claim(v,i,morph(null,'goblin'));p.hand.push(ids.get(e));}
         if(e==='permission')p.flags=[...(board(s).checkpoints||board(s).forts)];
@@ -234,7 +236,7 @@ const CepterCombos = (() => {
         if(e==='invisibility'){clearCepter(p);p.invisible=true;}
         if(e==='dreamterrain'){
           clearCepter(p);p.dream=true;
-          if(['revolt','begins'].includes(s.edition))p.enchantDeadline=(s.round-1+5)*s.players.length+s.turn;
+          if(['revolt','begins','3ds'].includes(s.edition))p.enchantDeadline=(s.round-1+5)*s.players.length+s.turn;
         }
         if(e==='raisedead'){if(s.lastDestroyed!=null)p.hand.push(s.lastDestroyed);p.book.unshift(ids.get(e));}
         if(e==='aurora'||e==='pressure')s.prices=s.prices.map(n=>Math.max(1,Math.floor(n*(e==='aurora'?1.2:.7))));

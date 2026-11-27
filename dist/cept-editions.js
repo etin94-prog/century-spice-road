@@ -5,6 +5,7 @@ const CepterEditions=(()=>{
   if(modern){Object.assign(data.cards,modern.cards);Object.assign(data.maps,modern.maps);}
   const handheld=typeof module==='undefined'?(typeof CepterEdition2012==='undefined'?null:CepterEdition2012):require('./cept-edition-data-2012');
   if(handheld)data.cards['3ds']=handheld.cards;
+  const handheldPlayerBooks=typeof module==='undefined'?(typeof Cepter2012PlayerBooks==='undefined'?[]:Cepter2012PlayerBooks):require('./cept-2012-player-books');
   const handheldRefs={
     cards:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-card-lists/culdcept-3ds-complete-card-list',
     maps:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-map-list',
@@ -107,7 +108,8 @@ const CepterEditions=(()=>{
       chariot:'chariot',corruption:'corruption',drought:'drought',fairylight:'fairylight',fog:'fog',
       incineration:'incineration',locust:'locust',phantasm:'phantasm',revelation:'revelation',revival:'revival',
       selenear:'selenear',simulacrum:'simulacrum',spartoi:'spartoi',spiritwalk:'spiritwalk',telegnosis:'telegnosis',
-      torture:'torture',triumph:'triumph',magicbooster:'magicbooster',theft:'theft'
+      torture:'torture',triumph:'triumph',magicbooster:'magicbooster',theft:'theft',
+      antielement:'antielement',permission:'permission',wordofrecall:'castlerecall',dreamterrain:'dreamterrain',earthshaker:'earthshaker'
     },
     saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
@@ -568,6 +570,9 @@ const CepterEditions=(()=>{
         holyword6:2,magicbolt:2,manna:3,shatter:2,windofhope:1
       }
     };
+    for(const [,,source,recipe] of handheldPlayerBooks){
+      if(Object.values(recipe).reduce((sum,n)=>sum+n,0)===50&&Object.keys(recipe).every(slug=>ids.has(slug)))books['handheld-'+source]=recipe;
+    }
     return Object.fromEntries(Object.entries(books).map(([key,counts])=>[key,Object.entries(counts).flatMap(([name,count])=>Array(count).fill(ids.get(name)))]));
   }
   // Element pairs are separate from the land requirements in the catalog.
@@ -675,6 +680,8 @@ const CepterEditions=(()=>{
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},
     madclown:{},hornet:{poison:true},medusa:{},vodyanoi:{first:true},gargoyle:{first:true},odradek:{support:true,immutableHP:true},dhampir:{neutralizes:[2]},soulcollector:{},
     colossus:{},decoy:{},dryad:{support:true},nike:{first:true},sprite:{blocksLarge:true},humbaba:{},jackalope:{support:true},neutralcloak:{st:0,hp:40},
+    chimera:{first:true},dragon:{first:true},firedrake:{},flamelord:{scrollCritical:true},generalguan:{first:true},golem:{},
+    salamander:{},fireamulet:{st:20,hp:10},oldwillow:{stationary:true},caitsith:{spellWard:true},sulfurousballoon:{},
     aurablade:{st:0,hp:0},coinofpiety:{st:0,hp:0},hellblaze:{st:40,hp:0},iksear:{st:0,hp:0,protectItem:true},
     kris:{st:30,hp:0,protectItem:true},offeringdoll:{st:0,hp:0},rainbowpiece:{st:0,hp:40,neutralizeScroll:true},
     shadowarmor:{st:0,hp:0},sleep:{st:0,hp:0},stinkbottle:{st:0,hp:0},trapezon:{st:0,hp:0},wingedboots:{st:0,hp:0,first:true,protectItem:true},

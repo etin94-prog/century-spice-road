@@ -10,7 +10,7 @@ const CepterExtraSpells=(()=>{
   const shifts={fireshift:0,watershift:1,earthshift:2,airshift:3};
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
   const type={...ps2Type,holyword8:'player',landdrain:'player',chargingstep:'player',
-    alarm:'global',chaospanic:'global',revoltPlague:'global',philosophy:'global',magicbooster:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
+    alarm:'global',chaospanic:'global',revoltPlague:'global',philosophy:'global',magicbooster:'global',castlerecall:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
     remission:'land',magicalleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',sigilofshrink:'land',debility:'land',debilitystrong:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
@@ -43,6 +43,7 @@ const CepterExtraSpells=(()=>{
     revoltPlague:'지도에 배치된 모든 크리처에 독을 겁니다. 전투가 끝날 때 최대 HP의 절반만큼 피해를 받습니다.',
     philosophy:'손패에 합성 능력이 있는 카드가 있으면 북에서 3장, 없으면 2장 뽑습니다.',
     chargingstep:'대상 셉터의 다음 두 번 이동은 2~4칸으로 제한됩니다. 대상은 굴릴 때마다 50G를 받습니다.',
+    castlerecall:'사용자가 성에 도착합니다. 이번 차례에는 주사위를 굴리지 않습니다.',
     magicbooster:'이번 차례에 영지 레벨업 비용이 절반이 됩니다. 차례 종료 시 효과가 사라집니다.',
     debility:'고른 크리처의 기본 ST를 0으로 바꾸고 한 장 뽑습니다. 주문을 버려 합성하면 최대 HP도 20 줄입니다.',
     sigilofshrink:'기존 비술이 없는 내 크리처에게 50G로 대상 크리처의 최대 HP를 10 낮추는 비술을 부여합니다.',
@@ -301,6 +302,7 @@ const CepterExtraSpells=(()=>{
         const land=s.tiles.filter(t=>t.unit);
         switch(e){
           case 'escape':return warp(s,nearest(s,p,t=>territoryType(t.type)&&!t.unit));
+          case 'castlerecall':return warp(s,board(s).castles?.[0]??0);
           case 'teleport':return warp(s,nearest(s,p,t=>!territoryType(t.type)));
           case 'aports':
             for(const other of s.players)if(other!==p){other.pos=p.pos;other.dir=0;other.previous=null;}
@@ -538,6 +540,7 @@ const CepterExtraSpells=(()=>{
       }
       if(e==='incineration')return (s.destroyedCount||0)*2;
       if(e==='magicbooster')return p.cash>=200?Math.min(15,mine.filter(t=>t.level<5&&!fx.blockedLevel(s,t)).length*3):0;
+      if(e==='castlerecall')return p.pos!==0&&p.flags.length===(board(s).checkpoints||board(s).forts).length?25:-20;
       if(e==='selenear')return mine.filter(t=>t.type===2).length*10;
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);
       if(e==='triumph')return p.status==='triumph'||s.edition==='begins'&&p.status?0:4+p.flags.length*4;
