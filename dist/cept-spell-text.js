@@ -222,6 +222,15 @@ const describeCepterSpell=(()=>{
       if(e==='reinforce')return '고른 지역의 모든 크리처의 기본 ST를 최대 100까지 10 올립니다.';
       if(e==='dispelmagic')return '고른 셉터의 저주를 해제합니다. 사용한 주문은 북으로 돌아갑니다.';
     }
+    if(['dc','ps1'].includes(edition)&&e==='corruption')return '고른 적은 보유 호부 한 개당 마력 5G를 잃습니다.';
+    if(edition==='dc'&&e==='foresight')return '내 북의 맨 위에서 최대 네 장을 확인하고 그중 한 장을 손패에 넣습니다.';
+    if(['ps1','saturn'].includes(edition)){
+      if(e==='barrier')return '고른 셉터는 '+(edition==='ps1'?6:3)+'라운드 동안 주문의 대상이 되지 않습니다. 인챈트 해제는 적용됩니다.';
+      if(e==='haste')return '고른 셉터의 주사위 눈을 3라운드 동안 6~8로 제한합니다.';
+      if(e==='chariot')return '내 크리처 하나를 두 칸 떨어진 영지로 이동시킵니다.';
+      if(e==='growthbody')return '내 크리처 하나의 최대 HP를 10 올립니다.';
+      if(e==='landtransfer')return '내 영지 한 곳을 포기하고 현재 영지 가치만큼 마력을 얻습니다.';
+    }
     if(edition==='3ds'&&['antielement','drought','fog','heal','weakness'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
     if(edition==='3ds'&&['camouflage','dispelmagic','removecurse'].includes(e))return text[e]+' 사용한 주문은 북으로 돌아갑니다.';
     if(edition==='3ds'&&e==='growthbody')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';

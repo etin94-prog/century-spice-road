@@ -4438,6 +4438,72 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(ford.players[0].pos,18);assert.equal(ford.phase,'land');
   console.log('Begins spells, 100 MHP cap, redraw, 80 percent land liquidation and original Ford routes OK');
 }
+for(const edition of ['dc','ps1','saturn']){
+  const C=ps2.createEdition(edition),map=edition+'-1';
+  const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const open=name=>{
+    const s=C.start(2,2,5000,map);
+    assert.ok(id(name)>=0,edition+' '+name);
+    s.players.forEach(q=>{q.cash=400;q.hand=[];q.book=[id('goblin')];});
+    s.players[0].hand=[id(name)];
+    return s;
+  };
+  const cast=(s,k,x)=>{assert.ok(C.play(s,['cast',0]));if(k)assert.ok(C.play(s,[k,x]),edition+' '+k+' '+x);};
+  const land=s=>s.tiles.flatMap((t,at)=>C.territoryType(t.type)?[at]:[]);
+  const place=(s,at,owner,hp=30)=>Object.assign(s.tiles[at],{owner,unit:{id:id('goblin'),hp}});
+  const barrier=open('barrier');cast(barrier,'targetPlayer',1);
+  assert.equal(barrier.players[1].status,'barrier');
+  assert.equal(barrier.players[1].enchantDeadline,2*({dc:5,ps1:6,saturn:3}[edition]));
+
+  const chariot=open('chariot'),source=land(chariot).find(at=>C.board(chariot).links[at].some(n=>C.board(chariot).links[n].some(j=>j!==at&&land(chariot).includes(j))));
+  place(chariot,source,0);
+  cast(chariot,'targetLand',source);
+  const [move,destination]=C.choices(chariot)[0];
+  assert.ok(C.play(chariot,[move,destination]));
+  assert.deepEqual([chariot.phase,chariot.tiles[source].owner,chariot.tiles[destination].unit.id],['roll',-1,id('goblin')]);
+  assert.equal(chariot.players[0].book.includes(id('chariot')),edition==='dc');
+
+  const damaged=open('lifestream'),[allyAt,opponentAt]=land(damaged);
+  place(damaged,allyAt,0,10);place(damaged,opponentAt,1,10);
+  cast(damaged);
+  assert.deepEqual([damaged.tiles[allyAt].unit.hp,damaged.tiles[opponentAt].unit.hp],[30,10]);
+
+  if(edition!=='saturn'){
+    const punished=open('corruption');
+    punished.players[1].symbols[0]=12;
+    cast(punished,'targetPlayer',1);
+    assert.equal(punished.players[1].cash,340);
+  }
+  if(edition==='dc'){
+    const insight=open('foresight');
+    const book=['goblin','minotaur','dwarf','wolf','fighter','magicbolt'].map(id);
+    assert.ok(book.every(n=>n>=0));
+    insight.players[0].book=book.slice();cast(insight);
+    assert.deepEqual(C.choices(insight).map(([, ,card])=>card),book.slice(-4).reverse());
+    assert.ok(!C.play(insight,['foresightCard',4,book[1]]));
+    assert.ok(C.play(insight,['foresightCard',3,book[2]]));
+    assert.deepEqual(insight.players[0].hand,[book[2]]);
+  }else{
+    const haste=open('haste');cast(haste,'targetPlayer',0);
+    assert.equal(haste.players[0].enchantDeadline,6);
+    assert.ok(C.play(haste,['roll']));
+    assert.ok(haste.die>=6&&haste.die<=8);
+
+    const growth=open('growthbody');
+    place(growth,allyAt,0);place(growth,opponentAt,1);
+    assert.ok(C.play(growth,['cast',0]));
+    assert.deepEqual(C.choices(growth),[['targetLand',allyAt]]);
+    assert.ok(C.play(growth,['targetLand',allyAt]));
+    assert.deepEqual([growth.tiles[allyAt].unit.mhp,growth.tiles[opponentAt].unit.mhp],[40,undefined]);
+
+    const released=open('landtransfer');
+    place(released,allyAt,0);released.tiles[allyAt].level=3;
+    const value=C.value(released,released.tiles[allyAt]);
+    cast(released,'targetLand',allyAt);
+    assert.deepEqual([released.players[0].cash,released.tiles[allyAt].owner,released.players[0].book],[390+value,-1,[id('goblin')]]);
+  }
+  console.log(edition,'native barrier, Chariot, healing, draw and economy effects passed');
+}
 {
   const C=ps2.createEdition('3ds'),archives=require('../dist/cept-edition-data-2012');
   const names=Object.keys(C.maps),intro='3ds-original-bend',shore='3ds-original-shore';

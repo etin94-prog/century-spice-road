@@ -246,7 +246,10 @@ const CepterExtraSpells=(()=>{
           case 'comet':t.level=Math.max(1,t.level-2);break;
           case 'elevation':t.level=2;break;
           case 'frostneedle':case 'venomousboil':fx.spellHarm(s,t,30);break;
-          case 'chariot':s.teleFrom=x;returnToBook(s,s.turn,ids.get(e));return 'teleMove';
+          case 'chariot':
+            s.teleFrom=x;
+            if(!['ps1','saturn'].includes(s.edition))returnToBook(s,s.turn,ids.get(e));
+            return 'teleMove';
           case 'influence':t.type=influence(s,t);break;
           case 'locust':t.level=Math.max(1,t.level-1);break;
           case 'meteor':t.level=1;break;
@@ -280,7 +283,7 @@ const CepterExtraSpells=(()=>{
         }
       }else if(type[e]==='player'){
         switch(e){
-          case 'corruption':q.cash-=10*symbolCount(q);break;
+          case 'corruption':q.cash-=(['dc','ps1'].includes(s.edition)?5:10)*symbolCount(q);break;
           case 'sagagift':q.cash+=100;draw(q,s);break;
           case 'landdrain':{const amount=owning(s,x).length*landDrainRate(s);p.cash+=amount;q.cash-=amount;break;}
           case 'judgment':{const victim=Math.random()<2/3?q:p;victim.cash-=Math.floor(Math.max(0,victim.cash)*.8);break;}
@@ -297,6 +300,7 @@ const CepterExtraSpells=(()=>{
           case 'mesmerize':s.spellTarget=x;return 'mesmerCard';
           case 'holyword2':case 'holyword8':clearCepter(q);q.word=e==='holyword2'?2:8;break;
           case 'backward':clearCepter(q);q.reverse=true;break;
+          case 'barrier':setStatus(s,q,e,s.edition==='ps1'?6:s.edition==='saturn'?3:duration.barrier);break;
           case 'chargingstep':setStatus(s,q,e);q.hasteRolls=2;break;
           case 'subsidence':{
             const land=owning(s,x),max=Math.max(0,...land.map(t=>t.level)),target=sample(land.filter(t=>t.level===max));
@@ -408,7 +412,7 @@ const CepterExtraSpells=(()=>{
       switch(s.phase){
         case 'soltisPower':return Object.keys(soltis).map(k=>['soltisPower',k]);
         case 'soltisArea':return [...new Set(s.tiles.map(t=>t.area))].map(i=>['soltisArea',i]);
-        case 'foresightCard':return (p.book||[]).slice(s.shrineForesight?-3:-6).reverse().map((id,j)=>['foresightCard',j,id]);
+        case 'foresightCard':return (p.book||[]).slice(s.shrineForesight?-3:s.edition==='dc'?-4:-6).reverse().map((id,j)=>['foresightCard',j,id]);
         case 'prophecyKind':{
           const kinds=['creature','item','spell'];
           return kinds.filter(k=>s.edition!=='begins'||p.book.some(id=>cards[id].kind===k)).map(k=>['prophecyKind',k]);

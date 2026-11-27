@@ -94,6 +94,20 @@ const CepterEditions=(()=>{
     if(edition==='begins')Object.assign(result,original.beginsPractice);
     return result;
   }
+  const firstSpellEffects={
+    backward:'backward',camouflage:'camouflage',chariot:'chariot',dispelmagic:'dispelmagic',drought:'drought',
+    growthbody:'growthbody',haste:'haste',holyword0:'holyword0',holyword2:'holyword2',holyword3:'holyword3',
+    holywordx:'holywordx',landtransfer:'landtransfer',lifestream:'lifestream',removecurse:'removecurse',barrier:'barrier'
+  };
+  const legacySpellEffects={
+    dc:{
+      acidrain:'acidrain',avalanche:'avalanche',backward:'backward',banishingray:'banishingray',barrier:'barrier',
+      bistair:'bistair',chariot:'chariot',corruption:'corruption',dispelmagic:'dispelmagic',erasure:'erasure',
+      find:'find',foresight:'foresight',holyword2:'holyword2',lifestream:'lifestream'
+    },
+    ps1:{...firstSpellEffects,corruption:'corruption'},
+    saturn:firstSpellEffects
+  };
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');
   const modernSpellEffects={
     '3ds':{
@@ -756,8 +770,9 @@ const CepterEditions=(()=>{
       const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:edition==='3ds'?handheldRefs.cards:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
         ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:(edition==='begins'&&beginsExtraTerritories[slug])||format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
       const c={...(compatible?base:{}),name,catalog,element,kind,category,cost:r.cost,ban:r.ban.map(k=>equipment[k].toLowerCase()),catalogOnly:!(compatible||variant||simple),unlisted:false,hasArt:!!base,...(modernSets[edition]?{editionArt:r.image}:{firstArt:r.image})};
-      if(kind==='spell'&&modernSets[edition]){
-        const effect=modernSpellEffects[edition][slug]||(edition!=='3ds'&&sharedModernSpells.includes(slug)?slug:null);
+      if(kind==='spell'){
+        const effect=legacySpellEffects[edition]?.[slug]||modernSpellEffects[edition]?.[slug]||
+          (modernSets[edition]&&edition!=='3ds'&&sharedModernSpells.includes(slug)?slug:null);
         if(effect){
           c.effect=effect;c.catalogOnly=false;
           if(edition==='saga'&&clauses.includes('Doublecast'))c.doublecast=true;

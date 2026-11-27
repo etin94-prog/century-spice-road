@@ -112,6 +112,7 @@ const CepterCombos = (() => {
       return s.tiles.flatMap((t,n)=>{
         if(!targetable(s,t,cards[ids.get(e)]?.catalog?.category))return [];
         if(['evilblast','shrink'].includes(e)&&allied(s,i,t.owner))return [];
+        if(e==='growthbody'&&['ps1','saturn'].includes(s.edition)&&t.owner!==i)return [];
         if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return territoryType(d.type)&&!allied(s,d.owner,t.owner)&&canInvade(s,t.owner,d.owner)&&d.unit?.enchant!=='peace';}))return [];
         if(e==='exile'&&(!enchanted(t.unit)||cards[t.unit.id].catalog?.additionalCost))return [];
         if(['landtransfer','relief'].includes(e)&&t.owner!==i)return [];
@@ -128,7 +129,7 @@ const CepterCombos = (() => {
       const tiles=s.tiles.filter(v=>v.unit&&(type[e]!=='area'||v.area===x));
       if(type[e]==='land'){
         if(e==='telekinesis'){s.teleFrom=x;return 'teleMove';}
-        if(e==='landtransfer'){p.cash+=value(s,t);vacate(t,true);if(s.edition!=='3ds')p.book.unshift(ids.get(e));}
+        if(e==='landtransfer'){p.cash+=value(s,t);vacate(t,true);if(!['3ds','ps1','saturn'].includes(s.edition))p.book.unshift(ids.get(e));}
         else if(e==='exile')returnToHand(s,t);
         else if(e==='relief'){
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
@@ -218,6 +219,7 @@ const CepterCombos = (() => {
         if(['silence','haste','despair','slow'].includes(e)){
           q.status=e;
           if(s.edition==='ps2')q.enchantDeadline=(s.round+1)*s.players.length+s.turn;
+          else if(['ps1','saturn'].includes(s.edition)&&e==='haste')q.enchantDeadline=(s.round+2)*s.players.length+s.turn;
           else if(s.edition==='revolt'&&e==='haste')q.hasteRolls=2;
           else if(s.edition==='begins'){
             if(e==='haste'||e==='slow')q.diceLimitRolls=2;

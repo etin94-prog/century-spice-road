@@ -441,7 +441,7 @@ function setMapCamera(root,x,y,zoom){
   placeMapRoll(root,x,y,zoom);
 }
 function selectingSpellMapTarget(){
-  if(['revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
+  if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
     ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
   return s?.phase==='spellTarget'&&['remission','magicalleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong'].includes(s.spellEffect);

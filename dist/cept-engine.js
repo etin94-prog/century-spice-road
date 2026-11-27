@@ -99,7 +99,7 @@ function createCepter(edition="ps2"){
   const flatFeeShopIds=flatFeeShop?new Map(cards.flatMap((card,id)=>!card.unlisted&&!card.catalogOnly&&card.catalog?.path?[[card.catalog.path.split('/').pop(),id]]:[])):null;
   const shopCost=id=>flatFeeShop?20:cards[id].cost;
   const modern=!!presets.stronghold;
-  const extraSpells=edition==='ps2'||modern?(typeof module==='undefined'?CepterExtraSpells:require('./cept-extra-spells.js')):null;
+  const extraSpells=typeof module==='undefined'?CepterExtraSpells:require('./cept-extra-spells.js');
   const extraTypes=edition==='ps2'?extraSpells.type:extraSpells?.modernType;
   if(edition==='ps2')for(const c of cards)if(extraTypes[key(c)]){c.effect=key(c);c.catalogOnly=false;}
   const circlePools=revolt?[
@@ -1596,7 +1596,7 @@ function createCepter(edition="ps2"){
       case 'teleTo':{
         const from=s.teleFrom,territoryMove=s.territoryMove;
         delete s.teleFrom;delete s.territoryMove;
-        const chariotMove=(begins||revolt||handheld)&&s.spellEffect==='chariot';
+        const chariotMove=!territoryMove&&edition!=='ps2'&&s.spellEffect==='chariot';
         const label=chariotMove?'채리엇':territoryMove==='adjacent'?'크리핑 플레임':territoryMove?'슬레이프니르':null;
         moveWithAbility(from,x,territoryMove,label);
         break;
