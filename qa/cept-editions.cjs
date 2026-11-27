@@ -1133,6 +1133,11 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 
   const deck=C.presets.intro.slice();deck.splice(-2,2,fireId,other);
   assert.ok(C.validBook(deck));
+  const envelope=E.packBook(deck);
+  assert.match(JSON.stringify(envelope),/^\[[0-9]{1,4}(,[0-9]{1,4}){49}\]$/);
+  assert.deepEqual(E.unpackBook(envelope),deck);
+  assert.deepEqual(E.unpackBook(C.presets.intro),C.presets.intro);
+  assert.equal(E.unpackBook([9999,...Array(49).fill(0)]),null);
   assert.ok(!C.validBook([...deck.slice(0,-1),base]),'only one recipe per Evo slot');
   assert.ok(!C.validBook([...deck.slice(0,-1),1_999_999_999]));
   assert.ok(!ps2.validBook(deck));

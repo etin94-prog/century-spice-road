@@ -109,6 +109,33 @@ const CepterEvo=(()=>{
       return cache.get(id);
     }});
   }
+  // Older room rules allow a 50-integer envelope with at most four digits per value.
+  // Use an otherwise invalid card ID to signal the packed representation.
+  const roomBookMarker=9999,roomRadix=10_000n;
+  function packBook(book){
+    let bits=1n;
+    for(const id of book){
+      const evo=id>=original.base;
+      if(evo?!decode(id):!Number.isInteger(id)||id<0||id>1023)return null;
+      bits=(bits<<BigInt(evo?34:11))|(BigInt(id)<<1n)|(evo?1n:0n);
+    }
+    const payload=Array(50).fill(0);
+    payload[0]=roomBookMarker;
+    for(let i=49;i>0;i--){payload[i]=Number(bits%roomRadix);bits/=roomRadix;}
+    return bits===0n?payload:null;
+  }
+  function unpackBook(payload){
+    if(!Array.isArray(payload)||payload[0]!==roomBookMarker)return payload;
+    if(payload.length!==50||payload.some(n=>!Number.isInteger(n)||n<0||n>9999))return null;
+    let bits=payload.slice(1).reduce((sum,n)=>sum*roomRadix+BigInt(n),0n);
+    const book=[];
+    for(let i=0;i<50;i++){
+      const width=(bits&1n)?34n:11n;
+      book.unshift(Number((bits&((1n<<width)-1n))>>1n));
+      bits>>=width;
+    }
+    return bits===1n?book:null;
+  }
   function spend(recipe,next,sp){
     const result={...recipe,...next,sp:recipe.sp-sp};
     return valid(result)?result:null;
@@ -133,7 +160,7 @@ const CepterEvo=(()=>{
   function won(recipe){
     return recipe.age<10?{...recipe,age:recipe.age+1,sp:recipe.sp+5}:recipe;
   }
-  return {fresh,valid,encode,decode,card,catalog,apply,won,growth,growthCost,abilities,slots,summonCost};
+  return {fresh,valid,encode,decode,card,catalog,apply,won,growth,growthCost,abilities,slots,summonCost,packBook,unpackBook};
 })();
 if(typeof module!=='undefined')module.exports=CepterEvo;
 

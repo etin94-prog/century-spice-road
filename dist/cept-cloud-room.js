@@ -19,12 +19,17 @@ const CepterCloudRoom=(()=>{
   const warn=e=>{$('notice').textContent='초대방 연결을 확인하세요. '+e.message;};
   async function create(game,needed){
     const {uid,db}=await connect(),id=newKey().slice(0,32);
-    await db.set(path(id),{meta:{host:uid,needed,edition:game.edition,openingBooks:true},seats:{s0:uid},state:JSON.stringify(game),revision:0,actor:0});
+    await db.set(path(id),{meta:{host:uid,needed,edition:game.edition,openingBooks:true,...(C.evo?{evoBooks:true}:{})},seats:{s0:uid},state:JSON.stringify(game),revision:0,actor:0});
     return id;
   }
   async function seatFor(id,meta,book){
     const {db,uid}=service;
     if(book!=null&&!C.validBook(book))throw Error('사용할 수 없는 북입니다.');
+    if(C.evo&&book?.some(id=>C.cards[id]?.evo)){
+      if(!meta.evoBooks)throw Error('에보 북으로 참가하려면 최신 리볼트 초대방이 필요합니다.');
+      book=C.evo.packBook(book);
+      if(!book)throw Error('에보 북을 전송할 수 없습니다.');
+    }
     const books=meta.openingBooks&&book!=null?JSON.stringify(book):null;
     for(let i=0;i<meta.needed;i++){
       const ref=path(id,'seats/s'+i),taken=(await db.get(ref)).val();
@@ -107,7 +112,7 @@ const CepterCloudRoom=(()=>{
           if(typeof saved!=='string')continue;
           let book;
           try{book=JSON.parse(saved);}catch{continue;}
-          C.setOpeningBook(game,seat,book);
+          C.setOpeningBook(game,seat,C.evo&&r.meta.evoBooks?C.evo.unpackBook(book):book);
         }
         delete r.openingBooks;
       }
