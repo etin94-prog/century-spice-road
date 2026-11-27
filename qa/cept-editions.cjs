@@ -1190,6 +1190,10 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     const fireEarth=revolt(null,null,'mushussu','greenogre',deployed(2,'woodfolk')).s.battle;
     assert.deepEqual([fireEarth.attackST,fireEarth.startHP[0]],[60,60]);
     assert.equal(fireEarth.won,true);
+    const rooted=revolt(null,null,'goblin','fighter',s=>{
+      s.tiles[1].unit.enchant='thornfetter';s.tiles[1].unit.hp=40;
+    }).s;
+    assert.equal(rooted.tiles[1].unit.hp,20);
     const handheldPyro=fight('3ds','goblin','pyromancer',null,null).s;
     assert.deepEqual([handheldPyro.tiles[1].unit.st,handheldPyro.tiles[1].unit.mhp],[20,30]);
     const barrier=s=>{s.tiles[1].unit.enchant='energyfield';};
@@ -4446,7 +4450,21 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(catalog.every(c=>!c.editionArt));
   assert.equal(names.length,3);
   assert.ok(Object.values(C.presets).every(C.validBook));
-  assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,3);
+  assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,7);
+  const starters={
+    handheldStarterFireEarth:'cyclops:2 fighter:2 giantrat:1 wolf:2 dragonfly:2 gascloud:2 kobold:2 minotaur:2 pillarofflame:2 dwarf:2 pan:2 tigerbeetle:2 wallofstone:2 woodfolk:2 battleaxe:1 chainmail:2 flametongue:1 leatherarmor:1 longsword:1 mace:1 scalearmor:1 stonehail:1 fly:2 holyword1:2 holyword6:2 magicbolt:2 manna:3 shatter:2 windofhope:1',
+    handheldStarterWaterAir:'cyclops:2 fighter:2 giantrat:1 wolf:2 giantamoeba:2 kingtortoise:2 lizardman:2 merfolk:2 wallofice:2 giantbat:2 harpy:2 hornet:2 hurricane:2 spectre:2 battleaxe:1 chainmail:2 leatherarmor:1 longsword:1 mace:1 scalearmor:1 icicle:1 windcutter:1 fly:2 holyword1:2 holyword6:2 magicbolt:2 manna:3 shatter:2 windofhope:1',
+    handheldStarterFireAir:'cyclops:2 fighter:2 giantrat:1 wolf:2 dragonfly:2 gascloud:2 kobold:2 minotaur:2 pillarofflame:2 giantbat:2 harpy:2 hornet:2 hurricane:2 spectre:2 battleaxe:1 chainmail:2 leatherarmor:1 longsword:1 mace:1 scalearmor:1 firebolt:1 rockbiter:1 fly:2 holyword1:2 holyword6:2 magicbolt:2 manna:3 shatter:2 windofhope:1',
+    handheldStarterWaterEarth:'cyclops:2 fighter:2 giantrat:1 wolf:2 giantamoeba:2 kingtortoise:2 lizardman:2 merfolk:2 wallofice:2 dwarf:2 pan:2 tigerbeetle:2 wallofstone:2 woodfolk:2 battleaxe:1 chainmail:2 leatherarmor:1 longsword:1 mace:1 scalearmor:1 airslasher:1 freeze:1 fly:2 holyword1:2 holyword6:2 magicbolt:2 manna:3 shatter:2 windofhope:1'
+  };
+  for(const [name,recipe] of Object.entries(starters)){
+    const expected=Object.fromEntries(recipe.split(' ').map(row=>{const [k,n]=row.split(':');return [k,Number(n)];}));
+    const deck=C.presets[name],counts={};
+    assert.ok(C.validBook(deck),name);
+    for(const card of deck){const slug=C.combo.key(C.cards[card]);counts[slug]=(counts[slug]||0)+1;}
+    assert.deepEqual(counts,expected);
+    assert.deepEqual(['creature','item','spell'].map(kind=>deck.filter(card=>C.cards[card].kind===kind).length),[27,9,14]);
+  }
   assert.ok(['goobaqueen','sakuya','wildgrowth'].every(name=>C.presets.intro.includes(id(name))));
   assert.ok(['ixtol','shadefolk','sleipnir','blackorb'].every(name=>C.presets.fire.includes(id(name))));
   assert.ok(['wallofice','bookworm','watershield','holygrail'].every(name=>C.presets.stronghold.includes(id(name))));
@@ -4779,6 +4797,38 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([prism.battle.attackST,prism.battle.startHP[0]],[60,70]);
   const gremlin=fight('gremlin',null,'countershield');
   assert.equal(gremlin.battle.strikes[0].effect,'hit');
+  const asDefender=(name,extras={})=>s=>{
+    const card=id(name);s.tiles[3].unit={id:card,hp:C.cards[card].hp,...extras};
+  };
+  const poisoned=fight('hornet',null,null,null,asDefender('tyrannosaurus',{st:0}));
+  assert.ok(poisoned.battle.won&&poisoned.battle.lines.some(line=>line.includes('독 · 30 피해')));
+  const haze=fight('minotaur',null,null,null,asDefender('gascloud'));
+  assert.equal(haze.battle.strikes[0].hp[1],10);
+  const hazeScroll=fight('minotaur','stonehail',null,null,asDefender('gascloud'));
+  assert.equal(hazeScroll.battle.strikes[0].hp[1],0);
+
+  const armor=fight('goblin',null,'shadowarmor');
+  assert.equal(armor.battle.startHP[1],100);
+  const blade=fight('minotaur','aurablade',null);
+  assert.equal(blade.battle.attackST,80);
+  const fireScroll=fight('minotaur','hellblaze',null,null,asDefender('goblin'));
+  assert.ok(fireScroll.battle.strikes[0].notes.some(line=>line.includes('60 피해')));
+
+  const offering=fight('minotaur','offeringdoll',null,null,s=>{
+    asDefender('statue')(s);s.prices[s.tiles[3].area*4]=10;
+  });
+  assert.equal(offering.battle.won,false);
+  assert.equal(offering.prices[offering.tiles[3].area*4],13);
+  const coin=fight('minotaur','coinofpiety',null,null,s=>{asDefender('goblin')(s);s.tiles[3].type=2;});
+  assert.equal(coin.players[0].symbols[coin.tiles[3].area*4+2],10);
+  const rainbow=fight('minotaur','stonehail','rainbowpiece',null,asDefender('goblin',{enchant:'greed'}));
+  assert.equal(rainbow.battle.strikes[0].effect,'block');
+  assert.equal(rainbow.tiles[3].unit.enchant,undefined);
+  assert.equal(C.copyLimit(C.cards[id('rainbowpiece')]),1);
+  const boots=fight('minotaur',null,'wingedboots',null,asDefender('gremlin'));
+  assert.equal(boots.battle.strikes[0].side,1);
+  assert.ok(boots.players[1].book.includes(id('wingedboots')));
+
   const protectedOrb=fight('minotaur','blackorb',null,null,s=>{s.tiles[3].unit={id:id('thief'),hp:40};});
   assert.ok(protectedOrb.battle.won,'Thief cannot steal Black Orb');
   {
@@ -4854,5 +4904,5 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }})`,worker);
   assert.equal(samples.at(-1).done,true);
   assert.deepEqual([...samples.at(-1).finished],[160,160]);
-  console.log('2012 3DS 22 more spells, catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities, defense/scroll equipment and 320 seat-rotation samples OK');
+  console.log('2012 3DS four exact starters, 22 more spells, catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities, defense/scroll equipment and 320 seat-rotation samples OK');
 }

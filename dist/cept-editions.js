@@ -541,6 +541,31 @@ const CepterEditions=(()=>{
         giantamoeba:3,kingtortoise:3,lizardman:3,wallofice:3,gianteel:2,fate:2,bookworm:2,archbishop:2,hyde:2,
         watershield:3,magicshield:2,magussmirror:1,spikedshield:2,countershield:2,powercrown:1,holygrail:1,
         manna:3,windofhope:3,sink:2,relief:2,lifestream:2,peace:1,barrier:2,landdrain:1
+      },
+      // Four starter books recorded by OmiyaSoft in the 2012 player deck archive.
+      handheldStarterFireEarth:{
+        cyclops:2,fighter:2,giantrat:1,wolf:2,dragonfly:2,gascloud:2,kobold:2,minotaur:2,
+        pillarofflame:2,dwarf:2,pan:2,tigerbeetle:2,wallofstone:2,woodfolk:2,battleaxe:1,chainmail:2,
+        flametongue:1,leatherarmor:1,longsword:1,mace:1,scalearmor:1,stonehail:1,fly:2,holyword1:2,
+        holyword6:2,magicbolt:2,manna:3,shatter:2,windofhope:1
+      },
+      handheldStarterWaterAir:{
+        cyclops:2,fighter:2,giantrat:1,wolf:2,giantamoeba:2,kingtortoise:2,lizardman:2,merfolk:2,
+        wallofice:2,giantbat:2,harpy:2,hornet:2,hurricane:2,spectre:2,battleaxe:1,chainmail:2,
+        leatherarmor:1,longsword:1,mace:1,scalearmor:1,icicle:1,windcutter:1,fly:2,holyword1:2,
+        holyword6:2,magicbolt:2,manna:3,shatter:2,windofhope:1
+      },
+      handheldStarterFireAir:{
+        cyclops:2,fighter:2,giantrat:1,wolf:2,dragonfly:2,gascloud:2,kobold:2,minotaur:2,
+        pillarofflame:2,giantbat:2,harpy:2,hornet:2,hurricane:2,spectre:2,battleaxe:1,chainmail:2,
+        leatherarmor:1,longsword:1,mace:1,scalearmor:1,firebolt:1,rockbiter:1,fly:2,holyword1:2,
+        holyword6:2,magicbolt:2,manna:3,shatter:2,windofhope:1
+      },
+      handheldStarterWaterEarth:{
+        cyclops:2,fighter:2,giantrat:1,wolf:2,giantamoeba:2,kingtortoise:2,lizardman:2,merfolk:2,
+        wallofice:2,dwarf:2,pan:2,tigerbeetle:2,wallofstone:2,woodfolk:2,battleaxe:1,chainmail:2,
+        leatherarmor:1,longsword:1,mace:1,scalearmor:1,airslasher:1,freeze:1,fly:2,holyword1:2,
+        holyword6:2,magicbolt:2,manna:3,shatter:2,windofhope:1
       }
     };
     return Object.fromEntries(Object.entries(books).map(([key,counts])=>[key,Object.entries(counts).flatMap(([name,count])=>Array(count).fill(ids.get(name)))]));
@@ -647,6 +672,11 @@ const CepterEditions=(()=>{
     stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40}
   };
   const handheldSpecial={
+    gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},
+    madclown:{},hornet:{poison:true},medusa:{},vodyanoi:{first:true},gargoyle:{first:true},odradek:{support:true,immutableHP:true},dhampir:{neutralizes:[2]},soulcollector:{},
+    aurablade:{st:0,hp:0},coinofpiety:{st:0,hp:0},hellblaze:{st:40,hp:0},iksear:{st:0,hp:0,protectItem:true},
+    kris:{st:30,hp:0,protectItem:true},offeringdoll:{st:0,hp:0},rainbowpiece:{st:0,hp:40,neutralizeScroll:true},
+    shadowarmor:{st:0,hp:0},sleep:{st:0,hp:0},stinkbottle:{st:0,hp:0},trapezon:{st:0,hp:0},wingedboots:{st:0,hp:0,first:true,protectItem:true},
     shadefolk:{revenge:'magic'},catoblepas:{revenge:'level',poison:true},raksas:{revenge:'symbols'},
     mindripper:{revenge:'hand',st:40,hp:0},soulcorrupter:{revenge:'symbols',st:40,hp:0},
     powercrown:{revenge:'fossil',protectItem:true,st:0,hp:0},

@@ -280,8 +280,12 @@ const CepterExtraBattle=(()=>{
         }
       }
       if(a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
-      if(a.u.enchant==='thornfetter'&&a.hp>0)a.hp=Math.min(a.hp,a.u.hp)-20;
+      if(s.edition!=='revolt'&&a.u.enchant==='thornfetter'&&a.hp>0)a.hp=Math.min(a.hp,a.u.hp)-20;
       if(a.u.enchant==='parasite')s.players[a.seat].cash-=100;
+      if(s.edition==='3ds'&&a.g==='offeringdoll'&&a.hp>0&&a.element>=0){
+        const i=t.area*4+a.element;
+        if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
+      }
       if(a.g==='wingedboots'||a.g==='stinkbottle'){
         const book=s.players[a.seat].book;
         book.splice(s.predict?0:Math.floor(Math.random()*(book.length+1)),0,a.item);
@@ -307,7 +311,7 @@ const CepterExtraBattle=(()=>{
       }
       if(a.n==='taotieh'){const st=fx.strength(a.u);a.u.st=Math.max(st,Math.min(80,st+10));grow(a,10);}
       if(a.g==='heartfibula'||a.g==='windamulet')grow(a,a.g==='heartfibula'?20:10);
-      if(a.g==='offeringdoll'&&a.element>=0){
+      if(s.edition!=='3ds'&&a.g==='offeringdoll'&&a.element>=0){
         const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
     }

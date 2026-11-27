@@ -91,7 +91,7 @@ function createCepter(edition="ps2"){
   const presets={intro:starter,fire:fireBook};
   const bookSize=edition==='begins'?40:50;
   const openingHandSize=edition==='begins'?5:4;
-  const copyLimit=card=>edition==='begins'&&card?.catalog?.rarity==='E'?1:4;
+  const copyLimit=card=>(edition==='begins'&&card?.catalog?.rarity==='E'||handheld&&key(card)==='rainbowpiece')?1:4;
   if(editions)editions.configure(edition,cards,presets,bookSize,copyLimit);
   const evo=revolt?(typeof module==='undefined'?CepterEvo:require('./cept-evo')):null;
   if(evo)cards=evo.catalog(cards);
