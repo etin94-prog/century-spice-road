@@ -105,7 +105,7 @@ const CepterEditions=(()=>{
       alarm:'alarm',disaster:'fatigueddisaster',elementalwrath:'elementalwrath',landtransfer:'revoltlandtransfer',
       magmashift:'magmashift',stormshift:'stormshift',quintessence:'quintessence',redivision:'redivision',remission:'remission',restore:'restore',remoteswitch:'remoteswitch',stealgem:'stealgem',obliteration:'obliterate',
       escape:'escape',gift:'gift',greed:'greed',growthbody:'growthbody',spiritwalk:'spiritwalk',vitality:'vitality',
-      purify:'purify',haste:'haste',massphantasm:'revoltphantasm',revival:'revival',stoneblast:'stoneblast',
+      miraclecall:'miraclecall',purify:'purify',haste:'haste',massphantasm:'revoltphantasm',revival:'revival',stoneblast:'stoneblast',
       turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',

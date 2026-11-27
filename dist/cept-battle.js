@@ -3,13 +3,13 @@ const attackVariants={
   leap:'ninja samurai knight griffon pegasus wyvern dragonfly',
   crush:'colossus cyclops golem stonegolem giantmole firegiant stormgiant steamgear',
   volley:'archer amazon darkelf elf lilith',
-  fang:'dragon hydra cerberus hellhound tyrannosaurus grendel manticore wereboar'
+  fang:'evodragon dragon hydra cerberus hellhound tyrannosaurus grendel manticore wereboar'
 };
 const weaponMotions={bow:'volley',crossbow:'volley',sling:'volley',morningstar:'crush',mace:'crush',batteringram:'crush',
   lanceofodin:'leap',spear:'leap',trident:'leap',livingspear:'leap',clawoftheghoul:'fang'};
 function attackMotion(id,item){
   const card=C.cards[id],gear=C.cards[item],key=C.combo.key(card);
-  if(gear?.category==='scroll')return 'magic';
+  if(gear?.category==='scroll'||!gear&&card.innateScroll)return 'magic';
   if(gear?.category==='weapon')return weaponMotions[C.combo.key(gear)]||'slash';
   const style=Object.entries(attackVariants).find(([,names])=>names.split(' ').includes(key))?.[0];
   if(style)return style;

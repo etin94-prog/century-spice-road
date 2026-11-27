@@ -21,10 +21,20 @@ const CepterEvo=(()=>{
     ['마비 공격','hit',6,30,{paralyze:true}],
     ['방어 전용','map',5,-40,{stationary:true}],
     ['주문 대상 면역','map',8,30,{spellWard:true}],
-    ['재생','end',5,10,{regenerate:true}]
+    ['재생','end',5,10,{regenerate:true}],
+    ['마법탄','start',5,20,{innateScroll:30}],
+    ['영지의 힘','battle',5,20,{evoBattle:'landST'}],['영지의 방어','battle',5,20,{evoBattle:'landHP'}],
+    ['시간의 힘','battle',5,20,{evoBattle:'roundST'}],['시간의 방어','battle',5,20,{evoBattle:'roundHP'}],
+    ['동속성의 힘','battle',8,20,{evoBattle:'elementST'}],['동속성의 방어','battle',8,20,{evoBattle:'elementHP'}],
+    ['나이의 힘','battle',10,30,{evoBattle:'ageST'}],['나이의 방어','battle',10,30,{evoBattle:'ageHP'}],
+    ['ST 드레인','hit',5,20,{drainST:true}],
+    ['통행료 상승','map',5,20,{tollFactor:1.5}],
+    ['카드 유산','end',5,10,{evoLegacy:'draw'}],['마력 유산','end',5,20,{evoLegacy:'cash'}],
+    ['화·지 관통','attack',8,20,{pierceElements:[0,2]}],['수·풍 관통','attack',8,20,{pierceElements:[1,3]}]
   ];
   const areas=['neutral','fire','water','earth','air'],colors='RBGY';
-  const radices=[2,11,5,17,16,3,2,abilities.length,abilities.length],base=1_000_000_000;
+  const original={base:1_000_000_000,radices:[2,11,5,17,16,3,2,17,17]};
+  const extended={base:2_000_000_000,radices:[2,11,5,17,16,3,2,128,128]};
   const fresh=()=>({age:0,sp:5,element:-1,st:20,hp:30,land:0,discard:0,abilities:[]});
   const statBounds=(st,hp)=>st>=0&&st<=80&&hp>=5&&hp<=80;
   function growthCost(st,hp,[,,ds,dh,sp]){
@@ -60,10 +70,12 @@ const CepterEvo=(()=>{
     if((slot!==0&&slot!==1)||!valid(recipe)||summonCost(recipe)<0)return null;
     const [first=0,second=0]=[...recipe.abilities].sort((a,b)=>a-b);
     const values=[slot,recipe.age,recipe.element+1,recipe.st/5,recipe.hp/5-1,recipe.land,recipe.discard,first,second];
+    const {base,radices}=first>=17||second>=17?extended:original;
     return base+values.reduce((value,n,i)=>value*radices[i]+n,0);
   }
   function decode(id){
-    if(!Number.isSafeInteger(id)||id<base)return null;
+    if(!Number.isSafeInteger(id)||id<original.base)return null;
+    const {base,radices}=id>=extended.base?extended:original;
     let value=id-base;
     const chunks=[];
     for(let i=radices.length-1;i>=0;i--){chunks.unshift(value%radices[i]);value=Math.floor(value/radices[i]);}
@@ -86,7 +98,7 @@ const CepterEvo=(()=>{
   function catalog(cards){
     const cache=new Map();
     return new Proxy(cards,{get(target,prop,receiver){
-      if(typeof prop!=='string'||prop.length!==10||!/^1\d{9}$/.test(prop))return Reflect.get(target,prop,receiver);
+      if(typeof prop!=='string'||prop.length!==10||!/^[1-4]\d{9}$/.test(prop))return Reflect.get(target,prop,receiver);
       const id=Number(prop);
       if(!cache.has(id)){
         const recipe=decode(id);

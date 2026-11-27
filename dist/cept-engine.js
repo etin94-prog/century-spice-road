@@ -241,7 +241,7 @@ function createCepter(edition="ps2"){
     if(messages.length){s.chainNotice=messages.join(' / ');note(s,s.chainNotice);}
   }
   const toll=(s,t)=>s.players[t.owner]?.status==='blackout'||cards[t.unit?.id]?.freeToll?0:Math.floor(value(s,t)*[0,.2,.3,.4,.6,.8][t.level]*
-    ({boggart:2,gnome:1.5,steamgear:.5}[key(cards[t.unit?.id])]||1)*({sleep:0,peace:0,barricade:1.3,greed:1.5,fog:.5}[t.unit?.enchant]??1)*({sagaTollUp:1.3,sagaTollDown:.7}[s.players[t.owner]?.status]??1));
+    (cards[t.unit?.id]?.tollFactor||{boggart:2,gnome:1.5,steamgear:.5}[key(cards[t.unit?.id])]||1)*({sleep:0,peace:0,barricade:1.3,greed:1.5,fog:.5}[t.unit?.enchant]??1)*({sagaTollUp:1.3,sagaTollDown:.7}[s.players[t.owner]?.status]??1));
   const owedToll=(s,t,seat=s.turn)=>s.players[seat].status==='goodluck'||s.players[seat].sagaClemency?0:toll(s,t);
   const debtSaleValue=(s,t)=>revolt?Math.floor(value(s,t)*.8):value(s,t);
   const revoltLapBase=(map,laps)=>Math.floor(map.bonus*(1+laps/10));
@@ -707,7 +707,7 @@ function createCepter(edition="ps2"){
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
-        a.n=null;a.c={...a.c,revenge:null,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,battleHP:0,
+        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,battleHP:0,
           criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
         useGear(a);
       }
@@ -762,7 +762,16 @@ function createCepter(edition="ps2"){
       if(a.n==='peri'&&other.book.length-owner.book.length>=3){a.st+=20;a.hp+=20;}
       if(a.g==='changingsalve')[a.st,a.hp]=[a.hp,a.st];
       if(a.g==='neutralamulet'){a.element=-1;a.elements=null;}
-      if(!muted)extra.baseStats(a,d);
+      if(!muted){
+        extra.baseStats(a,d);
+        if(a.c.evoBattle){
+          const effect=a.c.evoBattle,stat=effect.endsWith('ST')?'st':'hp';
+          if(effect.startsWith('land'))a[stat]=s.tiles.filter(v=>v.owner===a.seat).length*10;
+          if(effect.startsWith('round'))a[stat]+=s.round;
+          if(effect.startsWith('element'))a[stat]+=5*s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===a.element).length;
+          if(effect.startsWith('age'))a[stat]+=a.c.evoAge*4;
+        }
+      }
       a.land=a.defending?terrainHP(t,a.u,a,a.n,muted):0;
       a.hp+=a.land+(a.gear?.hp||0)+(muted?0:a.c.battleHP||0);
       a.st+=supportST(s,b.at,b.from,a.seat)+(a.gear?.st||0)+(muted?0:a.c.battleST||0);
@@ -780,6 +789,7 @@ function createCepter(edition="ps2"){
         if(extra.boost('virus',a))a.hp-=10;
         if(a.element===2&&extra.boost('sphinx',a))a.hp-=10;
         if(a.gear?.category==='scroll')a.st=a.gear.st||0;
+        if(!a.gear&&a.c.innateScroll)a.st=a.c.innateScroll;
         if(!firstEdition&&a.n==='sorcerer'&&!a.gear)a.st=20;
         if(['reflect','nullify'].includes(a.gear?.effect))a.st=0;
       }
@@ -790,7 +800,7 @@ function createCepter(edition="ps2"){
     const health=()=>sides.map(a=>Math.max(0,a.hp));
     b.guard=D.u.id;b.guardHP=D.u.hp;b.attackST=A.st;b.defendST=D.st;b.landHP=D.land;b.startHP=health();b.strikes=[];b.forms=sides.map(a=>a.u.id);
     function hit(a,d){
-      const scroll=a.gear?.category==='scroll'||!firstEdition&&a.n==='sorcerer'&&!a.gear,orb=a.gear?.effect==='orb';
+      const scroll=a.gear?.category==='scroll'||!a.gear&&(a.c.innateScroll>0||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb';
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||matches(weapon?.pierceElements,d));
@@ -844,7 +854,7 @@ function createCepter(edition="ps2"){
         if((a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||a.n==='nike'||a.g==='clawoftheghoul'){
           combo.clear(d.u);if(a.c.poison)d.u.poisoned=true;else if(a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
-        if(a.n==='succubus'||a.g==='ringofthesuccubus'){d.u.st=0;d.st=0;}
+        if(a.n==='succubus'||a.g==='ringofthesuccubus'||a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
         if(a.g==='ringofthevampire')a.hp+=damage;
         if(a.n==='bandit'||a.g==='banditsglove'){const n=Math.min(s.players[d.seat].cash,damage*2);s.players[d.seat].cash-=n;s.players[a.seat].cash+=n;}
         if(a.g==='rathunter'&&d.hp>0)extra.convert(d,'giantrat');
@@ -941,7 +951,9 @@ function createCepter(edition="ps2"){
       const p=s.players[a.seat];
       if(creatureEnd&&a.n==='cornfolk')p.cash+=200;
       if(creatureEnd&&a.n==='mummy')p.cash+=50*(p.lap+1);
-      if(creatureEnd&&a.n==='fate'&&p.hand.length<6)draw(p,s);
+      if(creatureEnd&&(a.n==='fate'&&p.hand.length<6||a.c.evoLegacy==='draw'))draw(p,s);
+      if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
+      if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
       if(a.g==='goldengoose')p.cash+=(firstEdition?5:10)*fx.max(a.u);
       if(creatureEnd&&a.n==='phoenix'||a.g==='phoenixamulet')p.hand.push(a.u.id);
       const victor=a===A?D:A;
@@ -1161,6 +1173,16 @@ function createCepter(edition="ps2"){
         if(c.effect==='obliterate'){
           for(const q of s.players)q.cash-=board(s).gemStore?q.symbols.reduce((sum,count)=>sum+count,0)*70:Math.floor(Math.max(0,q.cash)/10);
           mapEffect('cast',c.name);note(s,p.name+' · '+c.name);break;
+        }
+        if(c.effect==='miraclecall'){
+          const indices=p.book.flatMap((id,j)=>cards[id]?.evo?[j]:[]);
+          if(indices.length){
+            const j=indices[Math.floor(Math.random()*indices.length)];
+            p.hand.push(p.book.splice(j,1)[0]);
+          }else{draw(p,s);draw(p,s);}
+          const label=indices.length?'에보 카드 1장 뽑음':'카드 2장 뽑음';
+          mapEffect('cast',label,p.pos,{title:c.name});note(s,c.name+' · '+label);
+          break;
         }
         if(c.effect==='remoteswitch'){
           if(board(s).pathSwitches)flipPaths(s,c.name);
@@ -1510,6 +1532,10 @@ function createCepter(edition="ps2"){
           const paths=onward(s),steps=c.effect==='word1'?1:6;
           const fixed=Math.max(...paths.map(n=>landing(n,p.pos,steps)));
           return fixed<0?-5:fixed/18+(steps>1?3:-1);
+        }
+        if(k==='cast'&&c.effect==='miraclecall'){
+          const wantsEvo=!p.hand.some(id=>cards[id]?.evo)&&p.book?.some(id=>cards[id]?.evo);
+          return (wantsEvo?34:17)-Math.max(0,p.hand.length-5)*10;
         }
         if(k==='cast'&&c.effect==='manna')return 20+p.lap;
         if(k==='cast'&&c.effect==='bolt'&&!s.tiles.some(t=>t.unit&&!allied(s,t.owner,seat)))return -10;

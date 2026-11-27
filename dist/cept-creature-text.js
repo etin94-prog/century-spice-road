@@ -271,6 +271,17 @@ const CepterCreatureText=(()=>{
       if(card.spellWard)pieces.push('주문과 비술의 대상으로 지정할 수 없습니다.');
       if(card.protectGear)pieces.push('장비가 파괴되거나 빼앗기지 않습니다.');
       if(card.neutralizeScroll)pieces.push('두루마리 공격을 무효화합니다.');
+      if(card.innateScroll)pieces.push('장비 없이 공격하면 두루마리 피해 '+card.innateScroll+'을 줍니다.');
+      if(card.drainST)pieces.push('일반 공격으로 피해를 주면 상대의 기본 ST를 0으로 낮춥니다.');
+      if(card.tollFactor)pieces.push('이 영지의 통행료를 '+card.tollFactor+'배로 올립니다.');
+      if(card.evoLegacy)pieces.push(card.evoLegacy==='draw'?'전투에서 파괴되면 카드 한 장을 뽑습니다.':'전투에서 파괴되면 100G를 얻습니다.');
+      const scaling={
+        landST:'전투 ST는 내 영지 수 × 10입니다.',landHP:'전투 HP는 내 영지 수 × 10입니다.',
+        roundST:'전투 ST에 현재 라운드를 더합니다.',roundHP:'전투 HP에 현재 라운드를 더합니다.',
+        elementST:'전투 ST에 같은 속성의 배치 크리처 수 × 5를 더합니다.',elementHP:'전투 HP에 같은 속성의 배치 크리처 수 × 5를 더합니다.',
+        ageST:'전투 ST에 AGE × 4를 더합니다.',ageHP:'전투 HP에 AGE × 4를 더합니다.'
+      };
+      if(card.evoBattle)pieces.push(scaling[card.evoBattle]);
     }
     if(card.battleHP)pieces.push('전투 HP +'+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');

@@ -1162,7 +1162,49 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(duel,['bare']));assert.ok(C.play(duel,['bare']));
   assert.equal(duel.battle.strikes[0].side,0);
   assert.equal(duel.battle.attackST,20);
-  console.log('Revolt Breed training budget, part groups, legal book slots, summon costs, serialization, replay, privacy and first attack OK');
+  assert.equal(base,1_000_119_646,'released Evo deck IDs retain their meaning');
+  const build=part=>E.encode(E.apply(evolved,'ability',part),0);
+  const verifyAttack=(attacker,round=2)=>{
+    const s=C.start(2,2,5000,map,deck);s.round=round;
+    s.phase='attack';s.battle={at:3,inv:attacker,atkItem:null,defItem:null};
+    Object.assign(s.tiles[3],{type:1,level:3,owner:1,unit:{id:guard,hp:60,st:60}});
+    Object.assign(s.tiles[1],{owner:0,unit:{id:other,hp:30}});
+    assert.ok(C.play(s,['bare']));assert.ok(C.play(s,['bare']));
+    return s;
+  };
+  const scroll=verifyAttack(build(17));
+  assert.equal(scroll.battle.attackST,30);
+  assert.ok(scroll.battle.strikes[0].notes.some(line=>line.includes('30 피해')));
+  const era=verifyAttack(build(20),12);
+  assert.equal(era.battle.attackST,32);
+  const same=verifyAttack(build(22));
+  assert.equal(same.battle.attackST,25);
+  const habitat=verifyAttack(build(18));
+  assert.equal(habitat.battle.attackST,10);
+  const years=verifyAttack(build(24));
+  assert.equal(years.battle.attackST,44);
+  const drainer=verifyAttack(build(26));
+  assert.equal(drainer.tiles[3].unit.st,0);
+  const legacy=verifyAttack(build(29));
+  assert.equal(legacy.battle.finalHP[0],0);
+  assert.ok(legacy.battle.lines.some(line=>line.includes('마력 유산')));
+  assert.equal(legacy.players[0].cash,(C.maps[map].startCash??200)+120);
+  const tollGame=C.start(2,2,5000,map,deck);
+  Object.assign(tollGame.tiles[3],{owner:0,unit:{id:base,hp:30}});
+  const ordinary=C.toll(tollGame,tollGame.tiles[3]);
+  tollGame.tiles[3].unit.id=build(27);
+  assert.equal(C.toll(tollGame,tollGame.tiles[3]),Math.floor(ordinary*1.5));
+
+  const spell=C.cards.findIndex(c=>c.effect==='miraclecall'&&!c.catalogOnly);
+  assert.ok(spell>=0);
+  for(const hasDragon of [false,true]){
+    const s=C.start(2,2,5000,map,deck),p=s.players[0],normal=C.presets.intro[0];
+    p.hand=[spell];p.book=hasDragon?[base,normal,normal]:[normal,normal,normal];p.cash=500;
+    assert.ok(C.play(s,['cast',0]));assert.equal(s.phase,'roll');
+    assert.deepEqual(p.hand,hasDragon?[base]:[normal,normal]);
+    assert.equal(p.cash,430);
+  }
+  console.log('Revolt Breed training budget, part groups, legal book slots, summon costs, serialization, replay, privacy, packed version compatibility, battle parts and Miracle Call OK');
 }
 
 {
