@@ -396,3 +396,18 @@ html:not(.cept-full,.cept-wide) main:has(#game:not([hidden])){max-width:1440px}
   .cept-wide #game .table aside{max-height:none;overflow:visible}
   .cept-wide #game #mapViewport{max-height:max(148px,calc(100dvw - 155px));background:#171b23}
 }
+/* Edition scenery stays under the existing isometric tile and pawn layers. */
+#game .atlas:has(#map[data-edition-board]) #mapViewport{
+  background:
+    radial-gradient(ellipse at 50% 38%,var(--edition-glow),transparent 68%),
+    repeating-linear-gradient(30deg,transparent 0 34px,#d9ecfa0b 35px 36px,transparent 37px 68px),
+    repeating-linear-gradient(-30deg,transparent 0 34px,#d9ecfa0b 35px 36px,transparent 37px 68px),
+    linear-gradient(150deg,var(--edition-ground),#141822);
+}
+#game .atlas:has(#map[data-edition-board="saga"]){--edition-ground:#302925;--edition-glow:#9b6b454e}
+#game .atlas:has(#map[data-edition-board="revolt"]){--edition-ground:#142d42;--edition-glow:#4e99cb50}
+#game .atlas:has(#map[data-edition-board="begins"]){--edition-ground:#1d352d;--edition-glow:#71954856}
+#map[data-edition-board] .tile::after{background:color-mix(in srgb,var(--land),#fff2c1 42%)}
+#map[data-edition-board] .tile-surface{background:linear-gradient(145deg,#fffb 0%,transparent 44%,#1013235c 92%),var(--land)}
+#map[data-edition-board] .tile.special .tile-surface{background:repeating-linear-gradient(30deg,transparent 0 8px,#f5dd9d20 9px 10px),linear-gradient(145deg,#aa966e,#524d46)}
+#map[data-edition-board] .tile:is(.exit,.targetable,.chosen,:focus-visible)::after{background:#ffe39e}

@@ -494,6 +494,8 @@ function map(){
   const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.stage?1:m.rows+m.cols+.6;
   const half=m.stage?m.half:100/span;
   root.classList.toggle('source-map',!!m.stage);
+  if(['saga','revolt','begins'].includes(C.edition))root.dataset.editionBoard=C.edition;
+  else delete root.dataset.editionBoard;
   root.style.setProperty('--board-art',m.stage?'url("art/cept-maps/'+m.image+'.webp")':'none');
   root.style.backgroundImage='var(--board-art)';
   root.style.setProperty('--half-tile',half+'cqw');
