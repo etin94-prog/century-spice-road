@@ -6,7 +6,9 @@ for(const [group,select] of [['Player',$('bookChoice')],['AI',$('aiChoice')]]){
   adaptedBooks.forEach((b,i)=>{if(b.group===group)list.append(new Option(b.name+' · 유지 '+b.kept+'장','source-'+i));});
   select.insertBefore(list,select.querySelector('[value="custom"]'));
 }
-const practiceBooks=(firstSeries||modernSeries?[]:C.combo.recipes).map((_,i)=>({name:'콤보 '+(i+1)+' · '+comboLabel(i),deck:C.practiceBook(i),practice:true}));
+const practiceBooks=C.edition==='revolt'?C.combo.revoltCombos.map((recipe,i)=>({
+  name:comboLabel(i,recipe.cards.map(n=>[n])),deck:C.practiceBook(i),practice:true
+})):(firstSeries||modernSeries?[]:C.combo.recipes).map((_,i)=>({name:'콤보 '+(i+1)+' · '+comboLabel(i),deck:C.practiceBook(i),practice:true}));
 for(const select of [$('bookChoice'),$('aiChoice')]){
   const list=document.createElement('optgroup');list.label='콤보 연습 북';
   practiceBooks.forEach((b,i)=>{if(b.deck)list.append(new Option(b.name,'combo-'+i));});select.insertBefore(list,select.querySelector('[value="custom"]'));
@@ -30,6 +32,7 @@ if(C.edition!=='ps2'){
     player.querySelector('[value="intro"]').textContent='수·풍 기반 북';
     player.value='fire';
   }
+  if(modernSeries)$('ps2Library').hidden=true;
   if(firstSeries){
     for(const [key,title] of [['fire','화·지 초기 북'],['intro','수·풍 초기 북']]){$('bookChoice').querySelector('[value='+key+']').textContent=title;$('aiChoice').add(new Option(title,key));}
     const titles={fireAir:'화·풍 초기 북',waterEarth:'수·지 초기 북',Stopper:'통행 저지',Earth:'지속성',Air:'풍속성',Fire:'화속성',Water:'수속성'};

@@ -145,6 +145,24 @@ const CepterEditions=(()=>{
       escape:'escape',mountainleap:'mountainleap',lakeleap:'lakeleap',forestleap:'forestleap',plainleap:'plainleap',
       mutation:'mutation',removecurse:'removecurse',turntowall:'turntothewall'}
   };
+  // These three original books are the baseline used to calibrate Revolt difficulty.
+  const revoltBaselineBooks={
+    intro:[
+      'manna windofhope relief holyword6 foresight fly',
+      'chainmail longsword mace catapult trident',
+      'megalodon fighter steamgear goblin tyrannosaurus skeleton armoreddragon statue blitzraven tornado wallofstone ninja phoenix hidebehind'
+    ],
+    fire:[
+      'magicbolt brightworld shatter drainmagic',
+      'longsword battleaxe claymore stormcauser mace trident',
+      'elvenarcher megalodon hardrockdragon lightningdragon dwarvenminer fighter steamgear blitzraven goblin tyrannosaurus phoenix skeleton armoreddragon ninja griffon'
+    ],
+    stronghold:[
+      'barrier jointworld darkworld lifestream manna',
+      'chainmail scalearmor platemail magicshield eternalmail diamondarmor catapult',
+      'wallofstone megalodon statue tornado fighter gelatinouswall goblin tyrannosaurus steamgear skeleton armoreddragon mummy burnacle'
+    ]
+  };
   function modernBooks(cards,edition,bookSize,copyLimit){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
     function build(creatures,items,attackWeight,spells){
@@ -179,12 +197,17 @@ const CepterEditions=(()=>{
       add(groups.spell,bookSize-deck.length);
       return deck;
     }
-    const presets={
-      intro:build(edition==='begins'?22:28,edition==='begins'?8:10,.5,'manna windofhope relief word6 foresight fly'),
-      fire:build(edition==='begins'?24:30,edition==='begins'?9:12,.78,edition==='revolt'?'bolt brightworld shatter drainmagic':'bolt shatter drainmagic windofhope manna'),
-      stronghold:build(edition==='begins'?21:26,edition==='begins'?11:14,.25,edition==='revolt'?'barrier jointworld darkworld lifestream manna':'barrier lifestream heal windofhope manna')
-    };
     const ids=new Map(pool.map(id=>[cards[id].catalog.path.split('/').pop(),id]));
+    const presets=edition==='revolt'?Object.fromEntries(Object.entries(revoltBaselineBooks).map(([name,groups])=>[
+      name,groups.flatMap(group=>{
+        const idsInGroup=group.split(' ').map(slug=>ids.get(slug));
+        return [...idsInGroup,...idsInGroup];
+      })
+    ])):{
+      intro:build(edition==='begins'?22:28,edition==='begins'?8:10,.5,'manna windofhope relief word6 foresight fly'),
+      fire:build(edition==='begins'?24:30,edition==='begins'?9:12,.78,'bolt shatter drainmagic windofhope manna'),
+      stronghold:build(edition==='begins'?21:26,edition==='begins'?11:14,.25,'barrier lifestream heal windofhope manna')
+    };
     function addNamedBooks(books){
       for(const [key,entries] of Object.entries(books)){
         const deck=Object.entries(entries).flatMap(([name,count])=>Array(count).fill(ids.get(name)));
@@ -497,6 +520,10 @@ const CepterEditions=(()=>{
     amphibianwarrior:{immutableHP:true},cockatrice:{},apsaras:{},lilith:{first:true},
     livinghelmet:{itemCreature:true},livingarmor:{itemCreature:true,battleST:50},
     aquahorn:{neutralizes:[1,2]},mistwing:{neutralizes:[0,3]},odontotyrannus:{synergy:{element:3,st:20,hp:10}},pulgasari:{},
+    kelpie:{},oldwillow:{stationary:true},nightmare:{},sulfurousballoon:{},tetrarm:{doubleAttack:true},
+    burningtitan:{},nessie:{},soulcollector:{},samurai:{},saint:{neutralizes:[-1]},shadowgeist:{first:true,vigorous:true,drainST:true},
+    pixie:{support:true,supportElements:[0,2],vigorous:true},duskdweller:{first:true},rocktitan:{},devastator:{},
+    greatfossil:{stationary:true,freeToll:true,reviveForm:'tyrannosaurus'},gigantherium:{},
     glowhorn:{synergy:{element:0,st:20,hp:20}},rokh:{synergy:{element:1,st:30}},mudman:{},madharlequin:{vigorous:true},witch:{scrollCritical:true},
     grimalkin:{support:true,supportElements:[0,2],spellWard:true},
     phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},phoenix:{},
@@ -673,7 +700,7 @@ const CepterEditions=(()=>{
           alp:'fatigue',captaincock:'recover',domovikha:'protect',hyde:'paralyze',rockshell:'peace',
           screamer:'disableTerrain',hidebehind:'camouflage',kawahime:'loseStrength',
           spittingcobra:'poison',sakuya:'earthShift',witch:'stealSpellMagic',ironmonger:'drawItem',
-          aquahorn:'toMistwing',mistwing:'toAquahorn'
+          aquahorn:'toMistwing',mistwing:'toAquahorn',deathscythe:'toMummy'
         }[slug];
         if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
         if(slug==='dwarvenminer')c.tollFactor=1.5;

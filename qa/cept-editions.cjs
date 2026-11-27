@@ -1158,6 +1158,77 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([cheered.attackST,cheered.startHP[0],cheered.defendST,cheered.startHP[1]],[60,60,40,40]);
   const silenced=revolt(null,null,'fighter','fighter',(state,id)=>{jester(state,id);state.tiles[8].unit.enchant='paralysis';}).s.battle;
   assert.deepEqual([silenced.attackST,silenced.startHP[0]],[40,40]);
+  {
+    for(const [i,{cards,hint}] of revoltCatalog.combo.revoltCombos.entries()){
+      const book=revoltCatalog.practiceBook(i);
+      assert.ok(revoltCatalog.validBook(book),hint);
+      for(const slug of cards)assert.equal(book.filter(id=>id===bySlug.get(slug)).length,4,slug);
+    }
+    const guided=revoltCatalog.start(2,0,5000,'revolt-original-watchpost',revoltCatalog.practiceBook(0),undefined,3);
+    const guidedHand=['mace','batteringram'].map(n=>bySlug.get(n));
+    guided.players[0].hand=guidedHand;guided.players[0].cash=300;
+    guided.players[1].hand=[];
+    Object.assign(guided.tiles[3],{owner:1,type:0,level:3,unit:{id:bySlug.get('minotaur'),hp:80,mhp:80}});
+    guided.phase='attack';
+    guided.battle={at:3,inv:bySlug.get('cockatrice'),atkItem:null,defItem:null};
+    assert.deepEqual(revoltCatalog.ai(guided),['equip',1]);
+    assert.ok(revoltCatalog.play(guided,['equip',1])&&revoltCatalog.play(guided,['bare']));
+    assert.ok(guided.battle.won);
+
+    const ray=revolt('soulray','platemail','triton','goblin',(state,id)=>{
+      state.players[0].book=[id('manna')];
+    }).s;
+    assert.equal(ray.battle.startHP[1]-ray.battle.strikes[0].hp[1],45);
+    assert.ok(ray.players[0].hand.includes(bySlug.get('manna')));
+    assert.ok(ray.players[0].hand.includes(bySlug.get('soulray')));
+    assert.equal(revolt('sparkball','magussmirror','fighter','wonderwall').s.battle.strikes[0].effect,'reflect');
+    assert.equal(revolt('longsword','buckler','goblin','caitsith').s.battle.strikes[0].effect,'block');
+    const storm=revolt('stormcauser','platemail','sulfurousballoon','greattusker').s;
+    assert.ok(storm.battle.lines.some(line=>line.includes('40')&&line.includes('HP')));
+    assert.equal(storm.tiles[1].unit,null);
+    const frost=revolt('chillingblast','platemail','tetrarm','minotaur',deployed(1,'blueogre')).s.battle;
+    assert.equal(frost.strikes.filter(x=>x.side===0).length,2);
+    const doubles=revolt('twinspike','platemail','tetrarm','minotaur').s.battle;
+    assert.equal(doubles.finalForms[1],bySlug.get('tetrarm'));
+    assert.equal(doubles.strikes.filter(x=>x.side===0).length,2);
+    assert.ok(doubles.won);
+    const garment=revolt('spectresrobe','diamondarmor','tetrarm','minotaur').s.battle;
+    assert.ok(garment.attackST>=30&&garment.attackST<=90);
+    assert.ok(garment.strikes.length>=2);
+    const saint=revolt('twinspike','platemail','saint','minotaur').s.battle;
+    assert.equal(saint.won,false);
+    assert.equal(saint.finalForms[1],bySlug.get('saint'));
+    assert.ok(revolt(null,'platemail','saint','fighter').s.battle.won);
+    const drop=revolt('necroscarab',null,'sulfurousballoon','ninja').s;
+    assert.ok(drop.battle.won);
+    assert.equal(drop.tiles[1].unit.id,bySlug.get('skeleton'));
+    const unfused=revolt(null,null,'sulfurousballoon','ninja').s;
+    assert.equal(unfused.tiles[1].unit,null);
+    const fossil=revolt(null,null,'fighter','greatfossil').s;
+    assert.equal(fossil.tiles[1].unit.id,bySlug.get('tyrannosaurus'));
+    assert.ok(!fossil.battle.won);
+    const pierce=revolt('mace',null,'nightmare','woodfolk',state=>{Object.assign(state.tiles[1],{type:2,level:3});}).s.battle;
+    assert.equal(pierce.landHP,30);
+    assert.ok(pierce.won);
+    const ness=revolt(null,null,'nessie','fighter',state=>{Object.assign(state.tiles[1],{type:1,level:3});}).s.battle;
+    assert.equal(ness.startHP[0],70);
+    const invader=revolt(null,null,'devastator','goblin',state=>{state.tiles[1].level=3;}).s;
+    assert.equal(invader.tiles[1].level,2);
+    const collected=revolt(null,null,'soulcollector','goblin',state=>{state.destroyedCount=9;}).s.battle;
+    assert.equal(collected.attackST,65);
+    const titan=revolt(null,null,'rocktitan','goblin').s.tiles[1].unit;
+    assert.deepEqual([titan.st,titan.mhp,titan.hp],[60,60,60]);
+    const dusk=revolt(null,null,'duskdweller','goblin').s.tiles[1].unit;
+    assert.deepEqual([dusk.st,dusk.mhp,dusk.hp],[50,50,50]);
+    const samuraiRandom=Math.random;
+    try{
+      Math.random=()=>.4;
+      assert.ok(revolt(null,'platemail','samurai','fighter').s.battle.won);
+      assert.ok(!revolt(null,'platemail','samurai','goblin').s.battle.won);
+      Math.random=()=>.8;
+      assert.ok(!revolt(null,'platemail','samurai','fighter').s.battle.won);
+    }finally{Math.random=samuraiRandom;}
+  }
   const dino=revolt(null,null,'odontotyrannus','fighter',deployed(3,'yellowogre')).s.battle;
   assert.deepEqual([dino.attackST,dino.startHP[0]],[70,60]);
   const eating=revolt('mace','chainmail','pulgasari','fighter').s;
@@ -2707,7 +2778,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(State.view(C,restored,1).game.players[0].evoRewardBook,undefined);
   const duel=C.start(2,2,5000,map,deck);
   duel.phase='attack';duel.battle={at:3,inv:fireId,atkItem:null,defItem:null};
-  const guard=C.presets.fire.find(id=>C.cards[id].kind==='creature'&&!C.cards[id].first);
+  const guard=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='megalodon');
   Object.assign(duel.tiles[3],{type:1,owner:1,unit:{id:guard,hp:60}});
   assert.ok(C.play(duel,['bare']));assert.ok(C.play(duel,['bare']));
   assert.equal(duel.battle.strikes[0].side,0);

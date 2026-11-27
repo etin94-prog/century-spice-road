@@ -280,6 +280,17 @@ const CepterCreatureText=(()=>{
   };
   const elements=['화','수','지','풍'],races={rh:'인간형',rb:'야수형',rd:'용형',ru:'불사형'};
   const targets=ids=>ids.map(i=>elements[i]||'무').join('·')+' 속성';
+  const revoltBattle={
+    sulfurousballoon:'전투에서 격파되면 상대의 기본 HP에 40 피해를 줍니다.',
+    nessie:'수 영지에서 싸우면 영지 레벨 × 10만큼 전투 HP가 오릅니다.',
+    soulcollector:'이번 대국에서 지금까지 파괴된 크리처 한 마리마다 전투 ST +5.',
+    rocktitan:'전투에서 살아남으면 전투 종료 시 기본 ST와 최대 HP가 각각 10 줄어듭니다.',
+    greatfossil:'통행료를 받지 않습니다. 전투에서 격파되면 티라노사우루스로 살아납니다.',
+    duskdweller:'전투에서 승리하면 기본 ST와 최대 HP가 각각 10 오릅니다. 최대 100.',
+    devastator:'침략 전투에서 살아남으면 교전 영지 레벨을 1 내립니다. 최저 Lv.1.',
+    shadowgeist:'일반 공격으로 피해를 주면 상대의 기본 ST를 0으로 만듭니다.',
+    saint:'무속성 상대에게 일반 공격으로 피해를 주면 즉사시킵니다.'
+  };
   const handheldTerritory={
     fanatic:'고른 크리처에게 20 피해를 주고 이 크리처의 HP도 10 줄어듭니다.',
     algasphere:'자신의 최대 HP와 현재 HP를 최대 20씩 올립니다. 최대 HP 상한은 100입니다.',
@@ -339,7 +350,7 @@ const CepterCreatureText=(()=>{
     if(C.edition==='saga'&&key==='wolverine')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령이나 비술 사용 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
-    if(card.doubleAttack)pieces.push('일반 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
+    if(card.doubleAttack)pieces.push((C.edition==='revolt'&&key==='tetrarm'?'일반·두루마리':'일반')+' 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
     if(!card.evo&&card.spellWard&&key!=='pegasus')pieces.push('지정 주문과 영지 능력의 대상이 되지 않습니다.');
     if(!card.evo&&card.neutralizeScroll&&key!=='pegasus')pieces.push('두루마리 공격을 무효화합니다.');
     if(card.blocksFirst)pieces.push('선제 능력이 있는 크리처의 일반 공격을 무효화합니다.');
@@ -379,7 +390,8 @@ const CepterCreatureText=(()=>{
       const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
-    const special=C.edition==='begins'&&beginsBattle[key]?beginsBattle[key]:
+    const special=C.edition==='revolt'&&revoltBattle[key]?revoltBattle[key]:
+      C.edition==='begins'&&beginsBattle[key]?beginsBattle[key]:
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':
@@ -398,7 +410,7 @@ const CepterCreatureText=(()=>{
     if(card.remoteVacantElements?.length)pieces.push('어느 지역이든 빈 '+targets(card.remoteVacantElements)+' 영지로 이동할 수 있습니다.');
     if(card.remoteVacant)pieces.push('어느 지역의 빈 영지로든 이동할 수 있습니다.');
     if(!card.basicBattle&&!card.revenge&&special&&!card.remoteVacant&&!card.remoteVacantElements)pieces.push(special);
-    if(!firstEdition&&key==='samurai')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
+    if(!firstEdition&&key==='samurai')pieces.push(C.edition==='revolt'?'일반 공격으로 피해를 준 상대의 기본 ST가 40 이상이면 70% 확률로 즉사시킵니다.':'일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
     const landAbility=territorySummary(C,card);
     if(landAbility)pieces.push(landAbility);
     return pieces.length?pieces.join(' · '):'기본 ST와 HP로 전투합니다.';

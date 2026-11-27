@@ -414,7 +414,8 @@ const CepterCombos = (() => {
       floatSigil:{cost:50,label:'셉터의 다음 주사위를 5로 고정',player:true,word:5},
       drawItem:{cost:50,label:'북에서 장비 한 장 뽑기'},
       toMistwing:{cost:30,label:'미스트윙으로 변신',form:'mistwing',self:true},
-      toAquahorn:{cost:30,label:'아쿠아혼으로 변신',form:'aquahorn',self:true}
+      toAquahorn:{cost:30,label:'아쿠아혼으로 변신',form:'aquahorn',self:true},
+      toMummy:{cost:50,label:'머미로 변신',form:'mummy',self:true}
     };
     const grantedArts={sigiloffloat:'floatSigil',sigilofdrain:'drainSigil'};
     const secretKey=(card,unit)=>card?.secretArt||grantedArts[unit?.enchant];
@@ -515,8 +516,9 @@ const CepterCombos = (() => {
       if(art==='drawItem')utility=p.hand.filter(id=>cards[id]?.kind==='item').length<2?28:0;
       if(spec.form){
         const enemyColors=s.tiles.filter(v=>v.unit&&!allied(s,v.owner,s.turn)).map(v=>cards[v.unit.id].element);
-        const count=colors=>enemyColors.filter(e=>colors.includes(e)).length;
-        utility=6*(count(cards[ids.get(spec.form)].neutralizes)-count(card.neutralizes));
+        const count=(colors=[])=>enemyColors.filter(e=>colors.includes(e)).length;
+        const next=cards[ids.get(spec.form)];
+        utility=6*(count(next.neutralizes)-count(card.neutralizes))+(next.hp-source.hp)/2;
       }
       if(art==='dispel')utility=(friendly?1:-1)*(['peace','landprotection','regeneration','soulhunt','abilityplus'].includes(t.unit.enchant)?-16:14);
       if(art==='heal')utility=Math.min(30,max(t.unit)-t.unit.hp)+(t.level-1)*4;
@@ -775,6 +777,17 @@ const CepterCombos = (() => {
     }
     return {pair,ready,scoreTarget,cast,sequence};
   }
-  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,matches,planner};
+  const revoltCombos=[
+    {cards:['cockatrice','batteringram'],hint:'일반 공격이 명중하면 상대를 스톤 월로 바꾸고, 방어형 즉사 효과가 이어집니다.'},
+    {cards:['tetrarm','chillingblast'],hint:'보유한 수·풍 영지로 두루마리 ST를 만들고 연속 두 번 공격합니다.'},
+    {cards:['tetrarm','spectresrobe'],hint:'로브가 높인 전투 ST를 같은 전투의 두 타격에 모두 적용합니다.'},
+    {cards:['tetrarm','twinspike'],hint:'첫 타격에 살아남은 상대를 테트라암으로 바꾸고 변신한 상대에게 한 번 더 공격합니다.'},
+    {cards:['triton','soulray'],hint:'두루마리 강타로 공격합니다. 살아남으면 소울 레이가 돌아오고 카드도 한 장 뽑습니다.'},
+    {cards:['wonderwall','magussmirror'],hint:'네 속성의 일반 공격을 막고 두루마리 공격을 상대에게 반사합니다.'},
+    {cards:['sulfurousballoon','necroscarab'],hint:'격파되면 상대에게 HP 40 피해를 주고 스켈레톤으로 살아납니다.'},
+    {cards:['sulfurousballoon','stormcauser'],hint:'전투 ST를 크게 높입니다. 약해진 벌룬이 격파되면 상대에게 HP 40 피해를 줍니다.'},
+    {cards:['caitsith','buckler'],hint:'기본 ST가 40 이상인 상대는 캣 시스가, 30 이하인 상대는 버클러가 일반 공격을 막습니다.'}
+  ];
+  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,revoltCombos,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;

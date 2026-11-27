@@ -104,6 +104,7 @@ const CepterExtraBattle=(()=>{
         }
         if(a.n==='firedrake')a.st+=5*s.tiles.filter((v,j)=>j!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
         if(a.n==='amphibianwarrior'&&[1,3].includes(t.type))a.st+=20;
+        if(a.n==='nessie'&&t.type===1)a.hp+=t.level*10;
         if(['magmaarmor','stormarmor'].includes(a.g)){
           const elements=a.g==='magmaarmor'?[0,2]:[1,3];
           a.hp+=lands.filter(t=>elements.includes(t.type)).length*20;

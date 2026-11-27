@@ -66,7 +66,7 @@ else{
       selectMap.hidden=!supported;
     };
     pick.onchange=show;show();archive.append(pick,values,selectMap);references.append(list,archive);
-    if(C.edition==='revolt')references.append(revoltBookArchive());
+    if(C.edition==='revolt')references.append(revoltBookArchive(),revoltComboArchive());
   }else{
     list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
     if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
@@ -100,7 +100,7 @@ function showStage(){
 stageSelect.onchange=showStage;showStage();
 const comboCards=paths=>paths.map(path=>C.cards[cardIndex.get(path)]?.catalog.name||path);
 const pathByName=new Map([...cardIndex.keys()].map(path=>[path.split('/').pop(),path]));
-function comboLabel(i){return C.combo.recipes[i].map(group=>group.length>4?'조건에 맞는 크리처 ('+group.length+'종)':comboCards(group.map(n=>pathByName.get(n))).join(' 또는 ')).join(' + ');}
+function comboLabel(i,recipe=C.combo.recipes[i]){return recipe.map(group=>group.length>4?'조건에 맞는 크리처 ('+group.length+'종)':comboCards(group.map(n=>pathByName.get(n))).join(' 또는 ')).join(' + ');}
 function archiveLabel(kind,row){
   if(kind==='books')return row.group+' · '+row.name;
   if(kind==='combos')return row[0]+' · '+comboLabel(archive.combos.indexOf(row));
@@ -123,7 +123,7 @@ function useArchiveBook(book){
 function revoltBookArchive(){
   const entries=CepterRevoltBookArchive;
   const paths=new Map(C.cards.flatMap(c=>c.catalog&&!c.unlisted?[[C.combo.key(c),c.catalog.path]]:[]));
-  const archive=el('details',null,'revolt-book-archive');
+  const archive=el('details',null,'revolt-book-archive revolt-library-panel');
   archive.append(el('summary','스토리 북 자료 · '+entries.length+'개'));
   const pick=el('select');pick.setAttribute('aria-label','리볼트 스토리 북 자료');
   const groups=new Map();
@@ -156,6 +156,32 @@ function revoltBookArchive(){
   pick.onchange=update;
   archive.addEventListener('toggle',()=>{if(archive.open&&!summary.textContent)update();});
   archive.append(pick,summary,use,link,grid);
+  return archive;
+}
+function revoltComboArchive(){
+  const recipes=C.combo.revoltCombos,archive=el('details',null,'revolt-combo-archive revolt-library-panel');
+  archive.append(el('summary','전투 콤보 · '+recipes.length+'개'));
+  const picker=el('select');picker.setAttribute('aria-label','리볼트 전투 콤보');
+  const hint=el('p'),grid=el('div',null,'archive-cards');
+  hint.setAttribute('aria-live','polite');
+  const choose=btn('콤보 연습 북으로 선택',()=>{
+    const select=$('bookChoice');
+    select.value='combo-'+picker.value;
+    refreshMatchup();lobby();$('config').scrollIntoView({block:'center'});
+    select.focus({preventScroll:true});
+  });
+  const update=()=>{
+    const {cards,hint:text}=recipes[Number(picker.value)];
+    hint.textContent=text;
+    grid.replaceChildren(...cards.map(n=>archiveCard(pathByName.get(n))));
+  };
+  picker.onchange=update;
+  archive.addEventListener('toggle',()=>{
+    if(!archive.open||picker.options.length)return;
+    picker.append(...recipes.map(({cards},i)=>new Option(comboLabel(i,cards.map(n=>[n])),i)));
+    update();
+  });
+  archive.append(picker,hint,choose,grid,sourceLink('https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-combos/culdcept-revolt-in-battle-combos','전투 콤보 참고 자료'));
   return archive;
 }
 function showEntry(){
@@ -201,6 +227,14 @@ function showEntry(){
   else detail.append(sourceLink(row[1],row[0]));
 }
 function showHandCombos(container,hand){
+  if(C.edition==='revolt'){
+    const held=new Set(hand.map(id=>C.combo.key(C.cards[id])));
+    const combos=C.combo.revoltCombos.filter(({cards})=>cards.every(n=>held.has(n)));
+    if(!combos.length)return;
+    const details=el('details');details.append(el('summary','손패에 모인 콤보 '+combos.length+'개'));
+    for(const {cards,hint} of combos)details.append(el('p',comboCards(cards.map(n=>pathByName.get(n))).join(' + ')+' · '+hint));
+    container.append(details);return;
+  }
   if(C.presets.stronghold||C.edition==="saturn"||C.edition==="ps1")return;
   const held=hand.map(id=>C.combo.key(C.cards[id]));
   const matches=C.combo.recipes.flatMap((g,i)=>C.combo.matches(g,held)?[i]:[]);
