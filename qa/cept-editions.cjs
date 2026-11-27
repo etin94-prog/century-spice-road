@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,40],['begins',400,16]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,41],['begins',400,16]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -1457,6 +1457,22 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(oracle,['fortuneDraw','spell']));
   assert.deepEqual([oracle.players[0].cash,oracle.players[0].hand[0],oracle.players[0].book.length,oracle.phase],[20,id('windofhope'),2,'land']);
   console.log('Revolt Lantern Market two four-card shops, flat fee, skipped passage, cap and fortune draw OK');
+
+  const morph=C.start(4,4,6000,'revolt-original-lantern-morph');
+  assert.equal(morph.tiles.filter(t=>t.type==='모프').length,15);
+  for(const [at,card,expected] of [[1,'fighter','복합'],[2,'phlogiston',0],[5,'redogre',0]]){
+    Object.assign(morph,{turn:0,phase:'land'});
+    Object.assign(morph.players[0],{pos:at,cash:500,hand:[id(card)]});
+    assert.ok(C.play(morph,['summon',0]));
+    assert.equal(morph.tiles[at].type,expected);
+  }
+  assert.equal(C.chain(morph,morph.tiles[1]),1);
+  assert.equal(C.chain(morph,morph.tiles[2]),2);
+  Object.assign(morph,{turn:1,phase:'attack',battle:{at:2,inv:id('fighter'),atkItem:null,defItem:null}});
+  assert.ok(C.play(morph,['bare'])&&C.play(morph,['bare']));
+  assert.ok(morph.battle.won);
+  assert.equal(morph.tiles[2].type,0);
+  console.log('Revolt Full Morph first claim, neutral to Multi, chain and transfer persistence OK');
 }
 
 {

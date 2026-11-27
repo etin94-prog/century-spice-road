@@ -249,8 +249,9 @@ function createCepter(edition="ps2"){
   const worth=t=>(t.base||80)*2**(t.level-1);
   const {territoryType}=combo;
   function claimTerrain(tile,card){
-    if(edition!=='saga'||tile.type!=='모프')return tile.type;
-    return card.elements?'복합':card.element<0?'무속성':card.element;
+    if(tile.type!=='모프'||!(revolt||edition==='saga'))return tile.type;
+    if(card.elements||revolt&&card.element<0)return '복합';
+    return card.element<0?'무속성':card.element;
   }
   function claim(tile,seat,unit){
     Object.assign(tile,{type:claimTerrain(tile,cards[unit.id]),owner:seat,unit});
