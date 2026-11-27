@@ -269,6 +269,13 @@ const CepterEditions=(()=>{
     creepingflame:{stationary:true},
     freezingwind:{st:30,hp:0,scrollCriticalElements:[0,2]},firestone:{st:30,hp:0,scrollCriticalElements:[1,3]}
   };
+  const sagaBattleCreatures={
+    leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
+    lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
+    nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
+    beastgear:{spellWard:true,neutralizeScroll:true},
+    bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
+  };
   const sagaGear={
     aurablade:{},batteringram:{st:20},coinofpiety:{},fireshield:{},kris:{st:30,protectItem:true},
     ringofthesuccubus:{first:true},shadowarmor:{},sleep:{},smoketorch:{},tearinghalo:{st:30,protectItem:true},
@@ -342,6 +349,7 @@ const CepterEditions=(()=>{
         Object.assign(c,{catalogOnly:false,immediate:true});
         if(slug==='wolverine')c.tollFactor=1.5;
       }
+      if(edition==='saga'&&kind==='creature'&&Object.hasOwn(sagaBattleCreatures,slug))Object.assign(c,{catalogOnly:false},sagaBattleCreatures[slug]);
       if(edition==='saga'&&kind==='item'&&Object.hasOwn(sagaGear,slug))Object.assign(c,{st:0,hp:0,catalogOnly:false},sagaGear[slug]);
       if(edition==='saga'&&Object.hasOwn(sagaStarterEffects,slug))Object.assign(c,{catalogOnly:false},sagaStarterEffects[slug]);
       if(edition==='3ds'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});

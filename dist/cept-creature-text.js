@@ -49,6 +49,11 @@ const CepterCreatureText=(()=>{
     ares:'교전에 참여하지 않은 채 맵에 있으면 침략 크리처의 전투 ST를 20 올립니다.',
     baal:'전투가 끝나면 내 손패에서 카드 한 장을 무작위로 파괴합니다.',
     bard:'일반 공격 후 상대가 살아남으면 자신이 무작위 빈 영지로 이동합니다. 빈 영지가 없으면 파괴됩니다.',
+    bia:'상대가 크리처를 지원 장비로 사용하면 전투 ST와 HP가 각각 30 오릅니다.',
+    burningtitan:'내 영지가 5곳 이상이면 전투 ST와 HP가 각각 30 낮아집니다.',
+    kasha:'교전 영지에 인챈트가 걸려 있으면 전투 ST와 HP가 각각 20 오릅니다.',
+    aspidochelone:'현재 라운드만큼 전투 ST와 HP가 오릅니다.',
+    weretiger:'25라운드부터 전투 ST와 HP가 각각 20 낮아집니다.',
     barrowwight:'일반 공격 후 상대가 살아남으면 수면을 부여해 통행료를 받지 못하게 합니다.',
     boggart:'내 영지의 통행료가 두 배가 됩니다. 주문이나 영지 능력으로 파괴되면 손패로 돌아갑니다.',
     caitsith:'단일 대상 주문과 영지 능력의 대상이 되지 않습니다. 기본 ST 40 이상인 상대의 일반 공격을 무효화합니다.',
@@ -276,6 +281,9 @@ const CepterCreatureText=(()=>{
     if(C.edition==='saga'&&key==='wolverine')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령이나 비술 사용 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
+    if(card.doubleAttack)pieces.push('일반 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
+    if(!card.evo&&card.spellWard&&key!=='pegasus')pieces.push('지정 주문과 영지 능력의 대상이 되지 않습니다.');
+    if(!card.evo&&card.neutralizeScroll&&key!=='pegasus')pieces.push('두루마리 공격을 무효화합니다.');
     if(card.blocksSmall)pieces.push('최대 HP 30 이하인 상대의 일반 공격을 무효화합니다.');
     if(card.criticalSmall)pieces.push('최대 HP 30 이하인 상대를 일반 공격하면 강타합니다.');
     if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);

@@ -756,7 +756,7 @@ function createCepter(edition="ps2"){
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
-        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,criticalSmall:false,battleHP:0,invadeST:0,
+        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,criticalSmall:false,battleHP:0,invadeST:0,doubleAttack:false,
           criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
         useGear(a);
       }
@@ -967,7 +967,7 @@ function createCepter(edition="ps2"){
     const order=priority(D,A)>priority(A,D)?[D,A]:[A,D];
     for(const a of order){
       const d=a===A?D:A;
-      const attacks=['cerberus','pushpull'].includes(a.n)||a.gear?.doubleAttack?2:1;
+      const attacks=['cerberus','pushpull'].includes(a.n)||a.gear?.doubleAttack||a.c.doubleAttack?2:1;
       for(let j=0;j<attacks&&a.hp>0&&d.hp>0&&a.away==null&&d.away==null&&!a.stolen&&!d.stolen;j++){
         const start=lines.length;
         if(!muted&&a.u.enchant==='paralysis'){lines.push('마비 · 공격 불가');break;}

@@ -103,6 +103,11 @@ const CepterExtraBattle=(()=>{
         case 'gargoyle':if(a.defending)a.st=50;break;
         case 'chonchon':if(!a.gear)a.hp+=20;break;
         case 'soulcollector':a.st+=5*(s.destroyedCount||0);break;
+        case 'bia':if(d.gear?.kind==='creature'){a.st+=30;a.hp+=30;}break;
+        case 'burningtitan':if(lands.length>=5){a.st-=30;a.hp-=30;}break;
+        case 'kasha':if(combo.enchanted(t.unit)){a.st+=20;a.hp+=20;}break;
+        case 'aspidochelone':a.st+=s.round;a.hp+=s.round;break;
+        case 'weretiger':if(s.round>=25){a.st-=20;a.hp-=20;}break;
       }
       if(a.element>=0&&boost(lord[a.element],a))a.hp+=10;
       if(boost('madclown',a,true))a.hp+=10;

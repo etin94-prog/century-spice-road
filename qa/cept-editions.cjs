@@ -448,6 +448,46 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(fight('fighter','goblin','무속성','soulray').players[0].hand.includes(id('soulray')));
   assert.ok(!fight('fighter','goblin','무속성','soulray',s=>{s.players[0].hand=Array(6).fill(id('goblin'));}).players[0].hand.includes(id('soulray')));
   assert.equal(fight('fighter','goblin',1,'coinofpiety').players[0].symbols[1],10);
+  const leoknight=fight('leoknight','goblin','무속성',null,s=>{
+    unit(s,8,'goblin',0,0);unit(s,10,'goblin',0,1);unit(s,11,'goblin',1,2);
+  }).battle;
+  assert.deepEqual([leoknight.attackST,leoknight.startHP[0]],[20,20]);
+  assert.equal(fight('sanctumguard','goblin',1).players[0].symbols[1],5);
+  assert.equal(fight('trojanhorse','dwarf',2,'fighter').battle.strikes[0].hp[1],10);
+  assert.equal(fight('anubias','dwarf','무속성',null,s=>{s.destroyedCount=6;}).battle.startHP[0],30);
+  assert.equal(fight('lilith','dwarf','무속성',null,s=>{s.players[0].hand=[id('mace'),id('mace'),id('mace')];}).battle.attackST,30);
+  assert.equal(fight('dwarf','gargoyle').battle.defendST,50);
+  assert.equal(fight('nightfiend','dwarf','무속성',null,s=>{s.tiles[1].level=3;}).battle.attackST,80);
+  assert.equal(fight('nike','dwarf').tiles[1].unit.enchant,'paralysis');
+  for(const card of ['pegasus','beastgear']){
+    assert.equal(fight('fighter',card,'무속성','firestone').battle.strikes.find(a=>a.side===0).effect,'block');
+    const s=newMatch();
+    s.players[0].cash=200;s.players[0].hand=[id('zap')];
+    unit(s,1,card,1,1);unit(s,2,'goblin',1,1);
+    assert.ok(C.play(s,['cast',0]));
+    assert.deepEqual(C.choices(s).filter(v=>v[0]==='targetLand'),[['targetLand',2]]);
+  }
+  const immune=newMatch();
+  immune.players[0].cash=300;immune.players[0].hand=[id('zap')];
+  unit(immune,1,'odradek',1,2);
+  assert.ok(C.play(immune,['cast',0])&&C.play(immune,['targetLand',1]));
+  assert.equal(immune.tiles[1].unit.hp,20);
+  assert.equal(fight('soulcollector','dwarf','무속성',null,s=>{s.destroyedCount=6;}).battle.attackST,50);
+  assert.deepEqual(fight('bia','woodfolk','무속성',null,null,'goblin').battle.startHP,[70,60]);
+  assert.equal(fight('bia','woodfolk','무속성',null,null,'goblin').battle.attackST,60);
+  assert.equal(fight('bia','woodfolk','무속성',null,null,'chainmail').battle.attackST,30);
+  const titan=fight('burningtitan','dwarf','무속성',null,s=>{
+    [8,9,10,11,12].forEach(n=>unit(s,n,'goblin',0,0));
+  }).battle;
+  assert.deepEqual([titan.attackST,titan.startHP[0]],[30,30]);
+  const kasha=fight('kasha','dwarf','무속성',null,s=>{s.tiles[1].unit.enchant='peace';}).battle;
+  assert.deepEqual([kasha.attackST,kasha.startHP[0]],[50,60]);
+  const aspi=fight('aspidochelone','dwarf','무속성',null,s=>{s.round=12;}).battle;
+  assert.deepEqual([aspi.attackST,aspi.startHP[0]],[42,52]);
+  assert.equal(fight('weretiger','dwarf','무속성',null,s=>{s.round=24;}).battle.attackST,60);
+  assert.equal(fight('weretiger','dwarf','무속성',null,s=>{s.round=25;}).battle.attackST,40);
+  assert.deepEqual(fight('tetrarm','dwarf','무속성','tonfa').battle.strikes.map(v=>v.side),[0,0,1]);
+  assert.equal(id('gearion'),-1,'fusion-only creature is not a collectible card');
   assert.equal(fight('flammefleur','goblin').battle.won,true);
   const overlap=fight('warlock','frostbeast',1,'prismaticwand');
   const equal=fight('stymphalides','frostbeast',1,'prismaticwand');
@@ -521,7 +561,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(warlock,['targetPlayer',0]));
   assert.equal(warlock.players[0].antiMagic,undefined);
   assert.equal(warlock.players[0].cash,540);
-  console.log('Saga dual elements, starter card battles, Creeping Flame movement, and 23 additional battle items OK');
+  console.log('Saga dual elements, starter card battles, Creeping Flame movement, 23 additional items and 18 additional creatures OK');
 
   const economy=territory();
   unit(economy,1,'goblin',0,2,4);
