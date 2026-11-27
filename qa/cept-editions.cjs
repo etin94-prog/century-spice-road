@@ -1809,6 +1809,52 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
   }
   console.log('Saga eight active map Idols: paralysis, summon costs, dice, territory commands, damage and regeneration OK');
+  for(const [name,cost,prior,expected] of [
+    ['archbishop',50,{enchant:'fog'},{enchant:undefined,hp:40}],
+    ['domovoi',30,{poisoned:true},{enchant:'phantasm',poisoned:undefined}],
+    ['hyde',50,{},{enchant:'paralysis'}],
+    ['healer',20,{hp:7},{hp:37}],
+    ['fortress',30,{},{hp:30}],
+    ['helltic',60,{},{hp:20}],
+    ['burnacle',50,{},{enchant:'fog'}]
+  ]){
+    const s=idolMatch(),p=s.players[0];
+    place(s,2,name,0,0);place(s,3,'minotaur',1,0,3);
+    Object.assign(s.tiles[3].unit,prior);Object.assign(p,{cash:500,pos:2});
+    const toll=C.toll(s,s.tiles[3]);s.phase='land';
+    assert.ok(C.play(s,['ability',2])&&C.play(s,['abilityLand',3]),name);
+    assert.equal(p.cash,500-cost);
+    for(const [field,value] of Object.entries(expected))assert.equal(s.tiles[3].unit[field],value,name);
+    if(name==='burnacle')assert.equal(C.toll(s,s.tiles[3]),Math.floor(toll/2));
+  }
+  const bookworm=idolMatch();
+  place(bookworm,2,'bookworm',0,1);
+  Object.assign(bookworm.players[0],{cash:500,pos:2});
+  Object.assign(bookworm.players[1],{hand:[id('longsword')],book:[id('goblin')]});
+  bookworm.phase='land';
+  assert.ok(C.play(bookworm,['ability',2])&&C.play(bookworm,['abilityPlayer',1]));
+  assert.deepEqual(C.choices(bookworm),[['wormDiscard',0]]);
+  assert.ok(C.play(bookworm,['wormDiscard',0]));
+  assert.ok(!bookworm.players[1].hand.includes(id('longsword')));
+  assert.equal(bookworm.players[0].cash,460);
+
+  const purify=idolMatch();
+  place(purify,2,'sharazad',0,0);
+  Object.assign(purify.players[0],{cash:500,pos:2,status:'silence'});
+  Object.assign(purify.players[1],{antiMagic:true,word:8});
+  purify.phase='land';
+  assert.ok(C.play(purify,['ability',2]));
+  assert.deepEqual([purify.players[0].status,purify.players[1].antiMagic,purify.players[1].word],[undefined,undefined,undefined]);
+
+  const llama=idolMatch();
+  place(llama,2,'holyllama',0,3);
+  llama.tiles[8].type=3;
+  Object.assign(llama.players[0],{cash:500,pos:2});
+  llama.phase='land';
+  assert.ok(C.choices(llama).some(([k,from,to])=>k==='transfer'&&from===2&&to===8));
+  assert.ok(C.play(llama,['ability',2])&&C.play(llama,['abilityPlayer',1]));
+  assert.equal(llama.players[1].word,6);
+  console.log('Saga ten native territory creatures: damage, healing, fog, private hand destruction and fixed die OK');
   assert.equal(C.presets.sagaImmediate.filter(id=>C.cards[id].doublecast).length,10);
   assert.equal(C.presets.sagaAffinity.filter(id=>['sagabistair','sagaselenear'].includes(C.cards[id].effect)).length,6);
   const special=['reincarnation','cleanse','crusher','debility','fistfight','illness','mimicry','paralyzer','zap','bulimia','fatbody','hustle','poisonmind'];

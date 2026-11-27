@@ -276,6 +276,10 @@ const CepterEditions=(()=>{
     beastgear:{spellWard:true,neutralizeScroll:true},
     bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
+  const sagaTerritoryCreatures={
+    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},
+    fortress:{stationary:true},helltic:{},burnacle:{stationary:true}
+  };
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={
     aurablade:{},batteringram:{st:20},coinofpiety:{},fireshield:{},kris:{st:30,protectItem:true},
@@ -352,6 +356,7 @@ const CepterEditions=(()=>{
         if(slug==='wolverine')c.tollFactor=1.5;
       }
       if(edition==='saga'&&kind==='creature'&&Object.hasOwn(sagaBattleCreatures,slug))Object.assign(c,{catalogOnly:false},sagaBattleCreatures[slug]);
+      if(edition==='saga'&&kind==='creature'&&Object.hasOwn(sagaTerritoryCreatures,slug))Object.assign(c,{catalogOnly:false},sagaTerritoryCreatures[slug]);
       if(edition==='saga'&&kind==='creature'&&sagaTerritoryIdols.has(slug))Object.assign(c,{catalogOnly:false,stationary:true});
       if(edition==='saga'&&kind==='item'&&Object.hasOwn(sagaGear,slug))Object.assign(c,{st:0,hp:0,catalogOnly:false},sagaGear[slug]);
       if(edition==='saga'&&Object.hasOwn(sagaStarterEffects,slug))Object.assign(c,{catalogOnly:false},sagaStarterEffects[slug]);

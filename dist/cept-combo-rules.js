@@ -219,7 +219,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30};
+    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,burnacle:50};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -227,7 +227,7 @@ const CepterCombos = (() => {
     };
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','necromancer','barometz','quakebeast']);
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
-    const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl']);
+    const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl','burnacle']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
     function territoryMoveExits(s,from,adjacentOnly=false){
       const links=board(s).links,adjacent=links[from],src=s.tiles[from];
@@ -296,6 +296,8 @@ const CepterCombos = (() => {
           }
           return;
         }
+        if(n==='fortress'||n==='helltic'){damage(s,v,n==='fortress'?10:20);return;}
+        if(n==='burnacle'){clear(v.unit);v.unit.enchant='fog';return;}
         if(n==='rockshell'){clear(src.unit);src.unit.enchant='peace';return;}
         if(n==='hypnosloth'){if(q.antiMagic)delete q.antiMagic;else{clearCepter(q);q.word=1;}return;}
         if(n==='tokebi'){p.cash+=value(s,v);vacate(v,true);return;}

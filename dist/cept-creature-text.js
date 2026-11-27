@@ -256,6 +256,8 @@ const CepterCreatureText=(()=>{
     if(C.edition==='revolt')return;
     const key=C.combo.key(card),saga={fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
       hypnosloth:'고른 셉터의 다음 주사위를 1로 고정합니다.',lichenoid:'고른 크리처의 최대 HP를 최대 100까지 10 올립니다.',
+      fortress:'고른 크리처에게 피해 10을 줍니다.',helltic:'고른 크리처에게 피해 20을 줍니다.',
+      burnacle:'고른 영지에 안개를 걸어 통행료를 절반으로 줄입니다.',
       creepingflame:'이 크리처를 인접한 영지 한 곳으로 이동합니다. 상대 영지라면 침략합니다.',
       rockshell:'이 영지의 침략을 막고 통행료를 0G로 바꿉니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
     const effect=(C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
