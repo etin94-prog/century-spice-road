@@ -139,7 +139,9 @@ const CepterEditions=(()=>{
       massphantasm:'revoltphantasm',deathmiasma:'deathmiasma',dreadblast:'dreadblast',
       antimagic:'antimagic',dreamterrain:'dreamterrain',revelation:'revelation',telegnosis:'telegnosis',
       haste:'haste',slow:'slow',silence:'silence',triumph:'triumph',colorfrombeyond:'colorfrombeyond',
-      camouflage:'camouflage',chariot:'chariot',relief:'relief'}
+      camouflage:'camouflage',chariot:'chariot',relief:'relief',
+      escape:'escape',mountainleap:'mountainleap',lakeleap:'lakeleap',forestleap:'forestleap',plainleap:'plainleap',
+      mutation:'mutation',removecurse:'removecurse',turntowall:'turntothewall'}
   };
   function modernBooks(cards,edition,bookSize,copyLimit){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
@@ -266,6 +268,19 @@ const CepterEditions=(()=>{
         swordofthefalcon:2,windshield:2,gremlinamulet:2,armet:2,bindingwhip:2,sprite:2,leveller:2,nike:2,
         giantamoeba:2,gianteel:2,phoenix:2,hornet:3,centaur:3,firebeak:1,holyword3:2,windofhope:2,senility:2,
         airshift:2,bindingmist:3
+      },
+      beginsNajaranMistral:{
+        longsword:1,airslasher:1,buckler:1,towershield:1,windcutter:2,magicshield:2,harpy:2,gremlin:2,elf:2,knight:2,
+        wyvern:2,pillarofflame:2,minotaur:2,caitsith:2,dragon:2,mutation:1,haste:2,fly:2,removecurse:2,shatter:2,
+        firebeak:2,windofhope:3
+      },
+      beginsPopoloDragon:{
+        basilisk:1,firebolt:2,stonehail:2,armet:2,glaive:2,wallofstone:2,dragon:2,influence:2,hornedchameleon:3,
+        greatfossil:3,dragonzombie:3,hellhound:3,mountainleap:2,manna:2,relief:3,kingvaran:3,fireshift:3
+      },
+      beginsSteamdrillPierce:{
+        steamgear:2,statue:2,wonderwall:2,colossus:2,merfolk:2,drool:2,kobold:2,lavawurm:2,goldengoose:3,
+        lizardman:3,golem:3,mace:4,spear:4,morningstar:4,drilllance:3
       },
       beginsArtAssault:{
         abyssalmonarch:1,hornedchameleon:3,gascloud:3,flameacolyte:3,flamegoetia:2,aeroacolyte:3,aerogoetia:2,fighter:2,
@@ -457,6 +472,8 @@ const CepterEditions=(()=>{
     werewolf:{},cockatrice:{},grimalkin:{support:true,supportElements:[-1,2],spellWard:true},
     odradek:{support:true,supportElements:[-1,2],immutableHP:true},leveller:{},nike:{first:true},
     carbunfly:{first:true,generatedOnly:true},
+    gremlin:{},wyvern:{first:true,remoteVacantElements:[3],landBan:2},basilisk:{},greatfossil:{stationary:true,freeToll:true},
+    colossus:{last:true},drool:{pierceAll:true},golem:{},
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
@@ -465,7 +482,7 @@ const CepterEditions=(()=>{
     terragoetia:{innateScroll:40,support:true,supportElements:[-1,2],blocksAttackAbilities:true},
     aquagoetia:{innateScroll:40,half:true},flamegoetia:{innateScroll:40},aerogoetia:{innateScroll:40,first:true},abyssalmonarch:{innateScroll:50}
   };
-  const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y',carbunfly:'R,R'};
+  const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y',carbunfly:'R,R',basilisk:'G,G'};
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},battleaxe:{st:40},
@@ -475,6 +492,7 @@ const CepterEditions=(()=>{
     earthshield:{},fireshield:{},watershield:{},windshield:{},
     eternalmail:{hp:40},knightsshield:{},magicshield:{hp:30},spikedshield:{},
     towershield:{halveScroll:true},vestment:{hp:30},
+    glaive:{st:20,hp:20},drilllance:{st:20,pierceAll:true},aurablade:{},petrifystone:{},
     freeze:{st:30,critical:0},firebolt:{st:30,critical:1},windcutter:{st:30,critical:2},
     stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40}
   };

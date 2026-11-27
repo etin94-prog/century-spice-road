@@ -222,6 +222,10 @@ const describeCepterSpell=(()=>{
     }
     if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
     if(edition==='begins'){
+      if(e==='mutation')return '고른 크리처의 최대 HP를 최대 100까지 20 올리고 독을 부여합니다. 독은 전투가 끝날 때 최대 HP의 절반만큼 피해를 줍니다.';
+      if(e==='removecurse')return '고른 크리처의 인챈트를 해제합니다. 사용한 주문을 북에 넣고 남은 카드를 섞습니다.';
+      if(e==='escape'||['mountainleap','lakeleap','forestleap','plainleap'].includes(e))
+        return '가장 가까운 '+({escape:'빈',mountainleap:'화',lakeleap:'수',forestleap:'지',plainleap:'풍'}[e])+' 영지로 이동하고 주사위를 건너뜁니다.';
       if(['camouflage','chariot','relief','telegnosis'].includes(e))return text[e].replace(' 사용한 주문은 북으로 돌아갑니다.','')+' 사용한 주문을 북에 넣고 남은 카드를 섞습니다.';
       if(e==='haste'||e==='slow')return '고른 셉터가 다음 두 번 굴리는 주사위 눈을 '+(e==='haste'?'5~7':'1~3')+'로 제한합니다.';
       if(e==='silence')return '고른 적은 2라운드 동안 크리처를 소환·교체하거나 원군으로 사용할 수 없습니다.';

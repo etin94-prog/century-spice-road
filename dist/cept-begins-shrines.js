@@ -3,7 +3,7 @@
    and https://www.youtube.com/watch?v=5ImigSsCRIY&t=4960s.
    The pool contains the documented outcomes implemented here. The retail weights are unpublished. */
 const CepterBeginsShrines=(()=>{
-  function rules(cards,{fx,combo,board,draw,note,total,refillBook,setStatus}){
+  function rules(cards,{fx,combo,board,draw,note,total,refillBook,setStatus,escape}){
     const sample=items=>items.length?items[Math.floor(Math.random()*items.length)]:undefined;
     const units=s=>s.tiles.filter(t=>t.unit);
     const gain=(p,amount)=>{p.cash+=amount;return '+'+amount+'G';};
@@ -117,6 +117,35 @@ const CepterBeginsShrines=(()=>{
       ['네 개의 서명',(s,p)=>{
         const m=board(s);p.flags=[...(m.checkpoints||m.forts)];
         return '모든 요새를 경유한 것으로 처리';
+      }],
+      ['잠의 징조',s=>{
+        const rival=sample(foes(s));if(!rival)return '대상 셉터 없음';
+        setStatus(s,rival,'blackout',1);
+        return rival.name+' · 1라운드 통행료 봉인';
+      }],
+      ['카드 도난',s=>{
+        const leader=sample(s.players.filter((_,seat)=>rank(s,seat)===1));
+        const index=sample(leader.hand.flatMap((id,i)=>cards[id].kind!=='creature'?[i]:[]));
+        if(index==null)return '1위 손패에 주문·아이템 없음';
+        leader.hand.splice(index,1);
+        return leader.name+' · 주문 또는 아이템 1장 파괴';
+      }],
+      ['저지대의 융기',s=>{
+        const ranks=s.players.map((_,seat)=>rank(s,seat)),bottom=Math.max(...ranks);
+        const t=sample(units(s).filter(tile=>ranks[tile.owner]===bottom&&tile.level<5&&!fx.blockedLevel(s,tile)));
+        if(!t)return '레벨을 올릴 영지 없음';
+        t.level++;
+        return (s.tiles.indexOf(t)+1)+'번 영지 Lv.'+t.level;
+      }],
+      ['지가 급등',s=>{
+        const t=sample(s.tiles.filter(t=>t.owner<0&&combo.territoryType(t.type)&&t.level<5&&!fx.blockedLevel(s,t)));
+        if(!t)return '레벨을 올릴 빈 영지 없음';
+        t.level=Math.min(5,t.level+2);
+        return (s.tiles.indexOf(t)+1)+'번 빈 영지 Lv.'+t.level;
+      }],
+      ['탈출',s=>{
+        const at=escape(s);
+        return at==null?'빈 영지 없음':(at+1)+'번 빈 영지로 이동';
       }]
     ];
     function arrive(s){

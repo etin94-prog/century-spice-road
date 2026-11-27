@@ -375,7 +375,7 @@ const {chromium}=require('playwright');
         Object.assign(p,{pos:from,previous:C.board(s).links[from].find(i=>i!==at),word:1,cash:600});
         s.phase='roll';
         // Choose the fixed-magic event for the mobile result assertion.
-        Math.random=()=>3.5/30;
+        Math.random=()=>.105;
         render();
       });
       await page.locator('#mapRoll').tap();

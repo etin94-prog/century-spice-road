@@ -52,7 +52,7 @@ const CepterCombos = (() => {
       const n=name(t.unit);
       return (dispel||t.unit.enchant!=='landprotection'&&!s.players[t.owner].invisible&&
         !(activeWorld(s)==='darkworld'&&enchanted(t.unit)))&&
-        !(s.edition==='saga'&&n==='warlock')&&!cards[t.unit.id].spellWard&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&category==='senchant');
+        !(s.edition==='saga'&&n==='warlock')&&!cards[t.unit.id].spellWard&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&s.edition!=='begins'&&category==='senchant');
     }
     function death(s,id,count=true){
       if(count)s.destroyedCount=(s.destroyedCount||0)+1;
@@ -146,7 +146,14 @@ const CepterCombos = (() => {
         }
         else if(e==='temperance'){u.mhp=30;u.hp=Math.min(30,u.hp);}
         else if(e==='mutation'){
-          clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(s.edition==='saga'?100:80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
+          const begins=s.edition==='begins',locked=begins&&immuneHP(t);
+          clear(u);
+          if(!locked&&!immuneHP(t)){
+            const next=Math.max(max(u),Math.min(begins||s.edition==='saga'?100:80,max(u)+20));
+            if(!begins)u.hp+=next-max(u);
+            u.mhp=next;
+          }
+          u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
         if(s.edition==='begins'&&e==='camouflage')returnToBook(s,i,ids.get(e));
         if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||

@@ -259,7 +259,10 @@ function createCepter(edition="ps2"){
     return s.turn;
   }
   const levelCost=(t,level)=>(t.base||80)*2**(level-1)-worth(t);
-  const elementCost=t=>edition==='saga'?t.level*100+(typeof t.type==='number'?200:0):300;
+  const elementCost=t=>{
+    if(edition==='saga')return t.level*100+(typeof t.type==='number'?200:0);
+    return begins&&t.type==='복합'?100:300;
+  };
   const worth=t=>(t.base||80)*2**(t.level-1);
   const {territoryType}=combo;
   function claimTerrain(tile,card){
@@ -386,7 +389,15 @@ function createCepter(edition="ps2"){
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
   const beginsShrineModule=begins?(typeof module==='undefined'?CepterBeginsShrines:require('./cept-begins-shrines')):null;
-  const beginsShrine=beginsShrineModule?.rules(cards,{fx,combo,board,draw,note,total,refillBook,setStatus:extraSpells?.setStatus});
+  const beginsShrine=beginsShrineModule?.rules(cards,{
+    fx,combo,board,draw,note,total,refillBook,setStatus:extraSpells?.setStatus,
+    escape(s){
+      const p=s.players[s.turn],at=extra.nearest(s,p,t=>territoryType(t.type)&&t.owner<0);
+      if(at===p.pos)return null;
+      extra.warp(s,at);
+      return at;
+    }
+  });
   const roundGain=s=>Math.min(50,19+s.round);
   function finish(s){
     if(settleDebts(s,'endTurn'))return;
@@ -1128,7 +1139,7 @@ function createCepter(edition="ps2"){
         if(edition==='saga'&&d.hp>0)d.defeatedByOpponent=true;
         a.hp=d.hp=0;
       }
-      if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition)a.hp=Math.min(a.hp,a.u.hp)-10;}
+      if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition&&!begins)a.hp=Math.min(a.hp,a.u.hp)-10;}
       if(a.g==='boomerang'&&edition!=='saga'&&edition!=='begins'&&!firstEdition&&(!revolt||a.n!=='centaur'||a.hp<=0)&&hasHandSpace(s.players[a.seat]))s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0){
         a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-20;
@@ -1156,7 +1167,7 @@ function createCepter(edition="ps2"){
     }
     function revive(a){
       const scarab=a.g==='necroscarab'&&(edition!=='saga'||itemEnd&&a.defeatedByOpponent);
-      const form=scarab?(edition==='saga'?'skeleton':'zombie'):creatureEnd?({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]:null;
+      const form=scarab?(edition==='saga'?'skeleton':'zombie'):creatureEnd?({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld||begins?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]:null;
       if(!form||a.revived)return false;
       extra.transform(a,extra.ids.get(form));a.revived=true;
       return true;

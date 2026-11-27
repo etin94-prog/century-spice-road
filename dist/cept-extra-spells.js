@@ -127,7 +127,7 @@ const CepterExtraSpells=(()=>{
           if(seen.has(dest))continue;
           seen.add(dest);next.push(dest);
         }
-        const candidates=next.filter(i=>s.tiles[i].area===area&&condition(s.tiles[i]));
+        const candidates=next.filter(i=>(s.edition==='begins'||s.tiles[i].area===area)&&condition(s.tiles[i]));
         if(candidates.length)return sample(candidates);
         frontier=next;
       }
@@ -219,7 +219,11 @@ const CepterExtraSpells=(()=>{
             if(s.edition==='revolt'&&u.fatigued)t.unit.fatigued=true;
             break;
           }
-          case 'removecurse':if(u)combo.clear(u);delete t.enchant;break;
+          case 'removecurse':
+            if(u)combo.clear(u);
+            delete t.enchant;
+            if(s.edition==='begins')returnToBook(s,s.turn,ids.get(e));
+            break;
           case 'replace':s.replaceAt=x;return 'replaceCard';
           case 'magicfountain':combo.clear(u);u.enchant=e;break;
           default:combo.clear(u);u.enchant=e==='bindingmist'?'paralysis':e;u.caster=s.turn;
@@ -499,7 +503,7 @@ const CepterExtraSpells=(()=>{
       if(k==='mesmerCard'&&type[card.effect])return scoreCast(s,card.effect);
       return card.cost/20+(card.kind==='creature'&&s.players[s.turn].hand.every(n=>cards[n].kind!=='creature')?4:0);
     }
-    return {apply,targets,choices,choose,chariotExits,scoreTarget,scoreCast,scoreChoice};
+    return {apply,targets,choices,choose,chariotExits,scoreTarget,scoreCast,scoreChoice,nearest,warp};
   }
   return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,setStatus,startTurn,damageSpells,landDamage};
 })();
