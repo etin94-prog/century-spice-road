@@ -86,7 +86,7 @@ function createCepter(edition="ps2"){
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>(handheld?allied(s,i,t.owner):t.owner===i)&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
   const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')));
   const canEquip=(unit,gear)=>gear.kind==='item'?!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')):
-    gear.kind==='creature'&&(unit.support||['livingshield','livingspear','livingsword'].includes(key(gear)));
+    gear.kind==='creature'&&(unit.support&&(!unit.supportElements||unit.supportElements.some(e=>combo.hasElement(gear,e)))||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
   const bookSize=edition==='begins'?40:50;
   const copyLimit=card=>edition==='begins'&&card?.catalog?.rarity==='E'?1:4;
@@ -779,7 +779,7 @@ function createCepter(edition="ps2"){
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
-        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,criticalSmall:false,battleHP:0,invadeST:0,doubleAttack:false,
+        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,criticalSmall:false,battleHP:0,invadeST:0,doubleAttack:false,
           criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
         useGear(a);
       }
@@ -929,33 +929,34 @@ function createCepter(edition="ps2"){
       if(!scroll)d.ordinaryDamage=(d.ordinaryDamage||0)+damage;
       if(a.u.confused&&!muted)a.hp-=Math.floor(damage*.3);
       if(damage>0&&!scroll&&!muted&&(edition!=='ps2'||a.hp>0)){
+        const creatureEffects=!d.c.blocksAttackAbilities,attacker=creatureEffects?a.n:null;
         extra.onHit(a,d,damage);
         if(!s.predict&&a.g==='bladeofculdra'){
           const victim=s.players[d.seat];victim.hand.length=0;
           for(let j=0;j<6;j++)draw(victim,s);
           lines.push('컬드라의 검 · 상대 손패 교체');
         }
-        if(a.n==='deathquito'&&s.players[d.seat].hand.length){
+        if(attacker==='deathquito'&&s.players[d.seat].hand.length){
           const hand=s.players[d.seat].hand;
           hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);
           lines.push('데스키토 · 상대 손패 1장 파괴');
         }
-        if(handheld&&a.n==='mystic'&&fx.max(d.u)>=60&&!s.predict&&Math.random()<.7){d.hp=0;lines.push('미스틱 · 즉사');}
-        if(a.n==='berserker'){combo.clear(a.u);a.u.confused=true;}
-        if(a.n==='samurai'&&(firstEdition?d.c.catalog?.race==='rh':fx.max(d.u)<=30)&&!s.predict&&Math.random()<(firstEdition ? .3 : .6))d.hp=0;
-        if(a.n==='cleric'&&d.element===-1&&!s.predict&&Math.random()<.8)d.hp=0;
-        if(a.n==='willothewisp'||a.n==='amazon'&&!a.gear){
-          const amount=Math.min(s.players[d.seat].cash,a.n==='amazon'?(s.players[a.seat].lap+1)*20:Math.min(a.hp,a.u.hp)*2);
+        if(handheld&&attacker==='mystic'&&fx.max(d.u)>=60&&!s.predict&&Math.random()<.7){d.hp=0;lines.push('미스틱 · 즉사');}
+        if(attacker==='berserker'){combo.clear(a.u);a.u.confused=true;}
+        if(attacker==='samurai'&&(firstEdition?d.c.catalog?.race==='rh':fx.max(d.u)<=30)&&!s.predict&&Math.random()<(firstEdition ? .3 : .6))d.hp=0;
+        if(attacker==='cleric'&&d.element===-1&&!s.predict&&Math.random()<.8)d.hp=0;
+        if(attacker==='willothewisp'||attacker==='amazon'&&!a.gear){
+          const amount=Math.min(s.players[d.seat].cash,attacker==='amazon'?(s.players[a.seat].lap+1)*20:Math.min(a.hp,a.u.hp)*2);
           s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
         }
-        if((a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||a.n==='nike'||a.g==='clawoftheghoul'){
-          combo.clear(d.u);if(a.c.poison)d.u.poisoned=true;else if(a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
+        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'){
+          combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
-        if(a.n==='succubus'||a.g==='ringofthesuccubus'||a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
+        if(attacker==='succubus'||a.g==='ringofthesuccubus'||creatureEffects&&a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
         if(a.g==='ringofthevampire')a.hp+=damage;
-        if(a.n==='bandit'||a.g==='banditsglove'){const n=Math.min(s.players[d.seat].cash,damage*2);s.players[d.seat].cash-=n;s.players[a.seat].cash+=n;}
+        if(attacker==='bandit'||a.g==='banditsglove'){const n=Math.min(s.players[d.seat].cash,damage*2);s.players[d.seat].cash-=n;s.players[a.seat].cash+=n;}
         if(a.g==='rathunter'&&d.hp>0)extra.convert(d,'giantrat');
-        if(a.n==='wraith'&&!s.predict&&Math.random()<.5)d.hp=0;
+        if(attacker==='wraith'&&!s.predict&&Math.random()<.5)d.hp=0;
       }
     }
     function revenge(a,d){

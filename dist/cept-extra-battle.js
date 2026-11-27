@@ -192,7 +192,7 @@ const CepterExtraBattle=(()=>{
     }
     function onHit(a,d,damage){
       a.hit=true;
-      const n=a.n;
+      const n=d.c.blocksAttackAbilities?null:a.n;
       if(n==='vampire'||s.edition==='saga'&&n==='crimsonvine'){a.hp+=damage;a.absorbed=true;}
       if(s.edition==='saga'&&n==='jackolantern'){
         const amount=Math.min(Math.max(0,s.players[d.seat].cash),Math.max(0,Math.min(a.u.hp,a.hp))*2);

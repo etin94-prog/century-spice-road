@@ -170,8 +170,27 @@ const CepterEditions=(()=>{
       fire:build(edition==='begins'?24:30,edition==='begins'?9:12,.78,edition==='revolt'?'bolt brightworld shatter drainmagic':'bolt shatter drainmagic windofhope manna'),
       stronghold:build(edition==='begins'?21:26,edition==='begins'?11:14,.25,edition==='revolt'?'barrier jointworld darkworld lifestream manna':'barrier lifestream heal windofhope manna')
     };
-    if(edition!=='saga')return presets;
+    if(edition!=='saga'&&edition!=='begins')return presets;
     const ids=new Map(pool.map(id=>[cards[id].catalog.path.split('/').pop(),id]));
+    function addNamedBooks(books){
+      for(const [key,entries] of Object.entries(books)){
+        const deck=Object.entries(entries).flatMap(([name,count])=>Array(count).fill(ids.get(name)));
+        if(deck.length===bookSize&&deck.every(Number.isInteger))presets[key]=deck;
+      }
+      return presets;
+    }
+    if(edition==='begins')return addNamedBooks({
+      beginsArtAssault:{
+        abyssalmonarch:1,hornedchameleon:3,gascloud:3,flameacolyte:3,flamegoetia:2,aeroacolyte:3,aerogoetia:2,fighter:2,
+        chainmail:3,magicshield:2,gremlinamulet:1,boomerang:2,
+        manna:3,magicbolt:2,holyword6:2,shatter:2,find:2,fly:2
+      },
+      beginsTidalGuard:{
+        aquagoetia:3,aquaacolyte:2,gascloud:2,kingtortoise:2,dwarf:3,hornedchameleon:3,goldentotem:2,terragoetia:2,
+        chainmail:3,magicshield:2,watershield:2,towershield:1,countershield:2,
+        manna:3,growthbody:2,greed:2,landprotection:2,lifestream:2
+      }
+    });
     const gear={prismaticwand:2,scalearmor:2,towershield:2,longsword:2};
     // Culdcept Central's Xbox 360 opening books: 446-cs360-playerdecks-starterby and 426-cs360-playerdecks-starterrg.
     const starterShared={
@@ -276,11 +295,7 @@ const CepterEditions=(()=>{
         ...gear,bistair:3,selenear:3,manna:3,holyword8:2,elevation:2,fame:3,revelation:2
       }
     };
-    for(const [key,entries] of Object.entries(books)){
-      const deck=Object.entries(entries).flatMap(([name,count])=>Array(count).fill(ids.get(name)));
-      if(deck.length===50&&deck.every(Number.isInteger))presets[key]=deck;
-    }
-    return presets;
+    return addNamedBooks(books);
   }
   function handheldBooks(cards){
     const ids=new Map(cards.flatMap((card,id)=>card.unlisted||card.catalogOnly||card.generatedOnly?[]:[[card.catalog.path.split('/').pop(),id]]));
@@ -321,17 +336,18 @@ const CepterEditions=(()=>{
   }
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsCreatures={
-    gascloud:{half:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},
+    gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},
     aeroacolyte:{innateScroll:30,scrollCriticalElements:[3]},
+    terragoetia:{innateScroll:40,support:true,supportElements:[-1,2],blocksAttackAbilities:true},
     aquagoetia:{innateScroll:40,half:true},flamegoetia:{innateScroll:40},aerogoetia:{innateScroll:40,first:true},abyssalmonarch:{innateScroll:50}
   };
   const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y'};
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},
-    batteringram:{st:20},gremlinamulet:{},boomerang:{st:20,hp:10},
+    batteringram:{st:20},gremlinamulet:{},rathunter:{},boomerang:{st:20,hp:10},
     buckler:{},countershield:{effect:'reflect'},diamondarmor:{st:-30,hp:60,last:true},
     earthshield:{},fireshield:{},watershield:{},windshield:{},
     eternalmail:{hp:40},knightsshield:{},magicshield:{hp:30},spikedshield:{},

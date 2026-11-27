@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsArtAssault','beginsTidalGuard']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -923,6 +923,13 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(monarch.attackST,40);assert.equal(monarch.startHP[1],60);
   const guardedMonarch=begins(null,'chainmail','abyssalmonarch','fighter').s.battle;
   assert.equal(guardedMonarch.startHP[1],70);assert.equal(guardedMonarch.attackST,50);
+  const drains=begins(null,null,'bandit','fighter').s;
+  assert.equal(drains.players[0].cash,1040);assert.equal(drains.players[1].cash,960);
+  const suppressed=begins(null,null,'bandit','terragoetia').s;
+  assert.equal(suppressed.players[0].cash,1000);assert.equal(suppressed.players[1].cash,1000);
+  const itemStrike=begins('rathunter',null,'bandit','terragoetia').s;
+  assert.equal(itemStrike.players[0].cash,950);assert.equal(itemStrike.players[1].cash,1000);
+  assert.match(itemStrike.battle.lines.join(' '),/Giant Rat|자이언트 랫/);
   const normalArt=begins(null,null,'flameacolyte','fighter');
   const equippedArt=begins('mace','gaseousform','flameacolyte','fighter');
   assert.equal(normalArt.s.battle.strikes[0].hp[1],10);
@@ -2397,6 +2404,14 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(totem,['totem',2]));
   assert.equal(totemOwner.cash,500);assert.equal(totem.tiles[2].unit,null);
 
+  assert.ok(C.validBook(C.presets.beginsArtAssault)&&C.validBook(C.presets.beginsTidalGuard));
+  const supportArt=C.start(2,2,5000,'begins-original-ford');
+  const combatant=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  supportArt.phase='attack';
+  supportArt.battle={at:2,inv:combatant('terragoetia')};
+  Object.assign(supportArt.players[0],{cash:500,hand:['goblin','dwarf','gascloud','magicshield'].map(combatant)});
+  Object.assign(supportArt.tiles[2],{owner:1,type:2,unit:{id:combatant('fighter'),hp:40}});
+  assert.deepEqual(C.choices(supportArt).filter(([k])=>k==='equip').map(([,index])=>index),[0,1,3]);
   const current=C.presets.intro;
   const creature=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
   const monarchId=creature('abyssalmonarch'),gooba=creature('gooba'),aero=creature('aerogoetia');

@@ -47,7 +47,7 @@ function seats(){
 }
 const modernBookNames=C.edition==='3ds'?
   {intro:'지속성 영지 확장 북',fire:'설욕·이동 침략 북',stronghold:'수속성 방어·견제 북'}:
-  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
+  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='begins'?{beginsArtAssault:'금술 침략 북',beginsTidalGuard:'수·지 수비 북'}:{}),...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
     sagaGottliebKill:'고틀리프 · 섬멸',sagaGottliebSlaves:'고틀리프 · 포로',
     sagaBorivalFire:'보리발 · 화염',sagaZenethDragon:'제네스 · 용의 눈',
     sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaRilaraExploit:'리라라 · 강탈',sagaBorivalHellFire:'보리발 · 지옥불',sagaRilaraConspire:'리라라 · 모략',sagaRilaraFierce:'리라라 · 맹공',sagaKoenigStar:'쾨니히 · STAR',sagaTraderMoney:'상인 · MONEY!',sagaGuilderTwins:'길더와 루블 · 쌍둥이',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
@@ -182,7 +182,7 @@ setInterval(tickInputClock,250);
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){
   if(C.presets.stronghold){
-    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
+    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['intro','beginsArtAssault','beginsTidalGuard']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
       ['intro','sagaImmediate','sagaAffinity']:['intro','fire','stronghold'];
     const key=order[Number($('tierChoice').value)]||'intro';
     return {name:modernBookNames[key],deck:C.presets[key],practice:true,
