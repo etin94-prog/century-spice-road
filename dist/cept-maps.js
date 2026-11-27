@@ -76,6 +76,13 @@ const CepterMaps=(()=>{
     [4,12],100,12,[...loop(16),[14,16],[16,17],[17,18],[18,6],[2,19],[19,17],[17,20],[20,10]],Array(21).fill(0));
   revoltPractice['revolt-original-circle-court']={...circleCourt,areaCount:1,section:'arena',graph:true,startCash:250,
     castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
+  const lanternMarket=map('등불 교역장 · 창작 지도',[...ring,[2,3],[3,3],[3,2],[4,2],[4,3]],
+    ['성',0,1,'카드 상점','동쪽 게이트',2,3,1,0,'점술관',1,3,'서쪽 게이트',0,1,3,0,2,'카드 상점',2,3],
+    [4,12],100,12,[...loop(16),[2,16],[16,17],[17,18],[18,19],[19,20],[20,10]],Array(21).fill(0));
+  revoltPractice['revolt-original-lantern-market']={...lanternMarket,areaCount:1,section:'arena',graph:true,startCash:250,
+    castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'},
+    // Original sets of four offers. Nintendo's Revolt manual §37 specifies 20G for one card when stopping.
+    cardShops:{3:['phlogiston','squirrine','magmahammer','windofhope'],18:['aqualing','cornfolk','stormspear','manna']}};
   const fordRing=ring.map(([row,col])=>[row+1,col+1]);
   const ford=map('돌등 여울 · 창작 지도',[
     ...fordRing,[1,2],[1,3],[1,4],[7,6],[7,5],[7,4],[3,4],[4,4],[5,4]

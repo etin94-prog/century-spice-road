@@ -48,6 +48,7 @@ function createCepter(edition="ps2"){
   const shopIds=new Map(cards.map((card,id)=>[key(card),id]));
   function shopStock(s,at=s.players[s.turn].pos){
     if(!s.layoutRevision||s.tiles[at]?.type!=='카드 상점')return [];
+    if(revolt)return (board(s).cardShops?.[at]||[]).map(name=>revoltShopIds.get(name)).filter(Number.isInteger);
     return (shopLists[s.mapId]?.[at]||[]).map(name=>shopIds.get(name));
   }
   const enabled=new Set('boggart gnome oldwillow kelpie cornfolk dryad sage manes seabonze goldentotem caitsith decoy bandit executor cerberus grendel phoenix mummy zombie mandrake lunatichare nike succubus leprechaun gremlin leshy gouda drool undine mujina spectre centaur migoal nightmare nightfiend powdereater goblin statue silveridol brassidol borgess lung virus sulfurousballoon wraith sonascetic livingshield mermecoleo bloodypudding behemoth remora deathgaze tetramorph sphinx peri conjurer baal heatimp windimp witch spittingcobra goobaqueen gooba graniteidol marbleidol cleric carbuncle berserker thief hellhound roadrunner wereboar griffon knight lilith pyrodrake dragonzombie firegiant stormgiant hornedchameleon ninja mastermonk willothewisp amazon golem pegasus wyvern wonderwall steamgear trenchworm lavaworm vision samurai troll mudman pushpull tyrannosaurus hydra shellcreeper larvae darkelf coati cyclops grimalkin gladiator gigantherium dragon bunyip wendigo sorcerer valkyria domovikha paladin sprite chimera manticore'.split(' '));
@@ -93,6 +94,8 @@ function createCepter(edition="ps2"){
   if(editions)editions.configure(edition,cards,presets,bookSize,copyLimit);
   const evo=revolt?(typeof module==='undefined'?CepterEvo:require('./cept-evo')):null;
   if(evo)cards=evo.catalog(cards);
+  const revoltShopIds=revolt?new Map(cards.flatMap((card,id)=>!card.unlisted&&!card.catalogOnly&&card.catalog?.path?[[card.catalog.path.split('/').pop(),id]]:[])):null;
+  const shopCost=id=>revolt?20:cards[id].cost;
   const modern=!!presets.stronghold;
   const extraSpells=edition==='ps2'||modern?(typeof module==='undefined'?CepterExtraSpells:require('./cept-extra-spells.js')):null;
   const extraTypes=edition==='ps2'?extraSpells.type:extraSpells?.modernType;
@@ -695,7 +698,7 @@ function createCepter(edition="ps2"){
       case 'roll':options.push(['roll']);break;
       case 'direction':return [['direction',1],['direction',-1]];
       case 'fork':return onward(s).map(n=>['route',n]);
-      case 'shop':return [...shopStock(s).filter(id=>cards[id].cost<=p.cash).map(id=>['buyCard',id]),['leaveShop']];
+      case 'shop':return [...shopStock(s).filter(id=>shopCost(id)<=p.cash&&(!revolt||hasHandSpace(p))).map(id=>['buyCard',id]),['leaveShop']];
       case 'fortune':return revolt&&!hasHandSpace(p)?[['pass']]:[...new Set(p.book.map(id=>cards[id].kind))].map(kind=>['fortuneDraw',kind]);
       case 'gemStore':
         s.prices.forEach((price,e)=>{
@@ -1316,9 +1319,9 @@ function createCepter(edition="ps2"){
       }
       case 'route':advance(s,x);break;
       case 'buyCard':{
-        const card=cards[x];
-        p.cash-=card.cost;p.hand.push(x);
-        note(s,p.name+' · '+card.name+' 구매 −'+card.cost+'G');
+        const cost=shopCost(x);
+        p.cash-=cost;p.hand.push(x);
+        note(s,p.name+' · '+cards[x].name+' 구매 −'+cost+'G');
         if(p.hand.length>6){s.phase='discard';s.discardReturn='endTurn';}else finish(s);
         break;
       }
@@ -1805,8 +1808,9 @@ function createCepter(edition="ps2"){
         case 'buySymbol':return p.cash>300&&y<=5&&p.symbols[x]<10?2:-2;
         case 'buyCard':{
           const offered=cards[x],missingKind=!p.hand.some(id=>cards[id].kind===offered.kind);
-          if(p.hand.length>=6||p.cash-offered.cost<40)return -3;
-          return 3+(missingKind?4:0)+(p.template?.includes(x)?2:0)-offered.cost/40;
+          const cost=shopCost(x);
+          if(p.hand.length>=6||p.cash-cost<40)return -3;
+          return 3+(missingKind?4:0)+(p.template?.includes(x)?2:0)-cost/40;
         }
         case 'leaveShop':return 1;
         case 'sellSymbol':return p.cash<90?2+y/100:-2;
@@ -1858,7 +1862,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,bookSize,copyLimit,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
+  return {edition,bookSize,copyLimit,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

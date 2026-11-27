@@ -634,7 +634,7 @@ function map(){
       center.append(el('span',[c.name,status,u.fatigued?'피로 · 영지 명령 불가':null,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.chainName(s,t)+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+C.toll(s,t)+'G','가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
     }else if(t.type==='카드 상점'){
       const stock=C.shopStock(s,inspect);
-      center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));
+      center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.shopCost(id)+'G').join(' · '):'이 맵의 상품 정보 없음'));
     }else if(t.type==='모프'){
       center.append(el('span','처음 배치한 크리처의 속성을 얻습니다. 변한 속성은 영지가 비어도 유지됩니다.'));
     }else if(t.type==='마법진'){

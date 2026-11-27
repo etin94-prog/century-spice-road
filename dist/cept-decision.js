@@ -32,9 +32,10 @@ function openerButton(kind,text,count,open){
 
 function shopMenu(controls,choices,p){
   const entries=C.shopStock(s).map(id=>{
-    const card=C.cards[id],short=card.cost-p.cash;
-    return {action:['buyCard',id],id,label:card.name+' · '+card.cost+'G',blocked:short>0?short+'G 부족':'',
-      confirm:card.cost+'G에 구매 · 잔액 '+(p.cash-card.cost)+'G',note:p.hand.length>=6?'구매 후 손패 1장을 버립니다.':''};
+    const card=C.cards[id],cost=C.shopCost(id),short=cost-p.cash;
+    const full=C.edition==='revolt'&&p.hand.length>=10;
+    return {action:['buyCard',id],id,label:card.name+' · '+cost+'G',blocked:full?'손패 10장 보유':short>0?short+'G 부족':'',
+      confirm:cost+'G에 구매 · 잔액 '+(p.cash-cost)+'G',note:p.hand.length>=6?'구매 후 손패를 6장으로 줄입니다.':''};
   });
   if(!entries.length)return;
   const box=el('div',null,'command');box.dataset.kind='buyCard';
@@ -153,7 +154,7 @@ function openTurnPicker(entries,title,preferred=-1){
     option.setAttribute('aria-pressed','false');
     if(card){
       const art=cardSeal(entry.id);art.alt='';option.prepend(art);
-      const cost=entry.action[0]==='circleCast'?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
+      const cost=entry.action[0]==='buyCard'?C.shopCost(entry.id):entry.action[0]==='circleCast'?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
       if(Number.isFinite(cost))option.append(el('small',cost+'G','card-cost'));
       if(card.kind==='creature')option.append(el('small','ST '+card.st+' · HP '+card.hp,'card-power'));
     }

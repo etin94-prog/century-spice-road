@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,39],['begins',400,16]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,40],['begins',400,16]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -1369,6 +1369,46 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual(noSwitch.players[0].hand,[goblin]);
   assert.deepEqual(noSwitch.players[0].book,[spell]);
   console.log('Revolt Path Switch forced cross, approach directions, stop choice, synchronized timer, spell recycle and replay OK');
+}
+
+{
+  const C=ps2.createEdition('revolt'),mapId='revolt-original-lantern-market';
+  const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.catalog?.path.endsWith('/'+name));
+  const s=C.start(4,4,6000,mapId);
+  const offers=['phlogiston','squirrine','magmahammer','windofhope'].map(id);
+  assert.deepEqual(C.shopStock(s,3),offers);
+  assert.deepEqual(C.shopStock(s,18),['aqualing','cornfolk','stormspear','manna'].map(id));
+  assert.ok(offers.every(id=>C.shopCost(id)===20));
+  function approach(at,steps=1){
+    const state=JSON.parse(JSON.stringify(s));
+    Object.assign(state,{phase:'fork',die:steps,rollSum:steps,remaining:steps});
+    Object.assign(state.players[0],{pos:at-1,previous:at-2,hand:[],cash:20});
+    assert.ok(C.play(state,['route',at]));
+    return state;
+  }
+  assert.notEqual(approach(3,2).phase,'shop');
+  assert.notEqual(approach(9,2).phase,'fortune');
+  const buy=approach(3);
+  assert.deepEqual(C.choices(buy),[...offers.map(id=>['buyCard',id]),['leaveShop']]);
+  assert.ok(!C.play(buy,['buyCard',id('fighter')]));
+  assert.ok(C.play(buy,['buyCard',offers[0]]));
+  assert.deepEqual([buy.players[0].cash,buy.players[0].hand,buy.turn],[0,[offers[0]],1]);
+  const capped=approach(3);
+  capped.players[0].hand=Array(10).fill(id('fighter'));
+  assert.deepEqual(C.choices(capped),[['leaveShop']]);
+  capped.players[0].hand.pop();capped.players[0].cash=19;
+  assert.deepEqual(C.choices(capped),[['leaveShop']]);
+  const dusk=approach(3);
+  dusk.players[0].hand=Array(9).fill(id('fighter'));
+  assert.ok(C.play(dusk,['buyCard',offers[0]]));
+  assert.equal(dusk.phase,'discard');
+  assert.equal(dusk.players[0].hand.length,10);
+  const oracle=approach(9);
+  oracle.players[0].book=['aqualing','windofhope','cornfolk'].map(id);
+  assert.deepEqual(C.choices(oracle),[['fortuneDraw','creature'],['fortuneDraw','spell']]);
+  assert.ok(C.play(oracle,['fortuneDraw','spell']));
+  assert.deepEqual([oracle.players[0].cash,oracle.players[0].hand[0],oracle.players[0].book.length,oracle.phase],[20,id('windofhope'),2,'land']);
+  console.log('Revolt Lantern Market two four-card shops, flat fee, skipped passage, cap and fortune draw OK');
 }
 
 {
