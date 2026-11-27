@@ -83,8 +83,10 @@ function actionCard(action,p){
 }
 
 function cardSummary(card){
-  const base=stats(card),ability=localAbility(card)||card.catalog?.ability;
-  return card.kind==='spell'||!ability||ability===base?base:base+' · '+ability;
+  const base=stats(card);
+  if(card.kind==='spell')return base;
+  const ability=localAbility(card)||card.catalog?.ability;
+  return !ability||ability===base?base:base+' · '+ability;
 }
 
 // Entries are {action,id,label} plus optional blocked (why it cannot be chosen), confirm (button text) and note.

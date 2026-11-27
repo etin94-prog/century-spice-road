@@ -16,8 +16,43 @@ const {chromium}=require('playwright');
       await page.waitForFunction(()=>document.querySelectorAll('.catalog-entry').length===24);
       await page.tap('#nextCards');assert.match(await page.locator('#cardResults').innerText(),/25–48/);
       await page.selectOption('#cardScope','deck');assert.ok(await page.locator('.catalog-entry').count()>0);
+      let holyWord;
+      if(edition==='ps2'&&width===320){
+        holyWord=await page.evaluate(()=>{
+          const id=C.cards.findIndex(c=>!c.catalogOnly&&c.effect==='word1');
+          return {id,name:C.cards[id].name};
+        });
+        await page.selectOption('#cardScope','usable');
+        await page.locator('#cardSearch').fill(holyWord.name);
+        await page.locator('.catalog-open').filter({hasText:holyWord.name}).tap();
+        const ability=page.locator('#catalogAbility');
+        assert.match(await ability.innerText(),/고정값은 1입니다/);
+        holyWord.text=await ability.evaluate(p=>p.firstChild.textContent.trim());
+        await page.locator('#closeCard').tap();
+      }
       await page.locator('#editor summary').tap();
       await page.locator('#config .match-start .primary').tap();
+      if(holyWord){
+        const opening=await page.evaluate(id=>{
+          const p=s.players[0],previous={hand:p.hand,cash:p.cash};
+          p.hand=[id,C.cards.findIndex(c=>c.effect==='word6')];
+          p.cash=Math.max(p.cash,200);render();return previous;
+        },holyWord.id);
+        await page.locator('#seats .seat').first().tap();
+        await page.locator('#hand .card').first().tap();
+        assert.equal(await page.locator('#detail > span').first().innerText(),holyWord.text);
+        await page.locator('#map .pawn-action').tap();
+        await page.locator('[data-open=cast]').tap();
+        const spellChoice=page.locator('#turnPicker');
+        await spellChoice.locator('.turn-picker-card').first().tap();
+        assert.equal(await spellChoice.locator('.turn-picker-detail > span').first().innerText(),holyWord.text);
+        await spellChoice.getByRole('button',{name:'닫기',exact:true}).tap();
+        await spellChoice.waitFor({state:'detached'});
+        await page.evaluate(previous=>{
+          Object.assign(s.players[0],previous);
+          focusCard=-1;render();setActionMenu(false);
+        },opening);
+      }
       const soundButton=page.locator('#openSound'),sound=page.locator('#musicPanel');
       assert.ok((await soundButton.boundingBox()).width>=44);
       await soundButton.tap();

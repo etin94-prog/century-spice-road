@@ -1,5 +1,24 @@
 const assert=require('node:assert/strict');
 const ps2=require('../dist/cept-engine');
+const describeSpell=require('../dist/cept-spell-text');
+for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
+  const C=edition==='ps2'?ps2:ps2.createEdition(edition);
+  const spells=C.cards.filter(c=>!c.unlisted&&c.kind==='spell');
+  const find=effect=>spells.find(c=>!c.catalogOnly&&c.effect===effect);
+  for(const card of spells){
+    const text=describeSpell(C,card);
+    if(card.catalogOnly)assert.equal(text,undefined,edition+' '+card.name+' is catalog-only');
+    else assert.match(text||'',/[가-힣]/,edition+' '+card.name+' should have a Korean effect');
+  }
+  const bolt=describeSpell(C,find('bolt'));
+  assert.equal(bolt.includes('적 크리처'),!['ps1','saturn'].includes(edition));
+  assert.match(describeSpell(C,find('word1')),/고정값은 1입니다/);
+  assert.match(describeSpell(C,find('manna')),edition==='begins'?/100G/:/50G/);
+  if(find('fly'))assert.match(describeSpell(C,find('fly')),edition==='revolt'?/3개/:/2개/);
+  if(find('landdrain'))assert.match(describeSpell(C,find('landdrain')),edition==='saga'?/20G/:/30G/);
+  if(find('reincarnation'))assert.equal(describeSpell(C,find('reincarnation')).includes('한 장 더'),['revolt','begins'].includes(edition));
+  console.log(edition,spells.filter(c=>!c.catalogOnly).length,'playable spell summaries are in Korean');
+}
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
 for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,17],['revolt',489,34],['begins',400,15]]){

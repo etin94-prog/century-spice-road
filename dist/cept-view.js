@@ -196,7 +196,8 @@ function showCatalogCard(c,id){
   $('catalogName').textContent=entry&&entry.name!==c.name?c.name+' · '+entry.name:c.name;
   $('catalogArt').replaceChildren(cardSeal(id));
   $('catalogStats').textContent=entry?[c.elements?cardElements(c)+' 속성':catalogTypes[entry.category]||entry.category,entry.rarity,entry.stats].join(' · '):c.cost+'G';
-  $('catalogAbility').textContent=localAbility(c)||entry?.ability||stats(c);
+  const ability=localAbility(c)||entry?.ability||stats(c);
+  $('catalogAbility').textContent=c.catalogOnly?'도감 전용 · '+ability:ability;
   if(entry){
     const terms={R:'화 영지',B:'수 영지',G:'지 영지',Y:'풍 영지','+[]':'손패 1장',Fire:'화',Water:'수',Earth:'지',Air:'풍',Weapon:'무기',Armor:'방어구',Scroll:'두루마리',Tool:'도구'};
     const describe=v=>v.split(',').filter(Boolean).map(x=>terms[x]||x).join(' · ');
@@ -256,9 +257,9 @@ $('storeBook').onclick=()=>{
   customBook=book;$('bookChoice').lastElementChild.disabled=false;$('bookChoice').value='custom';
   try{localStorage.setItem(bookKey,JSON.stringify(book));$('bookCount').textContent='50장 · 북 저장 완료';}catch{$('bookCount').textContent='이번 창에서 사용할 북으로 설정했습니다.';}
 };
-const spellText={plague:'선택한 지역의 모든 크리처에게 독 부여',one:'다음 이동 1칸',six:'다음 이동 6칸',cash:'100G 획득',heal:'크리처 HP 완전 회복',shatter:'대상의 아이템·주문 1장 파괴',fly:'주사위 2개',bolt:'크리처 HP −20',manna:'현재 주회 × 50G',word1:'셉터의 다음 이동 1칸',word6:'셉터의 다음 이동 6칸'};
 const gearText={freeze:'두루마리 · 화 속성에 강타',reflect:'ST 0 · 일반 공격 반사',nullify:'ST 0 · 일반 공격 무효',orb:'무효·반사 무시',pierceEarth:'지 속성 지형 보너스 관통'};
 function localAbility(c){
+  if(c.kind==='spell')return describeCepterSpell(C,c);
   const original=C.combo.key(c);
   if(C.edition==='saga'&&c.elements){
     return {
@@ -274,9 +275,6 @@ function localAbility(c){
       warlock:'단일 대상 주문과 영지 능력의 대상이 되지 않습니다. 두루마리 강타. 영지 명령 60G로 대상 셉터에게 안티 매직을 부여합니다.'
     }[original];
   }
-  if(c.magicPerLap)return '(완료한 주회 + 1) × '+c.magicPerLap+'G 획득';
-  if(C.edition==='revolt'&&c.effect==='fly')return '다음 이동에 주사위 3개를 굴립니다.';
-  if(C.spellDescriptions?.[original])return C.spellDescriptions[original];
   if(C.edition==='ps2'){
     const text={
       quetzalcoatl:'응원 · 카드 자체에 선제가 있는 크리처는 전투 중 ST +10',
@@ -293,14 +291,10 @@ function localAbility(c){
   }
   if(original==='manticore')return ['ps2','dc'].includes(C.edition)?'전투 중 ST와 HP는 남은 손패 수 × 10':'전투 중 ST는 현재 HP와 동일';
   if(original==='chimera')return '선제 · 주인이 주회 보너스를 받으면 ST +10 (최대 80)';
-  const element={icestorm:'화',fireexplosion:'수',thunderstorm:'지',deathcloud:'풍'}[c.effect];
-  if(element)return '모든 '+element+'속성 크리처에게 20 피해 · 아군 포함';
-  if(c.effect==='sonicwave')return '선제 능력이 있는 모든 크리처에게 20 피해';
-  if(c.effect==='shatter')return '적 셉터의 손패에서 아이템 또는 주문 1장 파괴';
-  if(c.effect==='bolt')return ['ps2','dc'].includes(C.edition)?'적 크리처에게 20 피해':'선택한 크리처에게 20 피해';
+
 }
 function stats(c){
-  if(c.kind==='spell')return localAbility(c)||spellText[c.effect]||c.catalog?.ability||c.name;
+  if(c.kind==='spell')return localAbility(c)||c.catalog?.ability||c.name;
   const base=c.st+' ST / '+c.hp+' HP';
   return [base,gearText[c.effect],c.first?'선제':null,c.half?'일반 피해 절반':null,c.stationary?'방어 전용':null,c.support?'크리처로 지원 가능':null,c.confuse?'공격 명중 시 혼란':null,
     c.landBan!=null?C.elements[c.landBan]+' 배치 불가':null,c.ban?.map(v=>({weapon:'무기',armor:'방어구',scroll:'두루마리'})[v]+' 불가').join('·')].filter(Boolean).join(' · ');
