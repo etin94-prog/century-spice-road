@@ -78,6 +78,9 @@ const CepterExtraBattle=(()=>{
       else if(name==='doppelganger')form=opponentId;
       else if(name==='baldanders')form=pick(creatures);
       if(form!=null)transform(a,form,temporary);
+      if(!consume&&gear==='metamorphosebelt'){
+        transform(a,ids.get('grassstrider'),true);consume=true;
+      }
       if(!consume&&(gear==='proteanring'||gear==='trapezon')){
         // There is one restoration slot. With two transformations, the
         // creature's first form remains on the board when the item expires.
@@ -100,6 +103,7 @@ const CepterExtraBattle=(()=>{
         case 'pyrallis':a.st+=10*lands.filter(v=>v.type===0).length;if(lands.some(v=>v.type===1))a.hp-=20;break;
         case 'anubias':a.hp=5*(s.destroyedCount||0);break;
         case 'kraken':if(lands.some(v=>v.type===0))a.hp-=20;break;
+        case 'grassstrider':a.st+=s.players[d.seat].hand.length*10;break;
         case 'gargoyle':if(a.defending)a.st=50;break;
         case 'chonchon':if(!a.gear)a.hp+=20;break;
         case 'soulcollector':a.st+=5*(s.destroyedCount||0);break;
