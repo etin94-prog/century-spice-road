@@ -73,7 +73,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaImmediate','sagaAffinity']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaImmediate','sagaAffinity']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -564,6 +564,23 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(s.tiles[1].unit.id,id('minotaur'));
     assert.equal(s.tiles[3].owner,-1);
   }
+  const award=fight('minotaur','gelatinouswall','무속성',null,s=>{s.players[1].cash=200;});
+  assert.equal(award.battle.won,false);
+  assert.equal(award.players[1].cash,400);
+  const noAward=fight('minotaur','gelatinouswall','무속성','firestone',s=>{s.players[1].cash=200;});
+  assert.equal(noAward.players[1].cash,200);
+  const bookReturn=fight('centaur','goblin','무속성','mace',s=>{s.players[0].book=[id('goblin')];});
+  assert.equal(bookReturn.players[0].book[0],id('mace'));
+  const noReturn=fight('centaur','fighter','무속성','mace',s=>{s.players[0].book=[id('goblin')];},'counteramulet');
+  assert.deepEqual(noReturn.players[0].book,[id('goblin')]);
+  for(const [round,bonus] of [[19,0],[20,30]]){
+    const gawain=fight('sirgawain','dwarf','무속성',null,s=>{s.round=round;}).battle;
+    assert.deepEqual([gawain.attackST,gawain.startHP[0]],[40+bonus,30+bonus]);
+  }
+  const hag=fight('seahag','goblin',1);
+  assert.equal(hag.battle.startHP[0],40);
+  assert.equal(hag.tiles[1].unit.enchant,'greed');
+  assert.equal(C.toll(hag,hag.tiles[1]),Math.floor(C.value(hag,hag.tiles[1])*.3));
   const opal=s=>unit(s,8,'opalidol',1,0);
   const regenerated=fight('fighter','dwarf','무속성',null,opal);
   assert.equal(regenerated.tiles[1].unit.hp,50);
@@ -1830,7 +1847,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     sagaGottliebKill:'thief:2 bia:3 fay:3 hellhound:2 peri:2 sharazad:3 cerberus:2 dryad:3 grimalkin:2 healer:3 sakuya:2 chainmail:2 bravesong:2 cleanse:1 crusherstorm:2 find:1 holyword0:1 holyword3:1 holyword6:1 illness:2 manna:2 shrink:2 silence:2 toughsong:2 upheaval:1 wildgrowth:1',
     sagaGottliebSlaves:'thief:2 bia:2 fay:3 hellhound:2 peri:2 sharazad:3 cerberus:2 dryad:3 grimalkin:3 healer:2 sakuya:2 chainmail:2 magmahammer:2 bravesong:2 cramp:1 crusherstorm:2 fog:2 holyword0:1 holyword3:2 holyword6:2 illness:2 manna:2 telegnosis:2 windofhope:2',
     sagaBorivalFire:'barbarian:2 bia:2 creepingflame:2 fay:2 firegiant:2 gascloud:2 lavawurm:2 minotaur:2 peri:2 phlogiston:2 phoenix:2 salamander:2 sorcerer:2 aurablade:2 chainmail:2 firestone:2 morningstar:2 stormcounter:2 chariot:2 haste:2 holyword1:2 hustle:2 influence:2 manna:2 mutation:2',
-    sagaZenethDragon:'hornedchameleon:2 gascloud:2 golem:2 hellhound:2 salamander:2 charon:2 giantamoeba:2 lilith:2 stormgiant:2 griffon:2 soulcollector:2 spectre:2 catapult:2 claymore:3 counteramulet:2 platemail:3 antielement:2 antimagic:2 banishingray:2 insectswarm:2 magicbolt:3 manna:2 phantasm:2 tempest:1'
+    sagaZenethDragon:'hornedchameleon:2 gascloud:2 golem:2 hellhound:2 salamander:2 charon:2 giantamoeba:2 lilith:2 stormgiant:2 griffon:2 soulcollector:2 spectre:2 catapult:2 claymore:3 counteramulet:2 platemail:3 antielement:2 antimagic:2 banishingray:2 insectswarm:2 magicbolt:3 manna:2 phantasm:2 tempest:1',
+    sagaTicomunKill:'fighter:2 giantrat:2 goblin:2 deathquito:2 gelatinouswall:2 lilith:2 lizardman:2 seahag:2 centaur:3 harpy:3 pegasus:2 tornado:2 battleaxe:1 buckler:2 chainmail:2 leatherarmor:2 longsword:2 mace:1 sling:2 blackout:2 holyword6:2 holyword1:2 magicbolt:2 manna:2 pain:2',
+    sagaTicomunChallenge:'deathquito:3 gelatinouswall:2 grendel:1 seahag:2 lizardman:2 stormgiant:2 centaur:2 harpy:2 knight:2 nightmare:2 pegasus:2 tornado:2 amethystring:1 berylring:1 buckler:2 chainmail:2 longsword:2 sling:2 stormspear:2 blackout:2 crusher:2 holyword6:2 holyword1:2 manna:2 pain:2 waste:2'
   };
   for(const [name,cards] of Object.entries(reportedSagaBooks)){
     assert.ok(C.validBook(C.presets[name]));

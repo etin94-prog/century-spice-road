@@ -220,6 +220,17 @@ const CepterEditions=(()=>{
         stormgiant:2,griffon:2,soulcollector:2,spectre:2,catapult:2,claymore:3,counteramulet:2,platemail:3,
         antielement:2,antimagic:2,banishingray:2,insectswarm:2,magicbolt:3,manna:2,phantasm:2,tempest:1
       },
+      // Xbox 360 Ticomun deck records: 102-cs360-aidecks-ticomun.
+      sagaTicomunKill:{
+        fighter:2,giantrat:2,goblin:2,deathquito:2,gelatinouswall:2,lilith:2,lizardman:2,seahag:2,
+        centaur:3,harpy:3,pegasus:2,tornado:2,battleaxe:1,buckler:2,chainmail:2,leatherarmor:2,
+        longsword:2,mace:1,sling:2,blackout:2,holyword6:2,holyword1:2,magicbolt:2,manna:2,pain:2
+      },
+      sagaTicomunChallenge:{
+        deathquito:3,gelatinouswall:2,grendel:1,seahag:2,lizardman:2,stormgiant:2,centaur:2,harpy:2,
+        knight:2,nightmare:2,pegasus:2,tornado:2,amethystring:1,berylring:1,buckler:2,chainmail:2,
+        longsword:2,sling:2,stormspear:2,blackout:2,crusher:2,holyword6:2,holyword1:2,manna:2,pain:2,waste:2
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
@@ -307,7 +318,7 @@ const CepterEditions=(()=>{
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
     beastgear:{spellWard:true,neutralizeScroll:true},
-    deathquito:{first:true},salamander:{},charon:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
+    deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
     archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},

@@ -110,6 +110,7 @@ const CepterExtraBattle=(()=>{
         case 'bia':if(d.gear?.kind==='creature'){a.st+=30;a.hp+=30;}break;
         case 'burningtitan':if(lands.length>=5){a.st-=30;a.hp-=30;}break;
         case 'kasha':if(combo.enchanted(t.unit)){a.st+=20;a.hp+=20;}break;
+        case 'sirgawain':if(s.round>=20){a.st+=30;a.hp+=30;}break;
         case 'aspidochelone':a.st+=s.round;a.hp+=s.round;break;
         case 'weretiger':if(s.round>=25){a.st-=20;a.hp-=20;}break;
       }
