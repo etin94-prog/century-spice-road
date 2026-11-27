@@ -11,7 +11,7 @@ const CepterExtraSpells=(()=>{
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
   const type={...ps2Type,holyword8:'player',landdrain:'player',
     alarm:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
-    remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
+    remission:'land',magicalleap:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
@@ -38,6 +38,7 @@ const CepterExtraSpells=(()=>{
     magicfountain:'크리처가 있는 영지를 선택한다. 이곳에 처음 멈춘 셉터가 400G를 받는다.',
     mesmerize:'적 손패의 주문 하나를 골라 사용한다. 메스머라이즈는 고를 수 없다.',
     teleport:'가장 가까운 특수 칸으로 이동한다. 이번 차례의 주사위는 생략한다.',
+    magicalleap:'1~4칸 거리에서 도착할 칸을 고릅니다. 중간 칸을 건너뛰고 이번 차례 주사위를 생략합니다.',
     speedpenalty:'나보다 많이 완주한 적 중 최다 완주자 한 명에게서 완주 차이 1회당 100G를 빼앗는다. 동률이면 한 명을 무작위로 고른다.',
     soltis:'행운, 정화, 순위에 따른 마력, 드로우, 호부 가격 하락, 전체 피해, 지역 회복 중 하나를 선택한다.'
   };
@@ -84,7 +85,23 @@ const CepterExtraSpells=(()=>{
           (s.edition!=='saga'||canOccupy(cards[tile.unit.id],dest));
       });
     }
+    function leapDestinations(s){
+      const m=board(s),pos=s.players[s.turn].pos,area=s.tiles[pos].area;
+      const seen=new Set([pos]);
+      let frontier=[pos];
+      for(let distance=1;distance<=4&&frontier.length;distance++){
+        const next=[];
+        for(const at of frontier)for(const dest of m.links[at]){
+          if(seen.has(dest)||s.tiles[dest].area!==area)continue;
+          seen.add(dest);next.push(dest);
+        }
+        frontier=next;
+      }
+      seen.delete(pos);
+      return [...seen];
+    }
     function targets(s,e){
+      if(e==='magicalleap')return leapDestinations(s).map(at=>['targetLand',at]);
       if(e==='remission'){
         const map=board(s),flags=s.players[s.turn].flags;
         const missing=map.checkpoints.filter(id=>!flags.includes(id));
@@ -199,6 +216,7 @@ const CepterExtraSpells=(()=>{
         else if(landDamage[e])fx.spellHarm(s,t,landDamage[e]);
         else switch(e){
           case 'remission':p.flags.push(board(s).gates[x]);break;
+          case 'magicalleap':return warp(s,x);
           case 'restore':delete u.fatigued;if(!fx.immuneHP(t))u.hp=fx.max(u);break;
           case 'revoltlandtransfer':p.cash+=Math.floor(value(s,t)*(s.edition==='begins'?.8:.7));vacate(t,true);break;
           case 'banishingray':fx.spellDestroy(s,t);break;
@@ -389,6 +407,12 @@ const CepterExtraSpells=(()=>{
     function scoreTarget(s,e,x){
       const p=s.players[s.turn],t=s.tiles[x],q=s.players[x];
       if(e==='remission')return 10;
+      if(e==='magicalleap'){
+        const gate=board(s).gates[x];
+        if(gate!=null)return (p.flags.includes(gate)?2:9)+s.tiles.filter(v=>v.owner===s.turn&&v.unit?.fatigued).length;
+        if(t.owner<0)return territoryType(t.type)?2:1;
+        return enemy(s,t.owner)?-(4+t.level*3):3;
+      }
       if(type[e]==='player'){
         const sign=enemy(s,x)?-1:1;
         if(q.antiMagic&&e!=='dispelmagic')return -1;

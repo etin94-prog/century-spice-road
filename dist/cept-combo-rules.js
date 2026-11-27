@@ -408,13 +408,16 @@ const CepterCombos = (() => {
       camouflage:{cost:40,label:'내 크리처에 지형 효과',enchant:'camouflage',own:true,beneficial:true},
       loseStrength:{cost:30,label:'기본 ST −10',strength:-10},
       poison:{cost:30,label:'크리처에 독 부여'},
-      earthShift:{cost:120,label:'내 영지를 지 속성으로 변경',own:true}
+      earthShift:{cost:120,label:'내 영지를 지 속성으로 변경',own:true},
+      stealSpellMagic:{cost:30,label:'적의 손패 주문 1장당 40G 탈취',player:true}
     };
     const secretArt=card=>arts[card?.secretArt];
     function secretTargets(s,from){
       const src=s.tiles[from];
       const key=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn],art=arts[key];
       if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
+      if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
+        !allied(s,i,s.turn)&&q.status!=='barrier'?[['secretPlayer',i]]:[]);
       if(key==='worldDispel')return activeWorld(s)?[['secretSelf',from]]:[];
       if(['offering','draw','lapGain','dice6'].includes(key)||art.self&&src.unit.enchant!==art.enchant)return [['secretSelf',from]];
       if(art.self)return [];
@@ -439,6 +442,14 @@ const CepterCombos = (() => {
       const p=s.players[s.turn],target=s.tiles[at],src=s.tiles[from];
       const card=cards[src.unit.id],art=secretArt(card);
       p.cash-=art.cost;
+      if(card.secretArt==='stealSpellMagic'){
+        const foe=s.players[at];
+        const amount=foe.antiMagic?0:40*foe.hand.filter(id=>cards[id]?.kind==='spell').length;
+        if(foe.antiMagic)delete foe.antiMagic;
+        p.cash+=amount;foe.cash-=amount;
+        note(s,p.name+' · '+card.name+' 비술 · '+foe.name+'에게서 '+amount+'G 탈취');
+        return amount+'G 탈취';
+      }
       if(card.secretArt==='offering'){p.cash+=200;destroy(s,src);}
       if(card.secretArt==='draw')draw(p,s);
       if(card.secretArt==='dispel')clear(target.unit);
@@ -459,8 +470,12 @@ const CepterCombos = (() => {
     }
     function secretValue(s,from,at){
       const card=cards[s.tiles[from].unit.id],t=s.tiles[at],p=s.players[s.turn];
-      const friendly=allied(s,s.turn,t.owner);
       const art=card.secretArt,spec=secretArt(card);
+      if(art==='stealSpellMagic'){
+        const foe=s.players[at];
+        return foe.antiMagic?-20:foe.hand.filter(id=>cards[id]?.kind==='spell').length*9-spec.cost*.25-4;
+      }
+      const friendly=allied(s,s.turn,t.owner);
       let utility=0;
       if(art==='offering')utility=200-value(s,t)-(t.level-1)*35;
       if(art==='draw')utility=p.hand.length<5?35:4;

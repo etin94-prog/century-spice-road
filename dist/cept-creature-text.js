@@ -329,6 +329,8 @@ const CepterCreatureText=(()=>{
     if(card.scrollCritical&&!battle[key]?.includes('두루마리'))pieces.push('두루마리 공격이 강타합니다.');
     if(C.edition==='revolt'&&key==='amphibianwarrior')pieces.push('수·풍 영지에서 싸우면 전투 ST +20. 주문으로 기본 HP가 변하지 않습니다.');
     if(C.edition==='revolt'&&key==='apsaras')pieces.push('Lv.3 이상 영지에서 싸우면 일반 공격을 무효화합니다.');
+    if(card.synergy)pieces.push('감응. '+C.elements[card.synergy.element]+' 크리처가 지도에 있으면 전투 ST +'+card.synergy.st+(card.synergy.hp?' · HP +'+card.synergy.hp:'')+'.');
+    if(C.edition==='revolt'&&key==='madharlequin')pieces.push('지도에 배치돼 있으면 내 다른 크리처가 싸울 때 인접한 내 영지 한 곳당 ST·HP +20.');
     if(C.edition==='revolt'&&key==='firedrake')pieces.push('지도에 배치된 화 크리처 한 마리마다 전투 ST +5.');
     if(C.edition==='revolt'&&key==='uriel')pieces.push('저주가 걸린 상대에게 강타합니다.');
     if(C.edition==='revolt'&&key==='dwarvenminer')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');

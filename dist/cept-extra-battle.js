@@ -40,7 +40,7 @@ const CepterExtraBattle=(()=>{
     // Another copy elsewhere can still provide the same non-stacking bonus.
     const sources=s.tiles.filter((v,j)=>v.unit&&j!==b.at&&j!==b.from);
     function boost(n,a,ownOnly=false){
-      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n);
+      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(n!=='madharlequin'||v.unit.enchant!=='paralysis'));
     }
     function transform(a,id,temporary=false){
       if(id==null)return;
@@ -98,7 +98,11 @@ const CepterExtraBattle=(()=>{
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
       if(s.edition==='revolt'){
-        if(a.n==='firedrake')a.st+=5*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
+        const synergy=a.c.synergy;
+        if(synergy&&s.tiles.some((v,j)=>j!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],synergy.element))){
+          a.st+=synergy.st;a.hp+=synergy.hp||0;
+        }
+        if(a.n==='firedrake')a.st+=5*s.tiles.filter((v,j)=>j!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
         if(a.n==='amphibianwarrior'&&[1,3].includes(t.type))a.st+=20;
         if(['magmaarmor','stormarmor'].includes(a.g)){
           const elements=a.g==='magmaarmor'?[0,2]:[1,3];

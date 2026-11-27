@@ -889,7 +889,7 @@ function createCepter(edition="ps2"){
       }
       if(a.n==='larvae'&&owner.book.length-other.book.length>=3){a.st+=20;a.hp+=20;}
       if(a.n==='mudman'||a.n==='coati'){
-        const boost=5*s.tiles.filter(v=>(a.n==='coati'&&firstEdition?cards[v.unit?.id]?.catalog?.race==='rb':cards[v.unit?.id]?.element===2)).length;
+        const boost=5*s.tiles.filter((v,j)=>(!revolt||j!==b.from)&&(a.n==='coati'&&firstEdition?cards[v.unit?.id]?.catalog?.race==='rb':cards[v.unit?.id]?.element===2)).length;
         if(a.n==='mudman')a.hp+=boost;else a.st+=boost;
       }
       if(a.n==='wereboar'&&(begins||!a.defending))a.st+=30;
@@ -944,6 +944,10 @@ function createCepter(edition="ps2"){
         if(a.u.enchant==='hustle'){a.hp+=30;a.st+=30;}
         if(a.u.enchant==='disease'){a.hp-=20;a.st-=20;}
         if(!revolt&&!handheld&&edition!=='begins'&&a.u.enchant==='greed')a.hp-=10;
+        if(revolt&&extra.boost('madharlequin',a,true)){
+          const nearby=board(s).links[b.at].filter(j=>j!==b.from&&s.tiles[j].owner===a.seat).length;
+          a.hp+=nearby*20;a.st+=nearby*20;
+        }
         if(a.element===-1&&extra.boost('borgess',a))a.hp+=20;
         if(a===A&&extra.boost('tetramorph',a))a.hp-=20;
         if(extra.boost('virus',a))a.hp-=10;
@@ -1450,11 +1454,11 @@ function createCepter(edition="ps2"){
       if(edition!=='saga'||!cards[s.tiles[at].unit?.id]?.immediate)return false;
       s.immediateAt=at;s.phase='land';return true;
     }
-    function castSecret(from,at){
+    function castSecret(from,at,player=false){
       fatigue(s.tiles[from].unit);
       const label=fx.applySecret(s,from,at);
       delete s.secretFrom;
-      mapEffect('cast',label,at,{source:from});
+      mapEffect('cast',label,player?s.players[at].pos:at,{source:from});
       s.phase='roll';
     }
     switch(k){
@@ -1462,7 +1466,7 @@ function createCepter(edition="ps2"){
         if(fx.secretTargets(s,x)[0]?.[0]==='secretSelf')castSecret(x,x);
         else{s.secretFrom=x;s.phase='secretTarget';}
         break;
-      case 'secretLand':castSecret(s.secretFrom,x);break;
+      case 'secretLand':case 'secretPlayer':castSecret(s.secretFrom,x,k==='secretPlayer');break;
       case 'secretCancel':delete s.secretFrom;s.phase='spell';break;
       case 'ability':{
         if(fx.territoryTargets(s,x)[0]?.[0]==='abilitySelf'){
@@ -1608,7 +1612,7 @@ function createCepter(edition="ps2"){
           const effect=s.spellEffect;
           s.phase=extra.apply(s,effect,x);
           const damage=prior-(tile.unit?.hp??0),showDamage=extraSpells.landDamage[effect];
-          const label=revivalLabel(unit,tile.unit)??(damage>0?'−'+damage+' HP'+(showDamage&&!tile.unit?' · 격파':''):showDamage?'피해 없음':effect);
+          const label=effect==='magicalleap'?'매지컬 리프':revivalLabel(unit,tile.unit)??(damage>0?'−'+damage+' HP'+(showDamage&&!tile.unit?' · 격파':''):showDamage?'피해 없음':effect);
           mapEffect('cast',label,x);break;
         }
         if(combo.type[s.spellEffect]){
@@ -1941,7 +1945,7 @@ function createCepter(edition="ps2"){
       if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-(revolt?price(p,c,s):c.cost)/35;
       if(['targetLand','comboArea','targetPlayer'].includes(k)&&combo.type[s.spellEffect])return plan.scoreTarget(s.spellEffect,x);
       if(k==='secretArt')return Math.max(...fx.secretTargets(s,x).map(([,at])=>fx.secretValue(s,x,at)));
-      if(k==='secretLand')return fx.secretValue(s,s.secretFrom,x);
+      if(k==='secretLand'||k==='secretPlayer')return fx.secretValue(s,s.secretFrom,x);
       if(k==='secretCancel')return -1000;
       if(k==='totem')return 130+(s.tiles[x].unit.enchant==='soulhunt'?50:0);
       if(k==='ability'){

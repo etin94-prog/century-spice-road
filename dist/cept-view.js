@@ -14,7 +14,7 @@ if(C.edition==='3ds'){
   rules.append(Object.assign(document.createElement('p'),{textContent:'2대2 동맹전에서는 아군 영지의 레벨을 올리거나 크리처를 교체·이동할 수 있습니다. 아군 영지로는 침략할 수 없으며 아군 크리처로 적 영지를 침략할 때는 그 크리처의 주인이 장비를 고릅니다.'}));
 }
 $('editionChoice').value=C.edition;$('editionChoice').onchange=e=>location.assign(location.pathname+'?edition='+e.target.value);
-const labels={secretArt:'비술',secretLand:'대상 영지',secretCancel:'선택 취소',circleCast:'마법진 주문',circleSkip:'주문 없이 계속',buyGem:'속성석 매수',sellGem:'속성석 매도',stealGem:'상대 보유분 매입',leaveGem:'거래 건너뛰기',switchKeep:'방향 유지',switchFlip:'방향 변경',towerAim:'사령탑 사용',towerTo:'목표 영지',towerCancel:'뒤로',wormDiscard:'파괴할 손패',suppressCard:'모두 제거할 주문',sacrifice:'추가 비용으로 버릴 카드',ability:'영지 능력',abilityPlayer:'대상 셉터',abilityLand:'대상 영지',teleTo:'이동할 영지',eraseDraw:'파괴할 북 위치',comboArea:'효과 적용 지역',totem:'토템을 바쳐 마력 획득',plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
+const labels={secretArt:'비술',secretLand:'대상 영지',secretPlayer:'대상 셉터',secretCancel:'선택 취소',circleCast:'마법진 주문',circleSkip:'주문 없이 계속',buyGem:'속성석 매수',sellGem:'속성석 매도',stealGem:'상대 보유분 매입',leaveGem:'거래 건너뛰기',switchKeep:'방향 유지',switchFlip:'방향 변경',towerAim:'사령탑 사용',towerTo:'목표 영지',towerCancel:'뒤로',wormDiscard:'파괴할 손패',suppressCard:'모두 제거할 주문',sacrifice:'추가 비용으로 버릴 카드',ability:'영지 능력',abilityPlayer:'대상 셉터',abilityLand:'대상 영지',teleTo:'이동할 영지',eraseDraw:'파괴할 북 위치',comboArea:'효과 적용 지역',totem:'토템을 바쳐 마력 획득',plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
 const hints={secretTarget:'지도에서 비술을 적용할 영지를 누르세요.',spellCircle:'제시된 주문 중 한 장을 비용 없이 사용할 수 있습니다.',gemStore:'속성석을 거래하거나 이동을 계속하세요.',pathSwitch:'분기 스위치의 방향을 유지하거나 바꾸세요.',towerTarget:'지도에서 빈 영지나 침략할 적 영지를 누르세요.',towerDeploy:'하단 손패에서 사용할 크리처를 고르세요.',bookWorm:'북 웜으로 파괴할 상대 손패를 선택하세요.',squeeze:'파괴할 손패 한 장을 선택하세요. 그 셉터는 150G를 받습니다.',suppression:'대상 손패에서 제거할 주문을 선택하세요.',sacrifice:'추가 비용으로 버릴 카드를 선택하세요.',territoryTarget:'영지 능력의 대상을 선택하세요.',teleMove:'이동할 칸을 선택하세요.',mindseeker:'북 맨 위에서 몇 번째 카드를 파괴할지 선택하세요.',fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 Object.assign(labels,C.spellActions);Object.assign(hints,C.spellHints);
 if(C.edition==='revolt')hints.spell='주문이나 크리처 비술을 쓰거나 주사위를 굴리세요.';
@@ -47,7 +47,7 @@ function seats(){
 }
 const modernBookNames=C.edition==='3ds'?
   {intro:'지속성 영지 확장 북',fire:'설욕·이동 침략 북',stronghold:'수속성 방어·견제 북'}:
-  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='revolt'?{revoltAliciaEntry:'알리시아 · 입단 시험',revoltGenSerious:'겐 · 진심',revoltYumaFellowship:'유마 · 동료',revoltYumaResolve:'유마 · 결의',revoltYumaBonds:'유마 · 유대',revoltSomniaSerenity:'솜니아 · 평온',revoltTenetBelief:'테넷 · 신념',revoltTenetPraise:'테넷 · 찬사',revoltAliciaFreedom:'알리시아 · 자유',revoltTenetPoverty:'테넷 · 빈곤',revoltGoliganServant:'골리건 · 시종',revoltZenethPower:'제네스 · 힘',revoltYumaLove:'유마 · 사랑'}:{}),...(C.edition==='begins'?{beginsArtAssault:'금술 침략 북',beginsTidalGuard:'수·지 수비 북',beginsStarterFireEarth:'카무르 · 화·지 초기 북',beginsStarterWaterAir:'카무르 · 수·풍 초기 북',beginsVeramiSeaWind:'베라미 · 바다에 부는 바람',beginsIsharaFirst:'이샤라 · 선착',beginsGanzBeast:'간츠 · 야수의 힘',beginsGanzInstinct:'간츠 · 야생의 본능',beginsGanzGiantBeasts:'간츠 · 거대 야수의 습격',beginsTindalosFreeWind:'틴달로스 · 자유롭게 부는 바람',beginsNajaranMistral:'나자란 · 미스트랄 비긴즈',beginsPopoloDragon:'포포로 · 강한 드래곤',beginsSteamdrillPierce:'스팀드릴 · 삼중 관통'}:{}),...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
+  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='revolt'?{revoltAliciaEntry:'알리시아 · 입단 시험',revoltGenSerious:'겐 · 진심',revoltYumaFellowship:'유마 · 동료',revoltYumaResolve:'유마 · 결의',revoltYumaBonds:'유마 · 유대',revoltSomniaSerenity:'솜니아 · 평온',revoltTenetBelief:'테넷 · 신념',revoltTenetPraise:'테넷 · 찬사',revoltAliciaFreedom:'알리시아 · 자유',revoltTenetPoverty:'테넷 · 빈곤',revoltGoliganServant:'골리건 · 시종',revoltZenethPower:'제네스 · 힘',revoltYumaLove:'유마 · 사랑',revoltHypnaPetrify:'히프나 · 석화',revoltMoriAnnoying:'모리 · 교란'}:{}),...(C.edition==='begins'?{beginsArtAssault:'금술 침략 북',beginsTidalGuard:'수·지 수비 북',beginsStarterFireEarth:'카무르 · 화·지 초기 북',beginsStarterWaterAir:'카무르 · 수·풍 초기 북',beginsVeramiSeaWind:'베라미 · 바다에 부는 바람',beginsIsharaFirst:'이샤라 · 선착',beginsGanzBeast:'간츠 · 야수의 힘',beginsGanzInstinct:'간츠 · 야생의 본능',beginsGanzGiantBeasts:'간츠 · 거대 야수의 습격',beginsTindalosFreeWind:'틴달로스 · 자유롭게 부는 바람',beginsNajaranMistral:'나자란 · 미스트랄 비긴즈',beginsPopoloDragon:'포포로 · 강한 드래곤',beginsSteamdrillPierce:'스팀드릴 · 삼중 관통'}:{}),...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
     sagaGottliebKill:'고틀리프 · 섬멸',sagaGottliebSlaves:'고틀리프 · 포로',
     sagaBorivalFire:'보리발 · 화염',sagaZenethDragon:'제네스 · 용의 눈',
     sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaRilaraExploit:'리라라 · 강탈',sagaBorivalHellFire:'보리발 · 지옥불',sagaRilaraConspire:'리라라 · 모략',sagaRilaraFierce:'리라라 · 맹공',sagaKoenigStar:'쾨니히 · STAR',sagaTraderMoney:'상인 · MONEY!',sagaGuilderTwins:'길더와 루블 · 쌍둥이',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
@@ -323,7 +323,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'ability':case 'totem':return (x+1)+'번 · '+C.cards[s.tiles[x].unit.id].name;
     case 'eraseDraw':return '위에서 '+(x+1)+'번째'+(C.edition==='saga'&&p.peek?.ids[x]!=null?' · '+C.cards[p.peek.ids[x]].name:'');
     case 'sacrifice':return c.name;
-    case 'abilityPlayer':case 'targetPlayer':return s.players[x].name;
+    case 'secretPlayer':case 'abilityPlayer':case 'targetPlayer':return s.players[x].name;
     case 'wormDiscard':case 'suppressCard':case 'breakCard':return C.cards[s.players[s.spellTarget].hand[x]].name;
     case 'liquidate':case 'buySymbol':case 'sellSymbol':return symbolLabel(x)+' · '+y+'장 · '+s.prices[x]*y+'G';
     case 'direction':if(C.board(s).stage||C.board(s).graph){const exits=C.board(s).links[p.pos];return (1+(x===1?exits[0]:exits.at(-1)))+'번 칸 방향';}return x===1?'시계 방향':'반시계 방향';
@@ -435,13 +435,16 @@ function setMapCamera(root,x,y,zoom){
   root.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')';
   placeMapRoll(root,x,y,zoom);
 }
-function selectingGate(){
-  return s?.phase==='spellTarget'&&s.spellEffect==='remission';
+function selectingSpellMapTarget(){
+  return s?.phase==='spellTarget'&&['remission','magicalleap'].includes(s.spellEffect);
+}
+function selectingSecretPlayer(){
+  return s?.phase==='secretTarget'&&C.secretArt(C.cards[s.tiles[s.secretFrom]?.unit?.id])?.player;
 }
 function selectingTerritoryMove(){
   return s?.territoryMove||s?.phase==='territoryTarget'&&C.combo.key(C.cards[s.tiles[s.abilityFrom]?.unit?.id])==='sleipnir';
 }
-function selectingMapTarget(){return selectingGate()||s?.phase==='secretTarget'||s?.phase==='towerTarget'||selectingTerritoryMove();}
+function selectingMapTarget(){return selectingSpellMapTarget()||s?.phase==='secretTarget'&&!selectingSecretPlayer()||s?.phase==='towerTarget'||selectingTerritoryMove();}
 function focusMapTile(index){
   cameraTile=index;
   const root=$('map'),tile=root.children[index];
@@ -674,7 +677,8 @@ function map(){
         const revival=C.spellRevival(s,t,s.spellEffect);
         center.append(el('span',revival?'예상 · '+revival+'로 부활':'예상 HP '+u.hp+' → '+next+(next===0?' · 격파':'')));
       }
-      center.append(btn((inspect+1)+'번 · '+labels[action[0]]+' 확정',()=>act(action),'primary'));
+      const label=s.phase==='spellTarget'&&s.spellEffect==='magicalleap'?'이동':labels[action[0]];
+      center.append(btn((inspect+1)+'번 · '+label+' 확정',()=>act(action),'primary'));
     }
     return;
   }
@@ -688,7 +692,7 @@ function map(){
   if(s.phase==='pathSwitch')center.lastElementChild.textContent='분기 스위치 · 유지 또는 변경을 선택하세요';
   if(s.phase==='towerTarget')center.lastElementChild.textContent='사령탑 · 목표 영지를 터치하세요';
   if(s.phase==='towerDeploy')center.lastElementChild.textContent='사령탑 · '+(s.towerAt+1)+'번 영지 · 하단 손패에서 선택';
-  if(selectingGate()&&targets.size)center.lastElementChild.textContent='경유할 게이트를 선택하세요';
+  if(selectingSpellMapTarget()&&targets.size)center.lastElementChild.textContent=s.spellEffect==='magicalleap'?'이동할 칸을 선택하세요':'경유할 게이트를 선택하세요';
   center.dataset.rolled=String(!!s.die||s.phase==='over');
 }
 function stopWalk(){
@@ -806,7 +810,7 @@ function render(){
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
   const endSummary=s.endReason==='roundLimit'?'제한 라운드 종료':s.endReason==='suddenDeath'?'서든데스 · 마력 고갈':null;
-  $('hint').textContent=over?(endSummary?endSummary+(C.outcome(s).tie?' · 총마력 동률이라 승자가 없습니다.':' · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
+  $('hint').textContent=over?(endSummary?endSummary+(C.outcome(s).tie?' · 총마력 동률이라 승자가 없습니다.':' · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):selectingSecretPlayer()?'비술을 적용할 적 셉터를 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='magicalleap'?'지도에서 이동할 칸을 고르세요.':hints[s.phase];
   if(local&&s.immediateAt!=null)$('hint').textContent=(s.immediateAt+1)+'번 영지 · 즉시 능력으로 영지 명령을 사용할 수 있습니다.';
   if(local&&s.phase==='spell'&&s.doublecast==='ready')$('hint').textContent='연속 주문 사용 가능 · 주문을 더 쓰거나 주사위를 굴리세요.';
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
@@ -876,7 +880,7 @@ function render(){
   const menuKey=[s.round,s.turn,s.phase,s.logSequence||0,room?.revision||0,optional].join(':');
   if(menuState.game!==s||menuState.key!==menuKey){
     const landTarget=choices.some(([kind])=>kind==='targetLand');
-    const gateOnMap=selectingGate()&&landTarget;
+    const specialOnMap=selectingSpellMapTarget()&&landTarget;
     const beginsOnMap=C.edition==='begins'&&(
       landTarget&&['camouflage','chariot','relief','mutation','removecurse','turntothewall'].includes(s.spellEffect)||
       s.spellEffect==='chariot'&&choices.some(([kind])=>kind==='teleTo')
@@ -885,10 +889,10 @@ function render(){
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
     const secretOnMap=s.phase==='secretTarget'&&choices.some(([kind])=>kind==='secretLand');
     const routeOnMap=choices.some(([kind])=>kind==='route'||kind==='direction');
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!spellOnMap&&!towerOnMap&&!secretOnMap&&!routeOnMap&&!selectingTerritoryMove()};
+    menuState={game:s,key:menuKey,open:!optional&&!specialOnMap&&!spellOnMap&&!towerOnMap&&!secretOnMap&&!routeOnMap&&!selectingTerritoryMove()};
     if(routeOnMap)handPanel.open=false;
     if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
-    if(spellOnMap)handPanel.open=false;
+    if(spellOnMap||specialOnMap)handPanel.open=false;
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;
   }
