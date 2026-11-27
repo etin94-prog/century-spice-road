@@ -338,7 +338,7 @@ function placeHandPanel(){
   }
 }
 const mapViewButtons=[...$('mapViews').querySelectorAll('[data-zoom]')];
-let mapZoom='1.8',cameraTile=0;
+let mapZoom='1.8',cameraTile=0,gateZoom=null;
 try{
   const saved=localStorage.getItem('cept-map-zoom');
   if(mapViewButtons.some(b=>b.dataset.zoom===saved))mapZoom=saved;
@@ -415,17 +415,23 @@ function setMapCamera(root,x,y,zoom){
   root.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')';
   placeMapRoll(root,x,y,zoom);
 }
+function selectingGate(){
+  return s?.phase==='spellTarget'&&s.spellEffect==='remission';
+}
 function focusMapTile(index){
   cameraTile=index;
   const root=$('map'),tile=root.children[index];
   if(!tile?.classList.contains('tile')||!root.clientWidth||!viewport.clientHeight)return;
   const w=root.clientWidth,h=root.clientHeight,viewWidth=viewport.clientWidth,viewHeight=viewport.clientHeight;
   const free=measureMapFree(),freeWidth=free.right-free.left,freeHeight=free.bottom-free.top;
-  const overview=Number(mapZoom)===1;
+  if(!selectingGate())gateZoom=null;
+  const preferred=selectingGate()?(gateZoom??(inspect<0?'1':mapZoom)):mapZoom;
+  const overview=preferred==='1';
   const cover=Math.max(viewWidth/w,viewHeight/h);
   const zoom=overview?Math.min(1,freeWidth/w,freeHeight/h):
-    Math.max(Number(mapZoom),cover*Number(mapZoom)/1.8);
+    Math.max(Number(preferred),cover*Number(preferred)/1.8);
   viewport.classList.toggle('pannable',!overview);
+  for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(b.dataset.zoom===preferred));
   root.style.setProperty('--camera-zoom',zoom);
   // The pawn stands above its tile, so the tile sits a little below the middle of the free area.
   // An open action menu takes the right half on a wide screen and the lower part on a tall one.
@@ -438,7 +444,11 @@ function focusMapTile(index){
 for(const button of mapViewButtons){
   button.setAttribute('aria-pressed',String(button.dataset.zoom===mapZoom));
   button.onclick=()=>{
-    $('mapViews').open=false;mapZoom=button.dataset.zoom;
+    $('mapViews').open=false;
+    if(selectingGate()){
+      gateZoom=button.dataset.zoom;focusMapTile(cameraTile);return;
+    }
+    mapZoom=button.dataset.zoom;
     for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(b===button));
     try{localStorage.setItem('cept-map-zoom',mapZoom);}catch{}
     focusMapTile(cameraTile);
@@ -468,7 +478,7 @@ matchResize.observe(viewport);matchResize.observe(matchHud);
 let drag=null,ignoreMapClick=false;
 viewport.addEventListener('pointerdown',e=>{
   ignoreMapClick=false;
-  if(!e.isPrimary||e.button!==0||e.target.closest('#mapViews,#mapRoll,#handPanel')||Number(mapZoom)===1||s?.battle||activeWalk||mapPlayback)return;
+  if(!e.isPrimary||e.button!==0||e.target.closest('#mapViews,#mapRoll,#handPanel')||!viewport.classList.contains('pannable')||s?.battle||activeWalk||mapPlayback)return;
   const matrix=new DOMMatrixReadOnly(getComputedStyle($('map')).transform);
   drag={id:e.pointerId,x:e.clientX,y:e.clientY,tx:matrix.e,ty:matrix.f,zoom:matrix.a,started:false};
 });
@@ -594,6 +604,7 @@ function map(){
     return;
   }
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.phase==='over'?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.phase==='over'?winLabel():s.die?'주사위 '+s.die:m.name),el('span',(m.gates?'게이트 ':'요새 ')+p.flags.length+'/'+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  if(selectingGate()&&targets.size)center.lastElementChild.textContent='경유할 게이트를 선택하세요';
   center.dataset.rolled=String(!!s.die||s.phase==='over');
 }
 function stopWalk(){
@@ -771,7 +782,8 @@ function render(){
   actionMenu.classList.toggle('action-menu',anchored);
   const menuKey=[s.round,s.turn,s.phase,s.logSequence||0,room?.revision||0,optional].join(':');
   if(menuState.game!==s||menuState.key!==menuKey){
-    menuState={game:s,key:menuKey,open:!optional};
+    const gateOnMap=selectingGate()&&choices.some(([kind])=>kind==='targetLand');
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap};
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;
   }

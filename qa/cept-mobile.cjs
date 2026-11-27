@@ -241,5 +241,30 @@ const {chromium}=require('playwright');
       console.log(edition,width+'x'+height,'hand / roll bottom',Math.round(metrics.hand),Math.round(metrics.roll));
       await page.close();
     }
+    const gateUrl=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));
+    gateUrl.searchParams.set('edition','revolt');
+    for(const [width,height] of [[320,568],[375,812],[844,390]]){
+      const page=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await page.route('https://**',r=>r.abort());
+      await page.goto(gateUrl.href);
+      await page.selectOption('#mapChoice','revolt-1');
+      await page.locator('#config .match-start .primary').tap();
+      await page.evaluate(()=>{
+        const player=s.players[0];
+        player.hand=[C.cards.findIndex(c=>c.effect==='remission')];
+        player.cash=500;
+        render();
+      });
+      const cast=page.locator('#buttons [data-action=cast]');
+      if(!await cast.isVisible())await page.locator('#matchActionsToggle').tap();
+      await cast.tap();
+      await page.getByRole('button',{name:/^6번 북쪽 게이트/}).tap();
+      await page.locator('#center button.primary').tap();
+      assert.deepEqual(await page.evaluate(()=>s.players[0].flags),[5]);
+      assert.equal(await page.locator('#mapViewport').evaluate(el=>el.classList.contains('pannable')),true);
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      console.log('revolt',width+'x'+height,'gate tap and camera restoration OK');
+      await page.close();
+    }
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
