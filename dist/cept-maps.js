@@ -34,6 +34,22 @@ const CepterMaps=(()=>{
     [...loop(16),...loop(16).map(([a,b])=>[a+16,b+16])],crosswindTypes.map((_,at)=>Number(at>=16)),250);
   const sagaPractice={'saga-original-crosswind':{...crosswind,areaCount:2,section:'arena',graph:true,startCash:250,fortBonus:100,
     castles:[0],checkpoints:crosswind.forts,transit:{5:24,7:18,27:2,29:8}}};
+  const sanctuaryLoop=[[1,1],[1,2],[1,3],[1,4],[2,4],[3,4],[4,4],[4,3],[4,2],[4,1],[3,1],[2,1]];
+  const sanctuaryTypes=[
+    '성',0,'신전','북쪽 요새',1,'성소',2,3,'무속성',0,2,1,
+    1,2,0,'성소','동쪽 요새',3,'무속성',1,2,'신전',0,3,
+    0,3,2,1,'성소',3,2,0,'남쪽 요새',1,'신전','무속성',
+    '다리','다리','다리','다리','다리','다리'
+  ];
+  const sanctuary=map('저녁별 고원 · 창작 지도',[
+    ...sanctuaryLoop,...sanctuaryLoop.map(([row,col])=>[row,col+6]),...sanctuaryLoop.map(([row,col])=>[row+6,col+3]),
+    [2,5],[2,6],[5,4],[6,4],[5,7],[6,7]
+  ],sanctuaryTypes,[3,16,32],90,7,[
+    ...[0,12,24].flatMap(offset=>loop(12).map(([a,b])=>[a+offset,b+offset])),
+    [4,36],[36,37],[37,23],[6,38],[38,39],[39,24],[21,40],[40,41],[41,27]
+  ],[...Array(36).keys()].map(i=>Math.floor(i/12)).concat(0,1,0,2,1,2),260);
+  sagaPractice['saga-original-eveningstar']={...sanctuary,areaCount:3,section:'arena',graph:true,startCash:250,
+    fortBonus:100,defaultGoal:8000,castles:[0],checkpoints:sanctuary.forts,shrineKinds:{5:'light',15:'dark',28:'light'}};
   const trapway=map('메아리 수로 · 창작 지도',[...ring,[2,3],[3,3],[4,3]],
     ['성',0,1,2,'동쪽 게이트',1,0,3,2,'마력 트랩',0,3,'서쪽 게이트',2,3,1,'마력 트랩',2,1],
     [4,12],100,12,[...loop(16),[2,16],[16,17],[17,18],[18,10]],Array(19).fill(0));

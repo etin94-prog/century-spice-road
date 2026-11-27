@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,39],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,39],['begins',400,15]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -1810,6 +1810,20 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(actual,expected);
     assert.deepEqual(counts,{creature:28,item:9,spell:13});
   }
+  const evening='saga-original-eveningstar',threeArea=C.start(4,4,8000,evening);
+  const layout=C.board(threeArea);
+  assert.deepEqual([layout.types.length,layout.areaCount,layout.forts.length,threeArea.prices.length],[42,3,3,12]);
+  assert.deepEqual(layout.shrineKinds,{5:'light',15:'dark',28:'light'});
+  assert.equal(new Set(layout.position.map(pair=>pair.join(','))).size,42);
+  for(const [i,exits] of layout.links.entries())for(const j of exits){
+    assert.equal(Math.abs(layout.position[i][0]-layout.position[j][0])+Math.abs(layout.position[i][1]-layout.position[j][1]),1);
+  }
+  const sameElement=[1,14,24];
+  for(const at of sameElement)Object.assign(threeArea.tiles[at],{owner:0,unit:{id:id('minotaur'),hp:40}});
+  for(const at of sameElement)assert.equal(C.chain(threeArea,threeArea.tiles[at]),1);
+  const restoredMap=structuredClone(threeArea);
+  assert.equal(C.board(restoredMap).areaCount,3);
+  assert.deepEqual(sameElement.map(at=>restoredMap.tiles[at].area),[0,1,2]);
   const reportedSagaBooks={
     sagaRilaraPlunder:'bandit:4 fighter:2 goblin:4 thief:4 gascloud:2 redogre:2 blueogre:2 giantamoeba:2 dwarf:2 greenogre:2 harpy:2 yellowogre:2 chainmail:2 leatherarmor:2 longsword:3 mace:2 ringofthesuccubus:2 drainmagic:1 holyword1:2 holyword6:2 manna:2 slow:2',
     sagaRilaraRobbery:'fighter:4 giantrat:4 goblin:4 phlogiston:2 redogre:4 aqualing:2 blueogre:4 greenogre:4 squirrine:2 blitzraven:2 yellowogre:4 leatherarmor:2 mace:2 sling:2 haste:2 magicbolt:2 manna:2 slow:2',

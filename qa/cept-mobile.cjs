@@ -442,6 +442,8 @@ const {chromium}=require('playwright');
     await sagaPage.selectOption('#bookChoice','sagaImmediate');
     assert.match(await sagaPage.locator('#deckMatchNames').innerText(),/즉시·연속 주문 북/);
     assert.equal(await sagaPage.locator('#aiChoice option[value=sagaAffinity]').count(),1);
+    await sagaPage.selectOption('#mapChoice','saga-original-eveningstar');
+    assert.match(await sagaPage.locator('#stagePreview figcaption').innerText(),/42칸 · 3지역 · 요새 3곳/);
     await sagaPage.selectOption('#mapChoice','saga-original-crosswind');
     assert.match(await sagaPage.locator('#stagePreview figcaption').innerText(),/32칸 · 2지역 · 요새 3곳/);
     await sagaPage.locator('#config .match-start .primary').tap();
