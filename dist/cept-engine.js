@@ -167,6 +167,7 @@ function createCepter(edition="ps2"){
     return s.turn;
   }
   const levelCost=(t,level)=>(t.base||80)*2**(level-1)-worth(t);
+  const elementCost=t=>edition==='saga'?t.level*100+(typeof t.type==='number'?200:0):300;
   const worth=t=>(t.base||80)*2**(t.level-1);
   const territoryType=type=>typeof type==='number'||type==='복합'||type==='무속성';
   const landBonus=(unit,t)=>combo.matchesTerrain(unit,t.type)?10*t.level:0;
@@ -327,7 +328,9 @@ function createCepter(edition="ps2"){
           p.flags.push(checkpoint);const money=m.fortBonus||50;p.cash+=money;note(s,p.name+' · '+t.type+' +'+money+'G');
         }
         if(t.type==='성'&&p.flags.length===(m.checkpoints||m.forts).length){
-          const cashBeforeLap=p.cash;p.lap++;p.flags=[];p.cash+=m.bonus+20*(p.lap-1)+20*s.tiles.filter(v=>v.owner===s.turn).length;
+          const cashBeforeLap=p.cash;p.lap++;p.flags=[];
+          const lapIncrement=edition==='saga'?m.bonus/10:20;
+          p.cash+=m.bonus+Math.floor(lapIncrement*(p.lap-1))+20*s.tiles.filter(v=>v.owner===s.turn).length;
           const bonus=(p.symbols||[]).reduce((sum,n,k)=>sum+(n&&s.players.every(q=>q===p||q.symbols[k]<n)?n*s.prices[k]:0),0);
           p.cash+=Math.floor(bonus/10);if(p.status==='triumph'){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);extraSpells.clearCepter(p);}
           for(const v of s.tiles){
@@ -387,7 +390,8 @@ function createCepter(edition="ps2"){
       if(p.symbols.some(Boolean)||s.tiles.some(t=>t.owner===seat)){
         s.debtor=seat;s.debtResume=resume;s.phase='sell';return true;
       }
-      p.cash=board(s).startCash??200;p.pos=board(s).castles?.[0]??0;p.flags=[];p.dir=0;p.previous=null;note(s,p.name+' · 마력 고갈, 성에서 재출발');
+      const map=board(s);
+      p.cash=edition==='saga'?Math.floor(map.bonus*1.5):(map.startCash??200);p.pos=map.castles?.[0]??0;p.flags=[];p.dir=0;p.previous=null;note(s,p.name+' · 마력 고갈, 성에서 재출발');
     }
     return false;
   }
@@ -408,7 +412,8 @@ function createCepter(edition="ps2"){
   function territory(s){
     const p=s.players[s.turn];
     if(revolt)return s.tiles.flatMap((t,n)=>t.owner===s.turn&&t.unit&&!t.unit.fatigued?[n]:[]);
-    if(p.status==='enlightenment'||s.tiles[p.pos].type==='성'||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>v.owner===s.turn?[n]:[]);
+    const type=s.tiles[p.pos].type;
+    if(p.status==='enlightenment'||type==='성'||edition==='saga'&&type==='신전'||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>v.owner===s.turn?[n]:[]);
     return [...new Set([...s.visited,p.pos])].filter(n=>s.tiles[n].owner===s.turn);
   }
   function choices(s){
@@ -464,7 +469,7 @@ function createCepter(edition="ps2"){
             for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
               if(v.unit.enchant!=='thornfetter'&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&s.tiles[dest].owner!==i)options.push(['transfer',n,dest]);
             }
-            if(p.cash>=300)elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
+            if(p.cash>=elementCost(v))elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
             p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!sacrificeRequired(s,cards[id])||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id],s)<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
           }
           if(t.owner<0||allied(s,t.owner,i))options.push(['pass']);
@@ -932,7 +937,7 @@ function createCepter(edition="ps2"){
         else{mapEffect('invade','영지 공격',y,{source:x});s.battle={at:y,inv:from.unit.id,invHP:from.unit.hp,from:x,atkItem:null,defItem:null};s.phase='attack';}
         break;
       }
-      case 'element':mapEffect('cast',elements[y]+' 속성',x);p.cash-=300;s.tiles[x].type=y;fatigue(s.tiles[x].unit);afterTerritory(s);break;
+      case 'element':mapEffect('cast',elements[y]+' 속성',x);p.cash-=elementCost(s.tiles[x]);s.tiles[x].type=y;fatigue(s.tiles[x].unit);afterTerritory(s);break;
       case 'pay':payToll(s);break;
       case 'invade':mapEffect('invade','영지 침략',p.pos);s.battle={at:p.pos,inv:paid(s,p,x),atkItem:null,defItem:null,spellMove:!!s.spellArrival};s.phase='attack';break;
       case 'bare':case 'equip':{
@@ -988,7 +993,7 @@ function createCepter(edition="ps2"){
     }
     function development(k,x,y,c){
       const t=k==='summon'?s.tiles[p.pos]:s.tiles[x];
-      const next={...t,owner:seat},cost=k==='summon'?price(p,c,s):k==='element'?300:levelCost(t,y);
+      const next={...t,owner:seat},cost=k==='summon'?price(p,c,s):k==='element'?elementCost(t):levelCost(t,y);
       if(k==='summon')next.unit={id:p.hand[x],hp:c.hp};
       if(k==='level')next.level=y;
       if(k==='element')next.type=y;
@@ -1208,7 +1213,7 @@ function createCepter(edition="ps2"){
     for(const id of presets.fire)if(book.length<50&&book.filter(v=>v===id).length<4)book.push(id);
     return book;
   }
-  return {edition,price,spellHP,isComputer,owedToll,spellDescriptions:edition==='ps2'?extraSpells.descriptions:undefined,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,price,spellHP,isComputer,owedToll,spellDescriptions:edition==='ps2'?extraSpells.descriptions:undefined,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

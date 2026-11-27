@@ -401,6 +401,39 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(warlock.players[0].antiMagic,undefined);
   assert.equal(warlock.players[0].cash,540);
   console.log('Saga dual elements, terrain wards, Prismatic Wand, battle traits and territory abilities OK');
+
+  const economy=territory();
+  unit(economy,1,'goblin',0,2,4);
+  unit(economy,2,'goblin',0,'복합',4);
+  economy.players[0].cash=599;
+  assert.equal(C.elementCost(economy.tiles[1]),600);
+  assert.equal(C.elementCost(economy.tiles[2]),400);
+  assert.ok(!C.choices(economy).some(([k,at])=>k==='element'&&at===1));
+  assert.ok(C.play(economy,['element',2,2]));
+  assert.equal(economy.players[0].cash,199);
+  assert.equal(C.chain(economy,economy.tiles[2]),2);
+  assert.equal(C.toll(economy,economy.tiles[2]),Math.floor(C.value(economy,economy.tiles[2])*.6));
+
+  const temple=territory();
+  temple.players[0].pos=3;
+  temple.tiles[3].type='신전';
+  unit(temple,1,'goblin',0,2);
+  assert.ok(C.choices(temple).some(([k,at])=>k==='level'&&at===1));
+
+  const lap=newMatch(),map=C.board(lap);
+  lap.players[0].lap=1;lap.players[0].flags=map.checkpoints.slice();
+  lap.players[0].pos=map.links[0][0];lap.players[0].previous=null;
+  const startCash=lap.players[0].cash;
+  lap.phase='fork';lap.remaining=1;
+  assert.ok(C.play(lap,['route',0]));
+  assert.equal(lap.players[0].cash-startCash,275);
+  const debt=territory();
+  debt.players[0].pos=1;debt.players[0].cash=0;
+  unit(debt,1,'goblin',1,2);
+  assert.ok(C.play(debt,['pay']));
+  assert.equal(debt.players[0].pos,0);
+  assert.equal(debt.players[0].cash,375);
+  console.log('Saga level-dependent terrain costs, temple commands, lap increment and bankruptcy recovery OK');
 }
 
 {

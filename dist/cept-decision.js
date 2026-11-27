@@ -55,7 +55,7 @@ function decisionText(action,p){
     const at=kind==='summon'?p.pos:x,t=s.tiles[at],next={...t};
     let cost;
     if(kind==='level'){next.level=y;cost=C.levelCost(t,y);}
-    else if(kind==='element'){next.type=y;cost=300;}
+    else if(kind==='element'){next.type=y;cost=C.elementCost(t);}
     else{
       const id=p.hand[kind==='summon'?x:y];
       next.unit={id,hp:C.cards[id].hp};next.owner=s.turn;cost=C.price(p,C.cards[id],s);

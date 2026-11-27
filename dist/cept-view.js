@@ -327,7 +327,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'level':return (x+1)+'번 → Lv.'+y+' · '+C.levelCost(s.tiles[x],y)+'G';
     case 'exchange':return (x+1)+'번 · '+C.cards[p.hand[y]].name;
     case 'transfer':return (x+1)+'번 → '+(y+1)+'번';
-    case 'element':return (x+1)+'번 → '+C.elements[y]+' · 300G';
+    case 'element':return (x+1)+'번 → '+C.elements[y]+' · '+C.elementCost(s.tiles[x])+'G';
     case 'sell':return (x+1)+'번 · '+C.value(s,s.tiles[x])+'G';
     default:return labels[k];
   }
