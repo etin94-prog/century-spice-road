@@ -186,14 +186,15 @@ setInterval(tickInputClock,250);
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){
   if(C.presets.stronghold){
-    // Begins recommendations follow 3,696 four-seat trials across six maps, including teams and fixed-level opponents.
-    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['beginsStarterFireEarth','beginsVeramiSeaWind','beginsArtAssault']:
+    // Begins defaults follow two sets of 4,608 seeded four-seat matches across six maps.
+    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['beginsStarterFireEarth','beginsGanzBeast','beginsGanzGiantBeasts']:
       C.edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaBonds']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
       ['intro','sagaImmediate','sagaAffinity']:['intro','fire','stronghold'];
-    const preferred=order[Number($('tierChoice').value)];
+    const level=Number($('tierChoice').value),preferred=order[level];
     const key=C.presets[preferred]?preferred:'intro';
+    const playerKey=C.edition==='begins'?(['beginsStarterWaterAir','beginsIsharaFirst','intro'][level]||'intro'):'intro';
     return {name:modernBookNames[key],deck:C.presets[key],practice:true,
-      player:{name:modernBookNames.intro,deck:C.presets.intro,practice:true}};
+      player:{name:modernBookNames[playerKey],deck:C.presets[playerKey],practice:true}};
   }
   if(C.edition!=='ps2'){
     const player={name:'화·지 기반 북',deck:C.presets.fire,practice:true};

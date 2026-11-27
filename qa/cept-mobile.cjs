@@ -302,6 +302,34 @@ const {chromium}=require('playwright');
       console.log('revolt',width+'x'+height,'gate tap and camera restoration OK');
       await page.close();
     }
+    for(const [edition,count,width,height,mapId,archivePath] of [
+      ['saga',43,844,390,'saga-1','story/colosseum-3'],
+      ['revolt',109,320,568,'revolt-1','story/metro-bridge'],
+      ['begins',25,320,568,'begins-4','story/academy-yard']
+    ]){
+      const page=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await page.route('https://**',r=>r.abort());
+      const url=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));
+      url.searchParams.set('edition',edition);
+      await page.goto(url.href);
+      await page.getByText('판본 자료',{exact:true}).tap();
+      await page.getByText('원작 지도 자료 · '+count+'개',{exact:true}).tap();
+      const pick=page.getByLabel('원작 지도 자료'),select=page.getByRole('button',{name:'대전 지도로 선택'});
+      assert.equal(await pick.locator('option').count(),count);
+      const [archive,playable]=await page.evaluate(({mapId,archivePath})=>{
+        const rows=CepterModernMapArchive[C.edition],prefix='https://culdcept.club/maps/'+C.edition+'/';
+        return [rows.findIndex(([path])=>path===archivePath),rows.findIndex(([path])=>prefix+path===C.maps[mapId].source)];
+      },{mapId,archivePath});
+      await pick.selectOption(String(archive));
+      assert.equal(await select.count(),0);
+      assert.ok((await page.getByRole('link',{name:'지도 원문'}).getAttribute('href')).endsWith(archivePath));
+      await pick.selectOption(String(playable));
+      await select.tap();
+      assert.equal(await page.locator('#mapChoice').inputValue(),mapId);
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      console.log(edition,width+'x'+height,count+' original map entries and reachable match selection OK');
+      await page.close();
+    }
     const beginsUrl=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));
     beginsUrl.searchParams.set('edition','begins');
     for(const [width,height] of [[320,568],[844,390]]){

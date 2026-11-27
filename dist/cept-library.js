@@ -32,12 +32,44 @@ else{
         m.forts?'요새 '+m.forts+' · '+m.fortBonus+'G':null].filter(Boolean).join(' · ');
     };
     pick.onchange=show;show();archive.append(pick,values);references.append(list,archive);
-  }else if(modernEdition)list.append(sourceLink('https://culdceptcentral.com/culdcept-'+C.edition,'판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+C.edition+'/table','지도 목록'));
-  else list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
-  if(modernEdition);
-  else if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
-  else list.append(' · ',sourceLink('https://culdceptcentral.com/culdcept-ps2dc/culdcept-ps2dc-guides/706-cps2-guides-dcfaq','DC판 공략'));
-  if(C.edition!=='3ds')references.append(list);
+  }else if(modernEdition){
+    const source='https://culdcept.club/maps/'+C.edition+'/';
+    list.append(sourceLink('https://culdceptcentral.com/culdcept-'+C.edition,'판본별 카드 목록'),' · ',sourceLink(source+'table?limit=all','지도 목록'));
+    const entries=CepterModernMapArchive[C.edition],sections={story:'스토리',arena:'대전',download:'다운로드',memory:'추가 지도',tutorial:'튜토리얼'};
+    const playable=new Map(Object.entries(C.maps).filter(([,m])=>m.source).map(([id,m])=>[m.source,id]));
+    const archive=el('details');archive.append(el('summary','원작 지도 자료 · '+entries.length+'개'));
+    const pick=el('select');pick.setAttribute('aria-label','원작 지도 자료');
+    for(const [section,label] of Object.entries(sections)){
+      const group=el('optgroup');group.label=label;
+      entries.forEach(([path,name],index)=>{
+        if(path.split('/')[0]===section)group.append(new Option(name,index));
+      });
+      if(group.children.length)pick.append(group);
+    }
+    const values=el('p');values.setAttribute('aria-live','polite');
+    const selectMap=btn('대전 지도로 선택',()=>{
+      const [path]=entries[+pick.value];
+      const id=playable.get(source+path);
+      if(!id)return;
+      stageSelect.value=id;
+      stageSelect.dispatchEvent(new Event('change',{bubbles:true}));
+      stageSelect.focus();
+    });
+    const show=()=>{
+      const [path,,lands,elements,facilities]=entries[+pick.value];
+      const supported=playable.has(source+path);
+      values.replaceChildren([
+        supported?'대전 가능':'자료 열람',lands+'개 영지',elements,facilities||'등록 시설 없음'
+      ].filter(Boolean).join(' · '),' · ',sourceLink(source+path,'지도 원문'));
+      selectMap.hidden=!supported;
+    };
+    pick.onchange=show;show();archive.append(pick,values,selectMap);references.append(list,archive);
+  }else{
+    list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
+    if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
+    else list.append(' · ',sourceLink('https://culdceptcentral.com/culdcept-ps2dc/culdcept-ps2dc-guides/706-cps2-guides-dcfaq','DC판 공략'));
+    references.append(list);
+  }
   $('config').before(references);
   $('alliance').options[0].textContent='개인전';
 }

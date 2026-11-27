@@ -12,8 +12,9 @@ for(const select of [$('bookChoice'),$('aiChoice')]){
   practiceBooks.forEach((b,i)=>{if(b.deck)list.append(new Option(b.name,'combo-'+i));});select.insertBefore(list,select.querySelector('[value="custom"]'));
 }
 if(C.edition!=='ps2'){
-  $('bookChoice').querySelector('[value="recommend"]').remove();
-  const player=$('bookChoice'),ai=$('aiChoice');
+  const player=$('bookChoice'),ai=$('aiChoice'),recommended=player.querySelector('[value="recommend"]');
+  if(C.edition==='begins')recommended.textContent='난이도별 추천 북';
+  else recommended.remove();
   if(modernSeries){
     for(const [key,name] of Object.entries(modernBookNames)){
       if(!C.presets[key])continue;
@@ -22,7 +23,7 @@ if(C.edition!=='ps2'){
       else player.insertBefore(new Option(name,key),player.lastElementChild);
       ai.add(new Option(name,key));
     }
-    player.value='intro';
+    player.value=C.edition==='begins'?'recommend':'intro';
   }else{
     player.querySelector('[value="fire"]').textContent='화·지 기반 북';
     player.querySelector('[value="intro"]').textContent='수·풍 기반 북';

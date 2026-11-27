@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,41],['begins',400,17]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,41],['begins',400,18]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -3599,6 +3599,23 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.choices(alliedBoard).some(([kind])=>kind==='invade'));
   console.log('Begins one 8-sided die, lap magic, fort bonus, recovery, chains, tolls, symbol limits, alliance movement and Morph passed');
 
+  const trade=C.start(4,4,0,'begins-original-moontrade');
+  const tradeBoard=C.board(trade);
+  assert.equal(trade.target,8000);
+  assert.equal(trade.tiles.length,36);
+  assert.deepEqual(tradeBoard.checkpoints,[8,24]);
+  assert.deepEqual(Object.keys(tradeBoard.cardShops),['2','30']);
+  assert.equal(trade.tiles.filter(t=>t.type==='성소').length,2);
+  assert.ok(tradeBoard.links[5].includes(32)&&tradeBoard.links[29].includes(35));
+  for(const at of [2,30]){
+    const [from]=tradeBoard.links[at];
+    Object.assign(trade,{phase:'fork',remaining:1,turn:0});
+    Object.assign(trade.players[0],{pos:from,previous:null});
+    assert.ok(C.play(trade,['route',at]));
+    assert.equal(trade.phase,'shop');
+    assert.equal(C.choices(trade).filter(([kind])=>kind==='buyCard').length,4);
+    assert.ok(C.play(trade,['leaveShop']));
+  }
   const ford=C.start(4,4,0,'begins-original-ford');
   assert.equal(C.board(ford).name,'돌등 여울 · 창작 지도');
   assert.equal(ford.tiles.length,25);

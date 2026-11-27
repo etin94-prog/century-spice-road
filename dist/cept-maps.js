@@ -100,6 +100,19 @@ const CepterMaps=(()=>{
   beginsPractice['begins-original-ford-morph']={...beginsPractice['begins-original-ford'],
     name:'돌등 여울 · 모프 · 창작 지도',
     types:ford.types.map((type,at)=>[2,6,8,14,18,22,24].includes(at)?'모프':type)};
+  const tradeRoute=map('달빛 교역로 · 창작 지도',[
+    ...ring,...ring.map(([row,col])=>[row,col+7]),[2,6],[2,7],[4,6],[4,7]
+  ],[
+    '성',0,'카드 상점',2,3,1,0,2,'동쪽 요새',3,0,1,'신전',2,3,1,
+    0,1,2,3,1,2,0,3,'서쪽 요새',2,'점술관',3,0,'신전','카드 상점',1,
+    '성소',1,2,'성소'
+  ],[8,24],90,8,[
+    ...loop(16),...loop(16).map(([a,b])=>[a+16,b+16]),
+    [5,32],[32,33],[33,31],[7,34],[34,35],[35,29]
+  ],Array(36).fill(0));
+  beginsPractice['begins-original-moontrade']={...tradeRoute,areaCount:1,section:'arena',graph:true,startCash:250,
+    fortBonus:200,defaultGoal:8000,castles:[0],checkpoints:tradeRoute.forts,
+    cardShops:{2:['spear','chainmail','manna','holyword6'],30:['leatherarmor','skeleton','fly','windofhope']}};
   const handheldBend=map('솔바람 굽이 · 창작 지도',[...ring,[2,3],[3,3],[3,4],[4,4]],
     ['성',0,1,0,3,1,2,2,1,3,1,0,'남쪽 요새',2,3,0,1,2,3,0],
     [12],100,6,[...loop(16),[2,16],[16,17],[17,18],[18,19],[19,7]],Array(20).fill(0),200);
