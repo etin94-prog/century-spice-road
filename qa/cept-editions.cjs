@@ -50,7 +50,7 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,36],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,37],['begins',400,15]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -866,4 +866,71 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const choice=C.ai(ai);
   assert.equal(choice[0],'towerTo');assert.equal(ai.tiles[choice[1]].type,0);
   console.log('Revolt Command Tower stop/pass, allied exclusions, save/cancel, fatigue, capture, no toll and AI selection OK');
+}
+
+{
+  const C=ps2.createEdition('revolt'),mapId='revolt-original-switchyard';
+  const spell=C.cards.findIndex(c=>c.effect==='remoteswitch'&&!c.catalogOnly);
+  const goblin=C.cards.findIndex(c=>!c.catalogOnly&&C.combo.key(c)==='goblin');
+  assert.ok(spell>=0);
+  function enter(steps,round=1){
+    const game=C.start(4,4,5000,mapId);
+    Object.assign(game,{phase:'fork',round,die:steps,rollSum:steps,remaining:steps});
+    Object.assign(game.players[0],{pos:0,previous:15,dir:1,cash:600,hand:[spell]});
+    return game;
+  }
+  const through=enter(2);
+  assert.equal(C.routePreview(through,['route',1]).at,2);
+  assert.equal(through.switchRound,undefined);
+  assert.ok(C.play(through,['route',1]));
+  assert.equal(through.players[0].pos,2);
+  assert.equal(through.switchRound,undefined);
+
+  const s=enter(1,2);
+  C.configureMatch(s,{recordReplay:true});
+  assert.deepEqual([C.pathSwitch(s,1,0).to,C.pathSwitch(s,7,6).to],[2,8]);
+  const preview=C.routePreview(s,['route',1]);
+  assert.deepEqual([preview.phase,preview.switchTo],['pathSwitch',2]);
+  assert.ok(C.play(s,['route',1]));
+  assert.equal(s.phase,'pathSwitch');assert.equal(s.switchRound,6);
+  assert.ok(C.play(s,['switchFlip']));
+  assert.equal(s.phase,'land');
+  assert.deepEqual([C.pathSwitch(s,1,0).to,C.pathSwitch(s,7,6).to],[16,20]);
+  assert.equal(s.replay.steps.at(-1).switchSide,true);
+  assert.equal(s.replay.steps.at(-1).switchRound,6);
+  assert.ok(!C.play(s,['switchFlip']));
+
+  const restored=JSON.parse(JSON.stringify(s));
+  restored.phase='roll';restored.players[0].word=1;
+  assert.ok(C.play(restored,['roll']));
+  assert.deepEqual(restored.lastMove.path,[1,16]);
+  const comingBack=enter(2);
+  Object.assign(comingBack.players[0],{pos:16,previous:17});
+  assert.equal(C.routePreview(comingBack,['route',1]).at,0);
+  comingBack.switchSide=true;
+  assert.equal(C.routePreview(comingBack,['route',1]).at,2);
+
+  const automatic=enter(1,5);
+  Object.assign(automatic,{phase:'land',turn:3,switchRound:6,switchSide:true});
+  automatic.players[3].hand=[];
+  assert.ok(C.play(automatic,['pass']));
+  assert.deepEqual([automatic.round,automatic.switchSide,automatic.switchRound],[6,false,10]);
+  const keep=enter(1,3);
+  assert.ok(C.play(keep,['route',1]));
+  assert.ok(C.play(keep,['switchKeep']));
+  assert.deepEqual([keep.switchRound,C.pathSwitch(keep,1,0).to],[7,2]);
+
+  const remote=enter(1);
+  remote.phase='spell';remote.players[0].book=[goblin];
+  assert.ok(C.play(remote,['cast',0]));
+  assert.equal(remote.phase,'roll');
+  assert.deepEqual([C.pathSwitch(remote,1,0).to,C.pathSwitch(remote,7,6).to],[16,20]);
+  assert.ok(remote.players[0].book.includes(spell));
+  assert.equal(remote.players[0].cash,600-30);
+  const noSwitch=C.start(2,2,5000,'revolt-original-trapway');
+  Object.assign(noSwitch.players[0],{book:[goblin],hand:[spell],cash:600});
+  assert.ok(C.play(noSwitch,['cast',0]));
+  assert.deepEqual(noSwitch.players[0].hand,[goblin]);
+  assert.deepEqual(noSwitch.players[0].book,[spell]);
+  console.log('Revolt Path Switch forced cross, approach directions, stop choice, synchronized timer, spell recycle and replay OK');
 }

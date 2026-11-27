@@ -257,6 +257,7 @@ function createCepter(edition="ps2"){
   function nextTurn(s){
     s.turn=(s.turn+1)%s.players.length;
     if(s.turn===0){s.round++;for(const t of s.tiles)if(t.unit?.expires<=s.round)combo.clear(t.unit);for(const q of s.players)if(q.statusUntil<=s.round&&q.status!=='waste')delete q.status;if(s.shineUntil<=s.round){s.prices=s.prices.map(v=>Math.max(1,Math.round(v/1.5)));delete s.shineUntil;}}
+    if(s.turn===0&&board(s).pathSwitches&&s.round>=(s.switchRound??5))flipPaths(s,'자동 전환');
     const p=s.players[s.turn];
     if(revolt)p.cash+=roundGain(s);
     extraSpells?.startTurn(s,cards);
@@ -272,8 +273,28 @@ function createCepter(edition="ps2"){
   function paid(s,p,j){
     const id=p.hand.splice(j,1)[0];p.cash-=price(p,cards[id],s);return id;
   }
+  function pathSwitch(s,at,entry,flip=false){
+    const paths=board(s).pathSwitches?.[at];
+    if(!paths)return null;
+    const start=Math.max(0,paths.indexOf(entry));
+    const step=Boolean(s.switchSide)!==flip?2:1;
+    return {to:paths[(start+step)%paths.length],rounds:Math.max(0,(s.switchRound??5)-s.round)};
+  }
+  function flipPaths(s,reason){
+    s.switchSide=!s.switchSide;
+    s.switchRound=s.round+4;
+    s.shrineNotice='분기 스위치 · '+reason;
+    note(s,s.shrineNotice);
+  }
+  function movementExits(s,at,entry){
+    const forced=pathSwitch(s,at,entry);
+    if(forced)return [forced.to];
+    const links=board(s).links[at];
+    return links.length===1?links:links.filter(n=>n!==entry);
+  }
   function onward(s){
-    const p=s.players[s.turn],links=board(s).links[p.pos];return links.length===1?links:links.filter(n=>n!==p.previous);
+    const p=s.players[s.turn];
+    return movementExits(s,p.pos,p.previous);
   }
   function readyCreatures(s,heal=0){
     for(const t of s.tiles){
@@ -303,6 +324,11 @@ function createCepter(edition="ps2"){
   function arrived(s,fromTransit=false){
     const p=s.players[s.turn],tile=s.tiles[p.pos];s.phase='land';
     if(revolt&&board(s).gates[p.pos]!=null)readyCreatures(s);
+    if(pathSwitch(s,p.pos,p.previous)){
+      s.switchRound=s.round+4;
+      s.phase='pathSwitch';
+      return;
+    }
     if(shopStock(s).length){s.phase='shop';return;}
     if(tile.unit?.enchant==='mine'){p.cash-=Math.floor(p.cash/2);combo.clear(tile.unit);}
     if(tile.enchant==='magicfountain'||tile.unit?.enchant==='magicfountain'){p.cash+=400;delete tile.enchant;if(tile.unit)combo.clear(tile.unit);note(s,'매직 파운틴 · +400G');}
@@ -401,7 +427,7 @@ function createCepter(edition="ps2"){
       if(s.remaining){const exits=onward(s);if(exits.length!==1){s.phase='fork';return;}next=exits[0];}
     }
     if(preview){
-      s.phase=shopStock(s).length?'shop':'land';
+      s.phase=pathSwitch(s,p.pos,p.previous)?'pathSwitch':shopStock(s).length?'shop':'land';
       if(fromTransit)s.lastMove.arrivedViaTransit=true;
     }else arrived(s,fromTransit);
   }
@@ -413,7 +439,7 @@ function createCepter(edition="ps2"){
     if(kind==='route')advance(trial,x,true);else move(trial,x,true);
     const walker=trial.players[trial.turn],tile=trial.tiles[walker.pos];
     return {first:trial.lastMove?.path[1]??p.pos,at:walker.pos,phase:trial.phase,remaining:trial.remaining,
-      toll:tile.owner>=0&&!allied(trial,tile.owner,trial.turn)?owedToll(trial,tile):0,
+      toll:tile.owner>=0&&!allied(trial,tile.owner,trial.turn)?owedToll(trial,tile):0,switchTo:pathSwitch(trial,walker.pos,walker.previous)?.to,
       cashGain:walker.cash-p.cash,trapDelta:trial.lastMove?.trapDelta??0,tower:tile.type==='사령탑'&&trial.phase==='land',fountain:tile.type==='분수'&&trial.phase==='land'&&!trial.lastMove?.arrivedViaTransit};
   }
   function resumeMove(s,preview=false){
@@ -422,7 +448,8 @@ function createCepter(edition="ps2"){
   }
   function move(s,dir,preview=false){
     const p=s.players[s.turn];p.dir=dir;s.remaining=s.die;s.visited=[];
-    if(p.previous==null&&(board(s).stage||board(s).graph)&&board(s).links[p.pos].length>2)s.phase='fork';
+    if(pathSwitch(s,p.pos,p.previous))resumeMove(s,preview);
+    else if(p.previous==null&&(board(s).stage||board(s).graph)&&board(s).links[p.pos].length>2)s.phase='fork';
     else if(p.previous==null)advance(s,dir===1?board(s).links[p.pos][0]:board(s).links[p.pos].at(-1),preview);
     else resumeMove(s,preview);
   }
@@ -520,6 +547,7 @@ function createCepter(edition="ps2"){
           for(let n=1;n<=Math.min(50,Math.floor(p.cash/price));n++)options.push(['buySymbol',k,n]);
           for(let n=1;n<=Math.min(50,p.symbols[k]);n++)options.push(['sellSymbol',k,n]);
         });options.push(['leaveTemple']);break;
+      case 'pathSwitch':return [['switchKeep'],['switchFlip']];
       case 'towerTarget':return [...towerTargets(s),['towerCancel']];
       case 'towerDeploy':return [...towerCards(s,s.towerAt),['towerCancel']];
       case 'land':
@@ -853,7 +881,7 @@ function createCepter(edition="ps2"){
   function expire(s,now=Date.now()){
     if(!s.deadlineAt||now<s.deadlineAt||s.phase==='over'||isComputer(s,actor(s)))return false;
     const moves=choices(s);
-    const action=moves.find(([kind])=>['roll','bare','pass','pay','leaveShop','leaveTemple','continue','fizzle','towerCancel'].includes(kind))||moves[0];
+    const action=moves.find(([kind])=>['roll','bare','pass','pay','leaveShop','leaveTemple','continue','fizzle','towerCancel','switchKeep'].includes(kind))||moves[0];
     if(!action)return false;
     return recordAction(s,action,now,true);
   }
@@ -953,6 +981,16 @@ function createCepter(edition="ps2"){
           }else{mapEffect('cast',c.name);note(s,p.name+' · '+c.name);}
           break;
         }
+        if(c.effect==='remoteswitch'){
+          if(board(s).pathSwitches)flipPaths(s,c.name);
+          else draw(p,s);
+          const at=Math.floor(Math.random()*(p.book.length+1));
+          p.book.splice(at,0,id);
+          for(const q of s.players)if(q.peek?.seat===s.turn)delete q.peek;
+          mapEffect('cast',c.name);
+          if(!board(s).pathSwitches)note(s,p.name+' · '+c.name+' · 카드 1장 뽑음');
+          break;
+        }
         if(c.effect==='cash')p.cash+=100;
         else if(c.effect==='manna')p.cash+=(c.magicPerLap||50)*(p.lap+1);
         else if(c.effect==='fly')s.fly=true;
@@ -991,9 +1029,11 @@ function createCepter(edition="ps2"){
       }
       case 'breakCard':if(s.phase==='squeeze')s.players[s.spellTarget].cash+=150;mapEffect('shatter','카드 파괴',s.players[s.spellTarget].pos,{title:s.players[s.spellTarget].name});s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
       case 'fizzle':delete s.reliefFrom;mapEffect('cast','대상 없음');s.phase='roll';break;
-      case 'roll':{const {faces,total,sides,zeroBased}=movementRoll(s,p);s.die=total;if(revolt)s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
+      case 'roll':{const {faces,total,sides,zeroBased}=movementRoll(s,p);s.die=total;if(revolt)s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(pathSwitch(s,p.pos,p.previous)){delete p.reverse;move(s,p.dir||1);break;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
       case 'totem':p.cash+=300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
+      case 'switchFlip':flipPaths(s,'방향 변경');s.phase='land';break;
+      case 'switchKeep':s.phase='land';break;
       case 'towerAim':s.phase='towerTarget';break;
       case 'towerTo':s.towerAt=x;s.phase='towerDeploy';break;
       case 'towerCancel':s.phase=s.phase==='towerDeploy'?'towerTarget':'land';delete s.towerAt;break;
@@ -1109,7 +1149,7 @@ function createCepter(edition="ps2"){
         const jump=transitDestination(m,next,tile.type,left-1);
         if(jump!=null){prev=next;next=jump;}
         if(left===1||tile.unit?.enchant==='quicksand'||!allied(s,tile.owner,traveler)&&((fx.name(tile.unit)==='oldwillow'&&tile.type===0)||(fx.name(tile.unit)==='kelpie'&&tile.type===1)))break;
-        const links=m.links[next],exits=links.filter(n=>links.length===1||n!==prev);
+        const exits=movementExits(s,next,prev);
         if(exits.length!==1)return bonus;
         prev=next;next=exits[0];
       }
@@ -1120,8 +1160,7 @@ function createCepter(edition="ps2"){
     }
     function alliedWordTarget(j,steps){
       if(!allied(s,seat,j)||s.players[j].antiMagic||modern&&s.players[j].status==='barrier')return -100;
-      const q=s.players[j],links=board(s).links[q.pos];
-      const exits=links.filter(n=>links.length===1||n!==q.previous);
+      const q=s.players[j],exits=movementExits(s,q.pos,q.previous);
       return Math.max(-100,...exits.map(n=>landing(n,q.pos,steps,j)))/12;
     }
     function territoryValue(from,kind,x){
@@ -1266,8 +1305,7 @@ function createCepter(edition="ps2"){
             const type=m.types[at],dest=m.transit?.[at],immediate=transitDestination(m,at,type,1);
             if(dest!=null&&immediate==null&&(type==='전송진'||m.graph)&&prev!==dest)queue.push([dest,at,d+1]);
             const pos=immediate??at,entry=immediate==null?prev:at;
-            const exits=m.links[pos];
-            exits.filter(n=>exits.length===1||n!==entry).forEach(n=>queue.push([n,pos,d+1]));
+            for(const exit of movementExits(s,pos,entry))queue.push([exit,pos,d+1]);
           }return -10000;
         }
         case 'buySymbol':return p.cash>300&&y<=5&&p.symbols[x]<10?2:-2;
@@ -1288,10 +1326,17 @@ function createCepter(edition="ps2"){
         }
         case 'targetPlayer':return (s.spellEffect==='word6')===allied(s,x,s.turn)?4:0;
         case 'cast':
+          if(c.effect==='remoteswitch')return board(s).pathSwitches?0:p.hand.length<=2?3:-2;
           if(c.effect==='bolt')return s.tiles.some(t=>fx.targetable(s,t)&&!allied(s,seat,t.owner)&&fx.damageAmount(s,t,20)>0)?4:-10;
           if(c.effect==='shatter')return !s.tiles.some(t=>fx.name(t.unit)==='graniteidol')&&s.players.some((q,j)=>!allied(s,seat,j)&&q.hand.some(id=>cards[id].kind!=='creature'))?4:-10;
           if(['manna','fly','word6'].includes(c.effect))return 4;
           return c.effect==='cash'?10:c.effect==='six'?3:-2;
+        case 'switchFlip':case 'switchKeep':{
+          const to=pathSwitch(s,p.pos,p.previous,k==='switchFlip').to;
+          const tile=s.tiles[to],danger=tile.owner>=0&&!allied(s,tile.owner,seat)?owedToll(s,tile,seat):0;
+          const gate=board(s).gates[to];
+          return (gate!=null&&!p.flags.includes(gate)?25:0)-danger/10+(k==='switchKeep'?1:0);
+        }
         case 'towerAim':return Math.max(...towerTargets(s).map(action=>score(action)));
         case 'towerTo':return Math.max(...towerCards(s,x).map(([kind,j])=>placementScore(kind,p.hand[j],x,true)));
         case 'summon':case 'invade':return placementScore(k,p.hand[x],s.towerAt??p.pos,s.phase==='towerDeploy');
@@ -1317,7 +1362,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

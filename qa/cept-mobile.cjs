@@ -496,6 +496,29 @@ const {chromium}=require('playwright');
       console.log('revolt '+width+'x'+height+': tower route, highlighted target, and illustrated hand summon by touch OK');
       await towerPage.close();
     }
+    for(const [width,height] of [[320,568],[844,390]]){
+      const switchPage=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await switchPage.route('https://**',r=>r.abort());
+      await switchPage.goto(trapUrl.href);
+      await switchPage.selectOption('#mapChoice','revolt-original-switchyard');
+      await switchPage.locator('#config .match-start .primary').tap();
+      await switchPage.evaluate(()=>{
+        Object.assign(s,{phase:'fork',die:1,rollSum:1,remaining:1});
+        Object.assign(s.players[0],{pos:0,previous:15,dir:1});
+        render();
+      });
+      const route=switchPage.locator('.route-option').filter({hasText:'2번 방향'});
+      assert.match(await route.innerText(),/분기 스위치.*3번/);
+      await route.tap();
+      assert.match(await switchPage.locator('#center').innerText(),/분기 스위치.*변경/);
+      assert.match(await switchPage.locator('[data-action=switchFlip]').innerText(),/17번/);
+      await switchPage.locator('[data-action=switchFlip]').tap();
+      assert.equal(await switchPage.getByRole('button',{name:/^2번 분기 스위치 · 17번 방향 · 4라운드/}).count(),1);
+      assert.equal(await switchPage.getByRole('button',{name:/^8번 분기 스위치 · 21번 방향 · 4라운드/}).count(),1);
+      assert.equal(await switchPage.evaluate(()=>s.phase),'land');
+      console.log('revolt '+width+'x'+height+': switch preview, manual flip and synchronized route signs by touch OK');
+      await switchPage.close();
+    }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
     await archerPage.route('https://**',r=>r.abort());
     await archerPage.goto(pathToFileURL(path.resolve(__dirname,'../dist/cept.html')).href);

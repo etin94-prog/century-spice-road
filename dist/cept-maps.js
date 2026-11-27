@@ -44,6 +44,12 @@ const CepterMaps=(()=>{
     [4,12],100,12,[...loop(16),[1,16],[16,17],[17,18],[18,19],[19,20],[20,7]],Array(21).fill(0));
   revoltPractice['revolt-original-watchpost']={...watchpost,areaCount:1,section:'arena',graph:true,startCash:250,
     castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
+  const switchyard=map('갈래바람 회랑 · 창작 지도',[...ring,[2,2],[3,2],[3,3],[4,3],[4,4]],
+    ['성','분기 스위치',1,3,'동쪽 게이트',2,0,'분기 스위치',2,3,1,0,'서쪽 게이트',1,3,2,1,2,0,3,2],
+    [4,12],100,12,[...loop(16),[1,16],[16,17],[17,18],[18,19],[19,20],[20,7]],Array(21).fill(0));
+  revoltPractice['revolt-original-switchyard']={...switchyard,areaCount:1,section:'arena',graph:true,startCash:250,
+    pathSwitches:{1:[0,2,16],7:[6,8,20]},castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},
+    gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];

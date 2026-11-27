@@ -85,7 +85,7 @@ const CepterEditions=(()=>{
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
       freezecyclone:'freezecyclone',insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation',
       alarm:'alarm',disaster:'fatigueddisaster',elementalwrath:'elementalwrath',landtransfer:'revoltlandtransfer',
-      magmashift:'magmashift',stormshift:'stormshift',quintessence:'quintessence',redivision:'redivision',remission:'remission',restore:'restore'},
+      magmashift:'magmashift',stormshift:'stormshift',quintessence:'quintessence',redivision:'redivision',remission:'remission',restore:'restore',remoteswitch:'remoteswitch'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',

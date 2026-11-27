@@ -76,6 +76,7 @@ function showReplay(replay){
           final&&final!==C.cards[id]?final.name:null].filter(Boolean).join(' · ')));
       combat.append(cell);
     });
+    const movement={mapId:replay.map,round:f.round,switchRound:f.switchRound,switchSide:f.switchSide};
     stage.replaceChildren(...tiles.map(([type,owner,level,id,hp],at)=>{
       const tile=el('div',String(at+1),'replay-tile '+(['fire','water','earth','wind'][type]||'special'));
       const [r,c]=board.position[at],span=board.rows+board.cols;
@@ -83,7 +84,8 @@ function showReplay(replay){
       tile.style.top=(board.stage?c:12+(r+c-2)*79/Math.max(1,span-2))+'%';
       if(Array.isArray(f.path)&&f.path.includes(at))tile.classList.add('on-route');
       if(owner>=0&&owner<colors.length)tile.style.borderColor=colors[owner];
-      tile.title=[C.elements[type]||type,'Lv. '+level,C.cards[id]?.name,hp==null?'':hp+' HP'].filter(Boolean).join(' · ');
+      const arrow=C.pathSwitch(movement,at);
+      tile.title=[C.elements[type]||type,arrow?(arrow.to+1)+'번 방향 · '+arrow.rounds+'라운드 후 자동 전환':'Lv. '+level,C.cards[id]?.name,hp==null?'':hp+' HP'].filter(Boolean).join(' · ');
       const occupants=f.players.flatMap((p,i)=>p[0]===at?[i+1]:[]);
       if(occupants.length)tile.append(el('span',occupants.join('/'),'replay-pawns'));
       return tile;

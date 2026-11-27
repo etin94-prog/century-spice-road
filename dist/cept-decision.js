@@ -8,6 +8,7 @@ function routeOption(action){
   else if(info.phase==='shop')landing+=' · 카드 1장 구매 가능';
   else if(info.phase==='temple')landing+=' · 호부 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+info.toll+'G');
+  else if(info.phase==='pathSwitch')landing+=' · 다음 '+(info.switchTo+1)+'번 방향 변경 가능';
   else if(info.tower)landing+=' · 원격 소환 또는 침략';
   else if(info.fountain)landing+=' · 손패 교체';
   else if(C.territoryType(tile.type))landing+=' · 빈 영지';
@@ -42,6 +43,7 @@ function shopMenu(controls,choices,p){
 
 function decisionText(action,p){
   const [kind,x,y]=action,position=s.towerAt??p.pos,here=s.tiles[position];
+  if(kind==='switchKeep'||kind==='switchFlip')return '다음 이동 '+(C.pathSwitch(s,p.pos,p.previous,kind==='switchFlip').to+1)+'번 칸';
   if(kind==='shrineChoice')return C.shrineDetails[x];
   if(kind==='ability'||kind==='totem')return CepterCreatureText.territorySummary(C,C.cards[s.tiles[x].unit.id]);
   if(['targetLand','abilityLand','teleTo','towerTo'].includes(kind)){
