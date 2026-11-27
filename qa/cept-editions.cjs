@@ -73,8 +73,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold']);
-    assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,3);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaImmediate','sagaAffinity']:[])]);
+    assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
       assert.deepEqual(new Set(deck.map(id=>C.cards[id].kind)),new Set(['creature','item','spell']));
@@ -1589,6 +1589,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 {
   const C=ps2.createEdition('saga'),map=Object.keys(C.maps)[0];
   const id=name=>C.cards.findIndex(card=>!card.unlisted&&!card.catalogOnly&&C.combo.key(card)===name);
+  for(const book of ['sagaImmediate','sagaAffinity'])assert.ok(C.validBook(C.presets[book]));
+  assert.equal(C.presets.sagaImmediate.filter(id=>C.cards[id].doublecast).length,10);
+  assert.equal(C.presets.sagaAffinity.filter(id=>['sagabistair','sagaselenear'].includes(C.cards[id].effect)).length,6);
   const special=['reincarnation','cleanse','crusher','debility','fistfight','illness','mimicry','paralyzer','zap','bulimia','fatbody','hustle','poisonmind'];
   for(const name of special){
     assert.equal(C.cards[id(name)].doublecast,true);

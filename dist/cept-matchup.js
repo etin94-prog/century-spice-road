@@ -16,6 +16,7 @@ if(C.edition!=='ps2'){
   const player=$('bookChoice'),ai=$('aiChoice');
   if(modernSeries){
     for(const [key,name] of Object.entries(modernBookNames)){
+      if(!C.presets[key])continue;
       const option=player.querySelector('option[value="'+key+'"]');
       if(option)option.textContent=name;
       else player.insertBefore(new Option(name,key),player.lastElementChild);

@@ -164,11 +164,29 @@ const CepterEditions=(()=>{
       add(groups.spell,50-deck.length);
       return deck;
     }
-    return {
+    const presets={
       intro:build(28,10,.5,'manna windofhope relief word6 foresight fly'),
       fire:build(30,12,.78,edition==='revolt'?'bolt brightworld shatter drainmagic':'bolt shatter drainmagic windofhope manna'),
       stronghold:build(26,14,.25,edition==='revolt'?'barrier jointworld darkworld lifestream manna':'barrier lifestream heal windofhope manna')
     };
+    if(edition!=='saga')return presets;
+    const ids=new Map(pool.map(id=>[cards[id].catalog.path.split('/').pop(),id]));
+    const gear={prismaticwand:2,scalearmor:2,towershield:2,longsword:2};
+    const books={
+      sagaImmediate:{
+        barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
+        ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
+      },
+      sagaAffinity:{
+        minotaur:4,barbarian:4,goblin:2,woodfolk:4,golem:2,wolverine:2,rockshell:2,sakuya:2,mudman:2,
+        ...gear,bistair:3,selenear:3,manna:3,holyword8:2,elevation:2,fame:3,revelation:2
+      }
+    };
+    for(const [key,entries] of Object.entries(books)){
+      const deck=Object.entries(entries).flatMap(([name,count])=>Array(count).fill(ids.get(name)));
+      if(deck.length===50&&deck.every(Number.isInteger))presets[key]=deck;
+    }
+    return presets;
   }
   function handheldBooks(cards){
     const ids=new Map(cards.flatMap((card,id)=>card.unlisted||card.catalogOnly||card.generatedOnly?[]:[[card.catalog.path.split('/').pop(),id]]));
