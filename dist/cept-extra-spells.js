@@ -200,7 +200,10 @@ const CepterExtraSpells=(()=>{
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
           case 'stoneblast':fx.harm(s,t,30);break;
           case 'zap':fx.harm(s,t,10);break;
-          case 'holybanishment':s.players[t.owner].hand.push(u.id);vacate(t);break;
+          case 'holybanishment':
+            if(s.edition==='revolt')fx.returnToHand(s,t);
+            else{s.players[t.owner].hand.push(u.id);vacate(t);}
+            break;
           case 'liquidform':combo.clear(u);u.enchant=e;u.caster=s.turn;draw(p,s);break;
           case 'turntothewall':{
             const forms=s.edition==='revolt'?['creepingflame','wallofice','wallofstone','tornado']:['pillarofflame','wallofice','wallofstone','hurricane'];

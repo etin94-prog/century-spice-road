@@ -358,9 +358,9 @@ const CepterEditions=(()=>{
   const revoltBattleCards={
     gascloud:{half:true},woodfolk:{support:true},bandit:{support:true},borgess:{},ninja:{first:true,scrollCritical:true},
     statue:{stationary:true},trojanhorse:{support:true},
-    phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},
+    phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},phoenix:{},
     sparkball:{st:40},magmahammer:{st:20,criticalOwnElements:[0,2]},stormspear:{st:20,criticalOwnElements:[1,3]},
-    batteringram:{st:30},buckler:{},magicshield:{hp:30},magussmirror:{hp:20},
+    batteringram:{st:30},boomerang:{st:20,hp:10},buckler:{},magicshield:{hp:30},magussmirror:{hp:20},
     petrifystone:{},prismaticwand:{},tearinghalo:{st:30,protectItem:true}
   };
   const beginsCreatures={

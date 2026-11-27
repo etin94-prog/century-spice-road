@@ -132,7 +132,9 @@ function createCepter(edition="ps2"){
     for(let i=book.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[book[i],book[j]]=[book[j],book[i]];}
     return book;
   }
+  const hasHandSpace=p=>p.hand.length<(revolt?10:6);
   function draw(p,s){
+    if(revolt&&!hasHandSpace(p))return;
     if(!p.book.length)p.book=refillBook(p);
     if(!p.book.length)return;
     p.hand.push(p.book.pop());
@@ -345,7 +347,7 @@ function createCepter(edition="ps2"){
   function stealableGems(buyer,seller){
     return seller.symbols.flatMap((count,e)=>count>0&&buyer.symbols[e]<20?Array(count).fill(e):[]);
   }
-  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy});
+  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace});
   function spellHP(s,t,e){
     const u=t.unit;
     if(e==='bolt')return u.hp-fx.damageAmount(s,t,20);
@@ -455,7 +457,7 @@ function createCepter(edition="ps2"){
       note(s,s.shrineNotice);
       return;
     }
-    if(tile.type==='점술관'&&p.status!=='babble'&&p.book.length){s.phase='fortune';return;}
+    if(tile.type==='점술관'&&p.status!=='babble'&&p.book.length&&(!revolt||hasHandSpace(p))){s.phase='fortune';return;}
     if(tile.type!=='성소')return;
     if(shrine){shrine.arrive(s,board(s).shrineKinds[p.pos]||'elemental');return;}
     const area=s.tiles.filter(t=>t.area===tile.area&&t.unit);
@@ -694,7 +696,7 @@ function createCepter(edition="ps2"){
       case 'direction':return [['direction',1],['direction',-1]];
       case 'fork':return onward(s).map(n=>['route',n]);
       case 'shop':return [...shopStock(s).filter(id=>cards[id].cost<=p.cash).map(id=>['buyCard',id]),['leaveShop']];
-      case 'fortune':return [...new Set(p.book.map(id=>cards[id].kind))].map(kind=>['fortuneDraw',kind]);
+      case 'fortune':return revolt&&!hasHandSpace(p)?[['pass']]:[...new Set(p.book.map(id=>cards[id].kind))].map(kind=>['fortuneDraw',kind]);
       case 'gemStore':
         s.prices.forEach((price,e)=>{
           const room=20-p.symbols[e];
@@ -1048,7 +1050,7 @@ function createCepter(edition="ps2"){
         a.hp=d.hp=0;
       }
       if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition)a.hp=Math.min(a.hp,a.u.hp)-10;}
-      if(a.g==='boomerang'&&edition!=='saga'&&edition!=='begins'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
+      if(a.g==='boomerang'&&edition!=='saga'&&edition!=='begins'&&!firstEdition&&hasHandSpace(s.players[a.seat]))s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0)a.hp-=20;
       if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
       if(!muted&&a.u.enchant==='bulimia'&&a.hp>0){
@@ -1113,7 +1115,7 @@ function createCepter(edition="ps2"){
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
       if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
       if(a.g==='goldengoose')p.cash+=(firstEdition?5:10)*fx.max(a.u);
-      if(creatureEnd&&a.n==='phoenix'||a.g==='phoenixamulet')p.hand.push(a.u.id);
+      if((creatureEnd&&a.n==='phoenix'||a.g==='phoenixamulet')&&(!revolt||hasHandSpace(p)))p.hand.push(a.u.id);
       const victor=a===A?D:A;
       if(victor.hp>0&&victor.n==='deathgaze'&&!s.predict&&Math.random()<(firstEdition ? .6 : .8)){
         const enemy=s.players[a.seat],id=a.u.id;

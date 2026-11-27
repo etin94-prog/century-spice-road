@@ -200,6 +200,8 @@ const describeCepterSpell=(()=>{
   const fixed={holyword0:0,word1:1,holyword2:2,holyword3:3,word6:6,holyword8:8,holywordx:10};
   function describe(C,card){
     if(card.kind!=='spell'||card.catalogOnly)return;
+    if(C.edition==='revolt'&&card.effect==='exile')return '추가 소환 조건 없이 낼 수 있고 인챈트가 걸린 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
+    if(C.edition==='revolt'&&card.effect==='holybanishment')return '영지와 속성이 다른 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     const e=card.effect,edition=C.edition;
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
     if(edition==='saga'){

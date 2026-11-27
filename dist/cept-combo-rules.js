@@ -37,7 +37,7 @@ const CepterCombos = (() => {
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
   function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
-  function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy}){
+  function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace=p=>p.hand.length<6}){
     const names=cards.map(key);
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
@@ -75,6 +75,11 @@ const CepterCombos = (() => {
       death(s,u.id,s.edition!=='saga'||caster!=null);
       vacate(t);
     }
+    function returnToHand(s,t){
+      const owner=s.players[t.owner];
+      if(!hasHandSpace(owner)){if(s.edition==='revolt')destroy(s,t);else vacate(t);return;}
+      owner.hand.push(t.unit.id);vacate(t);
+    }
     function damageAmount(s,t,n){
       return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,s.edition==='saga'?'clayidol':'crayidol')?10:0)));
     }
@@ -111,7 +116,7 @@ const CepterCombos = (() => {
       if(type[e]==='land'){
         if(e==='telekinesis'){s.teleFrom=x;return 'teleMove';}
         if(e==='landtransfer'){p.cash+=value(s,t);vacate(t,true);p.book.unshift(ids.get(e));}
-        else if(e==='exile'){const owner=s.players[t.owner];if(s.edition==='revolt'||owner.hand.length<6)owner.hand.push(u.id);vacate(t);}
+        else if(e==='exile')returnToHand(s,t);
         else if(e==='relief'){
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
           const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;p.book.unshift(ids.get(e));
@@ -452,7 +457,7 @@ const CepterCombos = (() => {
     function clearCepter(q){
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
-    return {targets,targetable,apply,max,strength,name,destroy,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
+    return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
       blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[

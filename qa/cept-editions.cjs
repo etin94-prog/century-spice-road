@@ -257,6 +257,30 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(discards.players[1].cash,220);
   assert.equal(discards.phase,'spell');
 
+  const atCap=scenario(C,'windofhope');
+  atCap.players[0].hand.push(...Array(9).fill(card(C,'manna')));
+  const remaining=atCap.players[0].book.length;
+  cast(C,atCap);
+  assert.equal(atCap.players[0].hand.length,10);
+  assert.equal(atCap.players[0].book.length,remaining-1);
+  atCap.phase='land';
+  assert.ok(C.play(atCap,['pass']));
+  for(let n=0;n<4;n++)assert.ok(C.play(atCap,['discard',0]));
+  assert.equal(atCap.turn,1);
+  assert.equal(atCap.players[0].hand.length,6);
+  for(const effect of ['exile','holybanishment'])for(const size of [9,10]){
+    const routed=scenario(C,effect);
+    const foe=routed.players[1],phoenix=card(C,'phoenix');
+    foe.hand=Array(size).fill(card(C,'manna'));
+    Object.assign(routed.tiles[1],{owner:1,type:1,unit:{id:phoenix,hp:30,enchant:'disease'}});
+    cast(C,routed);
+    assert.ok(C.play(routed,['targetLand',1]));
+    assert.equal(foe.hand.length,10);
+    assert.equal(foe.hand.includes(phoenix),size===9);
+    assert.equal(routed.lastDestroyed===phoenix,size===10);
+    assert.equal(routed.tiles[1].unit,null);
+  }
+
   const alarm=scenario(C,'alarm');
   place(C,alarm,1,0,1,25);alarm.tiles[1].unit.fatigued=true;
   cast(C,alarm);
@@ -959,6 +983,21 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(dealt(result),90);
     assert.equal(dealt(revolt(item,'diamondarmor','fighter','fighter')),60);
   }
+  for(const size of [9,10]){
+    const hand=(state,id)=>{state.players[1].hand.push(...Array(size).fill(id('manna')));};
+    const phoenix=revolt(null,null,'fighter','phoenix',hand);
+    assert.equal(phoenix.s.players[1].hand.length,10);
+    assert.equal(phoenix.s.players[1].hand.some(id=>phoenix.C.combo.key(phoenix.C.cards[id])==='phoenix'),size===9);
+    const fate=revolt('longsword',null,'fighter','fate',hand);
+    assert.equal(fate.s.players[1].hand.length,10);
+    assert.equal(fate.s.players[1].book.length,size===9?45:46);
+  }
+  const boomerang=revolt('boomerang',null,'fighter','fighter',(state,id)=>{
+    state.players[0].hand.push(...Array(9).fill(id('manna')));
+  });
+  assert.equal(boomerang.s.players[0].hand.length,10);
+  assert.ok(boomerang.s.players[0].hand.includes(boomerang.w));
+  console.log('Revolt ten-card cap, discard, draws, forced return and battle recycling OK');
   console.log('Revolt four exact AI books, MHP boundaries, rewards, and equipped-element critical hits OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   for(const [attacker,elementalGuard] of [['flameacolyte','pillarofflame'],['aquaacolyte','kingtortoise'],['terraacolyte','dwarf'],['aeroacolyte','griffon']]){
