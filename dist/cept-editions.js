@@ -97,7 +97,7 @@ const CepterEditions=(()=>{
       reincarnation:'reincarnation',shatter:'shatter',sink:'sink',upheaval:'upheaval',vitality:'vitality',
       weathering:'weathering',wildgrowth:'wildgrowth',windofhope:'windofhope'
     },
-    saga:{chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
+    saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
       illness:'disease',mimicry:'camouflage',paralyzer:'bindingmist',zap:'zap',
       bulimia:'bulimia',fatbody:'fatbody',hustle:'hustle',poisonmind:'mindseeker',
@@ -230,6 +230,11 @@ const CepterEditions=(()=>{
         deathquito:3,gelatinouswall:2,grendel:1,seahag:2,lizardman:2,stormgiant:2,centaur:2,harpy:2,
         knight:2,nightmare:2,pegasus:2,tornado:2,amethystring:1,berylring:1,buckler:2,chainmail:2,
         longsword:2,sling:2,stormspear:2,blackout:2,crusher:2,holyword6:2,holyword1:2,manna:2,pain:2,waste:2
+      },
+      sagaRilaraExploit:{
+        bandit:4,fighter:2,thief:2,boggart:2,hellhound:2,amazon:3,gelatinouswall:2,dwarf:2,
+        squirrine:2,gremlin:1,succubus:1,witch:3,gremlintooth:1,kris:2,morningstar:2,ringofthesuccubus:3,
+        scalearmor:2,vestment:2,capture:1,drainmagic:2,haste:2,landdrain:2,manna:2,slow:2,theft:1
       },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,

@@ -50,7 +50,7 @@ const modernBookNames=C.edition==='3ds'?
   {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
     sagaGottliebKill:'고틀리프 · 섬멸',sagaGottliebSlaves:'고틀리프 · 포로',
     sagaBorivalFire:'보리발 · 화염',sagaZenethDragon:'제네스 · 용의 눈',
-    sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
+    sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaRilaraExploit:'리라라 · 강탈',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){
@@ -290,7 +290,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'circleCast':return C.cards[x].name;
     case 'shrineChoice':return C.shrineNames[x];
     case 'soltisPower':return C.soltisOptions[x];
-    case 'foresightCard':case 'replaceCard':case 'mesmerCard':return C.cards[y].name;
+    case 'foresightCard':case 'replaceCard':case 'mesmerCard':case 'stealCard':return C.cards[y].name;
     case 'soltisArea':case 'comboArea':case 'plagueArea':return (x+1)+'지역';
     case 'prophecyKind':case 'fortuneDraw':return {creature:'크리처',item:'아이템',spell:'주문'}[x];
     case 'route':return (x+1)+'번 · '+(C.elements[s.tiles[x].type]||s.tiles[x].type);

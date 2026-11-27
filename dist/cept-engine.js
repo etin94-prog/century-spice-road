@@ -1312,7 +1312,7 @@ function createCepter(edition="ps2"){
       case 'leaveTemple':resumeMove(s);break;
       case 'liquidate':p.cash+=s.prices[x]*y;p.symbols[x]-=y;debt(s);break;
       case 'shrineChoice':shrine.choose(s,x);break;
-      case 'soltisPower':case 'soltisArea':case 'foresightCard':case 'prophecyKind':case 'replaceCard':
+      case 'soltisPower':case 'soltisArea':case 'foresightCard':case 'prophecyKind':case 'replaceCard':case 'stealCard':
         s.phase=extra.choose(s,k,x);
         if(k==='foresightCard'&&s.shrineForesight){delete s.shrineForesight;s.phase='land';shrine.after(s);}
         mapEffect('cast',extraSpells.soltis[x]||extraSpells.actions[k]);break;

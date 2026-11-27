@@ -14,14 +14,15 @@ const CepterExtraSpells=(()=>{
     remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
-    bravesong:'player',toughsong:'player',
+    bravesong:'player',toughsong:'player',capture:'player',theft:'player',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
-  const enemyOnly=new Set(['babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture']);
+  const stolenKind={capture:'item',theft:'spell'};
+  const enemyOnly=new Set(['capture','theft','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture']);
   const duration={bravesong:4,toughsong:4,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
   const soltis={
     goodluck:'행운 · 2라운드 통행료 면제',purify:'정화 · 모든 영지의 인챈트 해제',affection:'은총 · 순위 × 200G',
@@ -37,8 +38,8 @@ const CepterExtraSpells=(()=>{
     teleport:'가장 가까운 특수 칸으로 이동한다. 이번 차례의 주사위는 생략한다.',
     soltis:'행운, 정화, 순위에 따른 마력, 드로우, 호부 가격 하락, 전체 피해, 지역 회복 중 하나를 선택한다.'
   };
-  const actions={soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처'};
-  const hints={soltisPower:'일곱 권능 중 하나를 고르세요.',soltisArea:'내 크리처를 회복할 지역을 고르세요.',foresightCard:'북 맨 위의 카드 중 손패에 넣을 카드를 고르세요.',prophecyKind:'뽑을 카드 종류를 고르세요.',mesmerCard:'상대 손패에서 사용할 주문을 고르세요.',replaceCard:'영지 주인의 손패에서 교체할 크리처를 고르세요.'};
+  const actions={stealCard:'카드 탈취',soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처'};
+  const hints={stealCard:'상대 손패에서 가져올 카드 한 장을 고르세요.',soltisPower:'일곱 권능 중 하나를 고르세요.',soltisArea:'내 크리처를 회복할 지역을 고르세요.',foresightCard:'북 맨 위의 카드 중 손패에 넣을 카드를 고르세요.',prophecyKind:'뽑을 카드 종류를 고르세요.',mesmerCard:'상대 손패에서 사용할 주문을 고르세요.',replaceCard:'영지 주인의 손패에서 교체할 크리처를 고르세요.'};
   function clearCepter(p){
     for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete p[field];
   }
@@ -85,6 +86,7 @@ const CepterExtraSpells=(()=>{
         if(e!=='dispelmagic'&&category==='sflash'&&fx.idol(s,'graniteidol'))return [];
         return s.players.flatMap((q,i)=>{
           if(e!=='dispelmagic'&&q.status==='barrier'||enemyOnly.has(e)&&!enemy(s,i))return [];
+          if(stolenKind[e]&&!q.hand.some(id=>cards[id].kind===stolenKind[e]))return [];
           if(e==='mesmerize'&&!q.hand.some(id=>cards[id].kind==='spell'&&combo.key(cards[id])!=='mesmerize'))return [];
           return [['targetPlayer',i]];
         });
@@ -225,6 +227,7 @@ const CepterExtraSpells=(()=>{
           case 'revival':resetBook(s,x,true);break;
           case 'ruin':p.hand=p.hand.filter(id=>cards[id].kind!=='spell');q.hand=q.hand.filter(id=>cards[id].kind!=='spell');break;
           case 'rust':q.hand=q.hand.filter(id=>cards[id].kind!=='item');break;
+          case 'capture':case 'theft':s.spellTarget=x;return 'stealCard';
           case 'mesmerize':s.spellTarget=x;return 'mesmerCard';
           case 'holyword2':case 'holyword8':clearCepter(q);q.word=e==='holyword2'?2:8;break;
           case 'backward':clearCepter(q);q.reverse=true;break;
@@ -304,12 +307,14 @@ const CepterExtraSpells=(()=>{
           return kinds.filter(k=>s.edition!=='begins'||p.book.some(id=>cards[id].kind===k)).map(k=>['prophecyKind',k]);
         }
         case 'replaceCard':return replacement(s,s.tiles[s.replaceAt]);
+        case 'stealCard':return s.players[s.spellTarget].hand.flatMap((id,j)=>cards[id].kind===stolenKind[s.spellEffect]?[['stealCard',j,id]]:[]);
         case 'mesmerCard':return s.players[s.spellTarget].hand.flatMap((id,j)=>cards[id].kind==='spell'&&combo.key(cards[id])!=='mesmerize'?[['mesmerCard',j,id]]:[]);
       }
     }
     function choose(s,k,x){
       const p=s.players[s.turn];
       switch(k){
+        case 'stealCard':p.hand.push(...s.players[s.spellTarget].hand.splice(x,1));delete s.spellTarget;break;
         case 'foresightCard':p.hand.push(...p.book.splice(-1-x,1));forgetPeek(s,s.turn);break;
         case 'prophecyKind':{
           const j=p.book.findLastIndex(id=>cards[id].kind===x);
@@ -347,6 +352,7 @@ const CepterExtraSpells=(()=>{
           case 'ruin':return -sign*count('spell')*7-p.hand.filter(id=>cards[id].kind==='spell'&&combo.key(cards[id])!==e).length*5;
           case 'mesmerize':return -sign*Math.max(0,...q.hand.filter(id=>cards[id].kind==='spell').map(id=>cards[id].cost/9));
           case 'corruption':return -sign*symbolCount(q)/2;
+          case 'capture':case 'theft':return Math.max(0,...q.hand.filter(id=>cards[id].kind===stolenKind[e]).map(id=>cards[id].cost/5));
           case 'bravesong':case 'toughsong':return sign*(q.status===e?0:Math.min(24,6+3*owning(s,x).length));
           case 'sagagift':return sign*(10+(q.hand.length<5?8:0));
           case 'landdrain':return Math.min(owning(s,x).length*landDrainRate(s),Math.max(0,q.cash)+50)/9;

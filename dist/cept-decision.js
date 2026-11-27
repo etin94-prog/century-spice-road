@@ -86,7 +86,7 @@ function decisionText(action,p){
 
 function actionCard(action,p){
   const [kind,x,id]=action;
-  if(['foresightCard','replaceCard','mesmerCard'].includes(kind))return id;
+  if(['foresightCard','replaceCard','mesmerCard','stealCard'].includes(kind))return id;
   if(kind==='buyCard'||kind==='circleCast')return x;
   if(kind==='exchange')return p.hand[id];
   if(['cast','equip','discard','summon','invade','sacrifice'].includes(kind))return p.hand[x];
