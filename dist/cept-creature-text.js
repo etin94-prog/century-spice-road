@@ -253,6 +253,9 @@ const CepterCreatureText=(()=>{
     gigantherium:'전투하는 크리처 중 하나에 인챈트가 있으면 전투 HP가 20 줄어듭니다.',
     sandman:'주문으로 현재 HP와 최대 HP를 바꿀 수 없습니다.',
     manticore:'전투 ST와 HP는 내 손패 수 × 10입니다.',
+    lunatichare:'생존하면 상대의 기본 ST와 HP를 바꿉니다. 카드로 돌아갈 때까지 바뀐 능력치가 유지됩니다.',
+    jackalope:'주문으로 파괴되면 같은 영지에서 험바바로 부활합니다.',
+    humbaba:'교전에 참여하지 않고 지도에 있으면 풍 속성 크리처의 전투 ST를 10 낮춥니다.',
     aspidochelone:'전투 ST와 HP에 현재 라운드 수를 더합니다.'
   };
   const firstRules={

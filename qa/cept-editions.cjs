@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const [name,deck] of Object.entries(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -2821,7 +2821,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     beginsStarterFireEarth:'airslasher battleaxe chainmail:2 dragonfly:2 dwarf:2 fighter:2 flametongue fly gnome:2 holyword1:2 holyword6:2 kobold longsword magicbolt manna:2 minotaur:2 phoenix:2 pillarofflame:2 scalearmor:2 tigerbeetle wallofstone:2 windofhope:2 wolf:2 woodfolk:2',
     beginsStarterWaterAir:'battleaxe chainmail:2 cornfolk:2 fighter:2 fly giantamoeba:2 giantbat harpy:2 holyword1:2 holyword6:2 hurricane:2 icicle kingtortoise:2 lizardman:2 longsword magicbolt manna:2 merfolk rockbiter scalearmor:2 spectre:2 wallofice:2 windofhope:2 wolf:2',
     beginsVeramiSeaWind:'bandit:3 dwarf:2 fighter:3 fly:3 giantrat:3 holyword1:2 holyword3:2 holyword6:3 lizardman:2 megalodon:2 merfolk:2 pirate:4 sage:3 shatter:2 wallofice woodfolk:3',
-    beginsIsharaFirst:'cornfolk:3 fly:2 giantbat:3 gnome:3 haste:2 holyword3:2 holyword6:2 leatherarmor:3 mace:3 manna:2 phoenixamulet:2 spear:2 spectre:3 tigerbeetle:3 wallofstone:3 windofhope:2'
+    beginsIsharaFirst:'cornfolk:3 fly:2 giantbat:3 gnome:3 haste:2 holyword3:2 holyword6:2 leatherarmor:3 mace:3 manna:2 phoenixamulet:2 spear:2 spectre:3 tigerbeetle:3 wallofstone:3 windofhope:2',
+    beginsGanzBeast:'blynx:3 carbuncle:3 cerberus:3 chainmail:2 earthshift:2 fly:2 greattusker:3 growthbody:2 haste:2 jackalope:3 lunatichare:2 massgrowth:2 morningstar:2 scalearmor towershield vitality:2 weakness windofhope:2 wolf:2'
   };
   for(const [name,recipe] of Object.entries(recipes)){
     const book=C.presets[name];
@@ -2914,6 +2915,44 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   Object.assign(rituals.tiles[7],{type:0,owner:0,unit:{id:goblin,hp:30}});
   assert.ok(C.choices(rituals).some(([kind])=>kind==='summon'));
   rituals.tiles[2].type=1;assert.ok(!C.choices(rituals).some(([kind])=>kind==='summon'));
+  const gearAlpha=creature('battlegearalpha'),gearBeta=creature('battlegearbeta'),bundle=creature('bundlegear');
+  assert.notEqual(gearAlpha,gearBeta);
+  assert.ok(C.validBook([gearAlpha,gearBeta,...current.slice(2)]));
+  assert.ok(!C.validBook([bundle,...current.slice(1)]));
+  for(const [metal,otherHalf] of [[gearAlpha,gearBeta],[gearBeta,gearAlpha]]){
+    const merged=duel(fighter,metal,creature('freeze'),otherHalf);
+    assert.equal(merged.forms[1],bundle);
+    assert.equal(merged.startHP[1],70);
+    assert.equal(merged.strikes.find(strike=>strike.side===0)?.effect,'block');
+    assert.equal(land.unit.id,bundle);
+    assert.equal(land.unit.hp,70);
+  }
+  const jackalope=creature('jackalope'),humbaba=creature('humbaba'),hare=creature('lunatichare');
+  assert.deepEqual(C.cards[humbaba].catalog.additionalCost.split(','),['G','+[]']);
+  for(const spell of ['bolt','dreadblast','evilblast','globalinsectswarm']){
+    const rebirth=C.start(2,2,5000,'begins-original-ford');
+    Object.assign(rebirth.players[0],{hand:[id(spell)],cash:500});
+    Object.assign(rebirth.tiles[3],{owner:1,type:0,unit:{id:jackalope,hp:20}});
+    assert.ok(C.play(rebirth,['cast',0]));
+    if(spell!=='globalinsectswarm'){
+      assert.equal(C.spellRevival(rebirth,rebirth.tiles[3],spell),C.cards[humbaba].name);
+      assert.ok(C.play(rebirth,['targetLand',3]));
+      assert.match(rebirth.mapEffect.label,/부활/);
+    }
+    assert.deepEqual([rebirth.tiles[3].owner,rebirth.tiles[3].unit.id,rebirth.tiles[3].unit.hp,rebirth.destroyedCount],[1,humbaba,40,1]);
+  }
+  assert.ok(duel(fighter,jackalope).won);
+  assert.equal(land.unit.id,fighter);
+
+  const swap=duel(hare,fighter,null,creature('diamondarmor'),28);
+  assert.ok(!swap.won);
+  assert.deepEqual([land.unit.st,land.unit.hp,land.unit.mhp],[28,40,40]);
+  const rings=duel(hare,fighter,creature('ringofthesuccubus'),creature('mace'),100);
+  assert.ok(rings.won);
+  assert.equal(rings.strikes[1].hp[0],10);
+  const goose=creature('goldengoose');
+  assert.ok(duel(fighter,goblin,null,goose).won);
+  assert.equal(enemy.cash,410);
   const phoenixRelic=creature('phoenixamulet');
   assert.equal(C.cards[phoenixRelic].cost,0);
   assert.ok(duel(fighter,minotaur,axe,phoenixRelic).won);
@@ -3036,9 +3075,10 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(runner.pos,0);
   };
   passCastle();
-  assert.deepEqual([runner.cash,runner.lap,runner.status],[480,0,'triumph']);
+  assert.deepEqual([runner.cash,runner.lap,runner.status],[480,0,undefined]);
+  runner.hand=[id('triumph')];triumphant.phase='spell';assert.ok(C.play(triumphant,['cast',0]));
   runner.flags=C.board(triumphant).checkpoints.slice();passCastle();
-  assert.deepEqual([runner.cash,runner.lap,runner.status],[740,1,undefined]);
+  assert.deepEqual([runner.cash,runner.lap,runner.status],[720,1,undefined]);
 
   const color=C.start(2,2,5000,'begins-original-ford');
   Object.assign(color.players[0],{cash:500,hand:[id('colorfrombeyond')]});

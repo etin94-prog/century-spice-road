@@ -250,6 +250,10 @@ const CepterEditions=(()=>{
         spear:2,phoenixamulet:2,mace:3,leatherarmor:3,giantbat:3,spectre:3,cornfolk:3,tigerbeetle:3,wallofstone:3,gnome:3,
         holyword3:2,holyword6:2,haste:2,fly:2,windofhope:2,manna:2
       },
+      beginsGanzBeast:{
+        scalearmor:1,towershield:1,weakness:1,chainmail:2,morningstar:2,wolf:2,lunatichare:2,growthbody:2,
+        carbuncle:3,cerberus:3,blynx:3,jackalope:3,haste:2,fly:2,windofhope:2,vitality:2,massgrowth:2,earthshift:2,greattusker:3
+      },
       beginsArtAssault:{
         abyssalmonarch:1,hornedchameleon:3,gascloud:3,flameacolyte:3,flamegoetia:2,aeroacolyte:3,aerogoetia:2,fighter:2,
         chainmail:3,magicshield:2,gremlinamulet:1,boomerang:2,
@@ -434,6 +438,9 @@ const CepterEditions=(()=>{
     manticore:{},coati:{},mudman:{},anubias:{},steamgear:{tollFactor:.5},wonderwall:{stationary:true,neutralizes:[0,1,2,3]},
     firebeak:{first:true,pierceElements:[1,3],criticalElements:[1,3]},trojanhorse:{support:true},gigantherium:{},
     aspidochelone:{},dragon:{first:true},hornet:{poison:true},
+    battlegearalpha:{support:true,spellWard:true},battlegearbeta:{support:true,neutralizeScroll:true},
+    bundlegear:{spellWard:true,neutralizeScroll:true,generatedOnly:true},
+    jackalope:{support:true},humbaba:{poison:true},lunatichare:{},
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
@@ -446,7 +453,7 @@ const CepterEditions=(()=>{
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},battleaxe:{st:40},
-    icicle:{st:30,critical:0},rockbiter:{st:30,critical:2},phoenixamulet:{},
+    icicle:{st:30,critical:0},rockbiter:{st:30,critical:2},phoenixamulet:{},goldengoose:{},ringofthesuccubus:{first:true},
     batteringram:{st:20},gremlinamulet:{},rathunter:{},boomerang:{st:20,hp:10},
     buckler:{},countershield:{effect:'reflect'},diamondarmor:{st:-30,hp:60,last:true},
     earthshield:{},fireshield:{},watershield:{},windshield:{},

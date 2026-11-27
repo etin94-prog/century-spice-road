@@ -59,7 +59,8 @@ function decisionText(action,p){
     let outcome='';
     if(kind==='targetLand'&&(['bolt','heal'].includes(s.spellEffect)||C.hasLandDamage(s.spellEffect))){
       const next=C.spellHP(s,tile,s.spellEffect);
-      outcome=' → '+next+(next===0?' · 격파':'');
+      const revival=C.spellRevival(s,tile,s.spellEffect);
+      outcome=revival?' · '+revival+'로 부활':' → '+next+(next===0?' · 격파':'');
     }
     return relation+' · '+s.players[tile.owner].name+' · '+C.cards[unit.id].name+' · HP '+hp+'/'+max+outcome;
   }

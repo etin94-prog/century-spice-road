@@ -135,7 +135,7 @@ const CepterExtraBattle=(()=>{
       if(boost('madclown',a,true))a.hp+=10;
       if(!a.defending&&boost('ares',a))a.st+=20;
       if(!a.defending&&boost('nue',a))a.st-=10;
-      if(a.element===3&&boost('hunbaba',a))a.st-=10;
+      if(a.element===3&&boost(s.edition==='begins'?'humbaba':'hunbaba',a))a.st-=10;
       if(a.c.first&&boost('quetzalcoatl',a))a.st+=10;
       if(a.u.enchant==='wing')a.st+=20;
       if(s.edition==='saga'){

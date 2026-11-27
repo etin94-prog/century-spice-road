@@ -189,25 +189,25 @@ const CepterExtraSpells=(()=>{
       if(type[e]==='land'){
         if(Object.hasOwn(terrain,e))t.type=terrain[e];
         else if(hybridShifts[e])t.type=hybridShifts[e][t.type];
-        else if(landDamage[e])fx.harm(s,t,landDamage[e]);
+        else if(landDamage[e])fx.spellHarm(s,t,landDamage[e]);
         else switch(e){
           case 'remission':p.flags.push(board(s).gates[x]);break;
           case 'restore':delete u.fatigued;if(!fx.immuneHP(t))u.hp=fx.max(u);break;
           case 'revoltlandtransfer':p.cash+=Math.floor(value(s,t)*(s.edition==='begins'?.8:.7));vacate(t,true);break;
-          case 'banishingray':fx.destroy(s,t);break;
-          case 'bistair':fx.harm(s,t,10*owning(s,s.turn).filter(v=>v.type===0).length);break;
-          case 'sagabistair':if(affinity(s,0,2)>=5)fx.harm(s,t,40);break;
+          case 'banishingray':fx.spellDestroy(s,t);break;
+          case 'bistair':fx.spellHarm(s,t,10*owning(s,s.turn).filter(v=>v.type===0).length);break;
+          case 'sagabistair':if(affinity(s,0,2)>=5)fx.spellHarm(s,t,40);break;
           case 'sagaterrair':if(affinity(s,1,3)>=5)t.level=1;break;
           case 'comet':t.level=Math.max(1,t.level-2);break;
           case 'elevation':t.level=2;break;
-          case 'frostneedle':case 'venomousboil':fx.harm(s,t,30);break;
+          case 'frostneedle':case 'venomousboil':fx.spellHarm(s,t,30);break;
           case 'chariot':s.teleFrom=x;returnToBook(s,s.turn,ids.get(e));return 'teleMove';
           case 'influence':t.type=influence(s,t);break;
           case 'locust':t.level=Math.max(1,t.level-1);break;
           case 'meteor':t.level=1;break;
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
-          case 'stoneblast':fx.harm(s,t,30);break;
-          case 'zap':fx.harm(s,t,10);break;
+          case 'stoneblast':fx.spellHarm(s,t,30);break;
+          case 'zap':fx.spellHarm(s,t,10);break;
           case 'holybanishment':
             if(s.edition==='revolt')fx.returnToHand(s,t);
             else{s.players[t.owner].hand.push(u.id);vacate(t);}
@@ -261,8 +261,8 @@ const CepterExtraSpells=(()=>{
           case 'burninghail':case 'freezecyclone':case 'globalinsectswarm':case 'fatigueddisaster':case 'elementalwrath':case 'deathmiasma':
             for(const v of land){
               const amount=massDamage(e,v);
-              if(e==='energyflash'&&v.level===1)fx.destroy(s,v);
-              else if(amount&&e!=='energyflash')fx.harm(s,v,amount);
+              if(e==='energyflash'&&v.level===1)fx.spellDestroy(s,v);
+              else if(amount&&e!=='energyflash')fx.spellHarm(s,v,amount);
             }break;
           case 'darkcraft':{const n=Math.max(...s.players.map(symbolCount));for(const other of s.players)if(symbolCount(other)===n)mostSymbols(other,.3,true);break;}
           case 'erasure':s.players.forEach(clearCepter);for(const v of s.tiles){if(v.unit)combo.clear(v.unit);delete v.enchant;}break;
@@ -365,7 +365,7 @@ const CepterExtraSpells=(()=>{
           if(x==='purify')for(const t of s.tiles){if(t.unit)combo.clear(t.unit);delete t.enchant;}
           if(x==='hope'){draw(p,s);draw(p,s);}
           if(x==='depression')s.prices=s.prices.map(n=>Math.max(1,Math.floor(n*.8)));
-          if(x==='suffocate')for(const t of s.tiles)if(t.unit)fx.harm(s,t,10);
+          if(x==='suffocate')for(const t of s.tiles)if(t.unit)fx.spellHarm(s,t,10);
           break;
       }
       return 'roll';

@@ -59,7 +59,7 @@ const CepterCombos = (() => {
       s.lastDestroyed=id;
       for(const p of s.players)if(p.status==='soulsteal')p.cash+=50;
     }
-    function destroy(s,t,caster=s.turn){
+    function destroy(s,t,caster=s.turn,fromSpell=false){
       const u=t.unit;
       if(u.enchant==='soulhunt')s.players[u.caster].cash+=max(u)*5;
       if(activeWorld(s)!=='naturalworld'){
@@ -74,7 +74,10 @@ const CepterCombos = (() => {
         if(reward)note(s,cards[u.id].name+' · +'+reward+'G');
       }
       death(s,u.id,s.edition!=='saga'||caster!=null);
-      vacate(t);
+      if(s.edition==='begins'&&fromSpell&&name(u)==='jackalope'){
+        t.unit=morph(u,'humbaba');
+        note(s,cards[u.id].name+' · '+cards[t.unit.id].name+'로 부활');
+      }else vacate(t);
     }
     function returnToHand(s,t){
       const owner=s.players[t.owner];
@@ -84,10 +87,12 @@ const CepterCombos = (() => {
     function damageAmount(s,t,n){
       return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,s.edition==='saga'?'clayidol':'crayidol')?10:0)));
     }
-    function damage(s,t,n,caster=s.turn){
+    function damage(s,t,n,caster=s.turn,fromSpell=false){
       t.unit.hp-=damageAmount(s,t,n);
-      if(t.unit.hp<=0)destroy(s,t,caster);
+      if(t.unit.hp<=0)destroy(s,t,caster,fromSpell);
     }
+    const spellHarm=(s,t,n)=>damage(s,t,n,s.turn,true);
+    const spellDestroy=(s,t)=>destroy(s,t,s.turn,true);
     function morph(u,n){return {id:ids.get(n),hp:cards[ids.get(n)].hp};}
     function targets(s,e){
       const i=s.turn;
@@ -121,14 +126,14 @@ const CepterCombos = (() => {
         else if(e==='relief'){
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
           const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;returnToBook(s,i,ids.get(e));
-        }else if(e==='evilblast')damage(s,t,30);
+        }else if(e==='evilblast')spellHarm(s,t,30);
         else if(immuneHP(t)&&['shrink','growthbody','temperance'].includes(e)){
           if(e==='shrink'&&s.edition==='saga')u.st=Math.max(0,strength(u)-10);
           return 'roll';
         }
         else if(e==='shrink'){
           if(s.edition==='saga')u.st=Math.max(0,strength(u)-10);
-          u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)destroy(s,t);
+          u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)spellDestroy(s,t);
         }
         else if(e==='growthbody'){
           const gain=['revolt','begins'].includes(s.edition)?Math.max(0,Math.min(10,100-max(u))):10;
@@ -150,10 +155,10 @@ const CepterCombos = (() => {
         for(const v of tiles){
           const a=v.unit;
           if(e==='refresh'&&!immuneHP(v))a.hp=max(a);
-          if(e==='holyblight'&&hasElement(cards[a.id],-1))damage(s,v,20);
+          if(e==='holyblight'&&hasElement(cards[a.id],-1))spellHarm(s,v,20);
           if(e==='cramp')a.st=Math.max(0,strength(a)-20);
           if(e==='reinforce')a.st=Math.max(strength(a),Math.min(s.edition==='saga'?100:80,strength(a)+10));
-          if(e==='insectswarm'&&a.hp<max(a))damage(s,v,20);
+          if(e==='insectswarm'&&a.hp<max(a))spellHarm(s,v,20);
           if(e==='massphantasm'||e==='desertstorm'){clear(a);a.enchant=e==='massphantasm'?'phantasm':e;if(e==='desertstorm')a.expires=s.round+2;}
           if(e==='exorcism'&&enchanted(a)){clear(a);if(!immuneHP(v)){a.mhp=max(a)+10;a.hp+=10;}}
           if(e==='sculpture'&&max(a)<=30)v.unit=morph(a,'statue');
@@ -225,8 +230,8 @@ const CepterCombos = (() => {
           if(e==='chaospanic'){clearCepter(a);a.reverse=true;}
         }
         for(const v of tiles){
-          if(takesAreaDamage(e,v,cards))damage(s,v,20);
-          if(e==='catastrophe')damage(s,v,Math.ceil(max(v.unit)/2));
+          if(takesAreaDamage(e,v,cards))spellHarm(s,v,20);
+          if(e==='catastrophe')spellHarm(s,v,Math.ceil(max(v.unit)/2));
           if(e==='demonictrade'&&v.owner===i)v.unit=morph(v.unit,'goblin');
         }
         if(e==='demonictrade')p.cash+=100*s.tiles.filter(v=>name(v.unit)==='goblin').length;
@@ -462,7 +467,7 @@ const CepterCombos = (() => {
     function clearCepter(q){
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
-    return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
+    return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
       blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[
