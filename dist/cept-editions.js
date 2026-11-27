@@ -761,6 +761,9 @@ const CepterEditions=(()=>{
     freezingwind:{st:30,hp:0,scrollCriticalElements:[0,2]},firestone:{st:30,hp:0,scrollCriticalElements:[1,3]}
   };
   const sagaBattleCreatures={
+    livingclaw:{itemCreature:true},livingmirror:{itemCreature:true},livingrapier:{itemCreature:true,first:true},
+    livingscroll:{itemCreature:true,innateScroll:20,scrollAsItem:20},bloodypudding:{support:true},behemoth:{last:true},
+    cockatrice:{},medusa:{},deathscythe:{},raksas:{},
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
@@ -774,7 +777,7 @@ const CepterEditions=(()=>{
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={
     aurablade:{},batteringram:{st:20},coinofpiety:{},fireshield:{},kris:{st:30,protectItem:true},
-    ringofthesuccubus:{first:true},shadowarmor:{},sleep:{},smoketorch:{},tearinghalo:{st:30,protectItem:true},
+    godlesspike:{st:20},abyssaltome:{},ringofthesuccubus:{first:true},shadowarmor:{},sleep:{},smoketorch:{},tearinghalo:{st:30,protectItem:true},
     vorpalsword:{st:30},forceanklet:{},forcebracelet:{},knightsshield:{},spikedshield:{},
     magmaarmor:{},magmahammer:{st:20,criticalOwnElements:[0,2]},stormarmor:{},stormspear:{st:20,criticalOwnElements:[1,3]},
     soulray:{st:30},tonfa:{doubleAttack:true},gremlinclaw:{},gremlintooth:{},

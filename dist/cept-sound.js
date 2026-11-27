@@ -120,20 +120,57 @@ function playEffect(name){
   const cue=cues[name]||cues[({word:'cast',fly:'warp',gain:'coin',magic:'cast'})[name]];
   if(!cue)return;
   duckMusic(Math.max(...cue[1].map(([delay,,,duration])=>delay+duration)));
-  for(const [delay,from,to,duration] of cue[1]){
-    const start=soundContext.currentTime+delay,osc=soundContext.createOscillator(),gain=soundContext.createGain();
-    osc.type=cue[0];osc.frequency.setValueAtTime(from,start);osc.frequency.exponentialRampToValueAtTime(to,start+duration);
-    gain.gain.setValueAtTime(.001,start);gain.gain.exponentialRampToValueAtTime(.16,start+.008);gain.gain.exponentialRampToValueAtTime(.001,start+duration);
-    osc.connect(gain);gain.connect(effectBus);osc.start(start);osc.stop(start+duration+.01);
-    osc.onended=()=>{osc.disconnect();gain.disconnect();};
-  }
+  for(const [delay,from,to,duration] of cue[1])effectTone(cue[0],soundContext.currentTime+delay,from,to,duration,.16);
+}
+function effectTone(wave,start,from,to,duration,volume,ended){
+  const osc=soundContext.createOscillator(),gain=soundContext.createGain();
+  osc.type=wave;osc.frequency.setValueAtTime(from,start);osc.frequency.exponentialRampToValueAtTime(to,start+duration);
+  gain.gain.setValueAtTime(.001,start);gain.gain.exponentialRampToValueAtTime(volume,start+.008);gain.gain.exponentialRampToValueAtTime(.001,start+duration);
+  osc.connect(gain);gain.connect(effectBus);osc.start(start);osc.stop(start+duration+.01);
+  osc.onended=()=>{osc.disconnect();gain.disconnect();ended?.(osc);};
+  return osc;
 }
 function syncActionSound(state){
   if(state.actionSound&&state.actionSound.sequence!==seenActionSound){seenActionSound=state.actionSound.sequence;playEffect(state.actionSound.cue);}
 }
 
+// The numbered local clips were recorded for the original PS2 card index.
+const creatureVoiceIds=new Map(Object.entries({
+  giantrat:13,wolf:14,goblin:15,fighter:16,gascloud:17,kobold:18,dragonfly:19,
+  pillarofflame:20,minotaur:21,woodfolk:22,wallofstone:23,tigerbeetle:24,dwarf:25,pan:26,
+  skeleton:83,giantamoeba:147,kingtortoise:153,lizardman:157,marfolk:160,merfolk:160,pirate:165,wallofice:174,
+  giantbat:224,harpy:229,hornet:231,hurricane:232,sprite:252
+}));
 const creatureClips=new Map();
+function creatureVoice(id){
+  if(C.edition==='ps2'&&id>=0&&id<=7)return id;
+  return creatureVoiceIds.get(C.combo.key(C.cards[id]));
+}
+function loadCreatureVoice(id){
+  if(id==null)return null;
+  if(!creatureClips.has(id)){
+    const load=fetch('art/cept-name-'+id+'.mp3').then(r=>{
+      if(!r.ok)throw Error('Missing creature voice');
+      return r.arrayBuffer();
+    }).then(data=>soundContext.decodeAudioData(data)).catch(()=>null);
+    creatureClips.set(id,load);
+  }
+  return creatureClips.get(id);
+}
 let voiceRequest=0,playingVoices=[];
+const forgetVoice=source=>{playingVoices=playingVoices.filter(node=>node!==source);};
+function creatureCue(card,start){
+  const slug=C.combo.key(card)||card.name;
+  let tone=0;
+  for(const letter of slug)tone=(Math.imul(tone,31)+letter.codePointAt(0))>>>0;
+  const element=card.elements?.[0]??card.element;
+  const wave=['triangle','sine','triangle','square'][element]||'sine';
+  const pitch=[170,208,110,248][element]||152;
+  const first=pitch+(tone%45),last=first+34+(tone>>>7)%80;
+  playingVoices.push(effectTone(wave,start,first,last,.12,.10,forgetVoice),
+    effectTone(wave,start+.10,last,first*.75+(tone>>>15)%60,.18,.09,forgetVoice));
+  return .4;
+}
 function cancelCreatureVoice(){
   voiceRequest++;
   for(const source of playingVoices)source.stop();
@@ -143,22 +180,15 @@ async function announceCreatures(ids){
   cancelCreatureVoice();
   const request=voiceRequest;
   if(!effectBus||soundContext.state!=='running'||!$('effectsOn').checked||!Number($('effectVolume').value))return;
-  const clips=await Promise.all(ids.filter(id=>C.cards[id]?.kind==='creature').map(id=>{
-    if(!creatureClips.has(id)){
-      const load=fetch('art/cept-name-'+id+'.mp3').then(r=>{
-        if(!r.ok)throw Error('Missing creature voice');
-        return r.arrayBuffer();
-      }).then(data=>soundContext.decodeAudioData(data)).catch(()=>{creatureClips.delete(id);return null;});
-      creatureClips.set(id,load);
-    }
-    return creatureClips.get(id);
-  }));
+  const creatures=ids.filter(id=>C.cards[id]?.kind==='creature');
+  const clips=await Promise.all(creatures.map(id=>loadCreatureVoice(creatureVoice(id))));
   if(request!==voiceRequest||$('game').hidden||!$('effectsOn').checked||!Number($('effectVolume').value))return;
   let start=soundContext.currentTime+.07;
-  for(const clip of clips.filter(Boolean)){
+  for(const [i,clip] of clips.entries()){
+    if(!clip){start+=creatureCue(C.cards[creatures[i]],start);continue;}
     const source=soundContext.createBufferSource();source.buffer=clip;source.connect(effectBus);
     playingVoices.push(source);source.start(start);start+=clip.duration+.12;
-    source.onended=()=>{source.disconnect();playingVoices=playingVoices.filter(v=>v!==source);};
+    source.onended=()=>{source.disconnect();forgetVoice(source);};
   }
   if(playingVoices.length)duckMusic(start-soundContext.currentTime);
 }

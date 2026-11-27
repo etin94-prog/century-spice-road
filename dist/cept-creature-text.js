@@ -9,6 +9,9 @@ const CepterCreatureText=(()=>{
     flamegoetia:'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 각각 20 오릅니다.',
     astralqueen:'맵에 배치된 무속성 크리처 한 마리당 전투 HP가 5 오릅니다.',
     baldanders:'전투에 들어가면 무작위 크리처로 변신합니다.',
+    livingclaw:'일반 공격을 명중시킨 크리처에게 마비를 부여합니다. 장비로 사용해도 발동합니다.',
+    livingmirror:'두루마리 공격을 반사합니다. 장비로 사용해도 발동합니다.',
+    livingscroll:'장비 없이 공격하거나 다른 크리처의 장비로 쓰이면 두루마리 피해 20을 줍니다.',
     bandit:'일반 공격으로 준 피해량의 두 배에 해당하는 마력을 상대에게서 빼앗습니다.',
     basaltidol:'맵에 있으면 전투 종료나 패배로 발동하는 크리처 능력을 봉쇄합니다.',
     battlegearalpha:'배틀 기어 β를 지원으로 사용하면 번들 기어로 합체합니다. 단일 대상 주문과 영지 능력의 대상이 되지 않습니다.',
@@ -339,6 +342,7 @@ const CepterCreatureText=(()=>{
       sylph:'가루다로 진화합니다. 진화한 크리처는 영지에 남습니다.',
       lamia:'고른 크리처의 기본 ST를 20 내립니다. 최저 0입니다.',
       hellpyron:'누적된 크리처 파괴 1건당 50G를 얻고 파괴 수를 0으로 초기화합니다.',
+      deathscythe:'머미로 진화합니다. 진화한 크리처는 영지에 남습니다.',
       fortress:'고른 크리처에게 피해 10을 줍니다.',helltic:'고른 크리처에게 피해 20을 줍니다.',
       burnacle:'고른 영지에 안개를 걸어 통행료를 절반으로 줄입니다.',
       creepingflame:'이 크리처를 인접한 영지 한 곳으로 이동합니다. 상대 영지라면 침략합니다.',
@@ -433,7 +437,7 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='fate'?'전투에서 격파되면 카드 한 장을 뽑습니다.':
       C.edition==='begins'&&key==='darkmaster'?'지도에 배치되어 전투에 참여하지 않으면 지 크리처의 전투 ST를 10 올립니다. 자신이 전투에 생존하면 100G를 지불합니다.':
       C.edition==='begins'&&key==='beelzebub'?'지도에 배치되어 전투에 참여하지 않으면 풍 크리처의 전투 ST를 10 올립니다. 자신이 전투에 생존하면 100G를 지불합니다.':
-      C.edition==='begins'&&key==='bloodypudding'?'지원 크리처를 쓰면 그 카드의 HP만큼 자신의 최대 HP가 오릅니다. 최대 HP는 100까지 오릅니다.':
+      ['begins','saga'].includes(C.edition)&&key==='bloodypudding'?'지원 크리처를 쓰면 그 카드의 HP만큼 자신의 최대 HP가 오릅니다. 최대 HP는 100까지 오릅니다.':
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':

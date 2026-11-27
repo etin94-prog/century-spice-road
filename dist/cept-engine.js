@@ -937,7 +937,7 @@ function createCepter(edition="ps2"){
       if(!begins&&a.n==='sonascetic'&&a.gear?.kind==='creature')a.n=a.g;
       const count=(e)=>s.tiles.filter(v=>v.owner===a.seat&&v.type===e).length;
       if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){
-        const max=fx.max(a.u),gain=Math.max(0,Math.min(begins?100:80,max+a.gear.hp)-max);
+        const max=fx.max(a.u),gain=Math.max(0,Math.min(begins||edition==='saga'?100:80,max+a.gear.hp)-max);
         a.u.mhp=max+gain;a.u.hp+=gain;
       }
       if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
@@ -1025,7 +1025,8 @@ function createCepter(edition="ps2"){
         if(a===A&&extra.boost('tetramorph',a))a.hp-=20;
         if(extra.boost('virus',a))a.hp-=10;
         if(a.element===2&&extra.boost('sphinx',a))a.hp-=10;
-        if(a.gear?.category==='scroll'){
+        if(a.gear?.scrollAsItem)a.st=a.gear.scrollAsItem;
+        else if(a.gear?.category==='scroll'){
           if(a.g==='aurastrike')a.st=baseStrength[a===A?0:1];
           else if(a.gear.scrollTerritoryElements)a.st=a.gear.scrollTerritoryElements.reduce((sum,e)=>sum+count(e),0)*10;
           else a.st=a.gear.st||0;
@@ -1049,7 +1050,7 @@ function createCepter(edition="ps2"){
       trackDamage(a,damage,edition==='saga');
     }
     function hit(a,d){
-      const scroll=a.gear?.category==='scroll'||!muted&&!a.gear&&(a.c.innateScroll||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb'||a.suppressPhysicalWard;
+      const scroll=a.gear?.category==='scroll'||a.gear?.scrollAsItem||!muted&&!a.gear&&(a.c.innateScroll||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb'||a.suppressPhysicalWard;
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||weapon?.pierceAll||matches(weapon?.pierceElements,d));
@@ -1120,7 +1121,7 @@ function createCepter(edition="ps2"){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
         extra.onHit(a,d,damage);
-        if(begins&&a.g==='abyssaltome'&&d.hp>0)extra.transform(d,extra.ids.get('statue'));
+        if((begins||edition==='saga')&&a.g==='abyssaltome'&&d.hp>0)extra.transform(d,extra.ids.get('statue'));
         if(!s.predict&&a.g==='bladeofculdra'){
           const victim=s.players[d.seat];victim.hand.length=0;
           for(let j=0;j<6;j++)draw(victim,s);
@@ -1533,10 +1534,10 @@ function createCepter(edition="ps2"){
         lines.push(a.c.name+' · 승리 후 ST '+a.u.st);
       }
     }
-    if(begins&&itemEnd)for(const a of sides){
+    if((begins||edition==='saga')&&itemEnd)for(const a of sides){
       if(a.hp<=0)continue;
       if(a.g==='abyssaltome')extra.transform(a,extra.ids.get('statue'));
-      if(a.g==='coinofpiety'){
+      if(begins&&a.g==='coinofpiety'){
         const symbols=s.players[a.seat].symbols,most=Math.max(...symbols),gain=Math.floor(most*.1);
         if(gain>0){symbols[symbols.indexOf(most)]+=gain;lines.push(a.gear.name+' · 호부 '+gain+'개 증가');}
       }
@@ -1988,7 +1989,7 @@ function createCepter(edition="ps2"){
     return true;
   }
   const deckPlans=new WeakMap();
-  const battleCombos=begins?combo.beginsCombos(cards,canEquip):revolt?combo.revoltCombos.map(({cards,hint})=>({groups:cards.map(n=>[n]),hint})):null;
+  const battleCombos=begins?combo.beginsCombos(cards,canEquip):edition==='saga'?combo.sagaCombos(cards,canEquip):revolt?combo.revoltCombos.map(({cards,hint})=>({groups:cards.map(n=>[n]),hint})):null;
   const deckRecipes=battleCombos?[...combo.recipes,...battleCombos.map(({groups})=>groups)]:combo.recipes;
   function ai(s){
     const seat=actor(s),p=s.players[seat],skill=isComputer(s,seat)?(s.aiLevel||0):0;

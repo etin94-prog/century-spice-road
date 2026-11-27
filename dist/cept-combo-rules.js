@@ -272,7 +272,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
+    const sagaTerritory={deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -281,7 +281,7 @@ const CepterCombos = (() => {
     const beginsTerritory={sakuya:120,fay:50,algasphere:60,healer:10,archbishop:30,domovikha:80,archer:20,
       burnacle:50,sanguivore:50,amabie:40,swampspawn:50,landurchin:40,beacontower:50};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','necromancer','barometz','quakebeast']);
-    const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides'};
+    const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides',deathscythe:'mummy'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl','swampspawn']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl','burnacle','swampspawn','landurchin']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
@@ -916,6 +916,31 @@ const CepterCombos = (() => {
       {groups:[['gelatinouswall'],['diamondarmor']],hint:'HP를 60 올려 큰 타격을 버팁니다. 전투에서 생존하면 받은 피해 1당 5G를 얻습니다.'}
     ];
   }
+  function sagaCombos(cards,canEquip){
+    const usable=cards.filter(c=>!c.unlisted&&!c.catalogOnly&&!c.generatedOnly),byName=new Map(usable.map(c=>[key(c),c]));
+    const group=(predicate,item)=>usable.filter(c=>c.kind==='creature'&&predicate(c)&&canEquip(c,byName.get(item))).map(key);
+    return [
+      {groups:[group(c=>c.first&&key(c)!=='nike','livingclaw'),['livingclaw']],hint:'장비 크리처의 마비 효과를 선제 공격에 붙입니다. 명중하면 상대가 반격할 수 없습니다.'},
+      {groups:[group(c=>c.elements?.length===2,'prismaticwand'),['prismaticwand']],hint:'상대와 속성 조합이 다르면 이중 속성 크리처가 전투 ST와 HP를 각각 40 얻습니다.'},
+      {groups:[group(c=>c.elements?.length===2,'magmaarmor'),['magmaarmor']],hint:'지도에 배치된 화 크리처마다 ST, 지 크리처마다 HP를 10 얻습니다. 화·지 크리처는 양쪽에 더해집니다.'},
+      {groups:[group(c=>c.elements?.length===2,'stormarmor'),['stormarmor']],hint:'지도에 배치된 풍 크리처마다 ST, 수 크리처마다 HP를 10 얻습니다. 수·풍 크리처는 양쪽에 더해집니다.'},
+      {groups:[['bandit'],['deathscythe']],hint:'데스 사이드의 기본 ST 70을 지원에 더합니다. 밴디트가 명중하면 실제 피해량의 두 배를 빼앗습니다.'},
+      {groups:[['bandit'],['tonfa']],hint:'상대가 첫 공격을 버티면, 두 번째 공격의 피해만큼 추가로 마력을 빼앗을 수 있습니다.'},
+      {groups:[['bloodypudding'],['behemoth']],hint:'지원 크리처의 최대 HP 60만큼 블러디 푸딩의 최대 HP가 오릅니다. 최대 100입니다.'},
+      {groups:[['caitsith'],['buckler']],hint:'캣 시스가 기본 ST 40 이상인 상대를, 버클러가 30 이하인 상대의 일반 공격을 무효화합니다.'},
+      {groups:[['centaur'],['stormcauser']],hint:'켄타우로스가 높은 공격력으로 선제 공격하고 생존하면 장비가 북으로 돌아갑니다.'},
+      {groups:[['cerberus','tetrarm'],['rathunter']],hint:'첫 일반 공격에서 상대가 생존하면 자이언트 랫으로 바꾸고 한 번 더 공격합니다.'},
+      {groups:[['cockatrice','medusa'],['batteringram']],hint:'명중한 상대를 방어형 크리처로 바꿔 같은 타격의 공성추 즉사를 적용합니다.'},
+      {groups:[['deathquito'],['tonfa']],hint:'일반 공격을 연속으로 두 번 합니다. 피해를 줄 때마다 상대 손패에서 한 장을 파괴합니다.'},
+      {groups:[['frostbeast'],['livingmirror','smoketorch']],hint:'크리처의 속성 방어에 두루마리 반사 또는 무효화를 더합니다.'},
+      {groups:[['gascloud','spinyagama'],['livingmirror']],hint:'일반 공격을 견디면서 장비 크리처로 두루마리 공격을 반사합니다.'},
+      {groups:[['gremlin'],['livingscroll']],hint:'그렘린이 상대 장비를 파괴합니다. 리빙 스크롤의 두루마리 피해 20은 방어 지형 HP를 건너뜁니다.'},
+      {groups:[['leshy'],['silverplow']],hint:'전투 후 크리처와 장비의 영지 성장 효과가 각각 적용됩니다. 영지는 최대 5레벨입니다.'},
+      {groups:[['lunatichare'],['abyssaltome']],hint:'적중한 상대를 기본 ST 0인 스태추로 바꿉니다. 루나틱 헤어가 전투 종료에 적의 ST와 HP를 바꾼 뒤 스태추로 남습니다.'},
+      {groups:[['raksas'],['godlesspike']],hint:'전투에서 이기면 상대가 가장 많이 가진 호부 수량을 30% 줄이고, 상대 크리처 속성의 호부 가격도 절반으로 내립니다.'},
+      {groups:[['tetrarm'],['nuclearfusion']],hint:'짧은 전투에서 두루마리 공격 50을 최대 두 번 사용합니다.'}
+    ];
+  }
   const revoltCombos=[
     {cards:['cockatrice','batteringram'],hint:'일반 공격이 명중하면 상대를 스톤 월로 바꾸고, 방어형 즉사 효과가 이어집니다.'},
     {cards:['tetrarm','chillingblast'],hint:'보유한 수·풍 영지로 두루마리 ST를 만들고 연속 두 번 공격합니다.'},
@@ -927,6 +952,6 @@ const CepterCombos = (() => {
     {cards:['sulfurousballoon','stormcauser'],hint:'전투 ST를 크게 높입니다. 약해진 벌룬이 격파되면 상대에게 HP 40 피해를 줍니다.'},
     {cards:['caitsith','buckler'],hint:'기본 ST가 40 이상인 상대는 캣 시스가, 30 이하인 상대는 버클러가 일반 공격을 막습니다.'}
   ];
-  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,revoltCombos,beginsCombos,matches,planner};
+  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,revoltCombos,beginsCombos,sagaCombos,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;

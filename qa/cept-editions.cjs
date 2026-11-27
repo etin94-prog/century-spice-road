@@ -583,6 +583,54 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.equal(saved.tiles[source].owner,-1);
     }
   }
+  assert.equal(C.battleCombos.length,19);
+  for(const [index,recipe] of C.battleCombos.entries()){
+    const book=C.practiceBook(index);
+    assert.ok(C.validBook(book),recipe.hint);
+    assert.ok(C.combo.matches(recipe.groups,book.map(card=>C.combo.key(C.cards[card]))),recipe.hint);
+  }
+  const claw=fight('centaur','fighter','무속성','livingclaw',s=>{s.tiles[1].unit.hp=70;});
+  assert.equal(claw.battle.strikes[0].side,0);
+  assert.deepEqual([claw.battle.strikes.length,claw.tiles[1].unit.enchant],[1,'paralysis']);
+  const rapier=fight('fighter','goblin','무속성',null,null,'livingrapier');
+  assert.equal(rapier.battle.strikes[0].side,1);
+  assert.equal(rapier.battle.defendST,40);
+  const mirrored=fight('fighter','gascloud',0,'firestone',null,'livingmirror');
+  assert.equal(mirrored.battle.strikes[0].effect,'reflect');
+  const scroll=fight('gremlin','blueogre',1,'livingscroll',null,'chainmail');
+  assert.equal(scroll.battle.attackST,20);
+  assert.match(scroll.battle.strikes[0].notes.join(' '),/지형 보너스 관통.*20 피해/);
+  const supported=fight('bandit','fighter','무속성','deathscythe',s=>{
+    s.players[1].cash=500;s.tiles[1].unit.hp=100;
+  });
+  assert.equal(supported.battle.attackST,90);
+  assert.equal(supported.players[1].cash,320);
+  const pudding=fight('bloodypudding','fighter','무속성','behemoth',s=>{
+    const source=4;
+    unit(s,source,'bloodypudding',0,1,1,60);
+    s.tiles[source].unit.mhp=60;s.battle.from=source;s.battle.invHP=60;
+  });
+  assert.equal(pudding.tiles[1].unit.mhp,100);
+  for(const name of ['cockatrice','medusa']){
+    const ram=fight(name,'fighter','무속성','batteringram',s=>{s.tiles[1].unit.hp=100;});
+    assert.ok(ram.battle.won);
+    assert.match(ram.battle.strikes[0].notes.join(' '),/변신.*즉사/);
+  }
+  const hare=fight('lunatichare','fighter','무속성','abyssaltome',s=>{s.tiles[1].unit.hp=100;});
+  assert.ok(hare.battle.won);
+  assert.equal(hare.tiles[1].unit.id,id('statue'));
+  const declining=fight('raksas','blueogre','무속성','godlesspike',s=>{
+    s.players[1].symbols=[2,6,21,0];s.prices=[13,58,45,26];
+  });
+  assert.ok(declining.battle.won);
+  assert.deepEqual(declining.players[1].symbols,[2,6,15,0]);
+  assert.deepEqual(declining.prices,[13,29,45,26]);
+  const reaper=newMatch();
+  Object.assign(reaper.players[0],{pos:2,cash:300});unit(reaper,2,'deathscythe',0,0);
+  reaper.phase='land';
+  assert.ok(C.play(reaper,['ability',2]));
+  assert.deepEqual([reaper.players[0].cash,reaper.tiles[2].unit.id],[250,id('mummy')]);
+
   const coalFight=fight('coaloid','fighter','무속성',null,s=>{
     unit(s,8,'hellpyron',1,0);unit(s,9,'hellpyron',1,0);
     unit(s,10,'minotaur',0,0);unit(s,11,'minotaur',0,0);

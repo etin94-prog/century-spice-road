@@ -221,7 +221,7 @@ const CepterExtraBattle=(()=>{
     function protect(a,d,damage,scroll,penetrates,orb){
       if(scroll){
         const blocked=d.c.neutralizeScroll||d.gear?.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n);
-        const reflected=d.g==='magussmirror'||d.n==='carbunfly'||s.edition==='revolt'&&d.g==='mirrorhoplon'&&!a.gear;
+        const reflected=d.g==='magussmirror'||d.n==='carbunfly'||s.edition==='saga'&&(d.n==='livingmirror'||d.g==='livingmirror')||s.edition==='revolt'&&d.g==='mirrorhoplon'&&!a.gear;
         if(reflected&&!(s.edition==='revolt'&&blocked)){a.hp-=damage;lines.push('두루마리 반사');return 'reflect';}
         if(blocked){lines.push('두루마리 무효');return 'block';}
         return;
@@ -279,7 +279,7 @@ const CepterExtraBattle=(()=>{
         d.stolen=true;s.players[a.seat].hand.push(d.u.id);lines.push('상대 크리처를 손패로 획득');
       }
       if(n==='barrowwight'){combo.clear(d.u);d.u.enchant='sleep';}
-      if(['ghoul','hugespider'].includes(n)){combo.clear(d.u);d.u.enchant='paralysis';}
+      if(['ghoul','hugespider','livingclaw'].includes(n)||s.edition==='saga'&&a.g==='livingclaw'){combo.clear(d.u);d.u.enchant='paralysis';}
       if(n==='hunbaba'){combo.clear(d.u);d.u.poisoned=true;}
       if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
         s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||n==='yeti'&&d.element===0&&chance(.6)||n==='dhampir'&&d.element===2&&chance(.6)){
@@ -341,6 +341,9 @@ const CepterExtraBattle=(()=>{
       if(typeof t.type==='number'&&s.prices[symbol]!=null){
         if(a.n==='sanctumguard')p.symbols[symbol]+=5;
         if(s.edition!=='begins'&&a.g==='coinofpiety')p.symbols[symbol]+=10;
+      }
+      if(s.edition==='saga'&&a.g==='godlesspike')for(const [index,price] of s.prices.entries()){
+        if(combo.hasElement(d,index%4)){s.prices[index]=Math.max(1,Math.floor(price/2));}
       }
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
       if(a.n==='leviathan'&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld')t.type=1;

@@ -69,6 +69,7 @@ else{
     if(C.edition==='begins')references.append(editionBookArchive(CepterBeginsPlayerBooks,
       '공개 덱 자료','비긴즈 공개 덱 자료','https://www.culdceptcentral.com/culdcept-begins/culdcept-begins-player-decks/','begins-book-archive'),
       editionComboArchive('비긴즈','begins','https://culdceptcentral.com/culdcept-begins/culdcept-begins-card-combos/culdcept-begins-in-battle-combos'));
+    if(C.edition==='saga')references.append(editionComboArchive('사가','saga','https://www.culdceptcentral.com/culdcept-saga/culdcept-saga-card-combos/culdcept-saga-in-battle-combos'));
     if(C.edition==='revolt')references.append(editionBookArchive(CepterRevoltBookArchive,
       '스토리 북 자료','리볼트 스토리 북 자료','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/','revolt-book-archive'),
       editionComboArchive('리볼트','revolt','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-combos/culdcept-revolt-in-battle-combos'));
