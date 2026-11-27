@@ -55,6 +55,7 @@ jobs:
       - name: Check mobile touch and previous release rooms before publishing
         run: |
           node qa/serve.cjs &
+          node qa/catan-map-touch.cjs
           node qa/review-mobile.cjs
           node qa/guild-mobile.cjs
           node qa/combination-mobile.cjs

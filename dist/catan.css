@@ -11,3 +11,8 @@
  .legend{font-size:10px;line-height:1.1;padding:1px}#game aside{min-height:0;overflow:auto;padding:6px;font-size:13px}#who{font-size:17px}#who,#hint{margin-bottom:4px}#game aside h3{margin:6px 0}
 }
 #board .district{fill:#173e40;stroke:#f6d693;stroke-width:3;cursor:pointer}#board .districtLabel{fill:#fff4d8;font-size:23px}
+
+#board [data-region], #board [data-index], #mapBack { touch-action: manipulation; }
+#board [data-region] { cursor: pointer; }
+#board [data-region]:focus-visible rect { stroke: #ffdd75; stroke-width: 4; }
+.mapNavigation { padding: 2px 8px; text-align: center; }

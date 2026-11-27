@@ -55,11 +55,12 @@ function optionText([k,x,y,z]){
     default:return locationKinds.includes(k)?`${label[k]} · ${x+1}번`:label[k];
   }
 }
+const compactMap=matchMedia('(max-width:600px), (orientation:landscape) and (max-height:600px)');
 let district=null;
 function board(interactive){
   const s=state,px=v=>300+v.x*55,py=v=>277+v.y*55;
   const box=s.mode==='sea'?'-155 -150 910 850':'0 0 600 550';
-  const compact=interactive&&locationKinds.includes(selected)&&matchMedia('(orientation:landscape) and (max-height:600px)').matches;
+  const compact=interactive&&locationKinds.includes(selected)&&compactMap.matches;
   const [left,top,w,h]=box.split(' ').map(Number),cw=w/3,ch=h/3;
   const origin=n=>[left+(n%3)*cw,top+Math.floor(n/3)*ch];
   const view=compact&&district!==null?[...origin(district).map(v=>v-20),cw+40,ch+40].join(' '):box;
@@ -101,12 +102,15 @@ function board(interactive){
     const [x,y]=origin(region),cx=x+cw/2,cy=y+ch/2;
     bits.push(`<g role="button" tabindex="0" data-region="${region}" aria-label="${region+1}구역 확대"><rect x="${x+3}" y="${y+3}" width="${cw-6}" height="${ch-6}" rx="8" fill="#113d4025" stroke="#fff1b0"/><circle class="district" cx="${cx}" cy="${cy}" r="21"/><text class="districtLabel" x="${cx}" y="${cy}">${region+1}</text></g>`);
   }
-  $('mapBack').hidden=!compact||district===null;
+  $('mapNavigation').hidden=!compact||district===null;
   if(compact&&district===null)$('hint').append(' 지도에서 구역을 먼저 고르세요.');
   $('board').innerHTML=bits.join('')+'</svg>';
 }
 $('mapBack').onclick=()=>{district=null;render();};
-window.addEventListener('resize',()=>{if(state&&!$('game').hidden)render();});
+compactMap.addEventListener('change',()=>{
+  district=null;
+  if(state&&!$('game').hidden)render();
+});
 $('board').onclick=e=>{const area=e.target.closest('[data-region]');if(area){district=Number(area.dataset.region);render();return;}const target=e.target.closest('[data-index]');if(target)act(actions[+target.dataset.index]);};
 $('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const t=e.target.closest('[data-index],[data-region]');if(t){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}}};
 function render(){
