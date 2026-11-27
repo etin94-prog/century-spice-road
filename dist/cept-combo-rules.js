@@ -409,15 +409,24 @@ const CepterCombos = (() => {
       loseStrength:{cost:30,label:'기본 ST −10',strength:-10},
       poison:{cost:30,label:'크리처에 독 부여'},
       earthShift:{cost:120,label:'내 영지를 지 속성으로 변경',own:true},
-      stealSpellMagic:{cost:30,label:'적의 손패 주문 1장당 40G 탈취',player:true}
+      stealSpellMagic:{cost:30,label:'적의 손패 주문 1장당 40G 탈취',player:true,enemy:true},
+      drainSigil:{cost:20,label:'적의 보유 마력 10% 탈취',player:true,enemy:true},
+      floatSigil:{cost:50,label:'셉터의 다음 주사위를 5로 고정',player:true,word:5},
+      drawItem:{cost:50,label:'북에서 장비 한 장 뽑기'},
+      toMistwing:{cost:30,label:'미스트윙으로 변신',form:'mistwing',self:true},
+      toAquahorn:{cost:30,label:'아쿠아혼으로 변신',form:'aquahorn',self:true}
     };
-    const secretArt=card=>arts[card?.secretArt];
+    const grantedArts={sigiloffloat:'floatSigil',sigilofdrain:'drainSigil'};
+    const secretKey=(card,unit)=>card?.secretArt||grantedArts[unit?.enchant];
+    const secretArt=(card,unit)=>arts[secretKey(card,unit)];
     function secretTargets(s,from){
       const src=s.tiles[from];
-      const key=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn],art=arts[key];
+      const key=secretKey(cards[src?.unit?.id],src?.unit),p=s.players[s.turn],art=arts[key];
       if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
       if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
-        !allied(s,i,s.turn)&&q.status!=='barrier'?[['secretPlayer',i]]:[]);
+        (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'?[['secretPlayer',i]]:[]);
+      if(key==='drawItem')return p.book.some(id=>cards[id].kind==='item')?[['secretSelf',from]]:[];
+      if(art.form)return [['secretSelf',from]];
       if(key==='worldDispel')return activeWorld(s)?[['secretSelf',from]]:[];
       if(['offering','draw','lapGain','dice6'].includes(key)||art.self&&src.unit.enchant!==art.enchant)return [['secretSelf',from]];
       if(art.self)return [];
@@ -440,26 +449,46 @@ const CepterCombos = (() => {
     }
     function applySecret(s,from,at){
       const p=s.players[s.turn],target=s.tiles[at],src=s.tiles[from];
-      const card=cards[src.unit.id],art=secretArt(card);
+      const card=cards[src.unit.id],key=secretKey(card,src.unit),art=arts[key];
       p.cash-=art.cost;
-      if(card.secretArt==='stealSpellMagic'){
-        const foe=s.players[at];
-        const amount=foe.antiMagic?0:40*foe.hand.filter(id=>cards[id]?.kind==='spell').length;
-        if(foe.antiMagic)delete foe.antiMagic;
-        p.cash+=amount;foe.cash-=amount;
-        note(s,p.name+' · '+card.name+' 비술 · '+foe.name+'에게서 '+amount+'G 탈취');
+      if(art.player){
+        const q=s.players[at];
+        if(q.antiMagic){
+          delete q.antiMagic;
+          note(s,q.name+' · 안티 매직으로 비술 방어');
+          return '안티 매직';
+        }
+        if(art.word){
+          clearCepter(q);q.word=art.word;
+          note(s,q.name+' · 다음 주사위 '+art.word);
+          return art.label;
+        }
+        const amount=key==='drainSigil'?Math.floor(Math.max(0,q.cash)*.1):
+          40*q.hand.filter(id=>cards[id]?.kind==='spell').length;
+        p.cash+=amount;q.cash-=amount;
+        note(s,p.name+' · '+card.name+' 비술 · '+q.name+'에게서 '+amount+'G 탈취');
         return amount+'G 탈취';
       }
-      if(card.secretArt==='offering'){p.cash+=200;destroy(s,src);}
-      if(card.secretArt==='draw')draw(p,s);
-      if(card.secretArt==='dispel')clear(target.unit);
-      if(card.secretArt==='heal')target.unit.hp=Math.min(max(target.unit),target.unit.hp+30);
-      if(card.secretArt==='lapGain')p.cash+=30*p.lap;
-      if(card.secretArt==='dice6'){clearCepter(p);p.word=6;}
-      if(card.secretArt==='worldDispel')delete s.world;
-      if(card.secretArt==='poison'){clear(target.unit);target.unit.poisoned=true;}
-      if(card.secretArt==='earthShift')target.type=2;
-      if(card.secretArt==='strength')target.unit.st=Math.min(100,strength(target.unit)+20);
+      if(key==='offering'){p.cash+=200;destroy(s,src);}
+      if(key==='draw')draw(p,s);
+      if(key==='drawItem'){
+        const j=p.book.findLastIndex(id=>cards[id].kind==='item');
+        p.hand.push(p.book.splice(j,1)[0]);
+        for(const q of s.players)if(q.peek?.seat===s.turn)delete q.peek;
+      }
+      if(art.form){
+        const fatigued=src.unit.fatigued;
+        src.unit=morph(src.unit,art.form);
+        if(fatigued)src.unit.fatigued=true;
+      }
+      if(key==='dispel')clear(target.unit);
+      if(key==='heal')target.unit.hp=Math.min(max(target.unit),target.unit.hp+30);
+      if(key==='lapGain')p.cash+=30*p.lap;
+      if(key==='dice6'){clearCepter(p);p.word=6;}
+      if(key==='worldDispel')delete s.world;
+      if(key==='poison'){clear(target.unit);target.unit.poisoned=true;}
+      if(key==='earthShift')target.type=2;
+      if(key==='strength')target.unit.st=Math.min(100,strength(target.unit)+20);
       if(art.setFatigue===true)target.unit.fatigued=true;
       if(art.setFatigue===false)delete target.unit.fatigued;
       if(art.strength<0)target.unit.st=Math.max(0,strength(target.unit)+art.strength);
@@ -469,16 +498,26 @@ const CepterCombos = (() => {
       return art.label;
     }
     function secretValue(s,from,at){
-      const card=cards[s.tiles[from].unit.id],t=s.tiles[at],p=s.players[s.turn];
-      const art=card.secretArt,spec=secretArt(card);
-      if(art==='stealSpellMagic'){
-        const foe=s.players[at];
-        return foe.antiMagic?-20:foe.hand.filter(id=>cards[id]?.kind==='spell').length*9-spec.cost*.25-4;
+      const source=s.tiles[from].unit,t=s.tiles[at],p=s.players[s.turn],card=cards[source.id];
+      const art=secretKey(card,source),spec=arts[art];
+      if(spec.player){
+        const q=s.players[at];
+        if(q.antiMagic)return -20;
+        if(spec.word)return allied(s,at,s.turn)&&q.word==null?5:-20;
+        const value=art==='drainSigil'?Math.floor(Math.max(0,q.cash)*.1)/5:
+          q.hand.filter(id=>cards[id]?.kind==='spell').length*9;
+        return value-spec.cost*.25-(card.vigorous?0:4);
       }
       const friendly=allied(s,s.turn,t.owner);
       let utility=0;
       if(art==='offering')utility=200-value(s,t)-(t.level-1)*35;
       if(art==='draw')utility=p.hand.length<5?35:4;
+      if(art==='drawItem')utility=p.hand.filter(id=>cards[id]?.kind==='item').length<2?28:0;
+      if(spec.form){
+        const enemyColors=s.tiles.filter(v=>v.unit&&!allied(s,v.owner,s.turn)).map(v=>cards[v.unit.id].element);
+        const count=colors=>enemyColors.filter(e=>colors.includes(e)).length;
+        utility=6*(count(cards[ids.get(spec.form)].neutralizes)-count(card.neutralizes));
+      }
       if(art==='dispel')utility=(friendly?1:-1)*(['peace','landprotection','regeneration','soulhunt','abilityplus'].includes(t.unit.enchant)?-16:14);
       if(art==='heal')utility=Math.min(30,max(t.unit)-t.unit.hp)+(t.level-1)*4;
       if(art==='lapGain')utility=p.lap*30;

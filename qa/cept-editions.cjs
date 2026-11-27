@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying','revoltSomniaScripture','revoltMoriCrazy']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const [name,deck] of Object.entries(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -1101,7 +1101,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     revoltZenethPower:'baal:2 firedrake:2 phoenix:2 gianteel:2 lizardman:2 yeti:2 gargoyle:2 spittingcobra:2 woodfolk:2 centaur:2 gremlin:2 knight:2 angelcape:2 catapult:1 claymore:2 eaglerapier:2 platemail:2 trident:2 drainmagic:3 haste:3 insectswarm:1 magicbolt:4 relief:2 shatter:2',
     revoltYumaLove:'decoy:2 apsaras:3 fate:2 lilith:3 scylla:2 wallofice:2 dryad:3 dwarvenminer:2 grimalkin:2 sage:3 sakuya:2 chillingblast:2 neutralcloak:2 ragdoll:4 shadowblaze:2 sparkball:2 bindingmist:2 fatbody:4 holyword6:2 vitality:2 windofhope:2',
     revoltHypnaPetrify:'cockatrice:3 dragonzombie:2 dryad:2 gargoyle:2 glowhorn:2 healer:2 mudman:3 rocktroll:2 screamer:2 spittingcobra:2 woodfolk:3 batteringram:3 gelatinousarmor:2 magmashield:2 shadowblaze:4 bindingmist:2 earthshift:2 exile:2 magicalleap:2 manna:2 senility:1 turntothewall:3',
-    revoltMoriAnnoying:'amphibianwarrior:2 gelatinouswall:2 kawahime:2 triton:2 undine:2 yeti:2 elvenarcher:1 greatnimbus:2 madharlequin:2 rokh:2 spectre:3 witch:2 angrymask:2 battleaxe:2 bindingwhip:1 gelatinousarmor:2 shadowblaze:2 squidmantle:2 blackout:2 disease:2 holyword6:2 liquidform:2 magicbolt:1 remoteswitch:2 shatter:2 spartoi:2'
+    revoltMoriAnnoying:'amphibianwarrior:2 gelatinouswall:2 kawahime:2 triton:2 undine:2 yeti:2 elvenarcher:1 greatnimbus:2 madharlequin:2 rokh:2 spectre:3 witch:2 angrymask:2 battleaxe:2 bindingwhip:1 gelatinousarmor:2 shadowblaze:2 squidmantle:2 blackout:2 disease:2 holyword6:2 liquidform:2 magicbolt:1 remoteswitch:2 shatter:2 spartoi:2',
+    revoltSomniaScripture:'ironmonger:2 aquahorn:2 fate:2 hellgrammite:2 odontotyrannus:2 triton:2 yeti:2 dhampir:2 greatnimbus:2 gremlin:2 rokh:2 serpentfly:2 thunderspawn:2 chillingblast:2 forceanklet:2 gremlinseye:2 squidmantle:2 stormspear:2 trident:2 drainmagic:2 gift:2 holybanishment:2 holyword6:2 quintessence:2 sigiloffloat:2',
+    revoltMoriCrazy:'amphibianwarrior:2 aquahorn:2 odontotyrannus:2 undine:2 yeti:2 breezespirit:2 elvenarcher:2 pulgasari:2 rokh:2 spectre:2 witch:2 battleaxe:2 bindingwhip:1 shadowblaze:2 spectresrobe:2 stormshield:2 stormspear:2 blackout:2 chariot:2 disease:2 freezecyclone:1 holyword6:2 liquidform:2 remoteswitch:2 shatter:2 spartoi:2'
   };
   const revoltCatalog=ps2.createEdition('revolt');
   for(const [name,entries] of Object.entries(revoltBooks)){
@@ -1133,7 +1135,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     if(revoltCatalog.validBook(original))ready.push(character+' · '+name);
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,15);
+  assert.equal(ready.length,17);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
   const helmet=revolt('livinghelmet','livingarmor','fighter','fighter').s.battle;
   assert.deepEqual([helmet.attackST,helmet.startHP[0],helmet.startHP[1]],[60,70,80]);
@@ -1156,6 +1158,17 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([cheered.attackST,cheered.startHP[0],cheered.defendST,cheered.startHP[1]],[60,60,40,40]);
   const silenced=revolt(null,null,'fighter','fighter',(state,id)=>{jester(state,id);state.tiles[8].unit.enchant='paralysis';}).s.battle;
   assert.deepEqual([silenced.attackST,silenced.startHP[0]],[40,40]);
+  const dino=revolt(null,null,'odontotyrannus','fighter',deployed(3,'yellowogre')).s.battle;
+  assert.deepEqual([dino.attackST,dino.startHP[0]],[70,60]);
+  const eating=revolt('mace','chainmail','pulgasari','fighter').s;
+  const mace=revoltCatalog.cards[bySlug.get('mace')];
+  assert.equal(eating.battle.attackST,60+mace.st);
+  assert.equal(eating.tiles[1].unit.mhp,50);
+  const noMeal=revolt('mace',null,'pulgasari','fighter').s;
+  assert.equal(noMeal.tiles[1].unit.mhp,undefined);
+  const aqua=revolt(null,null,'blueogre','aquahorn').s.battle;
+  const mist=revolt(null,null,'redogre','mistwing').s.battle;
+  assert.deepEqual([aqua.strikes[0].effect,mist.strikes[0].effect],['block','block']);
   const dealt=({s})=>s.battle.startHP[1]-s.battle.strikes[0].hp[1];
   assert.equal(revolt(null,null,'fighter','caitsith').s.battle.strikes[0].effect,'block');
   const armedGoblin=revolt('longsword',null,'goblin','caitsith').s.battle;
@@ -1480,7 +1493,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(items.every(c=>!c.catalogOnly));
   }finally{Math.random=random;}
   console.log('Revolt all 75 items enabled, including four dragons, recycling, independent robe rolls and Warlock Disk');
-  console.log('Revolt fifteen exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
+  console.log('Revolt seventeen exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   const lv3=type=>state=>Object.assign(state.tiles[1],{type,level:3});
   const leveller=begins(null,'chainmail','leveller','fighter',lv3(2)).s;
@@ -2286,6 +2299,61 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(leap,['targetLand',4]));
   assert.deepEqual([leap.phase,leap.die,leap.players[0].pos,leap.players[0].dir,leap.players[0].word,leap.tiles[2].unit.fatigued],['land',0,4,0,3,undefined]);
   assert.deepEqual(leap.lastMove.path,[0,4]);
+
+  const float=fixtures();
+  float.players[0].hand=[card('sigiloffloat')];
+  float.players[0].cash=200;
+  place(float,1,0,'madharlequin',40);
+  place(float,2,0,'healer',40);
+  place(float,3,2,'goblin',30);
+  assert.ok(C.play(float,['cast',0]));
+  assert.deepEqual(C.choices(float),[['targetLand',1]]);
+  assert.ok(C.play(float,['targetLand',1]));
+  const floater=float.tiles[1].unit;
+  assert.equal(C.secretArt(C.cards[floater.id],floater).cost,50);
+  float.phase='spell';
+  float.players[2].status='haunt';
+  assert.ok(C.play(float,['secretArt',1]));
+  assert.ok(C.play(float,['secretPlayer',2]));
+  assert.deepEqual([float.phase,float.players[0].cash,float.players[2].word,float.players[2].status,floater.fatigued],['roll',110,5,undefined,undefined]);
+  assert.equal(C.secretArt(C.cards[card('healer')],{enchant:'sigiloffloat'}).cost,10);
+
+  const drain=fixtures();
+  place(drain,1,0,'goblin',30,{enchant:'sigilofdrain'});
+  drain.players[1].cash=457;
+  assert.ok(C.play(drain,['secretArt',1]));
+  assert.ok(!C.choices(drain).some(([kind,seat])=>kind==='secretPlayer'&&seat===2));
+  assert.ok(C.play(drain,['secretPlayer',1]));
+  assert.deepEqual([drain.players[0].cash,drain.players[1].cash],[125,412]);
+
+  const form=fixtures();
+  place(form,1,0,'aquahorn',22,{mhp:55,st:60});
+  assert.ok(C.play(form,['secretArt',1]));
+  assert.deepEqual([form.phase,form.players[0].cash,form.tiles[1].unit],['roll',70,{id:card('mistwing'),hp:40,fatigued:true}]);
+  form.phase='spell';
+  assert.ok(!C.choices(form).some(([k])=>k==='secretArt'));
+  delete form.tiles[1].unit.fatigued;
+  assert.ok(C.play(form,['secretArt',1]));
+  assert.equal(form.tiles[1].unit.id,card('aquahorn'));
+
+  const tools=fixtures();
+  place(tools,1,0,'ironmonger',30);
+  tools.players[0].hand=[];
+  tools.players[0].book=['chainmail','manna','mace','fighter'].map(card);
+  assert.ok(C.play(tools,['secretArt',1]));
+  assert.deepEqual(tools.players[0].hand,[card('mace')]);
+  assert.deepEqual(tools.players[0].book,['chainmail','manna','fighter'].map(card));
+
+  const chariot=fixtures();
+  chariot.players[0].hand=[card('chariot')];
+  place(chariot,1,0,'woodfolk',30,{fatigued:true});
+  assert.ok(C.play(chariot,['cast',0]));
+  assert.ok(C.play(chariot,['targetLand',1]));
+  assert.equal(chariot.phase,'teleMove');
+  assert.ok(C.choices(chariot).some(([k,at])=>k==='teleTo'&&at===3));
+  assert.ok(C.play(chariot,['teleTo',3]));
+  assert.deepEqual([chariot.phase,chariot.tiles[1].owner,chariot.tiles[3].owner,chariot.tiles[3].unit.fatigued],['roll',-1,0,true]);
+  assert.ok(chariot.players[0].book.includes(card('chariot')));
 
   const fay=fixtures();
   place(fay,1,0,'fay',30);

@@ -11,7 +11,7 @@ const CepterExtraSpells=(()=>{
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
   const type={...ps2Type,holyword8:'player',landdrain:'player',
     alarm:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
-    remission:'land',magicalleap:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
+    remission:'land',magicalleap:'land',sigiloffloat:'land',sigilofdrain:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
@@ -19,6 +19,7 @@ const CepterExtraSpells=(()=>{
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
+  const secretSigils=new Set(['sigiloffloat','sigilofdrain']);
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
@@ -38,6 +39,8 @@ const CepterExtraSpells=(()=>{
     magicfountain:'크리처가 있는 영지를 선택한다. 이곳에 처음 멈춘 셉터가 400G를 받는다.',
     mesmerize:'적 손패의 주문 하나를 골라 사용한다. 메스머라이즈는 고를 수 없다.',
     teleport:'가장 가까운 특수 칸으로 이동한다. 이번 차례의 주사위는 생략한다.',
+    sigiloffloat:'기존 비술이 없는 내 크리처에게 50G로 셉터의 주사위를 5로 고정하는 비술을 부여합니다.',
+    sigilofdrain:'기존 비술이 없는 내 크리처에게 20G로 적의 보유 마력 10%를 빼앗는 비술을 부여합니다.',
     magicalleap:'1~4칸 거리에서 도착할 칸을 고릅니다. 중간 칸을 건너뛰고 이번 차례 주사위를 생략합니다.',
     speedpenalty:'나보다 많이 완주한 적 중 최다 완주자 한 명에게서 완주 차이 1회당 100G를 빼앗는다. 동률이면 한 명을 무작위로 고른다.',
     soltis:'행운, 정화, 순위에 따른 마력, 드로우, 호부 가격 하락, 전체 피해, 지역 회복 중 하나를 선택한다.'
@@ -82,7 +85,7 @@ const CepterExtraSpells=(()=>{
         const dest=s.tiles[i];
         return i!==from&&territoryType(dest.type)&&!combo.allied(s,tile.owner,dest.owner)&&
           canInvade(s,tile.owner,dest.owner)&&dest.unit?.enchant!=='peace'&&
-          (s.edition!=='saga'||canOccupy(cards[tile.unit.id],dest));
+          (!['saga','revolt'].includes(s.edition)||canOccupy(cards[tile.unit.id],dest));
       });
     }
     function leapDestinations(s){
@@ -125,6 +128,7 @@ const CepterExtraSpells=(()=>{
         if(e==='quintessence'&&s.edition==='revolt'&&t.level>=5)return [];
         if(s.edition==='3ds'&&['sink','upheaval','weathering','wildgrowth'].includes(e)&&t.level>3)return [];
         if(!fx.targetable(s,t,category,e==='removecurse'))return [];
+        if(secretSigils.has(e)&&(t.owner!==s.turn||fx.secretArt(cards[t.unit.id])||t.unit.enchant===e))return [];
         if((hasTerrain||e==='influence')&&(fx.idol(s,'jadeidol')||combo.activeWorld(s)==='solidworld'))return [];
         if(['meteor','locust','comet','sagaterrair','elevation'].includes(e)&&fx.blockedLevel(s,t))return [];
         if(e==='comet'&&(!enemy(s,t.owner)||t.level<2)||e==='elevation'&&t.level!==1)return [];
@@ -214,6 +218,7 @@ const CepterExtraSpells=(()=>{
         if(Object.hasOwn(terrain,e))t.type=terrain[e];
         else if(hybridShifts[e])t.type=hybridShifts[e][t.type];
         else if(landDamage[e])fx.spellHarm(s,t,landDamage[e]);
+        else if(secretSigils.has(e)){combo.clear(u);u.enchant=e;u.caster=s.turn;}
         else switch(e){
           case 'remission':p.flags.push(board(s).gates[x]);break;
           case 'magicalleap':return warp(s,x);
@@ -443,6 +448,7 @@ const CepterExtraSpells=(()=>{
         }
       }
       const sign=enemy(s,t.owner)?-1:1,weight=t.level+1;
+      if(secretSigils.has(e))return (cards[t.unit.id].vigorous?14:7)-(t.unit.enchant==='landprotection'?14:0);
       if(Object.hasOwn(terrain,e)||hybridShifts[e]){
         const dest=hybridShifts[e]?.[t.type]??terrain[e];
         if(s.edition!=='revolt')return sign*((combo.hasElement(cards[t.unit.id],dest)?2:0)-(combo.hasElement(cards[t.unit.id],t.type)?2:0))*weight;

@@ -896,6 +896,7 @@ function createCepter(edition="ps2"){
       if(a.n==='pyrodrake'&&!a.gear){a.st+=20;a.hp+=20;}
       if(a.n==='mastermonk'&&!a.gear){a.st+=30;a.hp-=30;}
       if(a.n==='lilith')a.st=owner.hand.length*10;
+      if(revolt&&a.n==='pulgasari'&&a.gear)a.st+=20;
       if(a.n==='drool')a.st=count(1)*10;
       if(handheld&&a.n==='shadefolk')a.st=s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===d.element).length*10;
       if(a.n==='undine')a.hp=count(1)*20;
@@ -1151,6 +1152,12 @@ function createCepter(edition="ps2"){
       a.hp=Math.min(a.hp,a.u.hp)-loss;lines.push('독 · '+loss+' 피해');
     }
     if(revolt&&!muted)for(const a of order){
+      const rival=a===A?D:A;
+      if(creatureEnd&&a.n==='pulgasari'&&a.hp>0&&rival.gear){
+        const cap=fx.max(a.u),gain=Math.max(0,Math.min(10,100-cap));
+        a.u.mhp=cap+gain;a.u.hp+=gain;a.hp+=gain;
+        if(gain)lines.push(a.c.name+' · 최대 HP +'+gain);
+      }
       applyPoison(a);
       if(a.u.enchant==='senility')a.hp=0;
     }
@@ -1491,7 +1498,7 @@ function createCepter(edition="ps2"){
       case 'teleTo':{
         const from=s.teleFrom,src=s.tiles[from],dst=s.tiles[x],territoryMove=s.territoryMove;
         delete s.teleFrom;delete s.territoryMove;
-        const chariotMove=begins&&s.spellEffect==='chariot';
+        const chariotMove=(begins||revolt)&&s.spellEffect==='chariot';
         const moveName=chariotMove?'채리엇':territoryMove==='adjacent'?'크리핑 플레임':'슬레이프니르';
         if(dst.unit){
           if(territoryMove||chariotMove)mapEffect('invade',moveName+' 이동 침략',x,{source:from});
