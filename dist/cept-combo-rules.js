@@ -198,7 +198,10 @@ const CepterCombos = (() => {
           q.status=e;
           if(s.edition==='ps2')q.enchantDeadline=(s.round+1)*s.players.length+s.turn;
           else if(s.edition==='revolt'&&e==='haste')q.hasteRolls=2;
-          else q.statusUntil=s.round+2;
+          else if(s.edition==='begins'){
+            if(e==='haste'||e==='slow')q.diceLimitRolls=2;
+            else q.enchantDeadline=(s.round+1)*s.players.length+s.turn;
+          }else q.statusUntil=s.round+2;
         }
       }else{
         if(e==='feast')for(const [j,player] of s.players.entries())player.cash+=50*s.tiles.filter(v=>v.owner===j).length;
@@ -456,7 +459,7 @@ const CepterCombos = (() => {
       return utility-spec.cost*.25-(card.vigorous?0:4);
     }
     function clearCepter(q){
-      for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
+      for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
       blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
@@ -596,6 +599,11 @@ const CepterCombos = (() => {
         const q=s.players[x];
         if(e==='drainmagic')return q.antiMagic?-10:(Math.floor(q.cash*.3)-80)/6;
         if(e==='antimagic'&&s.edition==='begins')return friend(x)&&!q.antiMagic&&!q.status?6:-12;
+        if(s.edition==='begins'&&['haste','slow','silence'].includes(e)){
+          if(q.antiMagic||q.status===e)return -12;
+          if(e==='haste')return friend(x)&&!q.status?(x===seat?10:5):-12;
+          return friend(x)?-12:e==='silence'?4+q.hand.length*2:6;
+        }
         if(e==='squeeze')return q.antiMagic?-20:friend(x)?12-Math.min(...q.hand.map(id=>cards[id].cost))/10:Math.max(...q.hand.map(id=>cards[id].cost))/10-12;
         if(e==='suppression')return friend(x)?-20:5;
         if(e==='holyword0'){const tile=s.tiles[q.pos];return !friend(x)&&friend(tile.owner)?25+tile.level*5:-5;}

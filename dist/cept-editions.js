@@ -137,7 +137,8 @@ const CepterEditions=(()=>{
       antielement:'antielement',disease:'disease',drought:'drought',fog:'fog',greed:'greed',vitality:'vitality',weakness:'weakness',
       peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze',
       massphantasm:'revoltphantasm',deathmiasma:'deathmiasma',dreadblast:'dreadblast',
-      antimagic:'antimagic',dreamterrain:'dreamterrain',revelation:'revelation',telegnosis:'telegnosis'}
+      antimagic:'antimagic',dreamterrain:'dreamterrain',revelation:'revelation',telegnosis:'telegnosis',
+      haste:'haste',slow:'slow',silence:'silence',triumph:'triumph',colorfrombeyond:'colorfrombeyond'}
   };
   function modernBooks(cards,edition,bookSize,copyLimit){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
@@ -233,6 +234,11 @@ const CepterEditions=(()=>{
       beginsStarterFireEarth:{
         kobold:1,tigerbeetle:1,airslasher:1,battleaxe:1,flametongue:1,longsword:1,wolf:2,fighter:2,
         dragonfly:2,pillarofflame:2,phoenix:2,minotaur:2,woodfolk:2,wallofstone:2,dwarf:2,gnome:2,
+        scalearmor:2,chainmail:2,fly:1,magicbolt:1,windofhope:2,holyword1:2,holyword6:2,manna:2
+      },
+      beginsStarterWaterAir:{
+        merfolk:1,giantbat:1,icicle:1,battleaxe:1,rockbiter:1,longsword:1,wolf:2,fighter:2,
+        giantamoeba:2,wallofice:2,kingtortoise:2,lizardman:2,cornfolk:2,spectre:2,harpy:2,hurricane:2,
         scalearmor:2,chainmail:2,fly:1,magicbolt:1,windofhope:2,holyword1:2,holyword6:2,manna:2
       },
       beginsVeramiSeaWind:{
@@ -412,7 +418,7 @@ const CepterEditions=(()=>{
   const beginsCreatures={
     gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},skeleton:{regenerate:true},
     gnome:{tollFactor:1.5},phoenix:{},wallofice:{stationary:true,battleHP:20},
-    giantamoeba:{neutralizes:[0,2]},cornfolk:{},
+    giantamoeba:{neutralizes:[0,2]},cornfolk:{},spectre:{},
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},

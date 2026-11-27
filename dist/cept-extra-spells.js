@@ -17,7 +17,7 @@ const CepterExtraSpells=(()=>{
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
-    deathmiasma:'global',penalize:'global',
+    deathmiasma:'global',penalize:'global',colorfrombeyond:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma']);
@@ -43,7 +43,7 @@ const CepterExtraSpells=(()=>{
   const actions={stealCard:'카드 탈취',soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처'};
   const hints={stealCard:'상대 손패에서 가져올 카드 한 장을 고르세요.',soltisPower:'일곱 권능 중 하나를 고르세요.',soltisArea:'내 크리처를 회복할 지역을 고르세요.',foresightCard:'북 맨 위의 카드 중 손패에 넣을 카드를 고르세요.',prophecyKind:'뽑을 카드 종류를 고르세요.',mesmerCard:'상대 손패에서 사용할 주문을 고르세요.',replaceCard:'영지 주인의 손패에서 교체할 크리처를 고르세요.'};
   function clearCepter(p){
-    for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete p[field];
+    for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete p[field];
   }
   const time=s=>(s.round-1)*s.players.length+s.turn;
   function setStatus(s,q,name,rounds=duration[name]){
@@ -289,6 +289,7 @@ const CepterExtraSpells=(()=>{
           }
           case 'purify':p.cash+=purify(s)*50;break;
           case 'pacifism':for(const q of s.players)setStatus(s,q,e,2);break;
+          case 'colorfrombeyond':for(const v of land)v.unit.st=Math.max(0,fx.strength(v.unit)-30);break;
           case 'revoltphantasm':case 'penalize':
             for(const v of land){
               if(e==='penalize'&&!cards[v.unit.id].evo)continue;
@@ -464,7 +465,8 @@ const CepterExtraSpells=(()=>{
       if(e==='incineration')return (s.destroyedCount||0)*2;
       if(e==='selenear')return mine.filter(t=>t.type===2).length*10;
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);
-      if(e==='triumph')return p.status==='triumph'?0:4+p.flags.length*4;
+      if(e==='triumph')return p.status==='triumph'||s.edition==='begins'&&p.status?0:4+p.flags.length*4;
+      if(e==='colorfrombeyond')return land.reduce((score,t)=>score+(enemy(s,t.owner)?1:-1)*Math.min(30,fx.strength(t.unit))/5,0);
       if(e==='rayoflaw')return s.players.reduce((v,q,i)=>v+(enemy(s,i)?1:-1)*q.hand.filter(id=>cards[id].cost>=100).length*6,0);
       if(e==='massgrowth'){
         const cap=['saga','revolt','begins'].includes(s.edition)?100:80;

@@ -539,7 +539,7 @@ function createCepter(edition="ps2"){
           }else{
             const bonus=p.symbols.reduce((sum,n,k)=>sum+(n&&s.players.every(q=>q===p||q.symbols[k]<n)?n*s.prices[k]:0),0);
             p.cash+=Math.floor(bonus/10);
-          }if(p.sagaFeast){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);delete p.sagaFeast;}if(p.status==='triumph'){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);extraSpells.clearCepter(p);}
+          }if(p.sagaFeast){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);delete p.sagaFeast;}if(p.status==='triumph'){p.cash+=Math.floor((p.cash-cashBeforeLap)*(begins?3:5)/10);extraSpells.clearCepter(p);}
           for(const v of s.tiles){
             if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit)))continue;
             const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+(begins?10:Math.floor(max/5)));
@@ -549,7 +549,7 @@ function createCepter(edition="ps2"){
           }
           note(s,p.name+' · '+p.lap+'주 완주');
         }
-        if(t.type==='성'&&p.status==='triumph')extraSpells.clearCepter(p);
+        if(!begins&&t.type==='성'&&p.status==='triumph')extraSpells.clearCepter(p);
       }
       if((revolt?m.gates[next]!=null:t.type==='성')&&total(s,s.turn)>=s.target){s.winner=s.turn;s.phase='over';
         if(m.reward&&!preview){
@@ -762,7 +762,8 @@ function createCepter(edition="ps2"){
         if(tile.unit.enchant==='dullness'||fighter?.enchant==='paralysis')return [['bare']];
         const unit=cards[s.phase==='attack'?s.battle.inv:tile.unit.id];
         p.hand.forEach((id,j)=>{const gear=cards[id];
-          if((p.status!=='sagaBreak'||gear.kind!=='item')&&price(p,gear,s)<=p.cash&&canEquip(unit,gear))options.push(['equip',j]);
+          if((p.status!=='sagaBreak'||gear.kind!=='item')&&(!begins||p.status!=='silence'||gear.kind!=='creature')&&
+            price(p,gear,s)<=p.cash&&canEquip(unit,gear))options.push(['equip',j]);
         });options.push(['bare']);break;
       }
       case 'result':return [['continue']];
@@ -1258,9 +1259,10 @@ function createCepter(edition="ps2"){
     }
     const sides=board(s).die;
     const die=()=>fx.idol(s,'ironidol')?4+Math.floor(Math.random()*3):1+Math.floor(Math.random()*sides);
-    const roll=()=>p.status==='haste'?(handheld?5:6)+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
+    const limited=begins&&fixed==null&&p.diceLimitRolls>0&&['haste','slow'].includes(p.status);
+    const roll=()=>p.status==='haste'?(handheld||begins?5:6)+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
     const faces=fixed!=null?(begins&&s.fly&&p.word!=null&&p.status!=='bind'?[fixed,fixed]:[fixed]):s.fly?[roll(),roll()]:[roll()];
-    return {faces,total:faces.reduce((a,b)=>a+b,0),sides};
+    return {faces,total:faces.reduce((a,b)=>a+b,0),sides,limited};
   }
   function play(s,a,now=Date.now()){
     if(s.deadlineAt&&now>=s.deadlineAt)return false;
@@ -1497,7 +1499,7 @@ function createCepter(edition="ps2"){
       }
       case 'breakCard':if(s.phase==='squeeze')s.players[s.spellTarget].cash+=150;mapEffect('shatter','카드 파괴',s.players[s.spellTarget].pos,{title:s.players[s.spellTarget].name});s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
       case 'fizzle':delete s.reliefFrom;mapEffect('cast','대상 없음');s.phase='roll';break;
-      case 'roll':{const {faces,total,sides,zeroBased,haste}=movementRoll(s,p);if(haste&&!--p.hasteRolls)fx.clearCepter(p);s.die=total;if(revolt)s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(pathSwitch(s,p.pos,p.previous)){delete p.reverse;move(s,p.dir||1);break;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
+      case 'roll':{const {faces,total,sides,zeroBased,haste,limited}=movementRoll(s,p);if((haste&&!--p.hasteRolls)||(limited&&!--p.diceLimitRolls))fx.clearCepter(p);s.die=total;if(revolt)s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(pathSwitch(s,p.pos,p.previous)){delete p.reverse;move(s,p.dir||1);break;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
       case 'totem':p.cash+=handheld?200:edition==='begins'?400:300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
       case 'switchFlip':flipPaths(s,'방향 변경');s.phase='land';break;
