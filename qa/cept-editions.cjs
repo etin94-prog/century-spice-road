@@ -218,6 +218,50 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(disaster.tiles[1].unit.hp,10);
   assert.equal(disaster.tiles[2].unit.hp,40);
   console.log('Revolt gate directions, lap and victory, fatigue and recovery, and end-of-turn discards OK');
+
+  const remission=scenario(C,'remission');
+  remission.players[0].flags=[0];
+  cast(C,remission);
+  assert.ok(!C.choices(remission).some(([,at])=>at===0));
+  assert.ok(C.play(remission,['targetLand',12]));
+  assert.deepEqual(remission.players[0].flags,[0,5]);
+  assert.equal(remission.players[0].cash,400);
+  remission.phase='spell';remission.players[0].hand=[card(C,'remission')];
+  cast(C,remission);
+  assert.deepEqual(C.choices(remission),[['fizzle']]);
+
+  const transfer=scenario(C,'landtransfer');
+  place(C,transfer,1,0,0,20);place(C,transfer,2,1,1,30);
+  transfer.tiles[1].level=3;
+  const worth=C.value(transfer,transfer.tiles[1]);
+  cast(C,transfer);
+  assert.deepEqual(C.choices(transfer),[['targetLand',1]]);
+  assert.ok(C.play(transfer,['targetLand',1]));
+  assert.equal(transfer.players[0].cash,400+Math.floor(.7*worth));
+  assert.equal(transfer.tiles[1].unit,null);
+
+  const drain=scenario(begins,'landdrain');
+  place(begins,drain,1,1,0,20);drain.players[1].cash=10;
+  cast(begins,drain);
+  assert.deepEqual(begins.choices(drain),[['targetPlayer',1]]);
+  assert.ok(begins.play(drain,['targetPlayer',1]));
+  assert.equal(drain.players[0].cash,480);
+  assert.equal(drain.phase,'sell');
+
+  const vigorous=C.start(2,2,5000,'revolt-1');
+  const shieldmaiden=card(C,'shieldmaiden');
+  assert.equal(C.cards[shieldmaiden].vigorous,true);
+  vigorous.phase='land';vigorous.players[0].pos=1;vigorous.players[0].hand=[shieldmaiden];
+  assert.ok(C.play(vigorous,['summon',0]));
+  assert.equal(vigorous.tiles[1].unit.fatigued,undefined);
+
+  const restore=scenario(C,'restore');
+  place(C,restore,1,0,0,20);Object.assign(restore.tiles[1].unit,{mhp:50,fatigued:true});
+  cast(C,restore);
+  assert.ok(C.play(restore,['targetLand',1]));
+  assert.equal(restore.tiles[1].unit.hp,50);
+  assert.equal(restore.tiles[1].unit.fatigued,undefined);
+  console.log('Revolt gate spells, land transfer, Vigorous and Restore, and Begins debt settlement OK');
 }
 
 {

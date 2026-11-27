@@ -297,7 +297,8 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'prophecyKind':case 'fortuneDraw':return {creature:'크리처',item:'아이템',spell:'주문'}[x];
     case 'route':return (x+1)+'번 · '+(C.elements[s.tiles[x].type]||s.tiles[x].type);
     case 'targetLand':case 'abilityLand':case 'teleTo':{
-      const tile=s.tiles[x],unit=tile.unit;
+      const tile=s.tiles[x],unit=tile.unit,board=C.board(s),gate=board.gateNames?.[board.gates[x]];
+      if(gate)return (x+1)+'번 · '+gate;
       return (x+1)+'번 · '+(C.elements[tile.type]||tile.type)+' · '+(unit?C.cards[unit.id].name+' ('+(tile.owner+1)+'P)':'빈 영지');
     }
     case 'ability':case 'totem':return (x+1)+'번 영지';

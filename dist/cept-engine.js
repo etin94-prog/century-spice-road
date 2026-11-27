@@ -232,7 +232,7 @@ function createCepter(edition="ps2"){
     if(fx.immuneHP(t))return u.hp;
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
   }
-  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,canOccupy,deployable});
+  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,value,canOccupy,deployable});
   const roundGain=s=>Math.min(50,19+s.round);
   function finish(s){
     if(settleDebts(s,'endTurn'))return;
@@ -403,7 +403,7 @@ function createCepter(edition="ps2"){
   }
   function afterTerritory(s){const t=s.tiles[s.players[s.turn].pos];if(t.owner>=0&&!allied(s,t.owner,s.turn))payToll(s);else finish(s);}
   function fatigue(unit){
-    if(revolt&&unit)unit.fatigued=true;
+    if(revolt&&unit&&!cards[unit.id].vigorous)unit.fatigued=true;
   }
   function territory(s){
     const p=s.players[s.turn];

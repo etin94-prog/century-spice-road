@@ -39,6 +39,7 @@ function decisionText(action,p){
   const [kind,x,y]=action,here=s.tiles[p.pos];
   if(['targetLand','abilityLand','teleTo'].includes(kind)){
     const tile=s.tiles[x],unit=tile.unit;
+    if(kind==='targetLand'&&s.spellEffect==='remission')return '게이트를 경유한 것으로 표시합니다.';
     if(!unit)return '빈 영지 · Lv.'+tile.level;
     const relation=tile.owner===s.turn?'내 영지':C.allied(s,tile.owner,s.turn)?'동맹 영지':'적 영지';
     const hp=unit.hp,max=unit.mhp??C.cards[unit.id].hp;
