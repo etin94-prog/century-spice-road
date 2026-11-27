@@ -1353,5 +1353,66 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(worm.phase,'bookWorm');
   assert.ok(C.play(worm,['wormDiscard',1]));
   assert.ok(!worm.players[1].hand.includes(id('battleaxe')));
-  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, 21 territory abilities and reflect timing OK');
+  const fate=command('fate');
+  fate.players[0].hand=[];fate.players[0].book=[id('goblin')];
+  assert.ok(C.play(fate,['ability',8]));
+  assert.deepEqual([fate.players[0].cash,fate.players[0].hand],[960,[id('goblin')]]);
+  const fateDefeated=fight('minotaur','battleaxe',null,null,s=>{
+    s.tiles[3].unit={id:id('fate'),hp:40};s.players[1].book=[id('goblin')];
+  });
+  assert.deepEqual(fateDefeated.players[1].hand,[id('goblin')]);
+
+  const necromancer=command('necromancer');
+  assert.ok(!C.choices(necromancer).some(([kind])=>kind==='ability'));
+  necromancer.lastDestroyed=id('minotaur');necromancer.destroyedCount=2;
+  assert.ok(C.play(necromancer,['ability',8]));
+  assert.deepEqual([necromancer.players[0].cash,necromancer.players[0].hand.at(-1),necromancer.lastDestroyed,necromancer.destroyedCount],[970,id('minotaur'),id('minotaur'),2]);
+  const reviveFossil=fight('minotaur','battleaxe',null,null,s=>{
+    s.tiles[3].unit={id:id('greatfossil'),hp:30};s.lastDestroyed=id('goblin');
+  });
+  assert.equal(reviveFossil.lastDestroyed,id('goblin'),'battle revival keeps the prior grave target');
+  landAbility('mystic',30,s=>assert.deepEqual([s.tiles[3].unit.hp,s.tiles[3].unit.mhp],[34,100]),s=>{s.tiles[3].unit.mhp=96;},0);
+  const savedRandom=Math.random;
+  for(const value of [.69,.7]){
+    try{
+      Math.random=()=>value;
+      const instant=fight('mystic',null,null,null,s=>{s.tiles[3].unit={id:id('tyrannosaurus'),hp:60,st:0};});
+      assert.equal(instant.battle.won,value<.7);
+    }finally{Math.random=savedRandom;}
+  }
+  for(const [source,spawn,cost] of [['goobaqueen','gooba',20],['conjurer','baal',80]]){
+    const s=command(source);
+    assert.ok(C.play(s,['ability',8]));assert.ok(C.play(s,['abilityLand',3]));
+    assert.deepEqual([s.players[0].cash,s.tiles[3].owner,s.tiles[3].unit.id,s.tiles[8].owner],[1000-cost,0,id(spawn),source==='conjurer'?-1:0]);
+  }
+  assert.ok(C.cards[id('gooba')].generatedOnly);
+  for(const name of ['necromancer','conjurer']){
+    const scroll=fight(name,'windcutter',null);
+    assert.ok(scroll.battle.lines.some(line=>line.includes('45 피해')));
+  }
+
+  const sleipnir=()=>{
+    const s=command('sleipnir');
+    Object.assign(s.tiles[7],{type:0,owner:0,unit:{id:id('minotaur'),hp:40}});
+    Object.assign(s.tiles[5],{type:1,owner:1,unit:{id:id('goblin'),hp:30}});
+    Object.assign(s.tiles[19],{type:3,owner:0,unit:{id:id('wallofice'),hp:40}});
+    assert.ok(C.play(s,['ability',8]));
+    assert.ok(!C.choices(s).some(([,i])=>i===19));
+    assert.ok(C.play(s,['abilityLand',7]));
+    assert.deepEqual([s.phase,s.players[0].cash],['teleMove',940]);
+    assert.ok([5,6].every(i=>C.choices(s).some(([,n])=>n===i)));
+    assert.ok(!C.choices(s).some(([,i])=>[7,8,19].includes(i)));
+    return s;
+  };
+  const relocate=sleipnir();
+  assert.ok(C.play(relocate,['teleTo',6]));
+  assert.deepEqual([relocate.turn,relocate.tiles[7].owner,relocate.tiles[6].owner,relocate.territoryMove],[1,-1,0,undefined]);
+  const invade=JSON.parse(JSON.stringify(sleipnir()));
+  assert.ok(C.play(invade,['teleTo',5]));
+  assert.deepEqual([invade.phase,invade.battle.from,C.actor(invade)],['attack',7,0]);
+  assert.ok(C.play(invade,['bare']));assert.equal(C.actor(invade),1);
+  assert.ok(C.play(invade,['bare']));assert.ok(invade.battle.won);
+  assert.ok(C.play(invade,['continue']));
+  assert.deepEqual([invade.phase,invade.turn,invade.tiles[5].owner,invade.tiles[7].owner,invade.players[0].cash],['spell',1,0,-1,940]);
+  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities and reflect timing OK');
 }

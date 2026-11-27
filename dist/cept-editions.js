@@ -184,7 +184,9 @@ const CepterEditions=(()=>{
     greatfossil:{stationary:true,freeToll:true},metalbug:{},sakuya:{support:true},barometz:{stationary:true},
     archbishop:{},clockworkowl:{},dancingdoll:{},domovikha:{},domovoi:{},fanatic:{},
     sharazad:{support:true},algasphere:{stationary:true},banshee:{},bookworm:{},hyde:{},
-    healer:{regenerate:true},spittingcobra:{},archer:{},holyllama:{},witch:{},goldentotem:{stationary:true}
+    healer:{regenerate:true},spittingcobra:{},archer:{},holyllama:{},witch:{},goldentotem:{stationary:true},
+    fate:{},mystic:{},necromancer:{scrollCritical:true},conjurer:{scrollCritical:true},
+    goobaqueen:{},gooba:{generatedOnly:true},sleipnir:{}
   };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));

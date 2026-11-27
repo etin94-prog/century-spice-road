@@ -563,6 +563,7 @@ function createCepter(edition="ps2"){
   function choices(s){
     if(s.phase==='over')return [];
     const follow=extra?.choices(s);if(follow)return follow.length?follow:[['fizzle']];
+    if(s.phase==='teleMove'&&s.territoryMove)return fx.sleipnirExits(s,s.teleFrom).map(n=>['teleTo',n]);
     if(s.phase==='teleMove'&&s.spellEffect==='chariot')return extra.chariotExits(s,s.teleFrom).map(n=>['teleTo',n]);
     if(s.phase==='bookWorm')return s.players[s.spellTarget].hand.map((_,j)=>['wormDiscard',j]);
     if(s.phase==='sacrifice')return s.players[s.turn].hand.flatMap((_,j)=>j===s.pendingCard.index?[]:[['sacrifice',j]]);
@@ -689,7 +690,7 @@ function createCepter(edition="ps2"){
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
-        a.n=null;a.c={...a.c,revenge:null,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,battleHP:0,
+        a.n=null;a.c={...a.c,revenge:null,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,battleHP:0,
           criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
         useGear(a);
       }
@@ -781,7 +782,7 @@ function createCepter(edition="ps2"){
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
       if(scroll&&['deathgaze','pegasus'].includes(d.n))return 'block';
-      if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
+      if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
         a.n==='paladin'&&d.element===-1||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
@@ -815,6 +816,7 @@ function createCepter(edition="ps2"){
       if(a.u.confused&&!muted)a.hp-=Math.floor(damage*.3);
       if(damage>0&&!scroll&&!muted&&(edition!=='ps2'||a.hp>0)){
         extra.onHit(a,d,damage);
+        if(handheld&&a.n==='mystic'&&fx.max(d.u)>=60&&!s.predict&&Math.random()<.7){d.hp=0;lines.push('미스틱 · 즉사');}
         if(a.n==='berserker'){combo.clear(a.u);a.u.confused=true;}
         if(a.n==='samurai'&&(firstEdition?d.c.catalog?.race==='rh':fx.max(d.u)<=30)&&!s.predict&&Math.random()<(firstEdition ? .3 : .6))d.hp=0;
         if(a.n==='cleric'&&d.element===-1&&!s.predict&&Math.random()<.8)d.hp=0;
@@ -917,7 +919,7 @@ function createCepter(edition="ps2"){
     if(edition==='ps2')for(const a of sides)if(a.hp<=0)revive(a);
     for(const a of sides)if(creatureEnd&&a.hp<=0&&a.n==='sulfurousballoon'){const d=a===A?D:A;d.hp=Math.min(d.hp,d.u.hp)-30;}
     for(const a of sides)if(a.hp<=0){
-      if(edition==='ps2'&&revive(a))continue;
+      if((edition==='ps2'||handheld)&&revive(a))continue;
       if(!s.predict)fx.death(s,a.u.id);
       const p=s.players[a.seat];
       if(creatureEnd&&a.n==='cornfolk')p.cash+=200;
@@ -932,7 +934,7 @@ function createCepter(edition="ps2"){
         if(edition==='ps2')enemy.bannedCards=[...new Set([...(enemy.bannedCards||[]),id])];
         for(const player of s.players)if(player.peek?.seat===a.seat)delete player.peek;
       }
-      if(edition!=='ps2')revive(a);
+      if(edition!=='ps2'&&!handheld)revive(a);
     }
     if(D.hp>0)for(const a of sides){
       if(a.hp<=0||muted)continue;
@@ -1068,10 +1070,19 @@ function createCepter(edition="ps2"){
       }
       case 'eraseDraw':s.players[s.spellTarget].book.splice(-1-x,1);for(const q of s.players)if(q.peek?.seat===s.spellTarget)q.peek.ids.splice(x,1);s.phase='roll';break;
       case 'teleTo':{
-        const src=s.tiles[s.teleFrom],dst=s.tiles[x];
-        if(dst.unit){s.battle={at:x,from:s.teleFrom,inv:src.unit.id,invHP:src.unit.hp,atkItem:null,defItem:null,attackerSeat:src.owner,teleport:true};s.phase='attack';}
-        else{claim(dst,src.owner,{...src.unit});combo.clear(dst.unit);if(fx.name(src.unit)!=='powdereater')vacate(src);s.phase='roll';}
-        delete s.teleFrom;break;
+        const from=s.teleFrom,src=s.tiles[from],dst=s.tiles[x],territoryMove=s.territoryMove;
+        delete s.teleFrom;delete s.territoryMove;
+        if(dst.unit){
+          if(territoryMove)mapEffect('invade','슬레이프니르 이동 침략',x,{source:from});
+          s.battle={at:x,from,inv:src.unit.id,invHP:src.unit.hp,atkItem:null,defItem:null,attackerSeat:src.owner,...(territoryMove?{}:{teleport:true})};
+          s.phase='attack';
+        }else{
+          claim(dst,src.owner,{...src.unit});combo.clear(dst.unit);
+          if(fx.name(src.unit)!=='powdereater')vacate(src);
+          if(territoryMove){mapEffect('cast','슬레이프니르 이동',x,{source:from});afterTerritory(s);}
+          else s.phase='roll';
+        }
+        break;
       }
       case 'fortuneDraw':{
         const indices=p.book.flatMap((id,j)=>cards[id].kind===x?[j]:[]);
@@ -1281,6 +1292,15 @@ function createCepter(edition="ps2"){
       resolve(trial);
       return trial.battle;
     }
+    function sleipnirValue(from,to){
+      const src=s.tiles[from],dst=s.tiles[to],unit=cards[src.unit.id];
+      if(dst.owner<0){
+        const same=combo.matchesTerrain(unit,dst.type),prior=combo.matchesTerrain(unit,src.type);
+        return value(s,dst)-value(s,src)+(same?24:0)-(prior?18:0);
+      }
+      const outcome=forecast({at:to,from,inv:src.unit.id,attackerSeat:src.owner},null,false);
+      return outcome.won?value(s,dst)*1.4-value(s,src)+25:-100;
+    }
     function development(k,x,y,c){
       const t=k==='summon'?s.tiles[p.pos]:s.tiles[x];
       const next={...t,owner:seat},cost=k==='summon'?price(p,c,s):k==='element'?elementCost(t):levelCost(t,y);
@@ -1356,6 +1376,8 @@ function createCepter(edition="ps2"){
       if(kind==='abilityLand'){
         const t=s.tiles[x],u=t.unit;
         if(!u)return 35+t.level;
+        if(handheld&&n==='mystic')return sign(t)*Math.min(10,100-fx.max(u))*3;
+        if(handheld&&n==='sleipnir')return Math.max(...fx.sleipnirExits(s,x).map(dst=>sleipnirValue(x,dst)));
         if(handheld&&n==='metalbug')return -sign(t)*(value(s,t)+fx.max(u))-value(s,src)-fx.max(src.unit);
         if(handheld&&n==='sakuya'){
           const trial={...s,tiles:s.tiles.map(v=>v===t?{...v,type:2}:v)};
@@ -1378,6 +1400,7 @@ function createCepter(edition="ps2"){
       },-value(s,src)*.6);
       if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld?100:80)?handheld?40:20:0;
       if(n==='fate')return p.hand.length<5?30:0;
+      if(n==='necromancer')return p.hand.length<6?Math.max(24,cards[s.lastDestroyed].cost*.65):0;
       if(n==='barometz')return (p.lap+1)*30;
       if(n==='astralqueen')return s.tiles.reduce((a,t)=>a+(t.unit&&t.unit.enchant!=='camouflage'&&cards[t.unit.id].element!==t.type?sign(t)*t.level*10:0),0);
       if(n==='dancingdoll')return s.players.reduce((a,q,j)=>a+(allied(s,j,seat)?-1:1)*q.symbols.reduce((sum,count,e)=>sum+count*s.prices[e],0)*.2,0);
@@ -1441,7 +1464,7 @@ function createCepter(edition="ps2"){
       }
       if(k==='abilityLand'||k==='abilityPlayer')return territoryValue(s.abilityFrom,k,x);
       if(k==='breakCard'){const target=s.players[s.spellTarget],cost=cards[target.hand[x]].cost;return allied(s,s.spellTarget,seat)?-cost:cost;}
-      if(k==='teleTo')return s.tiles[x].owner>=0?10:1;
+      if(k==='teleTo')return s.territoryMove?sleipnirValue(s.teleFrom,x):s.tiles[x].owner>=0?10:1;
       if(k==='eraseDraw')return p.peek?.seat===s.spellTarget?(cards[p.peek.ids[x]]?.cost||0):0;
       if(k==='wormDiscard')return cards[s.players[s.spellTarget].hand[x]].cost;
       if(k==='sacrifice'||k==='discard'&&groups.length){

@@ -404,7 +404,10 @@ function setMapCamera(root,x,y,zoom){
 function selectingGate(){
   return s?.phase==='spellTarget'&&s.spellEffect==='remission';
 }
-function selectingMapTarget(){return selectingGate()||s?.phase==='towerTarget';}
+function selectingSleipnir(){
+  return s?.territoryMove||s?.phase==='territoryTarget'&&C.combo.key(C.cards[s.tiles[s.abilityFrom]?.unit?.id])==='sleipnir';
+}
+function selectingMapTarget(){return selectingGate()||s?.phase==='towerTarget'||selectingSleipnir();}
 function focusMapTile(index){
   cameraTile=index;
   const root=$('map'),tile=root.children[index];
@@ -412,7 +415,7 @@ function focusMapTile(index){
   const w=root.clientWidth,h=root.clientHeight,viewWidth=viewport.clientWidth,viewHeight=viewport.clientHeight;
   const free=measureMapFree(),freeWidth=free.right-free.left,freeHeight=free.bottom-free.top;
   if(!selectingMapTarget())targetZoom=null;
-  const preferred=selectingMapTarget()?(targetZoom??(inspect<0?'1':mapZoom)):mapZoom;
+  const preferred=selectingMapTarget()?(targetZoom??(selectingSleipnir()||inspect<0?'1':mapZoom)):mapZoom;
   const overview=preferred==='1';
   const cover=Math.max(viewWidth/w,viewHeight/h);
   const zoom=overview?Math.min(1,freeWidth/w,freeHeight/h):
@@ -745,7 +748,7 @@ function render(){
   if($('seatDialog').open)seatSummary(Number($('seatDialog').dataset.seat));
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
-  $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':hints[s.phase];
+  $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingSleipnir()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
   const controls=$('buttons');controls.replaceChildren();
   if(pending){
@@ -808,7 +811,7 @@ function render(){
   if(menuState.game!==s||menuState.key!==menuKey){
     const gateOnMap=selectingGate()&&choices.some(([kind])=>kind==='targetLand');
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!towerOnMap};
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!towerOnMap&&!selectingSleipnir()};
     if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;

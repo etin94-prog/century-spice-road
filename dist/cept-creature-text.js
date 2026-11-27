@@ -237,6 +237,9 @@ const CepterCreatureText=(()=>{
     fanatic:'고른 크리처에게 20 피해를 주고 이 크리처의 HP도 10 줄어듭니다.',
     algasphere:'자신의 최대 HP와 현재 HP를 최대 20씩 올립니다. 최대 HP 상한은 100입니다.',
     goldentotem:'200G를 얻고 이 크리처는 파괴됩니다.',
+    mystic:'고른 크리처의 최대 HP와 현재 HP를 최대 10씩 올립니다. 최대 HP 상한은 100입니다.',
+    necromancer:'마지막으로 파괴된 크리처를 손패에 추가합니다.',
+    sleipnir:'내 크리처 한 마리를 한 칸 또는 두 칸 이동시킵니다. 목적지가 적 영지면 침략합니다.',
     witch:'고른 적의 손패에 있는 주문과 장비 한 장당 30G를 빼앗습니다.'
   };
   function territorySummary(C,card){
@@ -258,6 +261,8 @@ const CepterCreatureText=(()=>{
     if(card.freeToll)pieces.push('이 영지의 통행료는 0G입니다. 전투에서 파괴되면 티라노사우루스로 부활합니다.');
     if(C.edition==='3ds'&&key==='ixtol')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대를 파괴합니다. 승리하면 기본 ST가 최대 100까지 10 오릅니다.');
     if(C.edition==='3ds'&&key==='kodama')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
+    if(C.edition==='3ds'&&key==='mystic')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 60 이상이면 70% 확률로 즉사시킵니다.');
+    if(card.scrollCritical&&!battle[key]?.includes('두루마리'))pieces.push('두루마리 공격이 강타합니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
