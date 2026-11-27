@@ -144,6 +144,15 @@ const CepterEditions=(()=>{
     const elements=[...parts[2].matchAll(/\[(\w+)\]/g)].map(([,name])=>battleElements.indexOf(name));
     return {[elementalTraits[parts[1]]]:elements};
   }
+  // Only enable Begins items whose printed effects the battle engine handles.
+  const beginsGear={
+    buckler:{},countershield:{effect:'reflect'},diamondarmor:{st:-30,hp:60,last:true},
+    earthshield:{},fireshield:{},watershield:{},windshield:{},
+    eternalmail:{hp:40},knightsshield:{},magicshield:{hp:30},spikedshield:{},
+    towershield:{halveScroll:true},vestment:{hp:30},
+    freeze:{st:30,critical:0},firebolt:{st:30,critical:1},windcutter:{st:30,critical:2},
+    stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40}
+  };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
@@ -182,6 +191,9 @@ const CepterEditions=(()=>{
         c.st=Number(gearClauses.find(v=>v.startsWith('ST'))?.slice(2)||0);
         c.hp=Number(gearClauses.find(v=>v.startsWith('HP'))?.slice(2)||0);
         c.first=gearClauses.includes('先制');c.last=gearClauses.includes('後手');
+      }
+      if(edition==='begins'&&kind==='item'&&Object.hasOwn(beginsGear,slug)){
+        Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
       }
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}
       if(first&&slug==='giantspider'){c.paralyze=true;c.statusRaces=['rh','rb'];}

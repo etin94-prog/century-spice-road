@@ -636,8 +636,9 @@ function createCepter(edition="ps2"){
            d.n==='caitsith'&&fx.strength(a.u)>=40||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element))){lines.push('공격 무효');return 'block';}
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
-        if(!orb&&d.g==='spikeshield'){const reflected=Math.floor(damage/2);a.hp-=reflected;damage-=reflected;}
+        if(!orb&&['spikeshield','spikedshield'].includes(d.g)){const reflected=Math.floor(damage/2);a.hp-=reflected;damage-=reflected;}
       }
+      if(scroll&&guard?.halveScroll)damage=Math.floor(damage/2);
       if((scroll||penetrates)&&d.land){d.hp-=d.land;d.land=0;lines.push('지형 보너스 관통');}
       d.hp-=damage;lines.push(a.c.name+' → '+damage+' 피해');
       if(damage>0)a.dealtDamage=true;
@@ -662,7 +663,7 @@ function createCepter(edition="ps2"){
         if(a.n==='wraith'&&!s.predict&&Math.random()<.5)d.hp=0;
       }
     }
-    const priority=(a,d)=>muted?0:a.g==='hourglass'||d.g!=='hourglass'&&(a.c.first||a.gear?.first||a.u.enchant==='wing'||['earthamulet','wingedboots','sling','swordofthefalcon','ringofthesuccubus','ringofthevampire'].includes(a.g)||a.defending&&active('silveridol'))?1:a.c.last||a.gear?.last||a.g==='diamondarmor'?-1:0;
+    const priority=(a,d)=>muted?0:a.g==='hourglass'||d.g!=='hourglass'&&(a.c.first||a.gear?.first||a.u.enchant==='wing'||['earthamulet','wingedboots','sling','swordofthefalcon','ringofthesuccubus','ringofthevampire'].includes(a.g)||a.defending&&active('silveridol'))?1:a.c.last||a.gear?.last?-1:0;
     const order=priority(D,A)>priority(A,D)?[D,A]:[A,D];
     for(const a of order){
       const d=a===A?D:A;
@@ -682,7 +683,7 @@ function createCepter(edition="ps2"){
       if(a.hp>0&&(a.n==='lunatichare'||a.g==='lunastone')&&d.hp>0){const st=Math.max(0,d.st);d.u.st=Math.max(0,Math.min(d.hp,fx.max(d.u)));d.hp=st;}
       if(a.hp>0&&a.hp<=20&&(a.n==='mandrake'||a.g==='gemoflife'))a.hp=d.hp=0;
       if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition)a.hp=Math.min(a.hp,a.u.hp)-10;}
-      if(a.g==='boomerang'&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
+      if(a.g==='boomerang'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0)a.hp-=20;
       if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
       if(a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
@@ -725,6 +726,7 @@ function createCepter(edition="ps2"){
     }
     for(const a of sides){
       const opponent=a===A?D:A;
+      if(a.g==='eternalmail'&&a.hp>0)s.players[a.seat].book.unshift(a.item);
       if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent);
       if(a.n==='valkyria'&&a.hp>0&&opponent.hp<=0){
         const st=fx.strength(a.u);a.u.st=Math.max(st,Math.min(80,st+10));lines.push('발키리아 · 승리 후 ST '+a.u.st);

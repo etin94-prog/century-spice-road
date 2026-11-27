@@ -301,5 +301,48 @@ const {chromium}=require('playwright');
       console.log('revolt',width+'x'+height,'gate tap and camera restoration OK');
       await page.close();
     }
+    const beginsUrl=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));
+    beginsUrl.searchParams.set('edition','begins');
+    for(const [width,height] of [[320,568],[844,390]]){
+      const page=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      const errors=[];page.on('pageerror',e=>errors.push(e.message));
+      await page.route('https://**',r=>r.abort());
+      await page.goto(beginsUrl.href);
+      const tower=await page.evaluate(()=>{
+        const id=C.cards.findIndex(c=>!c.catalogOnly&&C.combo.key(c)==='towershield');
+        return {id,name:C.cards[id].name};
+      });
+      await page.locator('#editor summary').tap();
+      await page.selectOption('#cardScope','usable');
+      await page.locator('#cardSearch').fill(tower.name);
+      await page.locator('.catalog-open').getByText(tower.name,{exact:true}).tap();
+      const summary=await page.locator('#catalogAbility').evaluate(p=>p.firstChild.textContent);
+      assert.match(summary,/일반 공격과 두루마리 피해를 절반/);
+      await page.locator('#closeCard').tap();
+      await page.locator('#editor summary').tap();
+      await page.locator('#config .match-start .primary').tap();
+      await page.evaluate(defense=>{
+        const id=name=>C.cards.findIndex(c=>!c.catalogOnly&&C.combo.key(c)===name);
+        const at=1,unit=id('fighter'),enemy=id('goblin');
+        s=C.start(2,2,5000,'begins-1');pending=false;
+        Object.assign(s.tiles[at],{owner:0,type:'무속성',unit:{id:unit,hp:C.cards[unit].hp}});
+        s.turn=1;s.players[1].pos=at;s.players[0].cash=1000;
+        s.players[0].hand=[defense,id('magicshield')];
+        s.phase='defend';s.battle={at,inv:enemy,atkItem:id('nuclearfusion'),defItem:null};
+        render();
+      },tower.id);
+      await page.locator('[data-open=equip]').tap();
+      const picker=page.locator('#turnPicker');
+      await picker.locator('.turn-picker-card').filter({hasText:tower.name}).tap();
+      assert.equal(await picker.locator('.turn-picker-detail > span').first().innerText(),summary);
+      const confirm=await picker.locator('.primary').boundingBox();
+      assert.ok(confirm.y>=0&&confirm.y+confirm.height<=height);
+      await picker.locator('.primary').tap();
+      await page.waitForFunction(()=>s.phase==='result');
+      assert.equal(await page.evaluate(()=>s.battle.startHP[1]-s.battle.strikes[0].hp[1]),25);
+      assert.deepEqual(errors,[]);
+      console.log('begins',width+'x'+height,'Korean armor and scroll damage from mobile battle OK');
+      await page.close();
+    }
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

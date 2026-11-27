@@ -15,6 +15,7 @@ const CepterExtraBattle=(()=>{
   };
   const egg=new Map(Object.entries(eggItems).flatMap(([form,names])=>names.split(' ').map(name=>[name,form])));
   const protectedItems=new Set('bellofchaos dragonhelm iksear kris tearinghalo terrair vestment'.split(' '));
+  const protectedItem=name=>protectedItems.has(name);
   const scrollBlock=new Set(['smoketorch','rainbowpiece','magicshield','holygrail']);
   const lord=['flamelord','dagon','darkmaster','beelzebub'];
   const indices=new WeakMap();
@@ -49,7 +50,7 @@ const CepterExtraBattle=(()=>{
       Object.assign(a,{u,c,n:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
       lines.push(c.name+' 변신');
     }
-    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||protectedItems.has(a.g);}
+    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||protectedItem(a.g);}
     function convert(target,name){
       const remaining=target.hp;
       transform(target,ids.get(name));
@@ -138,7 +139,7 @@ const CepterExtraBattle=(()=>{
       const rate=d.g==='holygrail'||d.n==='charon'?2:d.u.enchant==='simulacrum'?3:0;
       if(rate){s.players[d.seat].cash-=damage*rate;lines.push('피해 무효 · 마력 −'+damage*rate+'G');return 'block';}
       if(d.g==='talisman'||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(a.element===0||d.element===0)||
-        d.g==='knightshield'&&fx.strength(a.u)>=40||d.n==='grindylow'&&fx.strength(a.u)<=30||
+        ['knightshield','knightsshield'].includes(d.g)&&fx.strength(a.u)>=40||d.n==='grindylow'&&fx.strength(a.u)<=30||
         ['nymph','yeti'].includes(d.n)&&a.element===0||d.n==='dhampir'&&a.element===2||d.n==='kraken'&&a.element===-1){
         lines.push('공격 무효');return 'block';
       }
@@ -218,6 +219,6 @@ const CepterExtraBattle=(()=>{
     }
     return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,end,victory,transform,convert,ids,boost};
   }
-  return {rules};
+  return {rules,protectedItem};
 })();
 if(typeof module!=='undefined')module.exports=CepterExtraBattle;

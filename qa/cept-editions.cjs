@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict');
 const ps2=require('../dist/cept-engine');
 const describeSpell=require('../dist/cept-spell-text');
+const describeItem=require('../dist/cept-item-text');
 for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
   const C=edition==='ps2'?ps2:ps2.createEdition(edition);
   const spells=C.cards.filter(c=>!c.unlisted&&c.kind==='spell');
@@ -17,7 +18,13 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
   if(find('fly'))assert.match(describeSpell(C,find('fly')),edition==='revolt'?/3개/:/2개/);
   if(find('landdrain'))assert.match(describeSpell(C,find('landdrain')),edition==='saga'?/20G/:/30G/);
   if(find('reincarnation'))assert.equal(describeSpell(C,find('reincarnation')).includes('한 장 더'),['revolt','begins'].includes(edition));
-  console.log(edition,spells.filter(c=>!c.catalogOnly).length,'playable spell summaries are in Korean');
+  const items=C.cards.filter(c=>!c.unlisted&&c.kind==='item');
+  for(const card of items){
+    const summary=describeItem(C,card);
+    if(card.catalogOnly)assert.equal(summary,undefined,edition+' '+card.name+' is catalog-only');
+    else assert.match(summary||'',/[가-힣]/,edition+' '+card.name+' should have a Korean effect');
+  }
+  console.log(edition,spells.filter(c=>!c.catalogOnly).length,'spell and',items.filter(c=>!c.catalogOnly).length,'item summaries are in Korean');
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
@@ -62,8 +69,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.equal(s.battle.startHP[0],C.cards[fighter].hp+hp);
       assert.equal(s.battle.strikes[0].side,first);
     };
-    if(edition==='begins')checkGear(mace,20,0,0);
-    else checkGear(armor,-30,60,1);
+    checkGear(mace,20,0,0);
+    checkGear(armor,-30,60,1);
   }
   for(const [id,map] of Object.entries(C.maps)){
     assert.equal(map.types[0],'성');
@@ -551,4 +558,53 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     data.maps.saga.shift();
   }
   console.log('Modern portal destination validation, preview, travel, and saved map IDs OK');
+}
+
+{
+  const fight=(edition,attacker,defender,weapon,armor)=>{
+    const C=edition==='ps2'?ps2:ps2.createEdition(edition);
+    const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+    const atk=id(attacker),def=id(defender),w=weapon?id(weapon):-1,a=armor?id(armor):-1;
+    assert.ok(atk>=0&&def>=0&&(!weapon||w>=0)&&(!armor||a>=0),[edition,attacker,defender,weapon,armor].join(' '));
+    const s=C.start(2,2,5000,edition+'-1');
+    const at=1;
+    Object.assign(s.tiles[at],{owner:1,type:'무속성',unit:{id:def,hp:C.cards[def].hp}});
+    s.players.forEach(p=>{p.cash=1000;p.hand=[];});
+    if(w>=0)s.players[0].hand.push(w);
+    if(a>=0)s.players[1].hand.push(a);
+    s.players[0].pos=at;s.phase='attack';s.battle={at,inv:atk,atkItem:null,defItem:null};
+    assert.ok(C.play(s,w>=0?['equip',0]:['bare']));
+    assert.ok(C.play(s,a>=0?['equip',0]:['bare']));
+    assert.equal(s.phase,'result');
+    return {C,s,a,w};
+  };
+  for(const edition of ['ps2','dc','ps1','saturn','saga']){
+    const {C,s,w}=fight(edition,'fighter','goblin','boomerang');
+    const first=['ps1','saturn'].includes(edition);
+    assert.equal(s.players[0].hand.includes(w),!first);
+    const description=describeItem(C,C.cards[w]);
+    assert.equal(description.includes('선제'),first);
+    assert.equal(description.includes('돌아옵니다'),!first);
+  }
+  const begins=(w,a,attacker='fighter',defender='goblin')=>fight('begins',attacker,defender,w,a);
+  const {s:scroll}=begins('nuclearfusion');
+  const {s:tower}=begins('nuclearfusion','towershield');
+  assert.equal(scroll.battle.startHP[1]-scroll.battle.strikes[0].hp[1],30);
+  assert.equal(tower.battle.startHP[1]-tower.battle.strikes[0].hp[1],25);
+  const {s:normal}=begins(null,'towershield');
+  assert.equal(normal.battle.startHP[1]-normal.battle.strikes[0].hp[1],20);
+  const {s:magic}=begins('nuclearfusion','magicshield');
+  assert.equal(magic.battle.startHP[1],60);
+  assert.equal(magic.battle.strikes[0].effect,'block');
+  assert.equal(begins(null,'knightsshield').s.battle.strikes[0].effect,'block');
+  assert.equal(begins(null,'buckler','goblin','fighter').s.battle.strikes[0].effect,'block');
+  assert.equal(begins(null,'countershield').s.battle.strikes[0].effect,'reflect');
+  const {s:spiked}=begins(null,'spikedshield');
+  assert.deepEqual(spiked.battle.strikes[0].hp,spiked.battle.startHP.map(h=>h-20));
+  const {s:eternal,a}=begins(null,'eternalmail');
+  assert.equal(eternal.players[1].book.at(0),a);
+  const loser=begins('claymore','eternalmail');
+  assert.equal(loser.s.battle.finalHP[1],0);
+  assert.notEqual(loser.s.players[1].book.at(0),loser.a);
+  console.log('Edition Boomerang return, Begins armor protection, scroll reduction, reflection, and surviving book return OK');
 }

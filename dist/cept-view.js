@@ -257,9 +257,9 @@ $('storeBook').onclick=()=>{
   customBook=book;$('bookChoice').lastElementChild.disabled=false;$('bookChoice').value='custom';
   try{localStorage.setItem(bookKey,JSON.stringify(book));$('bookCount').textContent='50장 · 북 저장 완료';}catch{$('bookCount').textContent='이번 창에서 사용할 북으로 설정했습니다.';}
 };
-const gearText={freeze:'두루마리 · 화 속성에 강타',reflect:'ST 0 · 일반 공격 반사',nullify:'ST 0 · 일반 공격 무효',orb:'무효·반사 무시',pierceEarth:'지 속성 지형 보너스 관통'};
 function localAbility(c){
   if(c.kind==='spell')return describeCepterSpell(C,c);
+  if(c.kind==='item')return describeCepterItem(C,c);
   const original=C.combo.key(c);
   if(C.edition==='saga'&&c.elements){
     return {
@@ -280,8 +280,6 @@ function localAbility(c){
       quetzalcoatl:'응원 · 카드 자체에 선제가 있는 크리처는 전투 중 ST +10',
       bard:'공격이 명중하고 상대가 살아남으면 빈 땅으로 이동합니다. 빈 땅이 없으면 바드가 파괴됩니다.',
       catoblepas:'장비 없이 전투하면 전투 종료 시 상대의 기본 ST만큼 상대에게 피해를 줍니다.',
-      heartfibula:'전투 중 ST +20. 상대를 격파하면 최대 HP가 20 증가합니다. 상한은 80입니다.',
-      holygrail:'일반 공격과 두루마리를 무효화합니다. 일반 공격을 막으면 막은 피해의 두 배를 마력으로 지불합니다.',
       nymph:'공격 명중 시 상대의 최대 HP가 30 이하면 40% 확률로 상대를 내 손패에 넣습니다. 손패에 빈자리가 필요합니다.',
       gooba:'구바 퀸이 영지 능력으로 빈 땅에 소환합니다.',
       carbunfly:'카벙클이 드래곤플라이의 지원을 받아 합체합니다. 선제와 두루마리 반사를 가지며, 전투에서 쓰러지면 카벙클로 돌아옵니다.',
@@ -294,9 +292,9 @@ function localAbility(c){
 
 }
 function stats(c){
-  if(c.kind==='spell')return localAbility(c)||c.catalog?.ability||c.name;
+  if(c.kind!=='creature')return localAbility(c)||c.catalog?.ability||c.name;
   const base=c.st+' ST / '+c.hp+' HP';
-  return [base,gearText[c.effect],c.first?'선제':null,c.half?'일반 피해 절반':null,c.stationary?'방어 전용':null,c.support?'크리처로 지원 가능':null,c.confuse?'공격 명중 시 혼란':null,
+  return [base,c.first?'선제':null,c.half?'일반 피해 절반':null,c.stationary?'방어 전용':null,c.support?'크리처로 지원 가능':null,c.confuse?'공격 명중 시 혼란':null,
     c.landBan!=null?C.elements[c.landBan]+' 배치 불가':null,c.ban?.map(v=>({weapon:'무기',armor:'방어구',scroll:'두루마리'})[v]+' 불가').join('·')].filter(Boolean).join(' · ');
 }
 function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];

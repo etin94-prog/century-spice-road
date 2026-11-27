@@ -84,7 +84,7 @@ function actionCard(action,p){
 
 function cardSummary(card){
   const base=stats(card);
-  if(card.kind==='spell')return base;
+  if(card.kind!=='creature')return base;
   const ability=localAbility(card)||card.catalog?.ability;
   return !ability||ability===base?base:base+' · '+ability;
 }
