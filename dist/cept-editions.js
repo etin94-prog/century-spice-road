@@ -241,6 +241,16 @@ const CepterEditions=(()=>{
         helltic:2,kasha:2,peri:2,phlogiston:2,salamander:2,fireshield:2,firestone:2,gremlintooth:2,magmahammer:4,
         bravesong:2,burninghail:2,influence:1,magicbolt:2,mountainleap:2,upheaval:2,venomousboil:2
       },
+      sagaRilaraConspire:{
+        bandit:4,fighter:2,hornedchameleon:2,thief:2,golem:2,hellhound:2,phlogiston:1,amazon:3,bunyip:1,lamia:1,
+        dwarf:2,squirrine:3,pegasus:2,succubus:1,witch:2,chainmail:2,kris:1,morningstar:2,ringofthesuccubus:2,
+        sling:2,backward:2,drainmagic:2,feast:1,holyword8:2,manna:2,slow:2
+      },
+      sagaRilaraFierce:{
+        bandit:4,thief:2,boggart:3,firegiant:2,gascloud:2,gladiator:1,minotaur:2,phlogiston:2,revenant:2,squirrine:2,
+        vampire:1,wereboar:2,weretiger:2,wolverine:3,boomerang:2,catapult:2,gremlintooth:2,ringofthesuccubus:2,
+        scalearmor:2,capture:1,drainmagic:2,fairylight:2,slow:2,theft:1,venomousboil:2
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
@@ -327,12 +337,12 @@ const CepterEditions=(()=>{
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
-    beastgear:{spellWard:true,neutralizeScroll:true},
+    beastgear:{spellWard:true,neutralizeScroll:true},colossus:{},revenant:{paralyze:true},vampire:{first:true},
     deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
     archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},
-    fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
+    lamia:{entryEnchant:'spiritwalk'},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={

@@ -77,6 +77,7 @@ const CepterExtraBattle=(()=>{
       }else if(name==='ambermosquito')form=ids.get(pick(['giantrat','tyrannosaurus']));
       else if(name==='doppelganger')form=opponentId;
       else if(name==='baldanders')form=pick(creatures);
+      else if(s.edition==='saga'&&name==='revenant'&&combo.enchanted(t.unit))form=ids.get('vampire');
       if(form!=null)transform(a,form,temporary);
       if(!consume&&gear==='metamorphosebelt'){
         transform(a,ids.get('grassstrider'),true);consume=true;

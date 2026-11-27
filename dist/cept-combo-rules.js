@@ -226,7 +226,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50};
+    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -257,6 +257,7 @@ const CepterCombos = (() => {
           (n==='tokebi'||v.type!==2&&!idol(s,'jadeidol'))?[['abilityLand',j]]:[]);
         if(n==='fay'||n==='lichenoid')return s.tiles.flatMap((v,j)=>targetable(s,v)&&
           (n==='fay'?strength(v.unit)<100:!immuneHP(v)&&max(v.unit)<100)?[['abilityLand',j]]:[]);
+        if(n==='lamia')return s.tiles.flatMap((v,j)=>targetable(s,v,'senchant')?[['abilityLand',j]]:[]);
         if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
         if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
       }
@@ -303,6 +304,7 @@ const CepterCombos = (() => {
           }
           return;
         }
+        if(n==='lamia'){v.unit.st=Math.max(0,strength(v.unit)-20);return;}
         if(n==='hellpyron'){
           const reward=50*(s.destroyedCount||0);
           p.cash+=reward;s.destroyedCount=0;

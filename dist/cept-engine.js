@@ -1616,6 +1616,7 @@ function createCepter(edition="ps2"){
         if(edition==='saga'&&n==='fay')return sign(t)*Math.min(20,100-fx.strength(u));
         if(edition==='saga'&&n==='lichenoid')return sign(t)*Math.min(10,100-fx.max(u))*(1+t.level*.3);
         if(['archer','tetramorph','fortress','helltic'].includes(n))return damageValue(t,['archer','fortress'].includes(n)?10:20);
+        if(edition==='saga'&&n==='lamia')return -sign(t)*Math.min(20,fx.strength(u))*3;
         if(n==='burnacle')return sign(t)<0&&u.enchant!=='fog'?Math.min(35,toll(s,t)/5):0;
         if(n==='fanatic')return damageValue(t,20)+damageValue(src,handheld?10:20);
         if(n==='healer')return fx.immuneHP(t)?0:sign(t)*Math.min(30,fx.max(u)-u.hp);

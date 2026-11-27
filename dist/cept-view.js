@@ -50,7 +50,7 @@ const modernBookNames=C.edition==='3ds'?
   {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
     sagaGottliebKill:'고틀리프 · 섬멸',sagaGottliebSlaves:'고틀리프 · 포로',
     sagaBorivalFire:'보리발 · 화염',sagaZenethDragon:'제네스 · 용의 눈',
-    sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaRilaraExploit:'리라라 · 강탈',sagaBorivalHellFire:'보리발 · 지옥불',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
+    sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaRilaraExploit:'리라라 · 강탈',sagaBorivalHellFire:'보리발 · 지옥불',sagaRilaraConspire:'리라라 · 모략',sagaRilaraFierce:'리라라 · 맹공',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){
