@@ -136,7 +136,15 @@ function syncRoom(room){
   scheduleRoomAI();
 }
 async function submitOnline(action,computer=false,levelUsed=null){
-  if(online.pending||g.over||!(computer?canRunRoomAI():myTurn())||!apply(structuredClone(g),action))return;
+  const reportRefusal=!computer&&['spice','expedition'].includes(document.documentElement.dataset.table);
+  if(online.pending||g.over||!(computer?canRunRoomAI():myTurn())){
+    if(reportRefusal)refuseCenturyTurn();
+    return;
+  }
+  if(!apply(structuredClone(g),action)){
+    if(reportRefusal)refuseBoardMove('대국 상태가 바뀌었거나 행동 조건을 충족하지 않습니다. 선택을 다시 확인해 주세요.');
+    return;
+  }
   online.pending=true;
   if(!computer&&el('confirm'))el('confirm').disabled=true;
   const s=roomService,id=online.id,n=online.count;

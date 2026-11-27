@@ -26,3 +26,40 @@ function announcePlayerTurn(playable){
   previouslyPlayable=Boolean(playable);
   turnNotice.textContent=previouslyPlayable?'내 차례입니다.':'';
 }
+
+let refusalTimer, refusalTarget, refusalOriginal, refusalMessage;
+function refuseBoardMove(message){
+  clearTimeout(refusalTimer);
+  if(refusalTarget?.isConnected&&refusalTarget.textContent===refusalMessage){
+    refusalTarget.textContent=refusalOriginal;
+    delete refusalTarget.dataset.boardRefused;
+  }
+  const boardStatus=document.getElementById('status');
+  const body=document.getElementById('body');
+  if(boardDialog.open){
+    refusalTarget=body.querySelector('.boardRefusal');
+    if(!refusalTarget){
+      refusalTarget=document.createElement('p');
+      refusalTarget.className='boardRefusal';
+      refusalTarget.setAttribute('role','status');
+      body.prepend(refusalTarget);
+    }
+  }else refusalTarget=boardStatus.querySelector('.turn')||boardStatus;
+  refusalOriginal=refusalTarget.textContent;
+  refusalMessage=message;
+  refusalTarget.dataset.boardRefused='';
+  refusalTarget.textContent=message;
+  refusalTimer=setTimeout(()=>{
+    if(refusalTarget.textContent===message)refusalTarget.textContent=refusalOriginal;
+    delete refusalTarget.dataset.boardRefused;
+  },2600);
+}
+function refuseCenturyTurn(){
+  const message=g.over?'대국이 끝났습니다.':
+    online&&!online.ready?'친구가 입장할 때까지 기다려 주세요.':
+    online&&!online.connected?'대국에 다시 연결하고 있습니다.':
+    online?.pending?'이전 행동을 반영하고 있습니다.':
+    flightActor!==null?'이전 행동이 끝난 뒤 다시 선택해 주세요.':
+    seatName(g.turn)+' 차례입니다.';
+  refuseBoardMove(message);
+}

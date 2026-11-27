@@ -109,7 +109,7 @@ function advance(a,remote=false,substitute=false){
   if(online&&!remote){submitOnline(a);return;}
   const actor=g.turn,human=actor===mySeat();
   const motion=captureMove(actor,a);
-  if(!apply(g,a))return;
+  if(!apply(g,a)){if(human&&!remote)refuseBoardMove('현재 향신료와 카드 조건으로는 이 행동을 할 수 없습니다.');return;}
   if(g.over)endingCues.add(g);
   handOrigin=null;
   clearTimeout(turnTimer);flightActor=null;
@@ -149,9 +149,10 @@ function schedule(){
 }
 let handOrigin=null;
 function playHandCard(i){
-  if(!myTurn()||g.over)return;
+  if(!myTurn()||g.over)return refuseCenturyTurn();
   const p=g.players[mySeat()],c=p.hand[i];
-  if(!c)return;
+  if(!c)return refuseBoardMove('선택한 손패를 다시 확인해 주세요.');
+  if(!c.up&&!covers(p.bag,c.cost))return refuseBoardMove('교환에 필요한 향신료가 부족합니다.');
   const source=el('modal').open?el('collection')?.querySelector('[data-hand-index="'+i+'"]'):el('hand').children[i];
   handOrigin={card:c,rect:visibleRect(source)};
   const action={kind:'play',i,n:1};
@@ -161,19 +162,19 @@ function playHandCard(i){
   start('play',i);
 }
 function start(kind,i){
-  if(g.over||!myTurn())return;
+  if(g.over||!myTurn())return refuseCenturyTurn();
   draft={kind,i,pay:[],steps:[],n:1,drop:zeros()};
   const p=g.players[mySeat()];
   if(kind==='order'){
     const cost=g.orders[i].cost;
     if(covers(p.bag,cost)){advance(draft);return;}
     const missing=cost.map((n,t)=>n>p.bag[t]?names[t]+' '+(n-p.bag[t]):'').filter(Boolean);
-    el('status').querySelector('.turn').textContent=missing.join(' · ')+' 부족';
+    refuseBoardMove(missing.join(' · ')+' 부족');
     return;
   }
   if(kind==='buy'){
     if(sum(p.bag)<i){
-      el('status').querySelector('.turn').textContent='영입 비용 '+(i-sum(p.bag))+'개 부족';
+      refuseBoardMove('영입 비용 '+(i-sum(p.bag))+'개 부족');
       return;
     }
     finishForcedPayment(draft,p.bag);
@@ -255,7 +256,7 @@ function editor(){
     editor();
   });
   if(el('undo'))el('undo').onclick=()=>start(a.kind,a.i);
-  el('confirm').onclick=()=>advance(a);
+  el('confirm').onclick=()=>myTurn()&&!g.over?advance(a):refuseCenturyTurn();
 }
 el('rest').onclick=()=>start('rest',0);
 function results(){

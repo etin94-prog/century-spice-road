@@ -124,6 +124,7 @@ function openMix(i,opts={}){
   if(combo===12&&!t.special&&!board.departures)notes+='<p>항해 비용 '+(choices[0]?.fuel?.length??Math.max(0,(opts.path??seaPath(board,p.boat,i)).length-p.bonus.filter(b=>b==='move').length))+'장 · 사용한 카드부터 지불</p>'+(myTurn()?'<button id="mixPath">항로 직접 선택</button>':'');
   if(t.special==='move'&&opts.dest===undefined){
     const dests=[...new Set(choices.map(c=>c.dest))];
+    if(!dests.length)return myTurn()?refuseBoardMove('이동할 수 있는 섬이 없습니다.'):refuseCenturyTurn();
     modal(t.name,'<p>목적지 섬을 선택하세요.</p><div class="actions">'+dests.map(d=>'<button data-dest="'+d+'">'+(board.islands[d].water?'바다':'섬 '+(d+1))+' '+(board.islands[d].recipe?flow(board.islands[d].recipe):'')+'</button>').join('')+'</div>');
     el('body').querySelectorAll('[data-dest]').forEach(b=>b.onclick=()=>openMix(i,{dest:+b.dataset.dest}));return;
   }
@@ -135,7 +136,8 @@ function openMix(i,opts={}){
   if(el('mixPath'))el('mixPath').onclick=()=>mixRoute(board,i,opts);
   if(el('settle'))el('settle').onclick=()=>mixPayment(board,i,opts,fee,buildFee,option?.fuel?.length||0);
   el('body').querySelectorAll('[data-option]').forEach(b=>b.onclick=()=>{
-    if(!myTurn())return;const option=+b.dataset.option,c=choices[option];
+    if(!myTurn())return refuseCenturyTurn();
+    const option=+b.dataset.option,c=choices[option];
     if(c.kind==='refresh'){if(total(c.bag)>capacity(p))discard({},c.bag,capacity(p),a=>startRefresh(a.discard));else startRefresh();return;}
     const a={edition,combo,kind:c.kind,i,option,...opts,...(mixRefresh?{refresh:true,refreshDiscard:mixRefreshDiscard}:{})};
     const limit=capacity(p)+(c.prize==='cargo'?3:0);

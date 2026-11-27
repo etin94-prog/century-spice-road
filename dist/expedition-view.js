@@ -125,6 +125,7 @@ function openSite(i,opts={}){
   modal(siteName(t,i),detail+'<div class="actions">'+options.map((c,j)=>'<button data-option="'+j+'">'+optionsLabel(c,t)+previewBag(p.bag,c.bag)+'</button>').join('')+'</div>'+(!options.length?'<p>'+(myTurn()?'현재 이곳에서 수행할 수 있는 행동이 없습니다.':seatName(g.turn)+'의 차례입니다.')+'</p>':''));
   draft={i,opts};if(el('editRoute'))el('editRoute').onclick=()=>editRoute(i,opts);
   el('body').querySelectorAll('[data-option]').forEach(b=>b.onclick=()=>{
+    if(!myTurn())return refuseCenturyTurn();
     const option=+b.dataset.option,c=options[option],a={edition,i,option,kind:c.kind,...opts};
 
     const limit=capacity(p)+(c.prize==='cargo'?3:0);
@@ -143,7 +144,7 @@ function editRoute(i,previous){
     const panel=(id,bag,choices,n)=>n?'<h3>'+({pay:'항해·통행료',buildPay:'교역소 건설비'}[id])+' · '+n+'개</h3><p>'+(choices.map(k=>info.goods[k]).join(' → ')||'낮은 단계부터 자동 지불')+'</p><div class="actions">'+bag.map((amount,k)=>'<button data-fee="'+id+'" data-spice="'+k+'" '+(choices.length>=n||choices.filter(x=>x===k).length>=amount?'disabled':'')+'>'+goods(unitBag(String(k)))+'</button>').join('')+'<button data-clear="'+id+'">다시 선택</button></div>':'';
     const next=g.tiles.map((t,k)=>neighbors(g,last,k)?'<button data-next="'+k+'">'+siteName(t,k)+'</button>':'').join('');
     modal('항로 선택','<p>'+[p.boat,...route].map(k=>siteName(g.tiles[k],k)).join(' → ')+'</p><div class="actions">'+next+'<button id="undo">한 칸 취소</button></div>'+panel('pay',p.bag,pay,fees)+panel('buildPay',ar?.bag||blank(),buildPay,price)+'<label><input type="checkbox" id="collect" '+(collect?'checked':'')+'> 도착지에 놓인 재료 회수</label><button class="primary" id="landHere" '+(!ar?'disabled':'')+'>이곳에서 행동 선택</button>');
-    el('body').querySelectorAll('[data-next]').forEach(b=>b.onclick=()=>{if(route.length>=free+total(p.bag))return;route.push(+b.dataset.next);pay=[];buildPay=[];draw();});
+    el('body').querySelectorAll('[data-next]').forEach(b=>b.onclick=()=>{if(route.length>=free+total(p.bag))return refuseBoardMove('더 이동할 재료가 부족합니다.');route.push(+b.dataset.next);pay=[];buildPay=[];draw();});
     el('undo').onclick=()=>{route.pop();pay=[];buildPay=[];draw();};
     el('body').querySelectorAll('[data-fee]').forEach(b=>b.onclick=()=>{(b.dataset.fee==='pay'?pay:buildPay).push(+b.dataset.spice);draw();});
     el('body').querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{if(b.dataset.clear==='pay')pay=[];else buildPay=[];draw();});
@@ -154,7 +155,7 @@ function discard(a,bag,limit,submit=advance){
   const left=bag.slice(),paid=[];
   function draw(){modal('반납할 재료 선택','<p>'+ (total(left)-limit)+'개 남음</p><div class="actions">'+left.map((n,i)=>'<button data-drop="'+i+'" '+(!n?'disabled':'')+'>'+info.goods[i]+' '+n+'</button>').join('')+'</div>');
     el('body').querySelectorAll('[data-drop]').forEach(b=>b.onclick=()=>{
-      if(!myTurn())return;
+      if(!myTurn())return refuseCenturyTurn();
       const k=+b.dataset.drop;
       if(total(left)===limit+1){
         const buttons=[...el('body').querySelectorAll('[data-drop]:enabled')];
@@ -176,7 +177,8 @@ function recordMove(){}
 function advance(a,remote=false,sub=false){
   if(!remote&&g.turn===mySeat()&&(edition===2||combo===123)&&nextPriority)a={...a,priority:nextPriority.slice()};
   if(online&&!remote)return submitOnline(a);
-  const who=g.turn,m=captureMove(who,a);if(!apply(g,a))return;
+  const who=g.turn,m=captureMove(who,a);
+  if(!apply(g,a)){if(who===mySeat()&&!remote)refuseBoardMove('현재 위치나 재료 조건으로는 이 행동을 할 수 없습니다.');return;}
   if(g.over)endingCues.add(g);
   if(sub)g.log[0].msg='AI 대행 · '+g.log[0].msg;
   if(g.combo){mixRefresh=false;delete g.stagedRefresh;}
@@ -249,7 +251,7 @@ el('fullscreen').onclick=async()=>{
 };
 document.addEventListener('fullscreenchange',updateFull);document.addEventListener('webkitfullscreenchange',updateFull);
 el('workerPool').onclick=()=>{
-  if(!myTurn())return;
+  if(!myTurn())return refuseCenturyTurn();
   const sites=g.tiles.map((t,i)=>actionsAt(g,i).length?'<button data-work="'+i+'">'+siteName(t,i)+' · '+workerCost(g.players[g.turn],t)+'명</button>':'').join('');
   modal('일할 장소 선택','<div class="actions">'+sites+'</div>'+(sites?'':'<p>배치할 수 있는 장소가 없습니다. 일꾼을 회수하세요.</p>'));
   el('body').querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>openSite(+b.dataset.work));

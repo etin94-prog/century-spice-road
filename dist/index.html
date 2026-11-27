@@ -2,7 +2,7 @@
 <script>
 const url=new URL(location.href),id=url.searchParams.get('table')||url.searchParams.get('room');
 if(/^[a-f0-9]{32}$/.test(id||'')){url.pathname=url.pathname.replace(/[^/]*$/,id.startsWith('ce000005')?'vegas.html':id.startsWith('ce000004')?'splendor.html':/^ce00000[23]/.test(id)?'expedition.html':'spice.html');location.replace(url.href);}
-</script><link rel="stylesheet" href="welcome.css?v=tabs"><link rel="stylesheet" href="mobile-table.css"></head><body><main><header><p lang="en">Board Game Table</p><h1>어떤 게임을 펼칠까요?</h1><div>게임을 고르고 플레이할 모드를 선택하세요.</div></header>
+</script><link rel="stylesheet" href="welcome.css?v=tabs"><link rel="stylesheet" href="mobile-table.css?v=touch-3"></head><body><main><header><p lang="en">Board Game Table</p><h1>어떤 게임을 펼칠까요?</h1><div>게임을 고르고 플레이할 모드를 선택하세요.</div></header>
 <div role="tablist" aria-label="보드게임">
 <button type="button" role="tab" id="tab-century" aria-controls="century" aria-selected="true" tabindex="0">센추리</button>
 <button type="button" role="tab" id="tab-catan" aria-controls="catan" aria-selected="false" tabindex="-1">카탄</button>

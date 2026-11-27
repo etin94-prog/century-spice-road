@@ -226,3 +226,23 @@ dialog .setupBack {
 .opponent .card .corner small { font-size: .78em; }
 .progress #round { font-size: 12px; }
 [data-table="splendor"] #status[data-refused] { color: #ffc38f; font-weight: 700; white-space: normal; line-height: 1.15; }
+
+/* Keep the short landscape poker table within the visible viewport. */
+@media (orientation: landscape) and (max-height: 420px) {
+  [data-table="card-table"] .poker .localSeat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+[data-table="splendor"] aside #save,
+[data-table="expedition"] #manifest #save,
+[data-table="spice"] #rival .rivalhead small {
+  font-size: 12px;
+}
+:is([data-table="spice"], [data-table="expedition"]) [data-board-refused] {
+  color: #ffc38f;
+  font-weight: 700;
+}
+
+.boardRefusal:empty { display: none; }
