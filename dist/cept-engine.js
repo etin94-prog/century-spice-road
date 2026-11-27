@@ -83,7 +83,7 @@ function createCepter(edition="ps2"){
     return c.landBan!==terrain&&!banned.includes(color)&&!(land&&words.includes('no'+land));
   }
   const allowed=(s,i,c,t)=>canOccupy(c,t)&&(fx.idol(s,'goldidol')||
-    [...'RBGY'].every((v,e)=>s.tiles.filter(t=>t.owner===i&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
+    [...'RBGY'].every((v,e)=>s.tiles.filter(t=>(handheld?allied(s,i,t.owner):t.owner===i)&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
   const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&fx.idol(s,'goldidol'));
   const canEquip=(unit,gear)=>gear.kind==='item'?!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')):
     gear.kind==='creature'&&(unit.support||['livingshield','livingspear','livingsword'].includes(key(gear)));
@@ -541,8 +541,9 @@ function createCepter(edition="ps2"){
     const p=s.players[s.turn];
     if(revolt)return s.tiles.flatMap((t,n)=>t.owner===s.turn&&t.unit&&!t.unit.fatigued?[n]:[]);
     const type=s.tiles[p.pos].type;
-    if(p.status==='enlightenment'||type==='성'||edition==='saga'&&type==='신전'||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>v.owner===s.turn?[n]:[]);
-    return [...new Set([...s.visited,p.pos])].filter(n=>s.tiles[n].owner===s.turn);
+    const commandable=t=>handheld?allied(s,s.turn,t.owner):t.owner===s.turn;
+    if(p.status==='enlightenment'||type==='성'||edition==='saga'&&type==='신전'||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>commandable(v)?[n]:[]);
+    return [...new Set([...s.visited,p.pos])].filter(n=>commandable(s.tiles[n]));
   }
   function usableCreature(s,seat,id,tile,kind){
     const p=s.players[seat],c=cards[id];
@@ -627,7 +628,7 @@ function createCepter(edition="ps2"){
       case 'towerTarget':return [...towerTargets(s),['towerCancel']];
       case 'towerDeploy':return [...towerCards(s,s.towerAt),['towerCancel']];
       case 'land':
-        if(t.owner>=0&&t.owner!==i&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
+        if(t.owner>=0&&(handheld?!allied(s,t.owner,i):t.owner!==i)&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
         if(t.owner>=0&&!allied(s,t.owner,i))options.push(['pay']);
         {
           if(t.owner<0&&territoryType(t.type))hand('creature','summon');
@@ -637,7 +638,7 @@ function createCepter(edition="ps2"){
               if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
             for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
-              if(v.unit.enchant!=='thornfetter'&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&s.tiles[dest].owner!==i&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
+              if(v.unit.enchant!=='thornfetter'&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
             }
             if(p.cash>=elementCost(v))elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
             p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!sacrificeRequired(s,cards[id])||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id],s)<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
@@ -1039,7 +1040,7 @@ function createCepter(edition="ps2"){
       const ok=applyAction(s,pending.action);delete s.cardPaid;return ok;
     }
     const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
-    const previousChains=trackChains?chainCounts(s):null;
+    const previousChains=trackChains||handheld&&k==='exchange'?chainCounts(s):null;
     if(k==='roll'){delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
     const before=!gemTerrain&&(handheld||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
@@ -1206,10 +1207,14 @@ function createCepter(edition="ps2"){
       }
       case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=levelCost(s.tiles[x],y);s.tiles[x].level=y;fatigue(s.tiles[x].unit);note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
       case 'transfer':{
-        const from=s.tiles[x],dest=s.tiles[y];
+        const from=s.tiles[x],dest=s.tiles[y],owner=from.owner;
         fatigue(from.unit);
-        if(dest.owner<0){claim(dest,i,{...from.unit});combo.clear(dest.unit);if(fx.name(from.unit)!=='powdereater')vacate(from);afterTerritory(s);}
-        else{mapEffect('invade','영지 공격',y,{source:x});s.battle={at:y,inv:from.unit.id,invHP:from.unit.hp,from:x,atkItem:null,defItem:null};s.phase='attack';}
+        if(dest.owner<0){claim(dest,owner,{...from.unit});combo.clear(dest.unit);if(fx.name(from.unit)!=='powdereater')vacate(from);afterTerritory(s);}
+        else{
+          mapEffect('invade','영지 공격',y,{source:x});
+          s.battle={at:y,inv:from.unit.id,invHP:from.unit.hp,from:x,atkItem:null,defItem:null,...(owner===i?{}:{attackerSeat:owner})};
+          s.phase='attack';
+        }
         break;
       }
       case 'element':mapEffect('cast',elements[y]+' 속성',x);p.cash-=elementCost(s.tiles[x]);s.tiles[x].type=y;fatigue(s.tiles[x].unit);afterTerritory(s);break;
@@ -1474,7 +1479,7 @@ function createCepter(edition="ps2"){
             return (out.won?value(s,s.tiles[p.pos])+100:out.noToll?toll(s,s.tiles[p.pos]):-60)-c.cost*.5-(cards[id]?.cost||0)*.5;}));
         }
         if(skill===3&&k==='transfer'&&s.tiles[y].owner>=0){
-          const src=s.tiles[x],out=forecast({at:y,from:x,inv:src.unit.id,invHP:src.unit.hp},null,false);
+          const src=s.tiles[x],out=forecast({at:y,from:x,inv:src.unit.id,invHP:src.unit.hp,attackerSeat:src.owner},null,false);
           return out.won?value(s,s.tiles[y])*1.4-value(s,src)+25:-100;
         }
       }

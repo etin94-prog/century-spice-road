@@ -1145,6 +1145,42 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(lap,['route',0]));
   assert.deepEqual([lap.players[0].lap,lap.players[0].cash],[2,568]);
 
+  function alliedCommand(){
+    const s=C.start(4,4,0,intro,undefined,undefined,0,'teams');
+    s.phase='land';s.visited=[7];s.players[0].pos=8;
+    s.players.forEach(p=>{p.cash=1000;p.hand=[];});
+    Object.assign(s.tiles[7],{type:0,owner:2,unit:{id:id('minotaur'),hp:40}});
+    Object.assign(s.tiles[8],{type:0,owner:2,unit:{id:id('goblin'),hp:30}});
+    return s;
+  }
+  const allyLevel=alliedCommand();
+  allyLevel.players[0].hand=[id('minotaur')];
+  assert.ok(!C.choices(allyLevel).some(([kind])=>kind==='pay'||kind==='invade'));
+  assert.ok(!C.choices(allyLevel).some(([kind,x,y])=>kind==='transfer'&&x===7&&y===8));
+  assert.ok(C.play(allyLevel,['level',7,2]));
+  assert.deepEqual([allyLevel.tiles[7].owner,allyLevel.tiles[7].level,allyLevel.players[0].cash,allyLevel.players[2].cash],[2,2,900,1000]);
+
+  const allyExchange=alliedCommand();
+  allyExchange.players[0].hand=[id('ixtol')];
+  assert.ok(C.play(allyExchange,['exchange',8,0]),'ally fire territory satisfies Ixtol summon cost');
+  assert.deepEqual([allyExchange.tiles[8].owner,allyExchange.tiles[8].unit.id,allyExchange.players[0].hand],[0,id('ixtol'),[id('goblin')]]);
+  const allyMove=alliedCommand();
+  assert.ok(C.play(allyMove,['transfer',7,6]));
+  assert.deepEqual([allyMove.tiles[7].owner,allyMove.tiles[6].owner],[-1,2]);
+
+  const allyFight=alliedCommand();
+  Object.assign(allyFight.tiles[6],{owner:1,unit:{id:id('minotaur'),hp:40}});
+  allyFight.players[2].hand=[id('battleaxe')];
+  assert.ok(C.play(allyFight,['transfer',7,6]));
+  assert.deepEqual([allyFight.turn,C.actor(allyFight)],[0,2]);
+  assert.ok(C.play(allyFight,['equip',0]));
+  assert.deepEqual([allyFight.players[0].cash,allyFight.players[2].cash,C.actor(allyFight)],[1000,970,1]);
+  assert.ok(C.play(allyFight,['bare']));
+  assert.ok(allyFight.battle.won);
+  assert.deepEqual([allyFight.tiles[6].owner,allyFight.tiles[7].owner,C.actor(allyFight)],[2,-1,0]);
+  assert.ok(C.play(allyFight,['continue']));
+  assert.equal(allyFight.turn,1);
+
   const fight=(attacker,gear,shield,st,prepare)=>{
     const s=C.start(2,2,0,intro);
     const attackerId=id(attacker),guard=id('minotaur');assert.ok(attackerId>=0&&guard>=0);
@@ -1259,5 +1295,5 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   barometz.players[0].lap=2;
   assert.ok(C.play(barometz,['ability',8]));
   assert.equal(barometz.players[0].cash,1090);
-  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income, all nine Revenge cards, four territory abilities and reflect timing OK');
+  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, four territory abilities and reflect timing OK');
 }

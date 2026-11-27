@@ -621,7 +621,17 @@ const {chromium}=require('playwright');
       await handheldPage.locator('[data-action=ability]').tap();
       await handheldPage.locator('[data-action=abilityLand]').tap();
       assert.deepEqual(await handheldPage.evaluate(()=>[s.tiles[8].owner,s.tiles[3].owner]),[-1,-1]);
-      console.log('3ds 2012 '+width+'x'+height+': independent edition, 41-map archive, single die, Power Crown and Metal Bug by touch OK');
+      await handheldPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);
+        const id=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='minotaur');
+        s=C.start(4,4,6000,'3ds-original-bend',undefined,undefined,0,'teams');
+        s.phase='land';s.players[0].pos=8;s.players[0].cash=s.tiles[8].base;
+        Object.assign(s.tiles[8],{owner:2,unit:{id,hp:40}});
+        pending=false;render();
+      });
+      await handheldPage.locator('#buttons [data-action=level]').tap();
+      assert.deepEqual(await handheldPage.evaluate(()=>[s.tiles[8].owner,s.tiles[8].level,s.players[0].cash]),[2,2,0]);
+      console.log('3ds 2012 '+width+'x'+height+': independent edition, 41-map archive, single die, Power Crown, Metal Bug and allied land upgrade by touch OK');
       await handheldPage.close();
     }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
