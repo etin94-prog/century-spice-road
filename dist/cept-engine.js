@@ -261,7 +261,7 @@ function createCepter(edition="ps2"){
     if(revolt)p.cash+=roundGain(s);
     extraSpells?.startTurn(s,cards);
     for(let j=0;j<(s.tiles.some(t=>fx.name(t.unit)==='brassidol')?2:1);j++){draw(p,s);if(p.status==='despair')p.hand.pop();}
-    s.phase=!revolt&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;s.visited=[];
+    s.phase=!revolt&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
   }
   function price(p,c,s){
     const status=c.kind==='spell'?1:({waste:2,lifeforce:.5,sagaDeduction:.3,sagaInflation:1.3}[p.status]??1);
@@ -332,6 +332,21 @@ function createCepter(edition="ps2"){
     const dest=map.transit?.[at];
     if(dest!=null&&(type==='다리'||type==='강제 전송진'||!remaining&&(type==='전송진'||map.graph)))return dest;
   }
+  function magicTrapDelta(roll,cash,stored){
+    if(roll<=3)return stored;
+    return roll>=6?-Math.floor(Math.max(0,cash)/5):0;
+  }
+  function passMagicTrap(s,t){
+    const p=s.players[s.turn],stored=t.trapMagic??0;
+    const change=magicTrapDelta(s.rollSum??s.die,p.cash,stored);
+    if(!change)return;
+    p.cash+=change;
+    t.trapMagic=stored-change;
+    s.lastMove.trapDelta=(s.lastMove.trapDelta??0)+change;
+    const amount=(change>0?'+':'−')+Math.abs(change)+'G';
+    s.shrineNotice='마력 트랩 '+amount+' · 이 칸 적립 '+t.trapMagic+'G';
+    note(s,p.name+' · '+s.shrineNotice);
+  }
   function advance(s,next,preview=false){
     const p=s.players[s.turn],m=board(s);
     const path=[p.pos];
@@ -346,6 +361,7 @@ function createCepter(edition="ps2"){
       if(t.owner===s.turn)s.visited.push(next);
       if(revolt){
         if(m.gates[next]!=null)passGate(s,m,next);
+        if(t.type==='마력 트랩')passMagicTrap(s,t);
       }else{
         const checkpoint=(m.checkpoints||m.forts).find(n=>m.types[n]===t.type);
         if(checkpoint!==undefined&&!p.flags.includes(checkpoint)){
@@ -398,7 +414,7 @@ function createCepter(edition="ps2"){
     const walker=trial.players[trial.turn],tile=trial.tiles[walker.pos];
     return {first:trial.lastMove?.path[1]??p.pos,at:walker.pos,phase:trial.phase,remaining:trial.remaining,
       toll:tile.owner>=0&&!allied(trial,tile.owner,trial.turn)?owedToll(trial,tile):0,
-      cashGain:walker.cash-p.cash,fountain:tile.type==='분수'&&trial.phase==='land'&&!trial.lastMove?.arrivedViaTransit};
+      cashGain:walker.cash-p.cash,trapDelta:trial.lastMove?.trapDelta??0,fountain:tile.type==='분수'&&trial.phase==='land'&&!trial.lastMove?.arrivedViaTransit};
   }
   function resumeMove(s,preview=false){
     if(!s.remaining){arrived(s);return;}
@@ -953,7 +969,7 @@ function createCepter(edition="ps2"){
       }
       case 'breakCard':if(s.phase==='squeeze')s.players[s.spellTarget].cash+=150;mapEffect('shatter','카드 파괴',s.players[s.spellTarget].pos,{title:s.players[s.spellTarget].name});s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
       case 'fizzle':delete s.reliefFrom;mapEffect('cast','대상 없음');s.phase='roll';break;
-      case 'roll':{const {faces,total,sides,zeroBased}=movementRoll(s,p);s.die=total;if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
+      case 'roll':{const {faces,total,sides,zeroBased}=movementRoll(s,p);s.die=total;if(revolt)s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
       case 'totem':p.cash+=300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
       case 'summon':case 'exchange':{
@@ -1043,14 +1059,21 @@ function createCepter(edition="ps2"){
         +(k==='summon'?40:0)-reserve*.55;
     }
     // Value a visible straight route; the next fork gets its own decision.
-    function landing(next,prev,steps,traveler=seat){
-      const m=board(s),walker=s.players[traveler];
-      let bonus=0;
+    function landing(next,prev,steps,traveler=seat,roll=steps){
+      const m=board(s),walker=s.players[traveler],pots=new Map();
+      let bonus=0,cash=walker.cash;
       for(let left=steps;left>0;left--){
         const tile=s.tiles[next];
         const gate=m.gates?.[next];
         if((revolt?gate!=null:tile.type==='성')&&total(s,traveler)>=s.target)return 10000;
         if(revolt?gate!=null&&!walker.flags.includes(gate):m.forts.includes(next)&&!walker.flags.some(f=>m.types[f]===tile.type))bonus+=25;
+        if(revolt&&tile.type==='마력 트랩'){
+          const stored=pots.get(next)??tile.trapMagic??0;
+          const change=magicTrapDelta(roll,cash,stored);
+          cash+=change;
+          bonus+=change;
+          pots.set(next,stored-change);
+        }
         const jump=transitDestination(m,next,tile.type,left-1);
         if(jump!=null){prev=next;next=jump;}
         if(left===1||tile.unit?.enchant==='quicksand'||!allied(s,tile.owner,traveler)&&((fx.name(tile.unit)==='oldwillow'&&tile.type===0)||(fx.name(tile.unit)==='kelpie'&&tile.type===1)))break;
@@ -1164,7 +1187,7 @@ function createCepter(edition="ps2"){
           (c.kind==='item'?2:0)-(c.effect==='manna'?20:0)-(c.kind==='creature'&&p.hand.filter(id=>cards[id].kind==='creature').length<=2?12:0);
         if(skill>=2&&k==='direction'){
           const links=board(s).links[p.pos];
-          return landing(x===1?links[0]:links.at(-1),p.pos,s.die);
+          return landing(x===1?links[0]:links.at(-1),p.pos,s.die,seat,s.rollSum??s.die);
         }
         if(skill>=2&&k==='cast'&&['word1','word6','six'].includes(c.effect)){
           const paths=onward(s),steps=c.effect==='word1'?1:6;
@@ -1193,7 +1216,7 @@ function createCepter(edition="ps2"){
           let queue=[[x,p.pos,0]],seen=new Set();
           for(let k=0;k<queue.length;k++){
             const [at,prev,d]=queue[k],key=at+'/'+prev;if(seen.has(key))continue;seen.add(key);
-            if(goals.includes(at))return 9-d+(skill>=2?landing(x,p.pos,s.remaining)/12:0);
+            if(goals.includes(at))return 9-d+(skill>=2?landing(x,p.pos,s.remaining,seat,s.rollSum??s.die)/12:0);
             const type=m.types[at],dest=m.transit?.[at],immediate=transitDestination(m,at,type,1);
             if(dest!=null&&immediate==null&&(type==='전송진'||m.graph)&&prev!==dest)queue.push([dest,at,d+1]);
             const pos=immediate??at,entry=immediate==null?prev:at;

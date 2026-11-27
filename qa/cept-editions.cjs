@@ -50,7 +50,7 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,34],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,35],['begins',400,15]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -738,4 +738,56 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(warp.players[0].hand,[goblin,goblin,goblin,goblin]);
   }finally{map.transit[5]=prior;}
   console.log('Saga one-time morph claims and regional pricing, Fountain stop/pass, and book depletion OK');
+}
+
+{
+  const C=ps2.createEdition('revolt'),mapId='revolt-original-trapway';
+  const s=C.start(4,4,5000,mapId);
+  function approach(state,seat,dice,remaining){
+    Object.assign(state,{phase:'fork',turn:seat,die:dice||12,rollSum:dice,remaining,visited:[]});
+    Object.assign(state.players[seat],{pos:2,previous:1,cash:303});
+  }
+  approach(s,0,6,2);
+  assert.deepEqual(C.choices(s),[['route',3],['route',16]]);
+  assert.equal(C.routePreview(s,['route',16]).trapDelta,-60);
+  assert.equal(s.tiles[16].trapMagic??0,0);
+  assert.equal(s.players[0].cash,303);
+  assert.ok(C.play(s,['route',16]));
+  assert.deepEqual([s.players[0].pos,s.players[0].cash,s.tiles[16].trapMagic],[17,243,60]);
+  assert.equal(s.tiles[9].trapMagic??0,0);
+  for(const [seat,dice] of [[1,4],[2,5]]){
+    approach(s,seat,dice,1);
+    assert.equal(C.routePreview(s,['route',16]).trapDelta,0);
+    assert.ok(C.play(s,['route',16]));
+    assert.equal(s.players[seat].cash,303);
+    assert.equal(s.tiles[16].trapMagic,60);
+  }
+  const saved=JSON.parse(JSON.stringify(s));
+  approach(saved,3,3,1);
+  assert.equal(C.routePreview(saved,['route',16]).trapDelta,60);
+  assert.ok(C.play(saved,['route',16]));
+  assert.deepEqual([saved.players[3].pos,saved.players[3].cash,saved.tiles[16].trapMagic],[16,363,0]);
+  assert.match(saved.shrineNotice,/마력 트랩 \+60G/);
+  approach(s,3,0,1);
+  Object.assign(s,{phase:'roll',remaining:0});
+  delete s.rollSum;
+  const oldRandom=Math.random;
+  try{
+    Math.random=()=>0;
+    assert.ok(C.play(s,['roll']));
+  }finally{Math.random=oldRandom;}
+  assert.deepEqual([s.phase,s.rollSum,s.die,s.remaining],['fork',0,12,12]);
+  assert.equal(C.routePreview(s,['route',16]).trapDelta,60);
+  assert.ok(C.play(s,['route',16]));
+  assert.equal(s.players[3].cash,363);
+
+  const ai=C.start(2,1,5000,mapId);
+  ai.aiLevel=3;
+  approach(ai,1,6,1);
+  ai.players[1].cash=2000;
+  assert.deepEqual(C.ai(ai),['route',3]);
+  approach(ai,1,3,1);
+  ai.tiles[16].trapMagic=600;
+  assert.deepEqual(C.ai(ai),['route',16]);
+  console.log('Revolt trap pass/stop, 0/3/4/5/6 dice thresholds, separate pots, preview and serialized state OK');
 }

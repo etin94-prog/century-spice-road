@@ -74,6 +74,7 @@ const CepterEditions=(()=>{
         ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{})};
     }
     if(edition==='saga')Object.assign(result,original.sagaPractice);
+    if(edition==='revolt')Object.assign(result,original.revoltPractice);
     return result;
   }
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');

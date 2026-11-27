@@ -10,7 +10,10 @@ function routeOption(action){
   else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+info.toll+'G');
   else if(info.fountain)landing+=' · 손패 교체';
   else if(C.territoryType(tile.type))landing+=' · 빈 영지';
-  button.append(heading,el('span',landing+(info.cashGain?' · 경유 보너스 +'+info.cashGain+'G':'')));
+  const bonus=info.cashGain-info.trapDelta;
+  if(bonus)landing+=' · 경유 보너스 +'+bonus+'G';
+  if(info.trapDelta)landing+=' · 트랩 '+(info.trapDelta>0?'+':'−')+Math.abs(info.trapDelta)+'G';
+  button.append(heading,el('span',landing));
   if(info.toll&&info.phase==='land')button.classList.add('toll-route');
   return button;
 }

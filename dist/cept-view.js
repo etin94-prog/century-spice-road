@@ -534,6 +534,11 @@ function map(){
     }
     const surface=el('span',null,'tile-surface');surface.setAttribute('aria-hidden','true');
     b.append(surface,el('b',(n+1)+' · '+name));
+    if(t.type==='마력 트랩'){
+      const stored='적립 '+(t.trapMagic??0)+'G';
+      b.append(el('small',stored));
+      b.setAttribute('aria-label',(n+1)+'번 '+name+' · '+stored);
+    }
     if(n===standing)b.classList.add('current-step');
     if(exits.has(n))b.classList.add('exit');
     if(targets.has(n))b.classList.add('targetable');
@@ -580,6 +585,8 @@ function map(){
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));
     }else if(t.type==='모프'){
       center.append(el('span','처음 배치한 크리처의 속성을 얻습니다. 변한 속성은 영지가 비어도 유지됩니다.'));
+    }else if(t.type==='마력 트랩'){
+      center.append(el('span','적립 '+(t.trapMagic??0)+'G · 통과하거나 멈출 때 주사위 합 0–3이면 전액 획득, 4–5면 유지, 6 이상이면 보유 마력 20% 적립'));
     }else if(t.type==='분수'){
       center.append(el('span','멈추면 손패를 모두 버리고 남은 북에서 같은 수만큼 뽑습니다.'));
     }else if(['전송진','강제 전송진'].includes(t.type)){

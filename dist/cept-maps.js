@@ -34,6 +34,11 @@ const CepterMaps=(()=>{
     [...loop(16),...loop(16).map(([a,b])=>[a+16,b+16])],crosswindTypes.map((_,at)=>Number(at>=16)),250);
   const sagaPractice={'saga-original-crosswind':{...crosswind,areaCount:2,section:'arena',graph:true,startCash:250,fortBonus:100,
     castles:[0],checkpoints:crosswind.forts,transit:{5:24,7:18,27:2,29:8}}};
+  const trapway=map('메아리 수로 · 창작 지도',[...ring,[2,3],[3,3],[4,3]],
+    ['성',0,1,2,'동쪽 게이트',1,0,3,2,'마력 트랩',0,3,'서쪽 게이트',2,3,1,'마력 트랩',2,1],
+    [4,12],100,12,[...loop(16),[2,16],[16,17],[17,18],[18,10]],Array(19).fill(0));
+  const revoltPractice={'revolt-original-trapway':{...trapway,areaCount:1,section:'arena',graph:true,startCash:200,
+    castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}}};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];
@@ -48,7 +53,10 @@ const CepterMaps=(()=>{
     maps['legacy-ps2-'+stage.stage]=playable(stage);
     maps['ps2-'+stage.stage]=playable({...stage,...layouts[stage.stage-1]});
   }
-  Object.defineProperty(maps,'sagaPractice',{value:sagaPractice});
+  Object.defineProperties(maps,{
+    sagaPractice:{value:sagaPractice},
+    revoltPractice:{value:revoltPractice}
+  });
   return maps;
 })();
 if(typeof module!=='undefined')module.exports=CepterMaps;
