@@ -248,6 +248,7 @@ const CepterCreatureText=(()=>{
     if(C.edition==='revolt')return;
     const key=C.combo.key(card),saga={fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
       hypnosloth:'고른 셉터의 다음 주사위를 1로 고정합니다.',lichenoid:'고른 크리처의 최대 HP를 최대 100까지 10 올립니다.',
+      creepingflame:'이 크리처를 인접한 영지 한 곳으로 이동합니다. 상대 영지라면 침략합니다.',
       rockshell:'이 영지의 침략을 막고 통행료를 0G로 바꿉니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
     const effect=(C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
@@ -275,9 +276,11 @@ const CepterCreatureText=(()=>{
     if(C.edition==='saga'&&key==='wolverine')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령이나 비술 사용 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
+    if(card.blocksSmall)pieces.push('최대 HP 30 이하인 상대의 일반 공격을 무효화합니다.');
+    if(card.criticalSmall)pieces.push('최대 HP 30 이하인 상대를 일반 공격하면 강타합니다.');
+    if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
     if(card.evo){
-      if(card.battleST)pieces.push('전투 ST +'+card.battleST);
       if(card.spellWard)pieces.push('주문과 비술의 대상으로 지정할 수 없습니다.');
       if(card.protectGear)pieces.push('장비가 파괴되거나 빼앗기지 않습니다.');
       if(card.neutralizeScroll)pieces.push('두루마리 공격을 무효화합니다.');
@@ -293,7 +296,8 @@ const CepterCreatureText=(()=>{
       };
       if(card.evoBattle)pieces.push(scaling[card.evoBattle]);
     }
-    if(card.battleHP)pieces.push('전투 HP +'+card.battleHP);
+    if(card.battleST)pieces.push('전투 ST '+(card.battleST>0?'+':'')+card.battleST);
+    if(card.battleHP)pieces.push('전투 HP '+(card.battleHP>0?'+':'')+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');
     if(card.pierceElements?.length)pieces.push(targets(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(targets(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');

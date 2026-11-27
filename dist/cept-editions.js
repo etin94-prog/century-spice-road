@@ -172,7 +172,21 @@ const CepterEditions=(()=>{
     if(edition!=='saga')return presets;
     const ids=new Map(pool.map(id=>[cards[id].catalog.path.split('/').pop(),id]));
     const gear={prismaticwand:2,scalearmor:2,towershield:2,longsword:2};
+    // Culdcept Central's Xbox 360 opening books: 446-cs360-playerdecks-starterby and 426-cs360-playerdecks-starterrg.
+    const starterShared={
+      fighter:2,giantrat:2,goblin:2,skeleton:2,
+      chainmail:2,leatherarmor:2,longsword:2,mace:2,
+      crusher:2,cure:2,haste:1,holyword1:2,holyword6:2,magicbolt:2,manna:2
+    };
     const books={
+      sagaStarterWater:{
+        ...starterShared,aqualing:2,blueogre:2,giantamoeba:2,lizardman:2,wallofice:2,
+        blitzraven:2,griffon:2,harpy:2,tornado:2,yellowogre:2,freezingwind:1
+      },
+      sagaStarterFire:{
+        ...starterShared,creepingflame:2,gascloud:2,minotaur:2,phlogiston:2,redogre:2,
+        dwarf:2,greenogre:2,squirrine:2,wallofstone:2,woodfolk:2,firestone:1
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
@@ -249,6 +263,12 @@ const CepterEditions=(()=>{
     magicshield:{hp:30},magussmirror:{hp:20},smoketorch:{hp:20},stonehail:{st:30,critical:3},
     tearinghalo:{st:30,protectItem:true},knightsshield:{},spikedshield:{},vorpalsword:{st:30},prismaticwand:{}
   };
+  const sagaStarterEffects={
+    aqualing:{blocksSmall:true},blitzraven:{criticalSmall:true},phlogiston:{invadeST:20},
+    wallofice:{stationary:true,battleHP:30},tornado:{stationary:true,first:true,battleST:30,battleHP:-10},
+    creepingflame:{stationary:true},
+    freezingwind:{st:30,hp:0,scrollCriticalElements:[0,2]},firestone:{st:30,hp:0,scrollCriticalElements:[1,3]}
+  };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
@@ -315,6 +335,7 @@ const CepterEditions=(()=>{
         Object.assign(c,{catalogOnly:false,immediate:true});
         if(slug==='wolverine')c.tollFactor=1.5;
       }
+      if(edition==='saga'&&Object.hasOwn(sagaStarterEffects,slug))Object.assign(c,{catalogOnly:false},sagaStarterEffects[slug]);
       if(edition==='3ds'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}
       if(first&&slug==='giantspider'){c.paralyze=true;c.statusRaces=['rh','rb'];}

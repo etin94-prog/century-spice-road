@@ -90,6 +90,7 @@ const describeCepterItem=(()=>{
     if(fixedST)pieces.push('전투 ST를 0으로 맞춥니다.');
     if(!scroll&&(card.st||card.hp))pieces.push('전투 중 '+[card.st&&signed('ST',card.st),card.hp&&signed('HP',card.hp)].filter(Boolean).join(' · '));
     if(scroll&&card.st)pieces.push('두루마리 공격력 '+card.st);
+    if(card.scrollCriticalElements?.length)pieces.push(list(card.scrollCriticalElements)+' 상대에게 두루마리 강타가 적용됩니다.');
     if(Object.hasOwn(scrollCritical,name))pieces.push(list([scrollCritical[name]])+' 상대에게 두루마리 강타가 적용됩니다.');
     if(card.first&&name!=='hourglass')pieces.push('선제');
     if(card.last)pieces.push('후공');

@@ -334,7 +334,7 @@ function createCepter(edition="ps2"){
   function stealableGems(buyer,seller){
     return seller.symbols.flatMap((count,e)=>count>0&&buyer.symbols[e]<20?Array(count).fill(e):[]);
   }
-  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade});
+  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy});
   function spellHP(s,t,e){
     const u=t.unit;
     if(e==='bolt')return u.hp-fx.damageAmount(s,t,20);
@@ -623,7 +623,7 @@ function createCepter(edition="ps2"){
   function choices(s){
     if(s.phase==='over')return [];
     const follow=extra?.choices(s);if(follow)return follow.length?follow:[['fizzle']];
-    if(s.phase==='teleMove'&&s.territoryMove)return fx.sleipnirExits(s,s.teleFrom).map(n=>['teleTo',n]);
+    if(s.phase==='teleMove'&&s.territoryMove)return fx.territoryMoveExits(s,s.teleFrom,s.territoryMove==='adjacent').map(n=>['teleTo',n]);
     if(s.phase==='teleMove'&&s.spellEffect==='chariot')return extra.chariotExits(s,s.teleFrom).map(n=>['teleTo',n]);
     if(s.phase==='bookWorm')return s.players[s.spellTarget].hand.map((_,j)=>['wormDiscard',j]);
     if(s.phase==='sacrifice')return s.players[s.turn].hand.flatMap((_,j)=>j===s.pendingCard.index?[]:[['sacrifice',j]]);
@@ -756,7 +756,7 @@ function createCepter(edition="ps2"){
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
-        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,battleHP:0,
+        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,criticalSmall:false,battleHP:0,invadeST:0,
           criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
         useGear(a);
       }
@@ -825,6 +825,7 @@ function createCepter(edition="ps2"){
       a.hp+=a.land+(a.gear?.hp||0)+(muted?0:a.c.battleHP||0);
       a.st+=supportST(s,b.at,b.from,a.seat)+(a.gear?.st||0)+(muted?0:a.c.battleST||0);
       if(!muted){
+        if(!a.defending)a.st+=a.c.invadeST||0;
         if(a.n==='manes'&&combo.enchanted(t.unit))a.hp+=20;
         if(a.g==='terrair')a.st+=count(3)*20;
         if(a.g==='mujinamask')a.hp+=other.hand.length*10;
@@ -859,10 +860,10 @@ function createCepter(edition="ps2"){
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
       if(scroll&&['deathgaze','pegasus'].includes(d.n))return 'block';
-      if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
+      if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||!muted&&matches(a.gear?.scrollCriticalElements,d)||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
-        a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
+        !muted&&a.c.criticalSmall&&fx.max(d.u)<=30||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
       const ward=muted?null:extra.protect(a,d,damage,scroll,penetrates,orb);
       if(ward==='block'||ward==='heal')return ward;
       const reflected=ward==='reflect'||scroll&&d.n==='carbuncle';
@@ -879,7 +880,7 @@ function createCepter(edition="ps2"){
         const blocks=d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a);
         if(!orb&&(reflects||d.gear?.effect==='reflect'||d.n==='decoy')){a.hp-=damage;lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&(blocks||d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
-           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=40||
+           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=40||d.c.blocksSmall&&fx.max(a.u)<=30||
            d.n==='caitsith'&&fx.strength(a.u)>=40||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element))){lines.push('공격 무효');return 'block';}
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
@@ -1161,7 +1162,8 @@ function createCepter(edition="ps2"){
         if(fx.territoryTargets(s,x)[0]?.[0]==='abilitySelf'){
           fatigue(s.tiles[x].unit);
           const name=cards[s.tiles[x].unit.id].name;
-          fx.territoryEffect(s,x,x);mapEffect('cast',name,x);afterTerritory(s);
+          const next=fx.territoryEffect(s,x,x);mapEffect('cast',name,x);
+          if(next)s.phase=next;else afterTerritory(s);
         }else{s.abilityFrom=x;s.phase='territoryTarget';}
         break;
       }
@@ -1179,14 +1181,15 @@ function createCepter(edition="ps2"){
       case 'teleTo':{
         const from=s.teleFrom,src=s.tiles[from],dst=s.tiles[x],territoryMove=s.territoryMove;
         delete s.teleFrom;delete s.territoryMove;
+        const moveName=territoryMove==='adjacent'?'크리핑 플레임':'슬레이프니르';
         if(dst.unit){
-          if(territoryMove)mapEffect('invade','슬레이프니르 이동 침략',x,{source:from});
+          if(territoryMove)mapEffect('invade',moveName+' 이동 침략',x,{source:from});
           s.battle={at:x,from,inv:src.unit.id,invHP:src.unit.hp,atkItem:null,defItem:null,attackerSeat:src.owner,...(territoryMove?{}:{teleport:true})};
           s.phase='attack';
         }else{
           claim(dst,src.owner,{...src.unit});combo.clear(dst.unit);
           if(fx.name(src.unit)!=='powdereater')vacate(src);
-          if(territoryMove){mapEffect('cast','슬레이프니르 이동',x,{source:from});afterTerritory(s);}
+          if(territoryMove){mapEffect('cast',moveName+' 이동',x,{source:from});afterTerritory(s);}
           else s.phase='roll';
         }
         break;
@@ -1493,6 +1496,7 @@ function createCepter(edition="ps2"){
       if(edition==='saga'){
         if(n==='gogma')return (allied(s,seat,s.tiles[x].owner)?1:-1)*value(s,s.tiles[x])*1.5;
         if(n==='warlock')return allied(s,seat,x)&&!s.players[x].antiMagic?20:0;
+        if(n==='creepingflame')return Math.max(...fx.territoryMoveExits(s,from,true).map(dst=>sleipnirValue(from,dst)));
         if(n==='fontaciel')return s.tiles.reduce((sum,t)=>sum+(t.owner===seat&&t.unit&&fx.max(t.unit)<100&&!fx.immuneHP(t)?12:0),0);
       }
       const sign=t=>allied(s,t.owner,seat)?1:-1;
@@ -1513,7 +1517,7 @@ function createCepter(edition="ps2"){
         const t=s.tiles[x],u=t.unit;
         if(!u)return 35+t.level;
         if(handheld&&n==='mystic')return sign(t)*Math.min(10,100-fx.max(u))*3;
-        if(handheld&&n==='sleipnir')return Math.max(...fx.sleipnirExits(s,x).map(dst=>sleipnirValue(x,dst)));
+        if(handheld&&n==='sleipnir')return Math.max(...fx.territoryMoveExits(s,x).map(dst=>sleipnirValue(x,dst)));
         if(handheld&&n==='metalbug')return -sign(t)*(value(s,t)+fx.max(u))-value(s,src)-fx.max(src.unit);
         if((handheld||edition==='saga')&&n==='sakuya'){
           const trial={...s,tiles:s.tiles.map(v=>v===t?{...v,type:2}:v)};

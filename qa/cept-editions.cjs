@@ -73,7 +73,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaImmediate','sagaAffinity']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaImmediate','sagaAffinity']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -377,6 +377,40 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }else assert.ok(C.play(s,['bare']));
     assert.ok(C.play(s,['bare']));
     return s;
+  }
+  assert.equal(fight('goblin','aqualing').battle.strikes[0].effect,'block');
+  assert.equal(fight('fighter','aqualing').battle.strikes[0].effect,'hit');
+  assert.equal(fight('blitzraven','goblin').battle.won,true);
+  assert.equal(fight('blitzraven','goblin','무속성',null,s=>{s.tiles[1].unit.mhp=40;}).battle.won,false);
+  assert.equal(fight('phlogiston','dwarf').battle.attackST,40);
+  assert.equal(fight('fighter','phlogiston').battle.defendST,20);
+  assert.equal(fight('fighter','wallofice').battle.startHP[1],70);
+  const tornado=fight('fighter','tornado');
+  assert.deepEqual([tornado.battle.startHP[1],tornado.battle.defendST,tornado.battle.strikes[0].side],[40,50,1]);
+  for(const [gear,weak,strong] of [['freezingwind','redogre','blueogre'],['firestone','blueogre','redogre']]){
+    assert.equal(fight('fighter',weak,'무속성',gear).battle.won,true);
+    assert.equal(fight('fighter',strong,'무속성',gear).battle.won,false);
+  }
+  for(const occupied of [false,true]){
+    const s=C.start(2,2,5000,'saga-original-crosswind');
+    const p=s.players[0],source=2,dest=3;
+    unit(s,source,'creepingflame',0,2);
+    p.pos=source;p.cash=100;s.phase='land';
+    if(occupied)unit(s,dest,'goblin',1,0);
+    s.tiles[1].type=1;
+    assert.ok(!C.choices(s).some(([action])=>action==='transfer'));
+    assert.ok(C.play(s,['ability',source]));
+    assert.equal(p.cash,70);
+    const saved=structuredClone(s);
+    assert.deepEqual(C.choices(saved),[['teleTo',dest]]);
+    assert.ok(C.play(saved,['teleTo',dest]));
+    if(occupied){
+      assert.equal(saved.phase,'attack');
+      assert.equal(saved.battle.from,source);
+    }else{
+      assert.equal(saved.tiles[dest].unit.id,id('creepingflame'));
+      assert.equal(saved.tiles[source].owner,-1);
+    }
   }
   assert.equal(fight('flammefleur','goblin').battle.won,true);
   const overlap=fight('warlock','frostbeast',1,'prismaticwand');
@@ -1589,7 +1623,24 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 {
   const C=ps2.createEdition('saga'),map=Object.keys(C.maps)[0];
   const id=name=>C.cards.findIndex(card=>!card.unlisted&&!card.catalogOnly&&C.combo.key(card)===name);
-  for(const book of ['sagaImmediate','sagaAffinity'])assert.ok(C.validBook(C.presets[book]));
+  for(const book of ['sagaStarterWater','sagaStarterFire','sagaImmediate','sagaAffinity'])assert.ok(C.validBook(C.presets[book]));
+  const starters={
+    sagaStarterWater:'aqualing blueogre giantamoeba lizardman wallofice blitzraven griffon harpy tornado yellowogre freezingwind',
+    sagaStarterFire:'creepingflame gascloud minotaur phlogiston redogre dwarf greenogre squirrine wallofstone woodfolk firestone'
+  };
+  for(const [book,names] of Object.entries(starters)){
+    const expected=new Map('fighter giantrat goblin skeleton chainmail leatherarmor longsword mace crusher cure holyword1 holyword6 magicbolt manna'.split(' ').map(n=>[id(n),2]));
+    expected.set(id('haste'),1);
+    names.split(' ').forEach((n,i)=>expected.set(id(n),i===10?1:2));
+    const actual=new Map();
+    const counts={creature:0,item:0,spell:0};
+    for(const index of C.presets[book]){
+      actual.set(index,(actual.get(index)||0)+1);
+      counts[C.cards[index].kind]++;
+    }
+    assert.deepEqual(actual,expected);
+    assert.deepEqual(counts,{creature:28,item:9,spell:13});
+  }
   assert.equal(C.presets.sagaImmediate.filter(id=>C.cards[id].doublecast).length,10);
   assert.equal(C.presets.sagaAffinity.filter(id=>['sagabistair','sagaselenear'].includes(C.cards[id].effect)).length,6);
   const special=['reincarnation','cleanse','crusher','debility','fistfight','illness','mimicry','paralyzer','zap','bulimia','fatbody','hustle','poisonmind'];

@@ -47,7 +47,7 @@ function seats(){
 }
 const modernBookNames=C.edition==='3ds'?
   {intro:'지속성 영지 확장 북',fire:'설욕·이동 침략 북',stronghold:'수속성 방어·견제 북'}:
-  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='saga'?{sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
+  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){
@@ -417,10 +417,10 @@ function setMapCamera(root,x,y,zoom){
 function selectingGate(){
   return s?.phase==='spellTarget'&&s.spellEffect==='remission';
 }
-function selectingSleipnir(){
+function selectingTerritoryMove(){
   return s?.territoryMove||s?.phase==='territoryTarget'&&C.combo.key(C.cards[s.tiles[s.abilityFrom]?.unit?.id])==='sleipnir';
 }
-function selectingMapTarget(){return selectingGate()||s?.phase==='secretTarget'||s?.phase==='towerTarget'||selectingSleipnir();}
+function selectingMapTarget(){return selectingGate()||s?.phase==='secretTarget'||s?.phase==='towerTarget'||selectingTerritoryMove();}
 function focusMapTile(index){
   cameraTile=index;
   const root=$('map'),tile=root.children[index];
@@ -428,7 +428,7 @@ function focusMapTile(index){
   const w=root.clientWidth,h=root.clientHeight,viewWidth=viewport.clientWidth,viewHeight=viewport.clientHeight;
   const free=measureMapFree(),freeWidth=free.right-free.left,freeHeight=free.bottom-free.top;
   if(!selectingMapTarget())targetZoom=null;
-  const preferred=selectingMapTarget()?(targetZoom??(selectingSleipnir()||inspect<0?'1':mapZoom)):mapZoom;
+  const preferred=selectingMapTarget()?(targetZoom??(selectingTerritoryMove()||inspect<0?'1':mapZoom)):mapZoom;
   const overview=preferred==='1';
   const cover=Math.max(viewWidth/w,viewHeight/h);
   const zoom=overview?Math.min(1,freeWidth/w,freeHeight/h):
@@ -766,7 +766,7 @@ function render(){
   if($('seatDialog').open)seatSummary(Number($('seatDialog').dataset.seat));
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
-  $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingSleipnir()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
+  $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
   if(local&&s.immediateAt!=null)$('hint').textContent=(s.immediateAt+1)+'번 영지 · 즉시 능력으로 영지 명령을 사용할 수 있습니다.';
   if(local&&s.phase==='spell'&&s.doublecast==='ready')$('hint').textContent='연속 주문 사용 가능 · 주문을 더 쓰거나 주사위를 굴리세요.';
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
@@ -838,7 +838,7 @@ function render(){
     const gateOnMap=selectingGate()&&choices.some(([kind])=>kind==='targetLand');
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
     const secretOnMap=s.phase==='secretTarget'&&choices.some(([kind])=>kind==='secretLand');
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!towerOnMap&&!secretOnMap&&!selectingSleipnir()};
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
     if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;

@@ -37,7 +37,7 @@ const CepterCombos = (() => {
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
   function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
-  function rules(cards,{board,draw,value,vacate,note,claim,canInvade}){
+  function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy}){
     const names=cards.map(key);
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
@@ -219,7 +219,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80};
+    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -229,17 +229,21 @@ const CepterCombos = (() => {
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
-    function sleipnirExits(s,from){
+    function territoryMoveExits(s,from,adjacentOnly=false){
       const links=board(s).links,adjacent=links[from],src=s.tiles[from];
-      return [...new Set([...adjacent,...adjacent.flatMap(i=>links[i])])].filter(i=>{
+      if(adjacentOnly&&src.unit.enchant==='thornfetter')return [];
+      const exits=adjacentOnly?adjacent:[...new Set([...adjacent,...adjacent.flatMap(i=>links[i])])];
+      return exits.filter(i=>{
         const dst=s.tiles[i];
-        return i!==from&&territoryType(dst.type)&&!allied(s,src.owner,dst.owner)&&dst.unit?.enchant!=='peace';
+        return i!==from&&territoryType(dst.type)&&!allied(s,src.owner,dst.owner)&&dst.unit?.enchant!=='peace'&&
+          (!adjacentOnly||canOccupy(cards[src.unit.id],dst));
       });
     }
     function territoryTargets(s,from){
       const tile=s.tiles[from],n=name(tile.unit),cost=territoryCost(s,n);
       if(cost==null||s.players[s.turn].cash<cost||!canUseAbility(s,tile))return [];
       if(s.edition==='saga'){
+        if(n==='creepingflame')return territoryMoveExits(s,from,true).length?[['abilitySelf',from]]:[];
         if(n==='fontaciel'||n==='rockshell')return [['abilitySelf',from]];
         if(n==='hypnosloth')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
         if(n==='tokebi'||n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&
@@ -252,7 +256,7 @@ const CepterCombos = (() => {
       if(s.edition==='3ds'){
         if(n==='necromancer'&&s.lastDestroyed==null)return [];
         if(n==='mystic')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&max(v.unit)<100?[['abilityLand',j]]:[]);
-        if(n==='sleipnir')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&!cards[v.unit.id].stationary&&v.unit.enchant!=='thornfetter'&&sleipnirExits(s,j).length?[['abilityLand',j]]:[]);
+        if(n==='sleipnir')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&!cards[v.unit.id].stationary&&v.unit.enchant!=='thornfetter'&&territoryMoveExits(s,j).length?[['abilityLand',j]]:[]);
         if(n==='metalbug')return s.tiles.flatMap((v,j)=>j!==from&&targetable(s,v)&&v.unit.hp<max(v.unit)?[['abilityLand',j]]:[]);
         if(n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&v.unit&&territoryType(v.type)&&v.type!==2&&v.level<=3&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
       }
@@ -283,6 +287,7 @@ const CepterCombos = (() => {
         if(n==='sleipnir'){s.teleFrom=x;s.territoryMove=true;return 'teleMove';}
       }
       if(s.edition==='saga'){
+        if(n==='creepingflame'){s.teleFrom=from;s.territoryMove='adjacent';return 'teleMove';}
         if(n==='fontaciel'){
           for(const t of s.tiles){
             if(t.owner!==s.turn||!t.unit||immuneHP(t))continue;
@@ -425,7 +430,7 @@ const CepterCombos = (() => {
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,sleipnirExits,secretArt,secretTargets,applySecret,secretValue};
+      blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],
