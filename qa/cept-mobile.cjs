@@ -519,6 +519,31 @@ const {chromium}=require('playwright');
       console.log('revolt '+width+'x'+height+': switch preview, manual flip and synchronized route signs by touch OK');
       await switchPage.close();
     }
+    for(const [width,height] of [[320,568],[844,390]]){
+      const gemPage=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await gemPage.route('https://**',r=>r.abort());
+      await gemPage.goto(trapUrl.href);
+      await gemPage.selectOption('#mapChoice','revolt-original-gem-route');
+      await gemPage.locator('#config .match-start .primary').tap();
+      await gemPage.evaluate(()=>{
+        Object.assign(s,{phase:'fork',die:2,rollSum:2,remaining:2});
+        Object.assign(s.players[0],{pos:8,previous:7,cash:600});
+        s.prices[0]=55;s.players[1].symbols[0]=2;
+        render();
+      });
+      const route=gemPage.locator('.route-option').filter({hasText:'10번 방향'});
+      assert.match(await route.innerText(),/속성석 거래 후 1칸/);
+      await route.tap();
+      await gemPage.locator('[data-open=stealGem]').tap();
+      const trade=gemPage.locator('#turnPicker[open]');
+      await trade.getByRole('button',{name:'최대 수량 선택'}).tap();
+      assert.match(await trade.locator('.symbol-amount').innerText(),/지불 164G · 상대 수령 110G/);
+      assert.match(await trade.locator('.symbol-result').innerText(),/거래 후 마력 436G · 보유 2개 · 시세 55G/);
+      await trade.getByRole('button',{name:'상대 보유분 매입 확정'}).tap();
+      assert.deepEqual(await gemPage.evaluate(()=>[s.players[0].pos,s.players[0].cash,s.players[0].symbols[0],s.players[1].symbols[0]]),[10,436,2,0]);
+      console.log('revolt '+width+'x'+height+': gem store pause, trade quote, opponent payout and resume by touch OK');
+      await gemPage.close();
+    }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
     await archerPage.route('https://**',r=>r.abort());
     await archerPage.goto(pathToFileURL(path.resolve(__dirname,'../dist/cept.html')).href);

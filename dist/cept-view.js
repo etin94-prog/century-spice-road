@@ -9,8 +9,8 @@ if(C.edition==='revolt'){
   rules[2].textContent='방향이 다른 게이트를 모두 지나면 한 주를 완주합니다. 총마력이 목표에 도달한 뒤 어느 게이트든 지나면 승리합니다.';
 }
 $('editionChoice').value=C.edition;$('editionChoice').onchange=e=>location.assign(location.pathname+'?edition='+e.target.value);
-const labels={switchKeep:'방향 유지',switchFlip:'방향 변경',towerAim:'사령탑 사용',towerTo:'목표 영지',towerCancel:'뒤로',wormDiscard:'파괴할 손패',suppressCard:'모두 제거할 주문',sacrifice:'추가 비용으로 버릴 카드',ability:'영지 능력',abilityPlayer:'대상 셉터',abilityLand:'대상 영지',teleTo:'이동할 영지',eraseDraw:'파괴할 북 위치',comboArea:'효과 적용 지역',totem:'토템을 바쳐 마력 획득',plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
-const hints={pathSwitch:'분기 스위치의 방향을 유지하거나 바꾸세요.',towerTarget:'지도에서 빈 영지나 침략할 적 영지를 누르세요.',towerDeploy:'하단 손패에서 사용할 크리처를 고르세요.',bookWorm:'북 웜으로 파괴할 상대 손패를 선택하세요.',squeeze:'파괴할 손패 한 장을 선택하세요. 그 셉터는 150G를 받습니다.',suppression:'대상 손패에서 제거할 주문을 선택하세요.',sacrifice:'추가 비용으로 버릴 카드를 선택하세요.',territoryTarget:'영지 능력의 대상을 선택하세요.',teleMove:'이동할 칸을 선택하세요.',mindseeker:'북 맨 위에서 몇 번째 카드를 파괴할지 선택하세요.',fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
+const labels={buyGem:'속성석 매수',sellGem:'속성석 매도',stealGem:'상대 보유분 매입',leaveGem:'거래 건너뛰기',switchKeep:'방향 유지',switchFlip:'방향 변경',towerAim:'사령탑 사용',towerTo:'목표 영지',towerCancel:'뒤로',wormDiscard:'파괴할 손패',suppressCard:'모두 제거할 주문',sacrifice:'추가 비용으로 버릴 카드',ability:'영지 능력',abilityPlayer:'대상 셉터',abilityLand:'대상 영지',teleTo:'이동할 영지',eraseDraw:'파괴할 북 위치',comboArea:'효과 적용 지역',totem:'토템을 바쳐 마력 획득',plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
+const hints={gemStore:'속성석을 거래하거나 이동을 계속하세요.',pathSwitch:'분기 스위치의 방향을 유지하거나 바꾸세요.',towerTarget:'지도에서 빈 영지나 침략할 적 영지를 누르세요.',towerDeploy:'하단 손패에서 사용할 크리처를 고르세요.',bookWorm:'북 웜으로 파괴할 상대 손패를 선택하세요.',squeeze:'파괴할 손패 한 장을 선택하세요. 그 셉터는 150G를 받습니다.',suppression:'대상 손패에서 제거할 주문을 선택하세요.',sacrifice:'추가 비용으로 버릴 카드를 선택하세요.',territoryTarget:'영지 능력의 대상을 선택하세요.',teleMove:'이동할 칸을 선택하세요.',mindseeker:'북 맨 위에서 몇 번째 카드를 파괴할지 선택하세요.',fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 Object.assign(labels,C.spellActions);Object.assign(hints,C.spellHints);
 labels.shrineChoice='성소 효과 선택';hints.shrineChoice='성소에서 받을 효과를 고르세요.';
 let room=null,customBook=null,draft=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
@@ -595,6 +595,8 @@ function map(){
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));
     }else if(t.type==='모프'){
       center.append(el('span','처음 배치한 크리처의 속성을 얻습니다. 변한 속성은 영지가 비어도 유지됩니다.'));
+    }else if(t.type==='보석 상점'){
+      center.append(el('span',s.prices.map((price,e)=>C.elements[e]+' '+price+'G').join(' · ')));
     }else if(t.type==='분기 스위치'){
       const entry=s.players[s.turn].pos===inspect?s.players[s.turn].previous:null;
       const current=C.pathSwitch(s,inspect,entry),alternate=C.pathSwitch(s,inspect,entry,true);
@@ -614,6 +616,7 @@ function map(){
     return;
   }
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.phase==='over'?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.phase==='over'?winLabel():s.die?'주사위 '+s.die:m.name),el('span',(m.gates?'게이트 ':'요새 ')+p.flags.length+'/'+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  if(s.phase==='gemStore')center.lastElementChild.textContent='보석 상점 · '+(s.remaining?'거래 후 '+s.remaining+'칸 이동':'속성석 거래');
   if(s.phase==='pathSwitch')center.lastElementChild.textContent='분기 스위치 · 유지 또는 변경을 선택하세요';
   if(s.phase==='towerTarget')center.lastElementChild.textContent='사령탑 · 목표 영지를 터치하세요';
   if(s.phase==='towerDeploy')center.lastElementChild.textContent='사령탑 · '+(s.towerAt+1)+'번 영지 · 하단 손패에서 선택';
@@ -728,7 +731,7 @@ function render(){
     const cash=el('span',null,'seat-cash');cash.append(el('i','마력 '),v.cash+'G');
     box.append(figure(j,v.name),name,cash,el('span',(s.teams?'팀 총 ':'총 ')+wealth+'G','seat-wealth'));
     if(wealth>=s.target)box.append(el('small','성 귀환 시 승리','castle-goal'));
-    const symbols=v.symbols.reduce((a,b)=>a+b,0);if(symbols)box.append(el('small','호부 '+symbols));
+    const symbols=v.symbols.reduce((a,b)=>a+b,0);if(symbols)box.append(el('small',(C.board(s).gemStore?'속성석 ':'호부 ')+symbols));
     return box;
   }));
   if($('seatDialog').open)seatSummary(Number($('seatDialog').dataset.seat));
@@ -814,7 +817,7 @@ function render(){
     if(k==='buyCard'||k==='roll')continue;
     const group=choices.filter(a=>a[0]===k);
     if(k==='direction'||k==='route'){drawRouteArrows(group);const routes=el('div',null,'route-options');routes.append(...group.map(routeOption));controls.append(routes);continue;}
-    if(['buySymbol','sellSymbol','liquidate'].includes(k)){symbolTrade(group,p,controls);continue;}
+    if(['buySymbol','sellSymbol','liquidate','buyGem','sellGem','stealGem'].includes(k)){symbolTrade(group,p,controls);continue;}
     commandGroup(group,p,controls);
   }
   const owner=handSeat==null?null:s.players[handSeat];

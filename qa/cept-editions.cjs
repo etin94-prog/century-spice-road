@@ -50,7 +50,7 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,37],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,38],['begins',400,15]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -933,4 +933,81 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual(noSwitch.players[0].hand,[goblin]);
   assert.deepEqual(noSwitch.players[0].book,[spell]);
   console.log('Revolt Path Switch forced cross, approach directions, stop choice, synchronized timer, spell recycle and replay OK');
+}
+
+{
+  const C=ps2.createEdition('revolt'),mapId='revolt-original-gem-route';
+  const spell=effect=>C.cards.findIndex(c=>c.effect===effect&&!c.catalogOnly);
+  function approach(steps=1,humans=4){
+    const s=C.start(4,humans,5000,mapId,undefined,undefined,3,'teams');
+    C.configureMatch(s,{recordReplay:true});
+    Object.assign(s,{phase:'fork',die:steps,rollSum:steps,remaining:steps});
+    Object.assign(s.players[0],{pos:8,previous:7,cash:600,hand:[]});
+    const preview=C.routePreview(s,['route',9]);
+    assert.deepEqual([preview.at,preview.phase,preview.remaining],[9,'gemStore',steps-1]);
+    assert.ok(C.play(s,['route',9]));
+    return s;
+  }
+  const buy=approach(2);
+  assert.deepEqual(buy.prices,[50,50,50,50]);
+  assert.deepEqual(C.gemQuote(buy,['buyGem',0,5]),{cost:250,received:0,holdings:5,prices:[75,40,50,50]});
+  assert.ok(C.play(buy,['buyGem',0,5]));
+  assert.deepEqual([buy.phase,buy.players[0].pos,buy.players[0].cash,C.personalTotal(buy,0)],['land',10,350,725]);
+  assert.deepEqual(buy.replay.steps.at(-1).gemPrices,[75,40,50,50]);
+  assert.deepEqual(buy.replay.steps.at(-1).gems[0],[5,0,0,0]);
+
+  const limits=approach();
+  limits.players[0].cash=4000;limits.players[0].symbols[0]=18;limits.prices[0]=298;
+  assert.ok(C.choices(limits).some(a=>a.join('/')==='buyGem/0/2'));
+  assert.ok(!C.play(limits,['buyGem',0,3]));
+  assert.ok(!C.play(limits,['buyGem',1,11]));
+  assert.ok(C.play(limits,['buyGem',0,2]));assert.equal(limits.prices[0],300);
+  assert.equal(limits.players[0].symbols[0],20);
+
+  const sell=approach();
+  sell.prices=[75,40,50,50];sell.players[0].symbols[0]=5;
+  assert.deepEqual(C.gemQuote(sell,['sellGem',0,1]).prices,[75,40,50,50]);
+  assert.ok(C.play(sell,['sellGem',0,5]));
+  assert.deepEqual([sell.players[0].cash,sell.players[0].symbols[0],sell.prices, sell.players[0].pos],[975,0,[50,55,50,50],9]);
+  assert.ok(!C.play(sell,['sellGem',0,1]));
+
+  const steal=approach(2);
+  steal.prices[0]=55;steal.players[1].symbols[0]=4;steal.players[2].symbols[0]=4;
+  const sellerCash=steal.players[1].cash;
+  assert.ok(!C.play(steal,['stealGem',0,2,2]));
+  assert.ok(C.play(steal,['stealGem',0,2,1]));
+  assert.deepEqual([steal.players[0].cash,steal.players[0].symbols[0],steal.players[1].cash,steal.players[1].symbols[0],steal.prices[0]],[436,2,sellerCash+110,2,55]);
+  assert.equal(steal.players[0].pos,10);
+
+  function ownedFire(){
+    const s=approach();
+    assert.ok(C.play(s,['leaveGem']));
+    s.players[0].cash=1200;
+    Object.assign(s.tiles[5],{owner:0,level:2,unit:{id:C.cards.findIndex(c=>C.combo.key(c)==='goblin'),hp:30}});
+    return s;
+  }
+  const level=ownedFire();
+  assert.ok(C.play(level,['level',5,4]));
+  assert.deepEqual(level.prices,[90,40,70,50]);
+  const terrain=ownedFire();
+  assert.ok(C.play(terrain,['element',5,2]));
+  assert.deepEqual(terrain.prices,[40,50,60,50]);
+
+  const grab=spell('stealgem'),obliterate=spell('obliterate');assert.ok(grab>=0&&obliterate>=0);
+  const on=C.start(4,4,5000,mapId),off=C.start(4,4,5000,'revolt-original-watchpost');
+  for(const s of [on,off]){
+    s.players.forEach(p=>p.cash=1000);
+    s.players[0].hand=[grab];
+    assert.ok(C.play(s,['cast',0]));
+    if(s===on){assert.deepEqual(C.choices(s),[['fizzle']]);s.players[1].symbols[2]=2;}
+    assert.ok(C.play(s,['targetPlayer',1]));
+    if(s===on)assert.deepEqual([s.players[0].symbols[2],s.players[1].symbols[2]],[1,1]);
+    else assert.deepEqual([s.players[0].cash,s.players[1].cash],[1040,920]);
+    s.phase='spell';s.players[0].hand=[obliterate];s.players.forEach(p=>p.cash=1000);
+    assert.ok(C.play(s,['cast',0]));
+    assert.deepEqual([s.players[0].cash,s.players[1].cash],s===on?[850,930]:[828,900]);
+  }
+  const ai=approach(1,0);
+  assert.equal(C.ai(ai)[0],'buyGem');
+  console.log('Revolt gem shop pass/stop, caps, opponent purchase, price movement, spells, replay and AI OK');
 }

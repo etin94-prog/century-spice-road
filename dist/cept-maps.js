@@ -50,6 +50,11 @@ const CepterMaps=(()=>{
   revoltPractice['revolt-original-switchyard']={...switchyard,areaCount:1,section:'arena',graph:true,startCash:250,
     pathSwitches:{1:[0,2,16],7:[6,8,20]},castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},
     gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
+  const gemRoute=map('청람 교역로 · 창작 지도',[...ring,[3,4],[3,3],[3,2]],
+    ['성',1,1,3,'동쪽 게이트',0,0,1,3,'보석 상점',2,1,'서쪽 게이트',2,3,0,3,'보석 상점',2],
+    [4,12],100,12,[...loop(16),[6,16],[16,17],[17,18],[18,14]],Array(19).fill(0));
+  revoltPractice['revolt-original-gem-route']={...gemRoute,areaCount:1,section:'arena',graph:true,gemStore:true,startCash:300,
+    castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];

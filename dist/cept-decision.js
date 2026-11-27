@@ -6,6 +6,7 @@ function routeOption(action){
   if(info.phase==='fork')landing+=' · 갈림길에서 '+info.remaining+'칸 남음';
   else if(info.phase==='over')landing+=' · 목표 달성';
   else if(info.phase==='shop')landing+=' · 카드 1장 구매 가능';
+  else if(info.phase==='gemStore')landing+=' · 속성석 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(info.phase==='temple')landing+=' · 호부 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+info.toll+'G');
   else if(info.phase==='pathSwitch')landing+=' · 다음 '+(info.switchTo+1)+'번 방향 변경 가능';
@@ -163,49 +164,54 @@ function openTurnPicker(entries,title,preferred=-1){
 }
 
 function symbolLabel(id){
+  if(C.board(s).gemStore)return C.elements[id]+' 속성석';
   const area=Math.floor(id/4),legacy=['classic','market'].includes(s.mapId);
   return (legacy?(area===0?'서부':'동부'):(area+1)+'지역')+' '+C.elements[id%4];
 }
 function symbolTrade(group,p,controls){
-  const kind=group[0][0],assets=new Map();
+  const kind=group[0][0],assets=new Map(),gems=C.board(s).gemStore;
+  const gemTrade=['buyGem','sellGem','stealGem'].includes(kind);
+  const title=gems&&kind==='liquidate'?'속성석 처분':labels[kind],unit=gems?'개':'장';
   for(const action of group){
-    const [,id,count]=action;
-    if(!assets.has(id))assets.set(id,new Map());
-    assets.get(id).set(count,action);
+    const [,id,count,seller]=action,key=seller==null?String(id):id+'/'+seller;
+    if(!assets.has(key))assets.set(key,{id,seller,actions:new Map()});
+    assets.get(key).actions.set(count,action);
   }
   const box=el('div',null,'command');box.dataset.kind=kind;
-  box.append(openerButton(kind,labels[kind],assets.size,()=>{
-    const {dialog,commit,show}=turnPicker(labels[kind]);
+  box.append(openerButton(kind,title,assets.size,()=>{
+    const {dialog,commit,show}=turnPicker(title);
     dialog.classList.add('symbol-picker');
-    const buy=kind==='buySymbol',options=el('div',null,'symbol-options');
-    options.setAttribute('role','group');options.setAttribute('aria-label','호부 종류');
+    const buy=['buySymbol','buyGem','stealGem'].includes(kind),options=el('div',null,'symbol-options');
+    options.setAttribute('role','group');options.setAttribute('aria-label',gems?'속성석 종류':'호부 종류');
     const quantity=el('div',null,'symbol-quantity');
     quantity.setAttribute('role','group');quantity.setAttribute('aria-label','거래 수량');
     const number=el('output',null,'symbol-count');
     number.setAttribute('aria-live','off');
     const amount=el('p',null,'symbol-amount'),result=el('p',null,'symbol-result');
-    let id,counts=[],index=0;
+    let selected,counts=[],index=0;
     const change=delta=>{index=Math.min(counts.length-1,Math.max(0,index+delta));update();};
     const fewer=btn('−',()=>change(-1)),more=btn('+',()=>change(1)),max=btn('최대',()=>change(counts.length));
-    fewer.setAttribute('aria-label','수량 1장 줄이기');more.setAttribute('aria-label','수량 1장 늘리기');
+    fewer.setAttribute('aria-label','수량 1'+unit+' 줄이기');more.setAttribute('aria-label','수량 1'+unit+' 늘리기');
     max.setAttribute('aria-label','최대 수량 선택');
     quantity.append(fewer,number,more,max);
-    const confirm=btn(labels[kind]+' 확정',()=>commit(assets.get(id).get(counts[index])),'primary');
+    const confirm=btn(title+' 확정',()=>commit(assets.get(selected).actions.get(counts[index])),'primary');
     function update(){
-      const count=counts[index],value=count*s.prices[id],delta=buy?count:-count;
-      number.value=count+'장';fewer.disabled=index===0;more.disabled=index===counts.length-1;
-      amount.textContent=(buy?'지불 ':'수령 ')+value+'G';
-      result.textContent='거래 후 마력 '+(p.cash-delta*s.prices[id])+'G · 보유 '+(p.symbols[id]+delta)+'장';
+      const {id,seller,actions}=assets.get(selected),count=counts[index],delta=buy?count:-count;
+      const quote=gemTrade?C.gemQuote(s,actions.get(count)):{cost:delta*s.prices[id],holdings:p.symbols[id]+delta};
+      number.value=count+unit;fewer.disabled=index===0;more.disabled=index===counts.length-1;
+      amount.textContent=(buy?'지불 ':'수령 ')+Math.abs(quote.cost)+'G'+(seller==null?'':' · 상대 수령 '+quote.received+'G');
+      result.textContent='거래 후 마력 '+(p.cash-quote.cost)+'G · 보유 '+quote.holdings+unit+
+        (gemTrade?' · 시세 '+quote.prices[id]+'G':'');
     }
     const buttons=new Map();
     function choose(key){
-      id=key;counts=[...assets.get(id).keys()].sort((a,b)=>a-b);index=0;
-      for(const [candidate,button] of buttons)button.setAttribute('aria-pressed',String(candidate===id));
+      selected=key;counts=[...assets.get(key).actions.keys()].sort((a,b)=>a-b);index=0;
+      for(const [candidate,button] of buttons)button.setAttribute('aria-pressed',String(candidate===selected));
       update();
     }
-    for(const key of assets.keys()){
-      const button=btn(symbolLabel(key),()=>choose(key));
-      button.append(el('small','장당 '+s.prices[key]+'G'));
+    for(const [key,{id,seller}] of assets){
+      const button=btn(symbolLabel(id)+(seller==null?'':' · '+s.players[seller].name),()=>choose(key));
+      button.append(el('small',unit+'당 '+(gemTrade?C.gemUnitPrice(s,kind,id):s.prices[id])+'G'));
       options.append(button);buttons.set(key,button);
     }
     choose(assets.keys().next().value);
@@ -301,6 +307,7 @@ function seatSummary(seat){
       (s.target-total)+'G 추가 후 '+(map.gates?'게이트 경유':'성 귀환')],
     [map.gates?'이번 주회 남은 게이트':'이번 주회 남은 요새',missing.join(' · ')||(map.gates?'모두 경유':'모두 경유 · 성으로 귀환')]
   ];
+  if(map.gemStore)rows.push(['속성석',s.prices.map((price,e)=>C.elements[e]+' '+p.symbols[e]+'개 × '+price+'G').join(' · ')]);
   const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'모든 내 영지에 명령 가능',sagaTollUp:'통행료 30% 증가',
     sagaTollDown:'통행료 30% 감소',sagaDeduction:'크리처·장비 비용 감면',sagaInflation:'크리처·장비 비용 증가',
     sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):

@@ -6,6 +6,9 @@ const CepterMatchRecord=(()=>{
       round:s.round,turn:s.turn,phase:s.phase,die:s.die||0,winner:s.winner,
       players:s.players.map((p,i)=>[p.pos,p.cash,total(s,i)]),
     };
+    if(s.tiles.some(t=>t.type==='보석 상점')){
+      f.gems=s.players.map(p=>p.symbols.slice());f.gemPrices=s.prices.slice();
+    }
     if(s.switchRound!=null){f.switchRound=s.switchRound;f.switchSide=!!s.switchSide;}
     // A tied round limit has no winner; the record names the seats that shared first place.
     if(s.phase==='over'&&s.leaders?.length>1)f.leaders=s.leaders.slice();
