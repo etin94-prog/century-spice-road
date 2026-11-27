@@ -1083,6 +1083,10 @@ function createCepter(edition="ps2"){
       const p=s.players[a.seat];
       if(creatureEnd&&a.n==='cornfolk')p.cash+=200;
       if(creatureEnd&&a.n==='mummy')p.cash+=50*(p.lap+1);
+      if(edition==='saga'&&creatureEnd&&a.n==='spudfolk'&&a.defeatedByOpponent){
+        const reward=10*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],0)).length;
+        p.cash+=reward;if(reward)lines.push('스퍼드포크 · '+reward+'G 획득');
+      }
       if(creatureEnd&&(a.n==='fate'&&(revolt||p.hand.length<6)||a.c.evoLegacy==='draw'))draw(p,s);
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
       if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
@@ -1580,6 +1584,7 @@ function createCepter(edition="ps2"){
     function territoryValue(from,kind,x){
       const src=s.tiles[from],n=fx.name(src.unit),cost=fx.territoryCost(s,n);
       if(edition==='saga'){
+        if(n==='spudfolk')return 20*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],2)).length;
         if(n==='sylph'){
           const strength=10*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],3)).length;
           return strength>=50?strength+src.level*8+(src.type===3?12:0)-cost*.4:-10;

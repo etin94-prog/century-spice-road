@@ -14,7 +14,7 @@ const CepterExtraSpells=(()=>{
     remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
-    bravesong:'player',toughsong:'player',capture:'player',theft:'player',
+    bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
@@ -256,6 +256,7 @@ const CepterExtraSpells=(()=>{
           case 'darkcraft':{const n=Math.max(...s.players.map(symbolCount));for(const other of s.players)if(symbolCount(other)===n)mostSymbols(other,.3,true);break;}
           case 'erasure':s.players.forEach(clearCepter);for(const v of s.tiles){if(v.unit)combo.clear(v.unit);delete v.enchant;}break;
           case 'find':draw(p,s);p.hand.push(ids.get(e));break;
+          case 'refuge':p.cash+=80;p.hand.push(ids.get(e));break;
           case 'foresight':
             if(!p.book.length)resetBook(s,s.turn);return 'foresightCard';
           case 'prophecy':if(!p.book.length)resetBook(s,s.turn);return 'prophecyKind';
@@ -419,6 +420,11 @@ const CepterExtraSpells=(()=>{
         return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*(average-q.cash),0)/15;
       }
       if(e==='alarm')return mine.reduce((sum,t)=>sum+(t.unit?.fatigued?5+t.level:0),0);
+      if(e==='refuge'){
+        if(p.cash<120)return 22;
+        if(p.hand.length<4)return -8;
+        return p.cash<260?10:0;
+      }
       if(e==='incineration')return (s.destroyedCount||0)*2;
       if(e==='selenear')return mine.filter(t=>t.type===2).length*10;
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);
