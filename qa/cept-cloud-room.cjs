@@ -82,9 +82,9 @@ async function main(){
       const spectator=bySeat[1];
       if(edition==='begins'){
         assert.equal(opening.books.every(deck=>deck.length===40),true);
-        assert.deepEqual(await spectator.evaluate(()=>s.players.map(p=>p.bookCount)),[35,36,36,36]);
+        assert.deepEqual(await spectator.evaluate(()=>s.players.map(p=>p.bookCount)),[34,35,35,35]);
         await spectator.reload();await spectator.waitForFunction(()=>room?.seat===1&&room.started);
-        assert.deepEqual(await spectator.evaluate(()=>s.players.map(p=>p.hand.length)),[0,4,0,0]);
+        assert.deepEqual(await spectator.evaluate(()=>s.players.map(p=>p.hand.length)),[0,5,0,0]);
         await Promise.all(pages.map(p=>p.context().close()));
         assert.deepEqual(errors,[]);
         console.log('Begins cloud four-seat 40-card opening books and private reconnect OK');

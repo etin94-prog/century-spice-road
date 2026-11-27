@@ -90,6 +90,7 @@ function createCepter(edition="ps2"){
     gear.kind==='creature'&&(unit.support&&(!unit.supportElements||unit.supportElements.some(e=>combo.hasElement(gear,e)))||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
   const bookSize=edition==='begins'?40:50;
+  const openingHandSize=edition==='begins'?5:4;
   const copyLimit=card=>edition==='begins'&&card?.catalog?.rarity==='E'?1:4;
   if(editions)editions.configure(edition,cards,presets,bookSize,copyLimit);
   const evo=revolt?(typeof module==='undefined'?CepterEvo:require('./cept-evo')):null;
@@ -148,9 +149,10 @@ function createCepter(edition="ps2"){
   function refillBook(p){
     return shuffledBook((p.recycleTemplate||p.template)?.filter(id=>!p.bannedCards?.includes(id)));
   }
-  function dealOpeningBook(p,seat,template){
+  function dealOpeningBook(p,seat,template,baseHand=4){
     p.template=template.slice();p.book=shuffledBook(template);p.hand=[];
-    for(let j=0;j<(seat===0?5:4);j++)draw(p);
+    const drawCount=baseHand+Number(seat===0);
+    for(let j=0;j<drawCount;j++)draw(p);
   }
   function limitAllianceEvos(s){
     if(!evo||!s.teams||s.round!==1||s.turn!==0||s.phase!=='spell')return;
@@ -183,7 +185,7 @@ function createCepter(edition="ps2"){
     if(!p||p.ai||s.round!==1||s.turn!==0||s.phase!=='spell')return false;
     const usesOldBook=edition==='begins'&&p.template?.length===50;
     if(usesOldBook?template?.length!==50||!validLegacyBook(template):!validBook(template))return false;
-    dealOpeningBook(p,seat,template);
+    dealOpeningBook(p,seat,template,usesOldBook?4:s.openingHandSize??4);
     if(evo&&s.teams){
       p.explicitOpening=true;
       delete p.evoOpeningLimited;delete p.evoOpeningBook;
@@ -224,9 +226,10 @@ function createCepter(edition="ps2"){
       const npc=storyCast&&i>=humans?(aiBook==='story-leo'&&i===2?'Leo · Revenge':storyNames[i]):null;
       const seatBook=npc?storyBook(npc):i>=humans&&!storyCast?aiBook:template;
       const p={ai:i>=humans,name:npc||((i>=humans?'AI ':'셉터 ')+(i+1)),cash:maps[mapId].startCash??200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(seatBook),template:seatBook.slice(),symbols:Array((maps[mapId].areaCount||2)*4).fill(0),previous:null};
-      for(let j=0;j<4;j++)draw(p);return p;
+      for(let j=0;j<openingHandSize;j++)draw(p);return p;
     });
     const s={edition,version:1,layoutRevision:1,storyCast,alliance,teams,mapId,mapGoal,aiLevel,roundLimit,prices:Array((maps[mapId].areaCount||2)*4).fill(maps[mapId].gemStore?50:10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].baseValues?.[i]??maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
+    if(edition==='begins')s.openingHandSize=openingHandSize;
     if(revolt){
       players[0].cash+=roundGain(s);
       s.evoMatch=Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');

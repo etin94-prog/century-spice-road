@@ -229,6 +229,16 @@ const CepterEditions=(()=>{
     });
     if(edition!=='saga'&&edition!=='begins')return presets;
     if(edition==='begins')return addNamedBooks({
+      // Forty-card recipes checked against the public in-game book codes at culdcept-db.com.
+      beginsStarterFireEarth:{
+        kobold:1,tigerbeetle:1,airslasher:1,battleaxe:1,flametongue:1,longsword:1,wolf:2,fighter:2,
+        dragonfly:2,pillarofflame:2,phoenix:2,minotaur:2,woodfolk:2,wallofstone:2,dwarf:2,gnome:2,
+        scalearmor:2,chainmail:2,fly:1,magicbolt:1,windofhope:2,holyword1:2,holyword6:2,manna:2
+      },
+      beginsVeramiSeaWind:{
+        wallofice:1,dwarf:2,merfolk:2,megalodon:2,lizardman:2,giantrat:3,fighter:3,bandit:3,
+        woodfolk:3,sage:3,pirate:4,holyword1:2,holyword3:2,shatter:2,holyword6:3,fly:3
+      },
       beginsArtAssault:{
         abyssalmonarch:1,hornedchameleon:3,gascloud:3,flameacolyte:3,flamegoetia:2,aeroacolyte:3,aerogoetia:2,fighter:2,
         chainmail:3,magicshield:2,gremlinamulet:1,boomerang:2,
@@ -401,6 +411,8 @@ const CepterEditions=(()=>{
   };
   const beginsCreatures={
     gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},skeleton:{regenerate:true},
+    gnome:{tollFactor:1.5},phoenix:{},wallofice:{stationary:true,battleHP:20},
+    sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},
@@ -411,7 +423,7 @@ const CepterEditions=(()=>{
   const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y'};
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
-    gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},
+    gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},battleaxe:{st:40},
     batteringram:{st:20},gremlinamulet:{},rathunter:{},boomerang:{st:20,hp:10},
     buckler:{},countershield:{effect:'reflect'},diamondarmor:{st:-30,hp:60,last:true},
     earthshield:{},fireshield:{},watershield:{},windshield:{},
