@@ -328,7 +328,7 @@ const CepterCreatureText=(()=>{
       burnacle:'고른 영지에 안개를 걸어 통행료를 절반으로 줄입니다.',
       creepingflame:'이 크리처를 인접한 영지 한 곳으로 이동합니다. 상대 영지라면 침략합니다.',
       rockshell:'이 영지의 침략을 막고 통행료를 0G로 바꿉니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
-    const begins={goldentotem:'400G를 얻고 이 크리처는 파괴됩니다.'};
+    const begins={goldentotem:'400G를 얻고 이 크리처는 파괴됩니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
     const effect=(C.edition==='begins'?begins[key]:C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
@@ -414,7 +414,8 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='thunderspawn'?'내 수 영지 한 곳당 전투 ST가 10 오릅니다. 영지와 크리처의 속성이 다른 적 영지로 원거리 침략할 수 있습니다.':
       C.edition==='revolt'&&key==='kaiserpenguin'?'전투 시작 시 상대가 사용한 도구, 두루마리 또는 지원 크리처를 파괴합니다.':
-      C.edition==='revolt'&&key==='triton'?'아이템을 사용하고 생존하면 전투가 끝날 때 카드 한 장을 뽑습니다.':
+      ['revolt','begins'].includes(C.edition)&&key==='triton'?'아이템을 사용하고 생존하면 전투가 끝날 때 카드 한 장을 뽑습니다.':
+      C.edition==='begins'&&key==='valkyrie'?'승리하면 기본 ST가 최대 100까지 10 오릅니다.':
       C.edition==='revolt'&&key==='halfling'?'모든 속성 영지에서 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='cactuswall'?'수·풍 속성 상대와 싸울 때 전투 HP가 50 오릅니다.':
       C.edition==='revolt'&&key==='tigerweta'?'전투 영지에 인접한 내 영지가 있으면 전투 ST와 HP가 20씩 오릅니다.':

@@ -76,12 +76,14 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying','revoltSomniaScripture','revoltMoriCrazy','revoltHypnaBewitch','revoltTerrormireFireClaw','revoltGoliganSuppression','revoltTerrormireFireStorm','revoltMemenLame','revoltZenethInvasion','revoltKranissResurrection']:[])]);
+    assert.deepEqual(Object.keys(C.presets).filter(name=>edition!=='begins'||!name.startsWith('begins-')),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying','revoltSomniaScripture','revoltMoriCrazy','revoltHypnaBewitch','revoltTerrormireFireClaw','revoltGoliganSuppression','revoltTerrormireFireStorm','revoltMemenLame','revoltZenethInvasion','revoltKranissResurrection']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const [name,deck] of Object.entries(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
       const expectedKinds=name==='beginsVeramiSeaWind'?['creature','spell']:name==='beginsSteamdrillPierce'?['creature','item']:['creature','item','spell'];
-      assert.deepEqual(new Set(deck.map(id=>C.cards[id].kind)),new Set(expectedKinds));
+      if(edition!=='begins'||!name.startsWith('begins-')){
+        assert.deepEqual(new Set(deck.map(id=>C.cards[id].kind)),new Set(expectedKinds));
+      }
     }
     const fighter=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.kind==='creature'&&!c.first&&!c.last&&c.category==='neutral');
     const mace=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='mace');
@@ -3671,6 +3673,24 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const current=C.presets.intro;
   const creature=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
   const goblin=creature('goblin'),fighter=creature('fighter');
+  const archive=require('../dist/cept-begins-player-books');
+  const listed=new Set(C.cards.filter(c=>!c.unlisted).map(C.combo.key));
+  assert.equal(archive.length,37);
+  const size=recipe=>Object.values(recipe).reduce((sum,n)=>sum+n,0);
+  assert.deepEqual(archive.filter(([, , ,recipe])=>size(recipe)!==40).map(([, ,source,recipe])=>[source,size(recipe)]),[['1354-red-wind',39]]);
+  assert.ok(archive.every(([, , ,recipe])=>Object.keys(recipe).every(name=>listed.has(name))));
+  const playable=[];
+  for(const [, ,source,recipe] of archive){
+    const book=C.presets['begins-'+source];
+    if(!book)continue;
+    assert.ok(C.validBook(book));
+    assert.deepEqual(book.toSorted((a,b)=>a-b),Object.entries(recipe).flatMap(([name,n])=>Array(n).fill(creature(name))).sort((a,b)=>a-b));
+    playable.push(source);
+  }
+  assert.deepEqual(playable,['1345-budget-raging-river','1348-esupports#main','1351-beginner-book-upgrades-rg',
+    '1352-beginner-book-upgrades-by','1353-full-steam-ahead','1356-support-deck-for-chapter-15']);
+  const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
+  assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
     beginsStarterFireEarth:'airslasher battleaxe chainmail:2 dragonfly:2 dwarf:2 fighter:2 flametongue fly gnome:2 holyword1:2 holyword6:2 kobold longsword magicbolt manna:2 minotaur:2 phoenix:2 pillarofflame:2 scalearmor:2 tigerbeetle wallofstone:2 windofhope:2 wolf:2 woodfolk:2',
     beginsStarterWaterAir:'battleaxe chainmail:2 cornfolk:2 fighter:2 fly giantamoeba:2 giantbat harpy:2 holyword1:2 holyword6:2 hurricane:2 icicle kingtortoise:2 lizardman:2 longsword magicbolt manna:2 merfolk rockbiter scalearmor:2 spectre:2 wallofice:2 windofhope:2 wolf:2',
@@ -3712,6 +3732,21 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }
   const frost=duel(fighter,ice,null,null);
   assert.deepEqual([frost.startHP[1],frost.won],[60,false]);
+  const valkyrie=creature('valkyrie');
+  assert.ok(duel(valkyrie,goblin).won);
+  assert.equal(land.unit.st,C.cards[valkyrie].st+10);
+  const priorTritonBook=enemy.book;
+  enemy.book=[fighter];
+  const gearDraw=duel(goblin,creature('triton'),null,creature('freeze'));
+  assert.match(gearDraw.strikes.find(hit=>hit.side===1).notes.join(' '),/45 피해/);
+  assert.deepEqual(enemy.hand,[fighter]);
+  enemy.book=priorTritonBook;
+  const waterLand=creatures.tiles[6],oldWater={...waterLand};
+  Object.assign(waterLand,{owner:1,type:1,unit:{id:goblin,hp:30}});
+  const undine=creature('undine');
+  const nymph=duel(creature('merfolk'),undine,null,null,C.cards[undine].hp,1);
+  assert.deepEqual([nymph.startHP[1],nymph.strikes[0].effect],[50,'block']);
+  Object.assign(waterLand,oldWater);
   const fallen=duel(fighter,phoenix,axe,null);
   assert.ok(fallen.won&&enemy.hand.includes(phoenix));
   const guarded=duel(fighter,sage,amulet,vest);
@@ -3909,6 +3944,33 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     Object.assign(creatures.players[0],{hand:[fighter,creature('dwarf'),minotaur,creature('merfolk')],cash:500});
     assert.deepEqual(C.choices(creatures).filter(([kind])=>kind==='equip'),[['equip',0],['equip',1]]);
   }
+  const ritual=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+  const sakuya=creature('sakuya'),dryad=creature('dryad');
+  assert.equal(C.territoryAbilityCost(C.cards[sakuya]),120);
+  Object.assign(ritual.tiles[2],{owner:0,type:2,unit:{id:sakuya,hp:C.cards[sakuya].hp}});
+  Object.assign(ritual.tiles[6],{owner:0,type:0,level:4,unit:{id:fighter,hp:40}});
+  Object.assign(ritual.tiles[7],{owner:2,type:0,level:4,unit:{id:fighter,hp:40}});
+  Object.assign(ritual,{phase:'land',visited:[2]});
+  Object.assign(ritual.players[0],{pos:2,cash:400});
+  assert.ok(C.play(ritual,['ability',2]));
+  assert.deepEqual(C.choices(ritual),[['abilityLand',6]]);
+  assert.ok(C.play(ritual,['abilityLand',6]));
+  assert.deepEqual([ritual.players[0].cash,ritual.tiles[6].type,ritual.tiles[7].type],[280,2,0]);
+
+  const nymphMove=C.start(2,2,6000,'begins-original-ford');
+  Object.assign(nymphMove.tiles[2],{type:2,owner:0,unit:{id:dryad,hp:C.cards[dryad].hp}});
+  const distantEarth=nymphMove.tiles.findIndex((t,i)=>t.type===2&&i!==2&&!C.board(nymphMove).links[2].includes(i));
+  assert.ok(distantEarth>=0);
+  nymphMove.players[0].pos=2;nymphMove.phase='land';
+  assert.ok(C.play(nymphMove,['transfer',2,distantEarth]));
+  assert.equal(nymphMove.tiles[distantEarth].unit.id,dryad);
+
+  const recalling=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+  Object.assign(recalling.players[0],{pos:6,flags:C.board(recalling).forts.slice(),hand:[creature('wordofrecall')]});
+  recalling.players[1].pos=8;
+  assert.ok(C.play(recalling,['cast',0]));
+  assert.deepEqual([recalling.phase,recalling.die,recalling.players[0].pos,recalling.players[0].lap,recalling.players[1].pos],['land',0,0,1,8]);
+
   const curse=C.start(2,2,6000,'begins-original-ford');
   const warded=curse.tiles[3],growing={id:fighter,hp:28,mhp:90};
   Object.assign(warded,{owner:0,unit:growing});

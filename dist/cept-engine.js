@@ -1381,6 +1381,7 @@ function createCepter(edition="ps2"){
       const alreadyRecycled=revolt&&a.n==='centaur';
       if(a.hp>0&&(centaurReturn||a.g==='eternalmail'&&(!begins||itemEnd)&&!alreadyRecycled))returnToBook(s,a.seat,a.item);
       if(revolt&&itemEnd&&a.hp>0&&a.g==='soulray'&&!alreadyRecycled&&hasHandSpace(s.players[a.seat]))s.players[a.seat].hand.push(a.item);
+      if(begins&&creatureEnd&&a.n==='triton'&&a.hp>0&&a.gear?.kind==='item')draw(s.players[a.seat],s);
       if((edition==='saga'||revolt)&&creatureEnd&&a.hp>0){
         const owner=s.players[a.seat];
         if(edition==='saga'&&a.n==='centaur'&&a.item!=null)owner.book.unshift(a.item);
@@ -1411,9 +1412,9 @@ function createCepter(edition="ps2"){
         a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
         lines.push(a.c.name+' · 승리 후 기본 ST '+a.u.st+' · 최대 HP '+a.u.mhp);
       }
-      if((a.n==='valkyria'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0){
+      if((a.n==='valkyria'||begins&&a.n==='valkyrie'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0){
         const st=fx.strength(a.u);
-        a.u.st=Math.max(st,Math.min(a.n==='ixtol'?100:80,st+10));
+        a.u.st=Math.max(st,Math.min(begins||a.n==='ixtol'?100:80,st+10));
         lines.push(a.c.name+' · 승리 후 ST '+a.u.st);
       }
     }
@@ -1989,7 +1990,7 @@ function createCepter(edition="ps2"){
         if(handheld&&n==='mystic')return sign(t)*Math.min(10,100-fx.max(u))*3;
         if(handheld&&n==='sleipnir')return Math.max(...fx.territoryMoveExits(s,x).map(dst=>sleipnirValue(x,dst)));
         if(handheld&&n==='metalbug')return -sign(t)*(value(s,t)+fx.max(u))-value(s,src)-fx.max(src.unit);
-        if((handheld||edition==='saga')&&n==='sakuya'){
+        if((handheld||begins||edition==='saga')&&n==='sakuya'){
           const trial={...s,tiles:s.tiles.map(v=>v===t?{...v,type:2}:v)};
           return total(trial,seat)-total(s,seat)+(cards[u.id].element===2?20:0);
         }
@@ -2146,7 +2147,7 @@ function createCepter(edition="ps2"){
         if(handheld&&k==='transfer'&&fx.name(s.tiles[x].unit)==='powdereater'&&s.tiles[y].owner<0){
           return 26+value(s,s.tiles[y])/15+(s.tiles[y].type===3?4:0);
         }
-        if(revolt&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);
+        if((revolt||begins)&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);
         if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia'||revolt&&fx.name(s.tiles[x].unit)==='thunderspawn')){
           const src=s.tiles[x],out=forecast({at:y,from:x,inv:src.unit.id,invHP:src.unit.hp,attackerSeat:src.owner},null,false);
           return out.won?value(s,s.tiles[y])*1.4-value(s,src)+25:-100;

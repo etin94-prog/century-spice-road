@@ -66,6 +66,8 @@ else{
       selectMap.hidden=!supported;
     };
     pick.onchange=show;show();archive.append(pick,values,selectMap);references.append(list,archive);
+    if(C.edition==='begins')references.append(editionBookArchive(CepterBeginsPlayerBooks,
+      '공개 덱 자료','비긴즈 공개 덱 자료','https://www.culdceptcentral.com/culdcept-begins/culdcept-begins-player-decks/','begins-book-archive'));
     if(C.edition==='revolt')references.append(editionBookArchive(CepterRevoltBookArchive,
       '스토리 북 자료','리볼트 스토리 북 자료','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/','revolt-book-archive'),revoltComboArchive());
   }else{

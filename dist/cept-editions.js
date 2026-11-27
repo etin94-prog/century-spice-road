@@ -6,6 +6,7 @@ const CepterEditions=(()=>{
   const handheld=typeof module==='undefined'?(typeof CepterEdition2012==='undefined'?null:CepterEdition2012):require('./cept-edition-data-2012');
   if(handheld)data.cards['3ds']=handheld.cards;
   const handheldPlayerBooks=typeof module==='undefined'?(typeof Cepter2012PlayerBooks==='undefined'?[]:Cepter2012PlayerBooks):require('./cept-2012-player-books');
+  const beginsPlayerBooks=typeof module==='undefined'?(typeof CepterBeginsPlayerBooks==='undefined'?[]:CepterBeginsPlayerBooks):require('./cept-begins-player-books');
   const handheldRefs={
     cards:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-card-lists/culdcept-3ds-complete-card-list',
     maps:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-map-list',
@@ -171,7 +172,7 @@ const CepterEditions=(()=>{
       escape:'escape',mountainleap:'mountainleap',lakeleap:'lakeleap',forestleap:'forestleap',plainleap:'plainleap',
       mutation:'mutation',removecurse:'removecurse',turntowall:'turntothewall',
       corruption:'corruption',fairylight:'fairylight',goblinslair:'goblinslair',grace:'grace',
-      meteor:'meteor',quicksand:'quicksand',quintessence:'quintessence',shrink:'shrink',spartoi:'spartoi'}
+      meteor:'meteor',quicksand:'quicksand',quintessence:'quintessence',shrink:'shrink',spartoi:'spartoi',wordofrecall:'castlerecall'}
   };
   // These three original books are the baseline used to calibrate Revolt difficulty.
   const revoltBaselineBooks={
@@ -437,7 +438,10 @@ const CepterEditions=(()=>{
         aquagoetia:3,aquaacolyte:2,gascloud:2,kingtortoise:2,dwarf:3,hornedchameleon:3,goldentotem:2,terragoetia:2,
         chainmail:3,magicshield:2,watershield:2,towershield:1,countershield:2,
         manna:3,growthbody:2,greed:2,landprotection:2,lifestream:2
-      }
+      },
+      ...Object.fromEntries(beginsPlayerBooks.flatMap(([,,source,recipe])=>
+        Object.entries(recipe).every(([name,count])=>ids.has(name)&&count<=copyLimit(cards[ids.get(name)]))?
+          [['begins-'+source,recipe]]:[]))
     });
     const gear={prismaticwand:2,scalearmor:2,towershield:2,longsword:2};
     // Culdcept Central's Xbox 360 opening books: 446-cs360-playerdecks-starterby and 426-cs360-playerdecks-starterrg.
@@ -674,6 +678,8 @@ const CepterEditions=(()=>{
     gremlin:{},wyvern:{first:true,remoteVacantElements:[3],landBan:2},basilisk:{},greatfossil:{stationary:true,freeToll:true},
     colossus:{last:true},drool:{pierceAll:true},golem:{},
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
+    dryad:{support:true,supportElements:[-1,2],remoteVacantElements:[2]},sakuya:{support:true},
+    triton:{scrollCritical:true},undine:{},valkyrie:{first:true,support:true,supportElements:[-1,0]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},

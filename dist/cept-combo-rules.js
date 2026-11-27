@@ -297,6 +297,10 @@ const CepterCombos = (() => {
         if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
         if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
       }
+      if(s.edition==='begins'&&n==='sakuya'){
+        if(idol(s,'jadeidol'))return [];
+        return s.tiles.flatMap((v,j)=>v.owner===s.turn&&v.type!==2&&targetable(s,v)?[['abilityLand',j]]:[]);
+      }
       if(s.edition==='3ds'){
         if(n==='necromancer'&&s.lastDestroyed==null)return [];
         if(n==='mystic')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&max(v.unit)<100?[['abilityLand',j]]:[]);
@@ -317,9 +321,11 @@ const CepterCombos = (() => {
         return [['abilityLand',j]];
       });
     }
-    const territoryCost=(s,n)=>s.edition==='3ds'?handheldTerritory[n]:(s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
+    const territoryCost=(s,n)=>s.edition==='3ds'?handheldTerritory[n]:
+      s.edition==='begins'&&n==='sakuya'?120:(s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
     function territoryEffect(s,from,x){
       const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];p.cash-=territoryCost(s,n);
+      if(s.edition==='begins'&&n==='sakuya'){v.type=2;return;}
       if(s.edition==='3ds'){
         if(n==='metalbug'){destroy(s,v);destroy(s,src);return;}
         if(n==='sakuya'){v.type=2;return;}
