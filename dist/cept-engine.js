@@ -456,7 +456,7 @@ function createCepter(edition="ps2"){
     for(const t of s.tiles){
       if(t.owner!==s.turn||!t.unit)continue;
       delete t.unit.fatigued;
-      if(heal&&!(revolt&&fx.name(t.unit)==='statue'))t.unit.hp=Math.min(fx.max(t.unit),t.unit.hp+heal);
+      if(heal&&!(revolt&&(fx.name(t.unit)==='statue'||cards[t.unit.id].noLapHeal)))t.unit.hp=Math.min(fx.max(t.unit),t.unit.hp+heal);
     }
   }
   function passGate(s,m,at){
@@ -489,6 +489,13 @@ function createCepter(edition="ps2"){
     if(tile.type==='보석 상점'){s.phase='gemStore';return;}
     if(shopStock(s).length){s.phase='shop';return;}
     if(tile.unit?.enchant==='mine'){p.cash-=Math.floor(p.cash/2);combo.clear(tile.unit);}
+    if(revolt&&tile.unit?.enchant==='blasttrap'){
+      const loss=Math.floor(Math.max(0,p.cash)*.4),hp=tile.unit.hp;
+      p.cash-=loss;combo.clear(tile.unit);fx.spellHarm(s,tile,20);
+      const damage=hp-(tile.unit?.hp||0);
+      s.shrineNotice='폭발 함정 · 마력 −'+loss+'G'+(damage?' · HP −'+damage:'');
+      note(s,p.name+' · '+s.shrineNotice);
+    }
     if(tile.enchant==='magicfountain'||tile.unit?.enchant==='magicfountain'){p.cash+=400;delete tile.enchant;if(tile.unit)combo.clear(tile.unit);note(s,'매직 파운틴 · +400G');}
     if(edition==='saga'&&tile.type==='분수'&&!fromTransit){
       const prior=p.hand.length,count=Math.min(prior,p.book.length);
@@ -1514,7 +1521,12 @@ function createCepter(edition="ps2"){
         const victim=s.players[s.spellTarget],id=victim.hand.splice(x,1)[0];
         mapEffect('shatter',cards[id].name,victim.pos);delete s.spellTarget;afterTerritory(s);break;
       }
-      case 'eraseDraw':s.players[s.spellTarget].book.splice(-1-x,1);for(const q of s.players)if(q.peek?.seat===s.spellTarget)q.peek.ids.splice(x,1);s.phase='roll';break;
+      case 'eraseDraw':{
+        s.players[s.spellTarget].book.splice(-1-x,1);
+        for(const q of s.players)if(q.peek?.seat===s.spellTarget)q.peek.ids.splice(x,1);
+        if(revolt){delete p.peek;draw(p,s);}
+        s.phase='roll';break;
+      }
       case 'teleTo':{
         const from=s.teleFrom,src=s.tiles[from],dst=s.tiles[x],territoryMove=s.territoryMove;
         delete s.teleFrom;delete s.territoryMove;
@@ -1839,6 +1851,7 @@ function createCepter(edition="ps2"){
         prev=next;next=exits[0];
       }
       const t=s.tiles[next];
+      if(revolt&&t.unit?.enchant==='blasttrap')bonus-=Math.floor(Math.max(0,cash)*.4);
       if(t.owner>=0&&!allied(s,t.owner,traveler))return bonus-owedToll(s,t,traveler);
       if(allied(s,t.owner,traveler)||m.castles?.includes(next)||m.forts.includes(next))return bonus+20;
       return bonus+(territoryType(t.type)&&traveler===seat&&p.hand.some(id=>cards[id].kind==='creature'&&price(p,cards[id],s)<=p.cash)?65:0);

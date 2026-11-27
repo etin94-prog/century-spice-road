@@ -179,7 +179,7 @@ const CepterCombos = (() => {
         if(e==='waste')q.status=e;
         if(e==='wizardeye'){p.peek={seat:x,ids:q.book.slice(-6).reverse()};p.hand.push(ids.get(e));}
         if(e==='mindseeker'){
-          if(s.edition==='saga')p.peek={seat:x,ids:q.book.slice(-6).reverse()};
+          if(['saga','revolt'].includes(s.edition))p.peek={seat:x,ids:q.book.slice(-6).reverse()};
           s.spellTarget=x;return 'mindseeker';
         }
         if(e==='changeling'){
@@ -415,11 +415,17 @@ const CepterCombos = (() => {
       drawItem:{cost:50,label:'북에서 장비 한 장 뽑기'},
       toMistwing:{cost:30,label:'미스트윙으로 변신',form:'mistwing',self:true},
       toAquahorn:{cost:30,label:'아쿠아혼으로 변신',form:'aquahorn',self:true},
-      toMummy:{cost:50,label:'머미로 변신',form:'mummy',self:true}
+      toMummy:{cost:50,label:'머미로 변신',form:'mummy',self:true},
+      conjureBaal:{cost:80,label:'빈 영지에 바알 소환 후 자신 파괴',summon:'baal',consume:true},
+      conjureGooba:{cost:20,label:'빈 영지에 구바 소환',summon:'gooba'},
+      giveHiveWorker:{cost:20,label:'하이브 워커를 손패에 추가',grant:'hiveworker',self:true},
+      buildStatues:{cost:80,label:'인접한 빈 영지에 스태추 소환',adjacent:'statue',self:true}
     };
     const grantedArts={sigiloffloat:'floatSigil',sigilofdrain:'drainSigil'};
     const secretKey=(card,unit)=>card?.secretArt||grantedArts[unit?.enchant];
     const secretArt=(card,unit)=>arts[secretKey(card,unit)];
+    const vacantLand=t=>!t.unit&&territoryType(t.type);
+    const vacantNeighbors=(s,from)=>board(s).links[from].filter(at=>vacantLand(s.tiles[at]));
     function secretTargets(s,from){
       const src=s.tiles[from];
       const key=secretKey(cards[src?.unit?.id],src?.unit),p=s.players[s.turn],art=arts[key];
@@ -427,7 +433,9 @@ const CepterCombos = (() => {
       if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
         (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'?[['secretPlayer',i]]:[]);
       if(key==='drawItem')return p.book.some(id=>cards[id].kind==='item')?[['secretSelf',from]]:[];
-      if(art.form)return [['secretSelf',from]];
+      if(art.summon)return s.tiles.flatMap((t,at)=>vacantLand(t)?[['secretLand',at]]:[]);
+      if(art.adjacent)return vacantNeighbors(s,from).length?[['secretSelf',from]]:[];
+      if(art.form||art.grant)return [['secretSelf',from]];
       if(key==='worldDispel')return activeWorld(s)?[['secretSelf',from]]:[];
       if(['offering','draw','lapGain','dice6'].includes(key)||art.self&&src.unit.enchant!==art.enchant)return [['secretSelf',from]];
       if(art.self)return [];
@@ -469,6 +477,12 @@ const CepterCombos = (() => {
         p.cash+=amount;q.cash-=amount;
         note(s,p.name+' · '+card.name+' 비술 · '+q.name+'에게서 '+amount+'G 탈취');
         return amount+'G 탈취';
+      }
+      if(art.summon){claim(target,s.turn,morph(null,art.summon));delete target.enchant;}
+      if(art.consume)destroy(s,src);
+      if(art.grant)p.hand.push(ids.get(art.grant));
+      if(art.adjacent)for(const at of vacantNeighbors(s,from)){
+        claim(s.tiles[at],s.turn,morph(null,art.adjacent));delete s.tiles[at].enchant;
       }
       if(key==='offering'){p.cash+=200;destroy(s,src);}
       if(key==='draw')draw(p,s);
@@ -514,6 +528,12 @@ const CepterCombos = (() => {
       if(art==='offering')utility=200-value(s,t)-(t.level-1)*35;
       if(art==='draw')utility=p.hand.length<5?35:4;
       if(art==='drawItem')utility=p.hand.filter(id=>cards[id]?.kind==='item').length<2?28:0;
+      if(spec.summon){
+        const creature=cards[ids.get(spec.summon)];
+        utility=20+(matchesTerrain(creature,t.type)?12:0)+creature.hp*.3-(spec.consume?value(s,s.tiles[from])/6:0);
+      }
+      if(spec.grant)utility=p.hand.length<6?14:0;
+      if(spec.adjacent)utility=vacantNeighbors(s,from).length*22;
       if(spec.form){
         const enemyColors=s.tiles.filter(v=>v.unit&&!allied(s,v.owner,s.turn)).map(v=>cards[v.unit.id].element);
         const count=(colors=[])=>enemyColors.filter(e=>colors.includes(e)).length;

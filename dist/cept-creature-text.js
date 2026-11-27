@@ -284,6 +284,8 @@ const CepterCreatureText=(()=>{
     sulfurousballoon:'전투에서 격파되면 상대의 기본 HP에 40 피해를 줍니다.',
     nessie:'수 영지에서 싸우면 영지 레벨 × 10만큼 전투 HP가 오릅니다.',
     soulcollector:'이번 대국에서 지금까지 파괴된 크리처 한 마리마다 전투 ST +5.',
+    hiveworker:'지도에 배치된 하이브 워커 한 마리마다 전투 ST·HP +10.',
+    legendarypharos:'주회 보너스를 받아도 HP를 회복하지 않습니다.',
     rocktitan:'전투에서 살아남으면 전투 종료 시 기본 ST와 최대 HP가 각각 10 줄어듭니다.',
     greatfossil:'통행료를 받지 않습니다. 전투에서 격파되면 티라노사우루스로 살아납니다.',
     duskdweller:'전투에서 승리하면 기본 ST와 최대 HP가 각각 10 오릅니다. 최대 100.',

@@ -221,6 +221,7 @@ const describeCepterSpell=(()=>{
       if(e==='dispelmagic')return '고른 셉터의 저주를 해제합니다. 사용한 주문은 북으로 돌아갑니다.';
     }
     if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
+    if(edition==='revolt'&&e==='mindseeker')return '적의 북 맨 위 카드 최대 6장을 보고 한 장을 파괴한 뒤, 내 북에서 한 장을 뽑습니다.';
     if(edition==='begins'){
       if(e==='mutation')return '고른 크리처의 최대 HP를 최대 100까지 20 올리고 독을 부여합니다. 독은 전투가 끝날 때 최대 HP의 절반만큼 피해를 줍니다.';
       if(e==='removecurse')return '고른 크리처의 인챈트를 해제합니다. 사용한 주문을 북에 넣고 남은 카드를 섞습니다.';

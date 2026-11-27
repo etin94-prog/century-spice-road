@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying','revoltSomniaScripture','revoltMoriCrazy']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying','revoltSomniaScripture','revoltMoriCrazy','revoltHypnaBewitch']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const [name,deck] of Object.entries(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -1103,7 +1103,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     revoltHypnaPetrify:'cockatrice:3 dragonzombie:2 dryad:2 gargoyle:2 glowhorn:2 healer:2 mudman:3 rocktroll:2 screamer:2 spittingcobra:2 woodfolk:3 batteringram:3 gelatinousarmor:2 magmashield:2 shadowblaze:4 bindingmist:2 earthshift:2 exile:2 magicalleap:2 manna:2 senility:1 turntothewall:3',
     revoltMoriAnnoying:'amphibianwarrior:2 gelatinouswall:2 kawahime:2 triton:2 undine:2 yeti:2 elvenarcher:1 greatnimbus:2 madharlequin:2 rokh:2 spectre:3 witch:2 angrymask:2 battleaxe:2 bindingwhip:1 gelatinousarmor:2 shadowblaze:2 squidmantle:2 blackout:2 disease:2 holyword6:2 liquidform:2 magicbolt:1 remoteswitch:2 shatter:2 spartoi:2',
     revoltSomniaScripture:'ironmonger:2 aquahorn:2 fate:2 hellgrammite:2 odontotyrannus:2 triton:2 yeti:2 dhampir:2 greatnimbus:2 gremlin:2 rokh:2 serpentfly:2 thunderspawn:2 chillingblast:2 forceanklet:2 gremlinseye:2 squidmantle:2 stormspear:2 trident:2 drainmagic:2 gift:2 holybanishment:2 holyword6:2 quintessence:2 sigiloffloat:2',
-    revoltMoriCrazy:'amphibianwarrior:2 aquahorn:2 odontotyrannus:2 undine:2 yeti:2 breezespirit:2 elvenarcher:2 pulgasari:2 rokh:2 spectre:2 witch:2 battleaxe:2 bindingwhip:1 shadowblaze:2 spectresrobe:2 stormshield:2 stormspear:2 blackout:2 chariot:2 disease:2 freezecyclone:1 holyword6:2 liquidform:2 remoteswitch:2 shatter:2 spartoi:2'
+    revoltMoriCrazy:'amphibianwarrior:2 aquahorn:2 odontotyrannus:2 undine:2 yeti:2 breezespirit:2 elvenarcher:2 pulgasari:2 rokh:2 spectre:2 witch:2 battleaxe:2 bindingwhip:1 shadowblaze:2 spectresrobe:2 stormshield:2 stormspear:2 blackout:2 chariot:2 disease:2 freezecyclone:1 holyword6:2 liquidform:2 remoteswitch:2 shatter:2 spartoi:2',
+    revoltHypnaBewitch:'greatfossil:1 thief:3 cockatrice:4 dragonzombie:4 dryad:3 greattusker:1 greenogre:1 mudman:4 rocktroll:1 woodfolk:1 bindingwhip:4 gelatinousarmor:1 magmashield:3 petrifystone:2 shadowblaze:1 sparkball:2 bindingmist:1 earthshift:2 exile:1 magicalleap:4 manna:2 poisonmind:3 senility:1'
   };
   const revoltCatalog=ps2.createEdition('revolt');
   for(const [name,entries] of Object.entries(revoltBooks)){
@@ -1135,7 +1136,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     if(revoltCatalog.validBook(original))ready.push(character+' · '+name);
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,17);
+  assert.equal(ready.length,18);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
   const helmet=revolt('livinghelmet','livingarmor','fighter','fighter').s.battle;
   assert.deepEqual([helmet.attackST,helmet.startHP[0],helmet.startHP[1]],[60,70,80]);
@@ -1564,7 +1565,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(items.every(c=>!c.catalogOnly));
   }finally{Math.random=random;}
   console.log('Revolt all 75 items enabled, including four dragons, recycling, independent robe rolls and Warlock Disk');
-  console.log('Revolt seventeen exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
+  console.log('Revolt eighteen exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   const lv3=type=>state=>Object.assign(state.tiles[1],{type,level:3});
   const leveller=begins(null,'chainmail','leveller','fighter',lv3(2)).s;
@@ -2426,6 +2427,76 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([chariot.phase,chariot.tiles[1].owner,chariot.tiles[3].owner,chariot.tiles[3].unit.fatigued],['roll',-1,0,true]);
   assert.ok(chariot.players[0].book.includes(card('chariot')));
 
+  {
+    const poison=fixtures(),snapshot=require('../dist/cept-room-state.js').view;
+    const [actor,enemy,ally]=poison.players;
+    actor.hand=[card('poisonmind')];actor.book=[card('fly')];
+    enemy.book=['fighter','manna','sparkball','chariot','goblin','holyword6','shatter'].map(card);
+    const original=enemy.book.slice();
+    assert.ok(C.play(poison,['cast',0]));
+    assert.ok(!C.choices(poison).some(([kind,seat])=>kind==='targetPlayer'&&seat===2));
+    ally.book=[card('goblin')];
+    assert.ok(C.play(poison,['targetPlayer',1]));
+    assert.equal(poison.phase,'mindseeker');
+    assert.deepEqual(snapshot(C,poison,0).game.players[0].peek.ids,original.slice(-6).reverse());
+    for(const seat of [1,2,3]){
+      const view=snapshot(C,poison,seat);
+      assert.equal(view.game.players[0].peek,undefined);
+      assert.deepEqual(view.choices,[]);
+    }
+    const restored=JSON.parse(JSON.stringify(poison));
+    assert.ok(C.play(restored,['eraseDraw',2]));
+    assert.equal(restored.phase,'roll');
+    assert.equal(restored.players[0].cash,80);
+    assert.deepEqual(restored.players[0].hand,[card('fly')]);
+    assert.equal(restored.players[0].peek,undefined);
+    assert.deepEqual(restored.players[1].book,original.filter((_,i)=>i!==4));
+
+    const trap=fixtures();
+    trap.players[0].hand=[card('blasttrap')];trap.players[0].cash=530;
+    place(trap,1,1,'goblin',30);
+    assert.ok(C.play(trap,['cast',0])&&C.play(trap,['targetLand',1]));
+    Object.assign(trap.players[0],{pos:0,previous:15});
+    Object.assign(trap,{phase:'fork',remaining:2,die:2,rollSum:2});
+    assert.ok(C.play(trap,['route',1]));
+    assert.deepEqual([trap.players[0].pos,trap.players[0].cash,trap.tiles[1].unit.hp,trap.tiles[1].unit.enchant],[2,500,30,'blasttrap']);
+    Object.assign(trap.players[0],{pos:0,previous:15});
+    Object.assign(trap,{phase:'fork',remaining:1,die:1,rollSum:1});
+    assert.ok(C.play(trap,['route',1]));
+    assert.deepEqual([trap.players[0].pos,trap.players[0].cash,trap.tiles[1].unit.hp,trap.tiles[1].unit.enchant],[1,300,10,undefined]);
+    assert.match(trap.shrineNotice,/200G.*20/);
+
+    const demon=fixtures();
+    place(demon,1,0,'conjurer',30);
+    place(demon,2,1,'goblin',30);
+    demon.tiles[3].type=0;
+    assert.ok(C.play(demon,['secretArt',1]));
+    assert.ok(!C.choices(demon).some(([kind,at])=>kind==='secretLand'&&at===2));
+    assert.ok(C.play(demon,['secretLand',3]));
+    assert.deepEqual([demon.tiles[1].unit,demon.tiles[3].unit.id,demon.players[0].cash],[null,card('baal'),20]);
+
+    const queen=fixtures();
+    place(queen,1,0,'goobaqueen',40);
+    assert.ok(C.play(queen,['secretArt',1])&&C.play(queen,['secretLand',3]));
+    assert.equal(queen.tiles[3].unit.id,card('gooba'));
+    assert.ok(queen.tiles[1].unit.fatigued);
+    assert.ok(C.cards[card('gooba')].generatedOnly);
+
+    const hive=fixtures();
+    place(hive,1,0,'hivequeen',40);
+    hive.players[0].hand=[];
+    assert.ok(C.play(hive,['secretArt',1]));
+    assert.deepEqual(hive.players[0].hand,[card('hiveworker')]);
+
+    const pharos=fixtures();
+    place(pharos,2,0,'legendarypharos',24);
+    const around=C.board(pharos).links[2];
+    assert.ok(around.every(at=>!pharos.tiles[at].unit&&C.territoryType(pharos.tiles[at].type)));
+    assert.ok(C.play(pharos,['secretArt',2]));
+    assert.deepEqual(around.map(at=>pharos.tiles[at].unit.id),around.map(()=>card('statue')));
+    assert.equal(pharos.tiles[2].unit.hp,24);
+    assert.ok(C.cards[card('legendarypharos')].noLapHeal);
+  }
   const fay=fixtures();
   place(fay,1,0,'fay',30);
   place(fay,3,0,'healer',40,{st:90});
