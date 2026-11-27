@@ -173,7 +173,9 @@ const CepterEditions=(()=>{
       mutation:'mutation',removecurse:'removecurse',turntowall:'turntothewall',
       corruption:'corruption',fairylight:'fairylight',goblinslair:'goblinslair',grace:'grace',
       meteor:'meteor',quicksand:'quicksand',quintessence:'quintessence',shrink:'shrink',spartoi:'spartoi',wordofrecall:'castlerecall',exchange:'replace',gift:'gift',theft:'theft',
-      bistair:'beginsbistair',iksear:'beginsiksear',selenear:'beginsselenear',terrair:'beginsterrair'}
+      bistair:'beginsbistair',iksear:'beginsiksear',selenear:'beginsselenear',terrair:'beginsterrair',
+      shadowleap:'shadowleap',spiritwalk:'spiritwalk',liquidform:'liquidform',armageddon:'armageddon',
+      tempest:'beginstempest',scarestorm:'scarestorm',disbelief:'disbelief'}
   };
   // These three original books are the baseline used to calibrate Revolt difficulty.
   const revoltBaselineBooks={
@@ -693,6 +695,7 @@ const CepterEditions=(()=>{
     angostura:{stationary:true},giantspider:{paralyze:true},goobaqueen:{},vampire:{first:true},
     archer:{},dhampir:{},holyllama:{remoteVacantElements:[3]},mothman:{first:true},myrmecoleo:{last:true,reviveForm:'dragonfly'},
     nue:{},powdereater:{},pulgasari:{},succubus:{},witch:{scrollCritical:true},
+    barong:{},onyx:{anyTerrain:true,neutralizeScroll:true,criticalLargeMHP:40},redcap:{},paleglobster:{immutableHP:true},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},
@@ -714,7 +717,8 @@ const CepterEditions=(()=>{
     stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40},
     gemoflife:{},holygrail:{},kris:{st:30,protectItem:true},offeringdoll:{},powerbracelet:{},prismaticwand:{},
     silverplow:{hp:10},smoketorch:{hp:20},stinkbottle:{},tearinghalo:{st:30,protectItem:true},vorpalsword:{st:30},
-    angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30},voidorb:{hp:20,protectItem:true,blocksCreatureHits:true},stormcauser:{st:60,hp:-30},tonfa:{doubleAttack:true}
+    angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30},voidorb:{hp:20,protectItem:true,blocksCreatureHits:true},stormcauser:{st:60,hp:-30},tonfa:{doubleAttack:true},
+    necroscarab:{},neutralcloak:{hp:40},migoalblessing:{st:20,hp:20,criticalElements:[1,2],neutralizes:[0,3]}
   };
   const handheldSpecial={
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},

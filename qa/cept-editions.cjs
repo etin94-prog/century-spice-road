@@ -3687,9 +3687,10 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(book.toSorted((a,b)=>a-b),Object.entries(recipe).flatMap(([name,n])=>Array(n).fill(creature(name))).sort((a,b)=>a-b));
     playable.push(source);
   }
-  assert.deepEqual(playable,['1339-infernal-vacation','1344-kelpez','1345-budget-raging-river','1347-power-surge','1348-esupports#main',
-    '1349-willowisp#main','1349-willowisp#alternate','1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead',
-    '1356-support-deck-for-chapter-15','1366-selenear','1372-bonzey-buddy','1374-mosquito-water']);
+  assert.deepEqual(playable,['1339-infernal-vacation','1342-mothman-and-friends','1343-aggroaf','1344-kelpez','1345-budget-raging-river',
+    '1347-power-surge','1348-esupports#main','1348-esupports#alternate','1349-willowisp#main','1349-willowisp#alternate','1350-meme-book',
+    '1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead','1356-support-deck-for-chapter-15',
+    '1359-brynhildr','1366-selenear','1372-bonzey-buddy','1374-mosquito-water','1378-little-wonders']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -4372,6 +4373,109 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     moveSpell.tiles[3].owner=0;moveSpell.tiles[2].owner=-1;moveSpell.tiles[2].unit=null;
     assert.ok(C.play(moveSpell,['cast',0])&&C.play(moveSpell,['targetLand',3])&&C.play(moveSpell,['teleTo',5]));
     assert.deepEqual([moveSpell.tiles[3].unit,moveSpell.tiles[5].unit.id],[null,powder]);
+  }
+
+
+  {
+    const onyx=creature('onyx'),cap=creature('redcap'),globster=creature('paleglobster');
+    const high=duel(onyx,fighter,null,null,40,2),low=duel(onyx,goblin,null,null,30,2);
+    assert.match(high.strikes[0].notes.join(' '),/60 피해/);
+    assert.match(low.strikes[0].notes.join(' '),/40 피해/);
+    const warded=duel(fighter,onyx,creature('freeze'),null,40,2);
+    assert.deepEqual([warded.landHP,warded.strikes[0].effect],[10,'block']);
+
+    const stack=creatures.tiles[6],oldStack={...stack};
+    Object.assign(stack,{owner:0,unit:{id:goblin,hp:30}});
+    const goblins=duel(cap,goblin,null,null,30,2);
+    assert.deepEqual([goblins.attackST,goblins.startHP[0]],[40,40]);
+    stack.unit={id:cap,hp:30};
+    assert.equal(duel(goblin,fighter).attackST,40);
+    Object.assign(stack,oldStack);
+    const scale=duel(fighter,globster,null,null,40,2);
+    assert.deepEqual([scale.defendST,scale.startHP[1]],[30,50]);
+
+    const cloak=creature('neutralcloak');
+    const shift=duel(fighter,creature('minotaur'),null,cloak,40,0);
+    assert.deepEqual([shift.landHP,shift.startHP[1]],[0,80]);
+    const scarab=creature('necroscarab');
+    const raised=duel(fighter,goblin,axe,scarab,30,2);
+    assert.equal(raised.finalForms[1],creature('zombie'));
+    assert.equal(land.unit.id,creature('zombie'));
+    const relic=creature('migoalblessing');
+    assert.match(duel(fighter,creature('merfolk'),relic,null,100,2).strikes[0].notes.join(' '),/90 피해/);
+    assert.equal(duel(creature('minotaur'),fighter,null,relic,40,2).strikes[0].effect,'block');
+
+    const barong=creature('barong');
+    duel(fighter,barong,axe,null,50,2);
+    assert.ok(enemy.hand.includes(barong));
+    const guardian=C.start(2,2,6000,'begins-original-ford');
+    Object.assign(guardian.players[0],{pos:2,cash:600,hand:[creature('watershift')]});
+    Object.assign(guardian.tiles[2],{owner:0,type:2,level:3,unit:{id:barong,hp:50}});
+    guardian.phase='land';
+    assert.ok(C.choices(guardian).some(([action])=>action==='level'));
+    assert.ok(!C.choices(guardian).some(([action])=>action==='element'));
+    guardian.phase='spell';
+    assert.ok(C.play(guardian,['cast',0]));
+    assert.deepEqual(C.choices(guardian),[['fizzle']]);
+
+    function casting(spell,sacrifice=false){
+      const s=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+      Object.assign(s.players[0],{pos:2,cash:450,hand:sacrifice?[creature(spell),fay]:[creature(spell)]});
+      return s;
+    }
+    function castSpell(s,sacrifice=false){
+      assert.ok(C.play(s,['cast',0]));
+      if(sacrifice){
+        assert.equal(s.phase,'sacrifice');
+        assert.ok(C.play(s,['sacrifice',1]));
+      }
+    }
+
+    const havoc=casting('armageddon',true);
+    [
+      [3,barong,50,3],[6,fighter,40,4],[7,goblin,30,2],[9,globster,40,3]
+    ].forEach(([at,id,hp,level])=>Object.assign(havoc.tiles[at],{owner:1,level,unit:{id,hp}}));
+    castSpell(havoc,true);
+    assert.deepEqual([3,6,7,9].map(at=>[havoc.tiles[at].unit.hp,havoc.tiles[at].level]),[[20,3],[10,3],[30,2],[40,3]]);
+    assert.deepEqual(havoc.mapEffect.hits.map(({at,damage})=>[at,damage]),[[3,30],[6,30]]);
+    const tempest=casting('tempest',true);
+    Object.assign(tempest.tiles[3],{owner:1,unit:{id:goblin,hp:30,st:41}});
+    Object.assign(tempest.tiles[6],{owner:1,unit:{id:fighter,hp:40,st:40}});
+    castSpell(tempest,true);
+    assert.deepEqual([tempest.tiles[3].unit.hp,tempest.tiles[6].unit.hp],[30,20]);
+    const fear=casting('scarestorm',true);
+    Object.assign(fear.tiles[3],{owner:1,unit:{id:goblin,hp:30,st:31}});
+    Object.assign(fear.tiles[6],{owner:2,unit:{id:fighter,hp:40,st:30,enchant:'greed'}});
+    castSpell(fear,true);
+    assert.deepEqual([fear.tiles[3].unit.enchant,fear.tiles[6].unit.enchant],[undefined,'paralysis']);
+
+    const fluids=casting('liquidform');
+    fluids.players[0].book=[goblin];
+    Object.assign(fluids.tiles[3],{owner:0,unit:{id:fighter,hp:40}});
+    castSpell(fluids);
+    assert.ok(C.play(fluids,['targetLand',3]));
+    assert.deepEqual([fluids.players[0].hand,fluids.tiles[3].unit.enchant],[[goblin],'liquidform']);
+
+    const loss=casting('disbelief');
+    loss.players[0].symbols[0]=3;loss.players[1].symbols[2]=5;
+    loss.players[1].cash=10;
+    castSpell(loss);
+    assert.deepEqual([loss.players[0].cash,loss.players[1].cash],[345,-15]);
+
+    const aerial=casting('spiritwalk');
+    Object.assign(aerial.tiles[2],{owner:0,unit:{id:fighter,hp:40}});
+    castSpell(aerial);
+    assert.ok(C.play(aerial,['targetLand',2]));
+    aerial.phase='land';
+    assert.ok(C.choices(aerial).some(([kind,from,to])=>kind==='transfer'&&from===2&&to===15));
+    const shadow=casting('shadowleap',true);
+    Object.assign(shadow.tiles[7],{owner:0,type:1,level:3,unit:{id:fighter,hp:40}});
+    castSpell(shadow,true);
+    const reachable=C.choices(shadow).map(([,at])=>at);
+    for(const at of [1,3,7,13])assert.ok(reachable.includes(at));
+    for(const at of [0,4,8,19])assert.ok(!reachable.includes(at));
+    assert.ok(C.play(shadow,['targetLand',7]));
+    assert.deepEqual([shadow.players[0].pos,shadow.die,shadow.phase,C.choices(shadow)],[7,0,'land',[['pass']]]);
   }
 
   const curse=C.start(2,2,6000,'begins-original-ford');

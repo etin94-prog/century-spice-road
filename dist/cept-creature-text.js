@@ -419,6 +419,10 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='thunderspawn'?'내 수 영지 한 곳당 전투 ST가 10 오릅니다. 영지와 크리처의 속성이 다른 적 영지로 원거리 침략할 수 있습니다.':
       C.edition==='revolt'&&key==='kaiserpenguin'?'전투 시작 시 상대가 사용한 도구, 두루마리 또는 지원 크리처를 파괴합니다.':
+      C.edition==='begins'&&key==='barong'?'점유 중인 영지의 속성 변경과 레벨 하락을 막습니다. 전투에서 격파되면 손패로 돌아갑니다.':
+      C.edition==='begins'&&key==='onyx'?'최대 HP 40 이상인 상대에게 강타합니다.':
+      C.edition==='begins'&&key==='redcap'?'배치된 고블린 한 마리당 자신의 전투 ST와 HP가 20씩 오릅니다. 자신이 전투에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
+      C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':
       C.edition==='begins'&&key==='chimera'?'완주 보상을 받을 때마다 기본 ST를 10 올립니다. 최대 100까지 오릅니다.':

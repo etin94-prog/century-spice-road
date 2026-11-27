@@ -146,6 +146,8 @@ const describeCepterItem=(()=>{
     if(card.criticalRarity==='N')pieces.push('N 등급 크리처가 장착하면 일반 공격이 강타합니다.');
     if(C.edition==='revolt'&&name==='goldenhammer')pieces.push('일반 공격으로 피해를 주고 상대가 살아남으면 200G를 얻습니다.');
     if(card.pierceAll)pieces.push('일반 공격이 지형 HP 보너스를 관통합니다.');
+    if(C.edition==='begins'&&name==='necroscarab')pieces.push('장착한 크리처가 격파되면 좀비로 부활합니다.');
+    if(C.edition==='begins'&&name==='migoalblessing')pieces.push('전투에서 살아남으면 내 손패 한 장을 무작위로 파괴합니다.');
     if(C.edition==='revolt'&&name==='stormshield')pieces.push('수·풍 크리처가 장착하면 일반 공격을 무효화합니다.');
     if(C.edition==='revolt'&&name==='moonscimitar')pieces.push('일반 공격으로 피해를 주면 상대의 영지 통행료를 무효화합니다.');
     if(C.edition==='revolt'&&name==='wondercharm')pieces.push('받는 일반 공격 피해의 80%를 무효화합니다.');

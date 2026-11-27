@@ -46,7 +46,8 @@ const CepterCombos = (() => {
     const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n&&(s.edition!=='saga'||t.unit.enchant!=='paralysis'));
     const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek'||!!cards[t.unit?.id]?.immutableHP;
     const landLevelLocked=t=>levelLocked(t)||name(t.unit)==='trampleweed';
-    const blockedLevel=(s,t)=>landLevelLocked(t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
+    const terrainLocked=(s,t)=>s.edition==='begins'&&name(t.unit)==='barong'&&t.unit.enchant!=='paralysis';
+    const blockedLevel=(s,t)=>landLevelLocked(t)||terrainLocked(s,t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
     const isDefensive=u=>cards[u.id].stationary||u.enchant==='magicshelter';
     function targetable(s,t,category='sflash',dispel=false){
       if(!t.unit)return false;
@@ -300,7 +301,7 @@ const CepterCombos = (() => {
       }
       if(s.edition==='begins'){
         if(n==='sakuya')return idol(s,'jadeidol')?[]:s.tiles.flatMap((v,j)=>
-          v.owner===s.turn&&v.type!==2&&targetable(s,v)?[['abilityLand',j]]:[]);
+          v.owner===s.turn&&v.type!==2&&!terrainLocked(s,v)&&targetable(s,v)?[['abilityLand',j]]:[]);
         if(n==='fay')return s.tiles.flatMap((v,j)=>targetable(s,v)&&strength(v.unit)<100?[['abilityLand',j]]:[]);
         if(n==='algasphere'&&(immuneHP(tile)||max(tile.unit)>=100))return [];
         if(n==='healer')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&v.unit.hp<max(v.unit)?[['abilityLand',j]]:[]);
@@ -631,7 +632,7 @@ const CepterCombos = (() => {
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,shrinkHealth,isDefensive,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
+      blockedLevel,terrainLocked,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],

@@ -167,6 +167,11 @@ const CepterExtraBattle=(()=>{
         case 'aspidochelone':a.st+=s.round;a.hp+=s.round;break;
         case 'weretiger':if(s.round>=25){a.st-=20;a.hp-=20;}break;
       }
+      if(s.edition==='begins'){
+        if(a.n==='paleglobster'){a.st+=t.level*10;a.hp+=t.level*10;}
+        if(a.n==='redcap')a.st=a.hp=20*s.tiles.filter(v=>fx.name(v.unit)==='goblin').length;
+        if(a.n==='goblin'&&boost('redcap',a))a.st+=20;
+      }
       if(a.element>=0&&boost(lord[a.element],a)){
         if(s.edition==='begins'&&a.element>=2)a.st+=10;
         else a.hp+=10;

@@ -445,7 +445,7 @@ function selectingSpellMapTarget(){
   if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
     ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
-  return s?.phase==='spellTarget'&&['remission','magicalleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong'].includes(s.spellEffect);
+  return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong'].includes(s.spellEffect);
 }
 function selectingSecretPlayer(){
   const unit=s?.tiles[s.secretFrom]?.unit;
@@ -690,7 +690,7 @@ function map(){
         const revival=C.spellRevival(s,t,s.spellEffect);
         center.append(el('span',revival?'예상 · '+revival+'로 부활':'예상 HP '+u.hp+' → '+next+(next===0?' · 격파':'')));
       }
-      const label=s.phase==='spellTarget'&&s.spellEffect==='magicalleap'?'이동':labels[action[0]];
+      const label=s.phase==='spellTarget'&&['magicalleap','shadowleap'].includes(s.spellEffect)?'이동':labels[action[0]];
       center.append(btn((inspect+1)+'번 · '+label+' 확정',()=>act(action),'primary'));
     }
     return;
