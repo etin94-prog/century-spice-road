@@ -35,7 +35,7 @@ const CepterExtraSpells=(()=>{
   const actions={soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처'};
   const hints={soltisPower:'일곱 권능 중 하나를 고르세요.',soltisArea:'내 크리처를 회복할 지역을 고르세요.',foresightCard:'북 맨 위의 카드 중 손패에 넣을 카드를 고르세요.',prophecyKind:'뽑을 카드 종류를 고르세요.',mesmerCard:'상대 손패에서 사용할 주문을 고르세요.',replaceCard:'영지 주인의 손패에서 교체할 크리처를 고르세요.'};
   function clearCepter(p){
-    for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection'])delete p[field];
+    for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','sagaClemency','sagaService','sagaFeast'])delete p[field];
   }
   const time=s=>(s.round-1)*s.players.length+s.turn;
   function setStatus(s,q,name,rounds=duration[name]){
@@ -230,7 +230,7 @@ const CepterExtraSpells=(()=>{
       switch(s.phase){
         case 'soltisPower':return Object.keys(soltis).map(k=>['soltisPower',k]);
         case 'soltisArea':return [...new Set(s.tiles.map(t=>t.area))].map(i=>['soltisArea',i]);
-        case 'foresightCard':return (p.book||[]).slice(-6).reverse().map((id,j)=>['foresightCard',j,id]);
+        case 'foresightCard':return (p.book||[]).slice(s.shrineForesight?-3:-6).reverse().map((id,j)=>['foresightCard',j,id]);
         case 'prophecyKind':{
           const kinds=['creature','item','spell'];
           return kinds.filter(k=>s.edition!=='begins'||p.book.some(id=>cards[id].kind===k)).map(k=>['prophecyKind',k]);

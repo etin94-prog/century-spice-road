@@ -53,6 +53,7 @@ const CepterEditions=(()=>{
     }
     return {gates,gateNames:Object.fromEntries([...ids].map(([key,i])=>[i,tiles['fort-'+key].replace('요새','게이트')])),checkpoints:[...ids.values()]};
   }
+  const sagaShrineKinds={'mt-etumer':{4:'light',52:'dark'},zanador:{46:'light',64:'dark'}};
   function boards(edition,original){
     const result={};
     for(const [index,m] of data.maps[edition].entries()){
@@ -70,7 +71,7 @@ const CepterEditions=(()=>{
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
         areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||80,die:die||Number(m.die)||other?.die||6,storyGoal:goal||other?.storyGoal,
         graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
-        ...(edition==='revolt'?revoltGates(m):{})};
+        ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{})};
     }
     return result;
   }

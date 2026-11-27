@@ -249,7 +249,7 @@ const CepterCombos = (() => {
       if(['conjurer','heatimp','windimp'].includes(n))destroy(s,src);
     }
     function clearCepter(q){
-      for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection'])delete q[field];
+      for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
       blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect};

@@ -37,6 +37,7 @@ function shopMenu(controls,choices,p){
 
 function decisionText(action,p){
   const [kind,x,y]=action,here=s.tiles[p.pos];
+  if(kind==='shrineChoice')return C.shrineDetails[x];
   if(['targetLand','abilityLand','teleTo'].includes(kind)){
     const tile=s.tiles[x],unit=tile.unit;
     if(kind==='targetLand'&&s.spellEffect==='remission')return '게이트를 경유한 것으로 표시합니다.';
@@ -227,8 +228,10 @@ function seatSummary(seat){
       (s.target-total)+'G 추가 후 '+(map.gates?'게이트 경유':'성 귀환')],
     [map.gates?'이번 주회 남은 게이트':'이번 주회 남은 요새',missing.join(' · ')||(map.gates?'모두 경유':'모두 경유 · 성으로 귀환')]
   ];
-  const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'계시 · 모든 내 영지에 명령 가능'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
-    p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':null;
+  const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'모든 내 영지에 명령 가능',sagaTollUp:'통행료 30% 증가',
+    sagaTollDown:'통행료 30% 감소',sagaDeduction:'크리처·장비 비용 감면',sagaInflation:'크리처·장비 비용 증가',
+    sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
+    p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':p.sagaClemency?'다음 이동 통행료 면제':p.sagaService?'다음 요새 보너스 +50%':p.sagaFeast?'다음 주회 보너스 +50%':null;
   if(effect){
     const turns=p.enchantDeadline-(s.round-1)*s.players.length-s.turn;
     rows.push(['셉터 인챈트',effect+(turns>0?' · '+Math.ceil(turns/s.players.length)+'라운드 남음':'')]);

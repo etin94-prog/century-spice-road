@@ -437,6 +437,77 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
+  const C=ps2.createEdition('saga'),id=name=>C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)===name);
+  assert.deepEqual(C.maps['saga-5'].shrineKinds,{4:'light',52:'dark'});
+  assert.deepEqual(C.maps['saga-9'].shrineKinds,{46:'light',64:'dark'});
+  function atShrine(mapId,at){
+    const s=C.start(2,2,5000,mapId);
+    s.players[0].pos=C.board(s).links[at][0];s.players[0].previous=null;
+    s.phase='fork';s.remaining=1;
+    return s;
+  }
+  function step(s,at,random){
+    const old=Math.random;
+    let i=0;
+    try{
+      Math.random=()=>random[i++]??0;
+      assert.ok(C.play(s,['route',at]));
+    }finally{Math.random=old;}
+  }
+  const light=atShrine('saga-5',4),cash=light.players[0].cash;
+  assert.equal(C.routePreview(light,['route',4]).cashGain,0);
+  assert.equal(light.shrineNotice,undefined);
+  const passing=atShrine('saga-5',4);passing.remaining=2;
+  step(passing,4,[0]);
+  assert.equal(passing.shrineNotice,undefined);
+  step(light,4,[0]);
+  assert.equal(light.players[0].cash,cash+200);
+  assert.match(light.shrineNotice,/빛의 성소.*200G/);
+  const ordinary=atShrine('saga-2',1);
+  ordinary.tiles[2]={type:1,level:1,area:0,owner:1,unit:{id:id('warlock'),hp:25}};
+  ordinary.tiles[4]={type:0,level:1,area:1,owner:1,unit:{id:id('minotaur'),hp:5}};
+  ordinary.tiles[5]={type:1,level:1,area:0,owner:1,unit:{id:id('frostbeast'),hp:25}};
+  step(ordinary,1,[0,0]);
+  assert.equal(ordinary.tiles[2].unit.hp,20);
+  assert.equal(ordinary.tiles[4].unit,null);
+  assert.equal(ordinary.tiles[5].unit.hp,25);
+  assert.match(ordinary.shrineNotice,/HP −5 · 2체/);
+
+  const dark=atShrine('saga-5',52);
+  step(dark,52,[.26]);
+  assert.equal(dark.players[0].status,'blackout');
+  assert.equal(dark.players[0].statusUntil,dark.round+1);
+  dark.tiles[1]={type:0,level:3,owner:0,area:0,unit:{id:id('minotaur'),hp:20}};
+  assert.equal(C.toll(dark,dark.tiles[1]),0);
+  assert.match(dark.shrineNotice,/어둠의 성소/);
+
+  const foresight=atShrine('saga-5',4),p=foresight.players[0];
+  p.book=[id('manna'),id('goblin'),id('frostbeast'),id('warlock')];
+  p.hand=Array(6).fill(id('goblin'));
+  step(foresight,4,[.14]);
+  assert.equal(foresight.phase,'foresightCard');
+  assert.deepEqual(C.choices(foresight).map(a=>a[2]),p.book.slice(-3).reverse());
+  const action=C.choices(foresight)[0];
+  assert.ok(C.play(foresight,action));
+  assert.equal(foresight.phase,'discard');
+  assert.equal(p.hand.at(-1),id('warlock'));
+  assert.ok(C.play(foresight,['discard',0]));
+  assert.equal(foresight.phase,'land');
+
+  const door=atShrine('saga-5',4);
+  step(door,4,[.59]);
+  assert.equal(door.phase,'shrineChoice');
+  assert.equal(C.choices(door).length,7);
+  assert.ok(C.choices(door).some(c=>c.join('/')===C.ai(door).join('/')));
+  const saved=JSON.parse(JSON.stringify(door)),prior=saved.players.map(q=>q.cash);
+  assert.ok(C.play(saved,['shrineChoice','labor']));
+  assert.deepEqual(saved.players.map((q,i)=>q.cash-prior[i]),[100,100]);
+  assert.equal(saved.shrineChoices,undefined);
+  assert.match(saved.shrineNotice,/노동의 결실/);
+  console.log('Saga shrine map types, real stops, elemental casualties, timed effects, private draw and replayable choice OK');
+}
+
+{
   const data=require('../dist/cept-edition-data-modern');
   const map={section:'arena',slug:'qa-portal',name:'QA portal',loc:[[0,0],[0,1],[2,8],[2,9]],
     types:['castle','teleport','teleport','fort-north'],transit:{1:2,2:1}};
