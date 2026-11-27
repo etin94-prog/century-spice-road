@@ -145,7 +145,7 @@ const CepterExtraBattle=(()=>{
       }
     }
     function vacant(a){
-      const pool=s.tiles.flatMap((v,j)=>j!==b.at&&j!==b.from&&v.owner<0&&(typeof v.type==='number'||['무속성','복합'].includes(v.type))?[j]:[]);
+      const pool=s.tiles.flatMap((v,j)=>j!==b.at&&j!==b.from&&v.owner<0&&combo.territoryType(v.type)?[j]:[]);
       const at=pick(pool);
       if(at==null)a.hp=0;
       else{a.away=at;lines.push((at+1)+'번 빈 영지로 이동');}

@@ -76,11 +76,11 @@ function createCepter(edition="ps2"){
   }
   const deployable=(s,id)=>!s.tiles.some(v=>fx.name(v.unit)==='marbleidol')||!s.tiles.some(v=>v.unit?.id===id);
   function canOccupy(c,t){
-    const color='RBGY'[t.type]||(t.type==='무속성'?'N':'');
+    const terrain=claimTerrain(t,c),color='RBGY'[terrain]||(terrain==='무속성'?'N':'');
     const banned=c.catalog?.placement?.split(',').filter(Boolean)||[];
     const words=c.catalog?.ability.match(/Land Limit: ((?:no(?:fire|water|earth|air|neutral)\s*)+)/)?.[1]||'';
-    const land=['fire','water','earth','air'][t.type]||(color==='N'?'neutral':null);
-    return c.landBan!==t.type&&!banned.includes(color)&&!(land&&words.includes('no'+land));
+    const land=['fire','water','earth','air'][terrain]||(color==='N'?'neutral':null);
+    return c.landBan!==terrain&&!banned.includes(color)&&!(land&&words.includes('no'+land));
   }
   const allowed=(s,i,c,t)=>canOccupy(c,t)&&(fx.idol(s,'goldidol')||
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>t.owner===i&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
@@ -169,7 +169,14 @@ function createCepter(edition="ps2"){
   const levelCost=(t,level)=>(t.base||80)*2**(level-1)-worth(t);
   const elementCost=t=>edition==='saga'?t.level*100+(typeof t.type==='number'?200:0):300;
   const worth=t=>(t.base||80)*2**(t.level-1);
-  const territoryType=type=>typeof type==='number'||type==='복합'||type==='무속성';
+  const {territoryType}=combo;
+  function claimTerrain(tile,card){
+    if(edition!=='saga'||tile.type!=='모프')return tile.type;
+    return card.elements?'복합':card.element<0?'무속성':card.element;
+  }
+  function claim(tile,seat,unit){
+    Object.assign(tile,{type:claimTerrain(tile,cards[unit.id]),owner:seat,unit});
+  }
   const landBonus=(unit,t)=>combo.matchesTerrain(unit,t.type)?10*t.level:0;
   const allied=combo.allied;
   // One verdict for every screen and record. A shared top total at the round limit has no winner.
@@ -226,14 +233,14 @@ function createCepter(edition="ps2"){
       s.prices[k]=Math.max(1,s.prices[k]+whole);s.priceRemainder[k]=change-whole*100;
     });
   }
-  const fx=combo.rules(cards,{board,draw,value,vacate,note});
+  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim});
   function spellHP(s,t,e){
     const u=t.unit;
     if(e==='bolt')return u.hp-fx.damageAmount(s,t,20);
     if(fx.immuneHP(t))return u.hp;
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
   }
-  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,value,canOccupy,deployable});
+  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,value,canOccupy,deployable,claim});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
   const roundGain=s=>Math.min(50,19+s.round);
@@ -293,12 +300,20 @@ function createCepter(edition="ps2"){
       note(s,p.name+' · '+m.gateNames[id]+' +'+bonus+'G');
     }
   }
-  function arrived(s){
+  function arrived(s,fromTransit=false){
     const p=s.players[s.turn],tile=s.tiles[p.pos];s.phase='land';
     if(revolt&&board(s).gates[p.pos]!=null)readyCreatures(s);
     if(shopStock(s).length){s.phase='shop';return;}
     if(tile.unit?.enchant==='mine'){p.cash-=Math.floor(p.cash/2);combo.clear(tile.unit);}
     if(tile.enchant==='magicfountain'||tile.unit?.enchant==='magicfountain'){p.cash+=400;delete tile.enchant;if(tile.unit)combo.clear(tile.unit);note(s,'매직 파운틴 · +400G');}
+    if(edition==='saga'&&tile.type==='분수'&&!fromTransit){
+      const prior=p.hand.length,count=Math.min(prior,p.book.length);
+      p.hand=[];
+      for(let i=0;i<count;i++)draw(p,s);
+      s.shrineNotice='분수 · 손패 '+prior+'장 교체 · '+count+'장 뽑음';
+      note(s,s.shrineNotice);
+      return;
+    }
     if(tile.type==='점술관'&&p.status!=='babble'&&p.book.length){s.phase='fortune';return;}
     if(tile.type!=='성소')return;
     if(shrine){shrine.arrive(s,board(s).shrineKinds[p.pos]||'elemental');return;}
@@ -321,8 +336,9 @@ function createCepter(edition="ps2"){
     const p=s.players[s.turn],m=board(s);
     const path=[p.pos];
     s.lastMove={sequence:(s.lastMove?.sequence||0)+1,seat:s.turn,path};
+    let fromTransit=false;
     while(s.remaining){
-      path.push(next);
+      fromTransit=false;path.push(next);
       p.previous=p.pos;p.pos=next;s.remaining--;
       const t=s.tiles[next];if(t.unit?.enchant==='quicksand'){s.remaining=0;combo.clear(t.unit);}
       if(!allied(s,t.owner,s.turn)&&((fx.name(t.unit)==='kelpie'&&t.type===1)||(fx.name(t.unit)==='oldwillow'&&t.type===0)))s.remaining=0;
@@ -362,13 +378,16 @@ function createCepter(edition="ps2"){
         return;}
       const dest=transitDestination(m,next,t.type,s.remaining);
       if(dest!=null){
-        p.pos=dest;p.previous=next;path.push(dest);
+        fromTransit=true;p.pos=dest;p.previous=next;path.push(dest);
         note(s,t.type+' · '+(next+1)+'번 → '+(dest+1)+'번');
       }
       if(t.type==='신전'&&p.status!=='babble'){s.phase='temple';return;}
       if(s.remaining){const exits=onward(s);if(exits.length!==1){s.phase='fork';return;}next=exits[0];}
     }
-    if(preview)s.phase=shopStock(s).length?'shop':'land';else arrived(s);
+    if(preview){
+      s.phase=shopStock(s).length?'shop':'land';
+      if(fromTransit)s.lastMove.arrivedViaTransit=true;
+    }else arrived(s,fromTransit);
   }
   function routePreview(s,action){
     const [kind,x]=action,p=s.players[s.turn];
@@ -379,7 +398,7 @@ function createCepter(edition="ps2"){
     const walker=trial.players[trial.turn],tile=trial.tiles[walker.pos];
     return {first:trial.lastMove?.path[1]??p.pos,at:walker.pos,phase:trial.phase,remaining:trial.remaining,
       toll:tile.owner>=0&&!allied(trial,tile.owner,trial.turn)?owedToll(trial,tile):0,
-      cashGain:walker.cash-p.cash};
+      cashGain:walker.cash-p.cash,fountain:tile.type==='분수'&&trial.phase==='land'&&!trial.lastMove?.arrivedViaTransit};
   }
   function resumeMove(s,preview=false){
     if(!s.remaining){arrived(s);return;}
@@ -743,7 +762,7 @@ function createCepter(edition="ps2"){
     for(const a of sides){
       if(a.original&&a.hp>0){a.u=a.original;a.u.hp=fx.max(a.u);}
       else a.u.hp=Math.min(a.heal||a.absorbed?fx.max(a.u):a.u.hp,a.hp);
-      if(a.away!=null&&a.hp>0){const dst=s.tiles[a.away];dst.owner=a.seat;dst.unit=a.u;combo.clear(dst.unit);}
+      if(a.away!=null&&a.hp>0){const dst=s.tiles[a.away];claim(dst,a.seat,a.u);combo.clear(dst.unit);}
     }
     const attackerReturns=!won&&onLand(A)&&b.from==null;
     if(edition==='ps2'){
@@ -755,7 +774,7 @@ function createCepter(edition="ps2"){
       };
     }
     if(empty)vacate(t);
-    else if(won){t.owner=A.seat;t.unit=A.u;fatigue(t.unit);}
+    else if(won){claim(t,A.seat,A.u);fatigue(t.unit);}
     else{t.unit=D.u;if(attackerReturns)s.players[A.seat].hand.push(A.u.id);else if(onLand(A))s.tiles[b.from].unit=A.u;}
     if(t.unit&&sides.some(a=>a.g==='rainbowpiece'&&a.hp>0))combo.clear(t.unit);
     if(b.from!=null&&(won||!onLand(A))&&fx.name(s.tiles[b.from].unit)!=='powdereater')vacate(s.tiles[b.from]);
@@ -850,7 +869,7 @@ function createCepter(edition="ps2"){
       case 'teleTo':{
         const src=s.tiles[s.teleFrom],dst=s.tiles[x];
         if(dst.unit){s.battle={at:x,from:s.teleFrom,inv:src.unit.id,invHP:src.unit.hp,atkItem:null,defItem:null,attackerSeat:src.owner,teleport:true};s.phase='attack';}
-        else{dst.owner=src.owner;dst.unit={...src.unit};combo.clear(dst.unit);if(fx.name(src.unit)!=='powdereater')vacate(src);s.phase='roll';}
+        else{claim(dst,src.owner,{...src.unit});combo.clear(dst.unit);if(fx.name(src.unit)!=='powdereater')vacate(src);s.phase='roll';}
         delete s.teleFrom;break;
       }
       case 'fortuneDraw':{
@@ -941,13 +960,13 @@ function createCepter(edition="ps2"){
         const tile=k==='summon'?t:s.tiles[x],id=paid(s,p,k==='summon'?x:y);
         if(k==='exchange')p.hand.push(tile.unit.id);
         mapEffect('summon',cards[id].name,k==='summon'?p.pos:x);
-        tile.owner=i;tile.unit={id,hp:cards[id].hp};fatigue(tile.unit);note(s,p.name+' · '+cards[id].name+' 배치');afterTerritory(s);break;
+        claim(tile,i,{id,hp:cards[id].hp});fatigue(tile.unit);note(s,p.name+' · '+cards[id].name+' 배치');afterTerritory(s);break;
       }
       case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=levelCost(s.tiles[x],y);s.tiles[x].level=y;fatigue(s.tiles[x].unit);note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
       case 'transfer':{
         const from=s.tiles[x],dest=s.tiles[y];
         fatigue(from.unit);
-        if(dest.owner<0){dest.owner=i;dest.unit={...from.unit};combo.clear(dest.unit);if(fx.name(from.unit)!=='powdereater')vacate(from);afterTerritory(s);}
+        if(dest.owner<0){claim(dest,i,{...from.unit});combo.clear(dest.unit);if(fx.name(from.unit)!=='powdereater')vacate(from);afterTerritory(s);}
         else{mapEffect('invade','영지 공격',y,{source:x});s.battle={at:y,inv:from.unit.id,invHP:from.unit.hp,from:x,atkItem:null,defItem:null};s.phase='attack';}
         break;
       }
@@ -1008,7 +1027,7 @@ function createCepter(edition="ps2"){
     function development(k,x,y,c){
       const t=k==='summon'?s.tiles[p.pos]:s.tiles[x];
       const next={...t,owner:seat},cost=k==='summon'?price(p,c,s):k==='element'?elementCost(t):levelCost(t,y);
-      if(k==='summon')next.unit={id:p.hand[x],hp:c.hp};
+      if(k==='summon'){next.type=claimTerrain(t,c);next.unit={id:p.hand[x],hp:c.hp};}
       if(k==='level')next.level=y;
       if(k==='element')next.type=y;
       const trial={...s,tiles:s.tiles.map(v=>v===t?next:v)};
@@ -1229,7 +1248,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

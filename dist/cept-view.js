@@ -578,6 +578,10 @@ function map(){
     }else if(t.type==='카드 상점'){
       const stock=C.shopStock(s,inspect);
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));
+    }else if(t.type==='모프'){
+      center.append(el('span','처음 배치한 크리처의 속성을 얻습니다. 변한 속성은 영지가 비어도 유지됩니다.'));
+    }else if(t.type==='분수'){
+      center.append(el('span','멈추면 손패를 모두 버리고 남은 북에서 같은 수만큼 뽑습니다.'));
     }else if(['전송진','강제 전송진'].includes(t.type)){
       const destination=m.transit?.[inspect];
       const when=t.type==='강제 전송진'?'통과하거나 멈추면 ':'정지 시 ';

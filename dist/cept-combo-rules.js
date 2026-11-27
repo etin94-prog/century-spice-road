@@ -19,12 +19,13 @@ const CepterCombos = (() => {
   const hasElement=(card,element)=>card?.elements?.includes(element)??(card?.element===element);
   const sameElements=(a,b)=>a.elements&&b.elements?a.elements.length===b.elements.length&&a.elements.every(e=>hasElement(b,e))
     :!a.elements&&!b.elements&&a.element===b.element;
+  const territoryType=type=>typeof type==='number'||['복합','무속성','모프'].includes(type);
   const matchesTerrain=(card,type)=>typeof type==='number'?hasElement(card,type):type==='복합'&&(!!card.elements||card.element>=0);
   const enchanted=u=>!!(u?.enchant||u?.poisoned||u?.confused);
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
   function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
-  function rules(cards,{board,draw,value,vacate,note}){
+  function rules(cards,{board,draw,value,vacate,note,claim}){
     const names=cards.map(key);
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
@@ -71,7 +72,7 @@ const CepterCombos = (() => {
       return s.tiles.flatMap((t,n)=>{
         if(!targetable(s,t,cards[ids.get(e)]?.catalog?.category))return [];
         if(['evilblast','shrink'].includes(e)&&allied(s,i,t.owner))return [];
-        if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return (typeof d.type==='number'||['복합','무속성'].includes(d.type))&&!allied(s,d.owner,t.owner)&&d.unit?.enchant!=='peace';}))return [];
+        if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return territoryType(d.type)&&!allied(s,d.owner,t.owner)&&d.unit?.enchant!=='peace';}))return [];
         if(e==='exile'&&(!enchanted(t.unit)||cards[t.unit.id].catalog?.additionalCost))return [];
         if(['landtransfer','relief'].includes(e)&&t.owner!==i)return [];
         if(e==='relief'&&(s.reliefFrom===n||!s.tiles.some((v,j)=>j!==n&&v.owner===i&&targetable(s,v))))return [];
@@ -132,7 +133,7 @@ const CepterCombos = (() => {
           }
         }
         if(e==='dimensiondoor'){
-          const dest=s.tiles.flatMap((v,j)=>j!==q.pos&&(typeof v.type==='number'||['무속성','복합'].includes(v.type))?[j]:[]);
+          const dest=s.tiles.flatMap((v,j)=>j!==q.pos&&territoryType(v.type)?[j]:[]);
           if(dest.length){q.pos=dest[Math.floor(Math.random()*dest.length)];q.previous=null;q.dir=0;if(x===i)s.spellArrival=true;}
           s.visited=[];s.remaining=0;s.die=0;return 'land';
         }
@@ -150,7 +151,7 @@ const CepterCombos = (() => {
         if(e==='feast')for(const [j,player] of s.players.entries())player.cash+=50*s.tiles.filter(v=>v.owner===j).length;
         if(e==='earthshaker')for(const v of s.tiles)if(!blockedLevel(s,v))v.level=Math.max(1,v.level-1);
         if(e==='shine'){if(!s.shineUntil)s.prices=s.prices.map(v=>Math.floor(v*1.5));s.shineUntil=s.round+2;}
-        if(e==='goblinslair'){const v=s.tiles[p.pos];if(!v.unit&&(typeof v.type==='number'||['복합','무속성'].includes(v.type))){v.owner=i;v.unit=morph(null,'goblin');}p.hand.push(ids.get(e));}
+        if(e==='goblinslair'){const v=s.tiles[p.pos];if(!v.unit&&territoryType(v.type))claim(v,i,morph(null,'goblin'));p.hand.push(ids.get(e));}
         if(e==='permission')p.flags=[...(board(s).checkpoints||board(s).forts)];
         if(e==='windofhope'){draw(p,s);draw(p,s);}
         if(e==='invisibility'){clearCepter(p);p.invisible=true;}
@@ -194,7 +195,7 @@ const CepterCombos = (() => {
         return s.players.flatMap((q,j)=>q.status==='barrier'||!enchantAbilities.has(n)&&allied(s,j,s.turn)||n==='bookworm'&&!q.hand.length?[]:[['abilityPlayer',j]]);
       }
       return s.tiles.flatMap((v,j)=>{
-        if(['conjurer','goobaqueen'].includes(n))return !v.unit&&(typeof v.type==='number'||['복합','무속성'].includes(v.type))?[['abilityLand',j]]:[];
+        if(['conjurer','goobaqueen'].includes(n))return !v.unit&&territoryType(v.type)?[['abilityLand',j]]:[];
         if(!targetable(s,v,enchantAbilities.has(n)?'senchant':'sflash',n==='archbishop'))return [];
         if(n==='archer'&&allied(s,v.owner,s.turn))return [];
         if(n==='tetramorph'&&(allied(s,v.owner,s.turn)||hasElement(cards[v.unit.id],v.type)))return [];
@@ -245,7 +246,7 @@ const CepterCombos = (() => {
       else if(n==='domovikha'){clear(v.unit);v.unit.enchant='landprotection';}
       else if(n==='tetramorph')damage(s,v,20);
       else if(n==='spittingcobra'){clear(v.unit);v.unit.poisoned=true;}
-      else if(n==='conjurer'||n==='goobaqueen'){v.owner=s.turn;v.unit=morph(null,n==='conjurer'?'baal':'gooba');}
+      else if(n==='conjurer'||n==='goobaqueen')claim(v,s.turn,morph(null,n==='conjurer'?'baal':'gooba'));
       if(['conjurer','heatimp','windimp'].includes(n))destroy(s,src);
     }
     function clearCepter(q){
@@ -427,7 +428,7 @@ const CepterCombos = (() => {
       if(e==='earthshaker')return tiles.reduce((net,t)=>net-(t.level>1&&!levelLocked(t)?advantage(t)*(t.base||80)*2**(t.level-2):0),-300)/10;
       if(e==='raisedead')return s.lastDestroyed==null?-10:10;
       if(e==='permission')return p.flags.length?2:12;
-      if(e==='goblinslair'){const t=s.tiles[p.pos];return !t.unit&&(typeof t.type==='number'||['복합','무속성'].includes(t.type))?20:-10;}
+      if(e==='goblinslair'){const t=s.tiles[p.pos];return !t.unit&&territoryType(t.type)?20:-10;}
       if(e==='demonictrade')return friendly.length?friendly.reduce((v,t)=>v+(['goblin','powdereater','gooba'].includes(fx.name(t.unit))?12:2),0):-10;
       if(e==='gravity')return names.includes('scourge')?12:2;
       if(e==='scourge')return s.players.reduce((v,q)=>v+(friend(s.players.indexOf(q))?-1:1)*(q.status||q.word!=null||q.dream||q.invisible?q.cash*.035:0),0);
@@ -461,6 +462,6 @@ const CepterCombos = (() => {
     }
     return {pair,ready,scoreTarget,cast,sequence};
   }
-  return {rules,type,key,hasElement,sameElements,matchesTerrain,damageSpells,allied,clear,enchanted,levelLocked,recipes,matches,planner};
+  return {rules,type,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;

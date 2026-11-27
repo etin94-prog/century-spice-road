@@ -48,7 +48,7 @@ const CepterExtraSpells=(()=>{
     if(p.status==='fairylight')p.cash+=p.hand.length*10;
     if(p.status==='torture')p.cash-=p.hand.filter(id=>cards[id].kind==='spell').length*20;
   }
-  function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,value,canOccupy,deployable}){
+  function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,value,canOccupy,deployable,claim}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
@@ -218,7 +218,7 @@ const CepterExtraSpells=(()=>{
           case 'revelation':case 'telegnosis':setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);if(e==='telegnosis')p.book.unshift(ids.get(e));break;
           case 'selenear':p.cash+=100*owning(s,s.turn).filter(t=>t.type===2).length;break;
           case 'soltis':return 'soltisPower';
-          case 'spartoi':{const v=sample(s.tiles.filter(t=>territoryType(t.type)&&!t.unit));if(v){v.owner=s.turn;morph(v,ids.get('skeleton'));}break;}
+          case 'spartoi':{const v=sample(s.tiles.filter(t=>territoryType(t.type)&&!t.unit));if(v){const id=ids.get('skeleton');claim(v,s.turn,{id,hp:cards[id].hp});delete v.enchant;}break;}
           case 'triumph':case 'mistletoe':case 'soulsteal':setStatus(s,p,e);break;
           default:throw Error('알 수 없는 주문 '+e);
         }

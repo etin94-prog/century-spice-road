@@ -8,7 +8,8 @@ function routeOption(action){
   else if(info.phase==='shop')landing+=' · 카드 1장 구매 가능';
   else if(info.phase==='temple')landing+=' · 호부 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+info.toll+'G');
-  else if(typeof tile.type==='number'||['무속성','복합'].includes(tile.type))landing+=' · 빈 영지';
+  else if(info.fountain)landing+=' · 손패 교체';
+  else if(C.territoryType(tile.type))landing+=' · 빈 영지';
   button.append(heading,el('span',landing+(info.cashGain?' · 경유 보너스 +'+info.cashGain+'G':'')));
   if(info.toll&&info.phase==='land')button.classList.add('toll-route');
   return button;
@@ -60,12 +61,12 @@ function decisionText(action,p){
     else if(kind==='element'){next.type=y;cost=C.elementCost(t);}
     else{
       const id=p.hand[kind==='summon'?x:y];
-      next.unit={id,hp:C.cards[id].hp};next.owner=s.turn;cost=C.price(p,C.cards[id],s);
+      next.type=C.claimTerrain(t,C.cards[id]);next.unit={id,hp:C.cards[id].hp};next.owner=s.turn;cost=C.price(p,C.cards[id],s);
     }
     const trial={...s,tiles:s.tiles.map((tile,i)=>i===at?next:tile)};
     const owed=here.owner>=0&&!C.allied(s,here.owner,s.turn)?C.owedToll(trial,trial.tiles[p.pos]):0;
     const chain=C.chain(trial,next);
-    return (chain>1?chain+'연쇄 · ':'')+'통행료 '+(t.owner>=0?C.toll(s,t):0)+' → '+C.toll(trial,next)+'G · 잔액 '+(p.cash-cost-owed)+'G'+(owed?' (지불할 통행료 '+owed+'G 포함)':'');
+    return (t.type!==next.type&&kind==='summon'?'모프 → '+(C.elements[next.type]||next.type)+' · ':'')+(chain>1?chain+'연쇄 · ':'')+'통행료 '+(t.owner>=0?C.toll(s,t):0)+' → '+C.toll(trial,next)+'G · 잔액 '+(p.cash-cost-owed)+'G'+(owed?' (지불할 통행료 '+owed+'G 포함)':'');
   }
   if(kind==='invade'){
     const guard=C.cards[here.unit.id],ground=C.battleGround(s,{at:p.pos,inv:p.hand[x]});

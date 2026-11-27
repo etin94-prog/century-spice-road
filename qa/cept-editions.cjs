@@ -546,7 +546,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   step(door,4,[.59]);
   assert.equal(door.phase,'shrineChoice');
   assert.equal(C.choices(door).length,7);
-  assert.ok(C.choices(door).some(c=>c.join('/')===C.ai(door).join('/')));
+  const chosen=C.ai(door);
+  assert.ok(C.choices(door).some(c=>c.join('/')===chosen.join('/')));
   const saved=JSON.parse(JSON.stringify(door)),prior=saved.players.map(q=>q.cash);
   assert.ok(C.play(saved,['shrineChoice','labor']));
   assert.deepEqual(saved.players.map((q,i)=>q.cash-prior[i]),[100,100]);
@@ -680,4 +681,61 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }
   assert.deepEqual([compound.prices[0],compound.priceRemainder[0],compound.prices[4]],[12,40,10]);
   console.log('Saga independent area chains, fractional symbol prices, and normal/mandatory warp movement and previews OK');
+}
+
+{
+  const C=ps2.createEdition('saga'),game=()=>C.start(2,2,5000,'saga-original-crosswind');
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const goblin=id('goblin'),fire=id('minotaur'),dual=id('crimsonvine');
+  assert.ok([goblin,fire,dual].every(id=>id>=0));
+  const place=(creature,requirements=[])=>{
+    const s=game(),p=s.players[0];
+    s.phase='land';p.pos=1;p.cash=1000;p.hand=[creature];
+    requirements.forEach((type,i)=>Object.assign(s.tiles[2+i],{type,owner:0,unit:{id:goblin,hp:30}}));
+    assert.equal(s.tiles[1].type,'모프');
+    assert.ok(C.play(s,['summon',0]));
+    assert.equal(s.tiles[1].unit.id,creature);
+    return s;
+  };
+  const colored=place(fire),neutral=place(goblin),mixed=place(dual,[0,2]);
+  assert.equal(colored.tiles[1].type,0);
+  assert.equal(neutral.tiles[1].type,'무속성');
+  assert.equal(mixed.tiles[1].type,'복합');
+  assert.equal(colored.prices[0],11);
+  Object.assign(colored,{phase:'sell',turn:0,debtor:0,debtResume:'land'});
+  colored.players[0].cash=-50;
+  assert.ok(C.play(colored,['sell',1]));assert.equal(colored.tiles[1].type,0);
+  assert.equal(colored.tiles[1].owner,-1);
+  const move=game(),owner=move.players[0];
+  move.phase='land';owner.pos=0;owner.cash=1000;
+  Object.assign(move.tiles[2],{owner:0,unit:{id:fire,hp:40}});
+  assert.ok(C.play(move,['transfer',2,1]));
+  assert.equal(move.tiles[1].type,0);assert.equal(move.tiles[2].unit,null);
+
+  const fromFountain=(steps,book)=>{
+    const s=game(),p=s.players[0];s.phase='fork';s.remaining=steps;
+    Object.assign(p,{pos:10,previous:9,hand:[goblin,goblin,goblin,goblin],book:book.slice()});
+    return s;
+  };
+  const deck=[goblin,fire,dual,fire,dual],s=fromFountain(1,deck),p=s.players[0];
+  assert.equal(C.routePreview(s,['route',11]).fountain,true);
+  assert.ok(C.play(s,['route',11]));assert.deepEqual(p.hand,[dual,fire,dual,fire]);assert.deepEqual(p.book,[goblin]);
+  assert.equal(s.phase,'land');assert.match(s.shrineNotice,/분수.*4장 뽑음/);
+  const sparse=fromFountain(1,[dual]);assert.ok(C.play(sparse,['route',11]));
+  assert.deepEqual(sparse.players[0].hand,[dual]);assert.deepEqual(sparse.players[0].book,[]);
+  const empty=fromFountain(1,[]);assert.ok(C.play(empty,['route',11]));assert.deepEqual(empty.players[0].hand,[]);
+  const passing=fromFountain(2,deck);assert.ok(C.play(passing,['route',11]));
+  assert.deepEqual(passing.players[0].hand,[goblin,goblin,goblin,goblin]);
+  assert.deepEqual(passing.players[0].book,deck);
+  const map=C.maps['saga-original-crosswind'],prior=map.transit[5];
+  try{
+    map.transit[5]=11;
+    const warp=fromFountain(1,deck);
+    Object.assign(warp.players[0],{pos:4,previous:3});
+    assert.equal(C.routePreview(warp,['route',5]).fountain,false);
+    assert.ok(C.play(warp,['route',5]));
+    assert.equal(warp.players[0].pos,11);
+    assert.deepEqual(warp.players[0].hand,[goblin,goblin,goblin,goblin]);
+  }finally{map.transit[5]=prior;}
+  console.log('Saga one-time morph claims and regional pricing, Fountain stop/pass, and book depletion OK');
 }
