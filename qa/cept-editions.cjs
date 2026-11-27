@@ -50,7 +50,7 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,35],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,36],['begins',400,15]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -790,4 +790,80 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   ai.tiles[16].trapMagic=600;
   assert.deepEqual(C.ai(ai),['route',16]);
   console.log('Revolt trap pass/stop, 0/3/4/5/6 dice thresholds, separate pots, preview and serialized state OK');
+}
+
+{
+  const C=ps2.createEdition('revolt'),mapId='revolt-original-watchpost';
+  const card=key=>C.cards.findIndex(c=>!c.catalogOnly&&C.combo.key(c)===key);
+  const goblin=card('goblin'),gear=card('longsword'),guard=card('minotaur');
+  assert.ok([goblin,gear,guard].every(id=>id>=0));
+  function approach(steps=1,humans=4){
+    const s=C.start(4,humans,5000,mapId,undefined,undefined,3,'teams'),p=s.players[0];
+    Object.assign(s,{phase:'fork',die:steps,rollSum:steps,remaining:steps});
+    Object.assign(p,{pos:17,previous:16,cash:600,hand:[goblin,gear]});
+    assert.equal(C.routePreview(s,['route',18]).tower,steps===1);
+    assert.ok(C.play(s,['route',18]));
+    return s;
+  }
+  const passing=approach(2);
+  assert.equal(passing.players[0].pos,19);
+  assert.ok(!C.choices(passing).some(([kind])=>kind==='towerAim'));
+
+  const s=approach(),p=s.players[0];
+  assert.equal(p.pos,18);
+  const teammate=s.players.findIndex((_,i)=>i!==0&&C.allied(s,i,0));
+  const enemy=s.players.findIndex((_,i)=>!C.allied(s,i,0));
+  Object.assign(s.tiles[3],{owner:teammate,unit:{id:goblin,hp:20}});
+  Object.assign(s.tiles[5],{owner:enemy,unit:{id:guard,hp:40,enchant:'peace'}});
+  Object.assign(s.tiles[6],{owner:0,unit:{id:goblin,hp:20}});
+  assert.ok(C.choices(s).some(([kind])=>kind==='level'));
+  assert.ok(C.play(s,['towerAim']));
+  assert.ok(!C.play(s,['towerTo',0]));
+  assert.ok(!C.play(s,['towerTo',3]));
+  assert.ok(!C.play(s,['towerTo',5]));
+  assert.ok(!C.play(s,['towerTo',6]));
+  assert.ok(C.play(s,['towerTo',8]));
+  assert.equal(s.towerAt,8);
+  assert.deepEqual(C.choices(s),[['summon',0],['towerCancel']]);
+  assert.ok(C.play(s,['towerCancel']));
+  assert.equal(s.phase,'towerTarget');
+  assert.ok(C.play(s,['towerTo',10]));
+  const restored=JSON.parse(JSON.stringify(s));
+  assert.ok(C.play(restored,['summon',0]));
+  assert.equal(restored.players[0].pos,18);
+  assert.equal(restored.players[0].cash,600-C.cards[goblin].cost);
+  assert.equal(restored.tiles[10].owner,0);
+  assert.equal(restored.tiles[10].unit.fatigued,true);
+  assert.equal(restored.turn,1);
+  assert.equal(restored.towerAt,undefined);
+
+  for(const wins of [false,true]){
+    const battle=approach(),defender=battle.players.findIndex((_,i)=>!C.allied(battle,i,0));
+    Object.assign(battle.tiles[8],{type:1,level:3,owner:defender,unit:{id:guard,hp:wins?1:40}});
+    assert.ok(C.play(battle,['towerAim']));
+    assert.ok(C.play(battle,['towerTo',8]));
+    assert.ok(C.play(battle,['invade',0]));
+    assert.equal(battle.battle.at,8);
+    assert.equal(battle.players[0].pos,18);
+    assert.ok(C.play(battle,['bare']));
+    assert.equal(C.actor(battle),defender);
+    assert.ok(C.play(battle,['bare']));
+    assert.equal(battle.phase,'result');
+    assert.equal(battle.battle.won,wins);
+    assert.equal(battle.battle.noToll,true);
+    assert.equal(battle.tiles[8].owner,wins?0:defender);
+    assert.ok(C.play(battle,['continue']));
+    assert.equal(battle.players[0].pos,18);
+    assert.equal(battle.players[0].cash,600-C.cards[goblin].cost);
+    assert.equal(battle.turn,1);
+  }
+
+  const ai=approach(1,0);
+  Object.assign(ai.tiles[7],{type:0,owner:0,unit:{id:goblin,hp:20,fatigued:true}});
+  Object.assign(ai.tiles[8],{type:0,owner:0,unit:{id:goblin,hp:20,fatigued:true}});
+  assert.deepEqual(C.ai(ai),['towerAim']);
+  assert.ok(C.play(ai,C.ai(ai)));
+  const choice=C.ai(ai);
+  assert.equal(choice[0],'towerTo');assert.equal(ai.tiles[choice[1]].type,0);
+  console.log('Revolt Command Tower stop/pass, allied exclusions, save/cancel, fatigue, capture, no toll and AI selection OK');
 }

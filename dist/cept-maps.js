@@ -39,6 +39,11 @@ const CepterMaps=(()=>{
     [4,12],100,12,[...loop(16),[2,16],[16,17],[17,18],[18,10]],Array(19).fill(0));
   const revoltPractice={'revolt-original-trapway':{...trapway,areaCount:1,section:'arena',graph:true,startCash:200,
     castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}}};
+  const watchpost=map('서풍 초소 · 창작 지도',[...ring,[2,2],[3,2],[3,3],[3,4],[4,4]],
+    ['성',0,1,0,'동쪽 게이트',2,3,1,0,1,0,3,'서쪽 게이트',2,3,1,3,0,'사령탑',2,1],
+    [4,12],100,12,[...loop(16),[1,16],[16,17],[17,18],[18,19],[19,20],[20,7]],Array(21).fill(0));
+  revoltPractice['revolt-original-watchpost']={...watchpost,areaCount:1,section:'arena',graph:true,startCash:250,
+    castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];

@@ -470,6 +470,32 @@ const {chromium}=require('playwright');
     assert.deepEqual(await trapPage.evaluate(()=>[s.players[0].cash,s.tiles[16].trapMagic]),[243,60]);
     console.log('revolt 844x390: trap path loss, post-move notice and tile pot balance by touch OK');
     await trapPage.close();
+    for(const [width,height] of [[320,568],[844,390]]){
+      const towerPage=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await towerPage.route('https://**',r=>r.abort());
+      await towerPage.goto(trapUrl.href);
+      await towerPage.selectOption('#mapChoice','revolt-original-watchpost');
+      await towerPage.locator('#config .match-start .primary').tap();
+      await towerPage.evaluate(()=>{
+        const goblin=C.cards.findIndex(c=>C.combo.key(c)==='goblin'&&!c.catalogOnly);
+        Object.assign(s,{phase:'fork',die:1,rollSum:1,remaining:1});
+        Object.assign(s.players[0],{pos:17,previous:16,cash:600,hand:[goblin]});
+        render();
+      });
+      const towerRoute=towerPage.locator('.route-option').filter({hasText:'19번 방향'});
+      assert.match(await towerRoute.innerText(),/사령탑.*원격 소환/);
+      await towerRoute.tap();
+      await towerPage.locator('[data-action=towerAim]').tap();
+      assert.match(await towerPage.locator('#center').innerText(),/목표 영지를 터치/);
+      await towerPage.locator('#map .tile').nth(8).tap();
+      await towerPage.locator('#handPanel[open] .card.ready').tap();
+      assert.match(await towerPage.locator('#center').innerText(),/9번 영지/);
+      assert.ok(await towerPage.locator('#map .tile').nth(8).evaluate(tile=>tile.classList.contains('chosen')));
+      await towerPage.locator('#detail').getByRole('button',{name:'크리처 소환'}).tap();
+      assert.deepEqual(await towerPage.evaluate(()=>[s.players[0].pos,s.tiles[8].owner,s.tiles[8].unit.fatigued]),[18,0,true]);
+      console.log('revolt '+width+'x'+height+': tower route, highlighted target, and illustrated hand summon by touch OK');
+      await towerPage.close();
+    }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
     await archerPage.route('https://**',r=>r.abort());
     await archerPage.goto(pathToFileURL(path.resolve(__dirname,'../dist/cept.html')).href);

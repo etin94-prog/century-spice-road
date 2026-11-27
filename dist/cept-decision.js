@@ -8,6 +8,7 @@ function routeOption(action){
   else if(info.phase==='shop')landing+=' · 카드 1장 구매 가능';
   else if(info.phase==='temple')landing+=' · 호부 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+info.toll+'G');
+  else if(info.tower)landing+=' · 원격 소환 또는 침략';
   else if(info.fountain)landing+=' · 손패 교체';
   else if(C.territoryType(tile.type))landing+=' · 빈 영지';
   const bonus=info.cashGain-info.trapDelta;
@@ -40,10 +41,10 @@ function shopMenu(controls,choices,p){
 }
 
 function decisionText(action,p){
-  const [kind,x,y]=action,here=s.tiles[p.pos];
+  const [kind,x,y]=action,position=s.towerAt??p.pos,here=s.tiles[position];
   if(kind==='shrineChoice')return C.shrineDetails[x];
   if(kind==='ability'||kind==='totem')return CepterCreatureText.territorySummary(C,C.cards[s.tiles[x].unit.id]);
-  if(['targetLand','abilityLand','teleTo'].includes(kind)){
+  if(['targetLand','abilityLand','teleTo','towerTo'].includes(kind)){
     const tile=s.tiles[x],unit=tile.unit;
     if(kind==='targetLand'&&s.spellEffect==='remission')return '게이트를 경유한 것으로 표시합니다.';
     if(!unit)return '빈 영지 · Lv.'+tile.level;
@@ -58,7 +59,7 @@ function decisionText(action,p){
   }
   if(kind==='pay')return '통행료 '+C.owedToll(s,here)+'G · 지불 후 '+(p.cash-C.owedToll(s,here))+'G';
   if(['level','element','summon','exchange'].includes(kind)){
-    const at=kind==='summon'?p.pos:x,t=s.tiles[at],next={...t};
+    const at=kind==='summon'?position:x,t=s.tiles[at],next={...t};
     let cost;
     if(kind==='level'){next.level=y;cost=C.levelCost(t,y);}
     else if(kind==='element'){next.type=y;cost=C.elementCost(t);}
@@ -67,13 +68,13 @@ function decisionText(action,p){
       next.type=C.claimTerrain(t,C.cards[id]);next.unit={id,hp:C.cards[id].hp};next.owner=s.turn;cost=C.price(p,C.cards[id],s);
     }
     const trial={...s,tiles:s.tiles.map((tile,i)=>i===at?next:tile)};
-    const owed=here.owner>=0&&!C.allied(s,here.owner,s.turn)?C.owedToll(trial,trial.tiles[p.pos]):0;
+    const owed=s.towerAt==null&&here.owner>=0&&!C.allied(s,here.owner,s.turn)?C.owedToll(trial,trial.tiles[p.pos]):0;
     const chain=C.chain(trial,next);
     return (t.type!==next.type&&kind==='summon'?'모프 → '+(C.elements[next.type]||next.type)+' · ':'')+(chain>1?chain+'연쇄 · ':'')+'통행료 '+(t.owner>=0?C.toll(s,t):0)+' → '+C.toll(trial,next)+'G · 잔액 '+(p.cash-cost-owed)+'G'+(owed?' (지불할 통행료 '+owed+'G 포함)':'');
   }
   if(kind==='invade'){
-    const guard=C.cards[here.unit.id],ground=C.battleGround(s,{at:p.pos,inv:p.hand[x]});
-    return guard.name+' · 기본 ST '+(here.unit.st??guard.st)+' / 현재 HP '+here.unit.hp+' · 지형 HP +'+ground.hp+' · '+(C.allied(s,here.owner,s.turn)?'동맹 영지':'방어 성공 시 통행료 '+C.owedToll(s,here)+'G');
+    const guard=C.cards[here.unit.id],ground=C.battleGround(s,{at:position,inv:p.hand[x]});
+    return guard.name+' · 기본 ST '+(here.unit.st??guard.st)+' / 현재 HP '+here.unit.hp+' · 지형 HP +'+ground.hp+' · '+(s.towerAt!=null?'사령탑 침략 · 통행료 없음':C.allied(s,here.owner,s.turn)?'동맹 영지':'방어 성공 시 통행료 '+C.owedToll(s,here)+'G');
   }
   return '';
 }

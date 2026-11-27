@@ -9,8 +9,8 @@ if(C.edition==='revolt'){
   rules[2].textContent='방향이 다른 게이트를 모두 지나면 한 주를 완주합니다. 총마력이 목표에 도달한 뒤 어느 게이트든 지나면 승리합니다.';
 }
 $('editionChoice').value=C.edition;$('editionChoice').onchange=e=>location.assign(location.pathname+'?edition='+e.target.value);
-const labels={wormDiscard:'파괴할 손패',suppressCard:'모두 제거할 주문',sacrifice:'추가 비용으로 버릴 카드',ability:'영지 능력',abilityPlayer:'대상 셉터',abilityLand:'대상 영지',teleTo:'이동할 영지',eraseDraw:'파괴할 북 위치',comboArea:'효과 적용 지역',totem:'토템을 바쳐 마력 획득',plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
-const hints={bookWorm:'북 웜으로 파괴할 상대 손패를 선택하세요.',squeeze:'파괴할 손패 한 장을 선택하세요. 그 셉터는 150G를 받습니다.',suppression:'대상 손패에서 제거할 주문을 선택하세요.',sacrifice:'추가 비용으로 버릴 카드를 선택하세요.',territoryTarget:'영지 능력의 대상을 선택하세요.',teleMove:'이동할 칸을 선택하세요.',mindseeker:'북 맨 위에서 몇 번째 카드를 파괴할지 선택하세요.',fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
+const labels={towerAim:'사령탑 사용',towerTo:'목표 영지',towerCancel:'뒤로',wormDiscard:'파괴할 손패',suppressCard:'모두 제거할 주문',sacrifice:'추가 비용으로 버릴 카드',ability:'영지 능력',abilityPlayer:'대상 셉터',abilityLand:'대상 영지',teleTo:'이동할 영지',eraseDraw:'파괴할 북 위치',comboArea:'효과 적용 지역',totem:'토템을 바쳐 마력 획득',plagueArea:'독을 부여할 지역',fortuneDraw:'카드 종류 선택',route:'갈림길 선택',leaveTemple:'거래 종료',buySymbol:'호부 매수',sellSymbol:'호부 매도',liquidate:'호부 처분',targetPlayer:'대상 셉터',targetLand:'대상 영지',breakCard:'파괴할 카드',fizzle:'대상 없음',cast:'주문 사용',roll:'주사위 굴리기',direction:'이동 방향',summon:'크리처 소환',invade:'영지 침략',pay:'통행료 지불',level:'영지 레벨업',element:'속성 변경',exchange:'크리처 교체',transfer:'크리처 이동',pass:'행동 마치기',bare:'아이템 없이 전투',equip:'아이템 사용',continue:'전투 결과 확인',sell:'영지 처분',discard:'카드 버리기'};
+const hints={towerTarget:'지도에서 빈 영지나 침략할 적 영지를 누르세요.',towerDeploy:'하단 손패에서 사용할 크리처를 고르세요.',bookWorm:'북 웜으로 파괴할 상대 손패를 선택하세요.',squeeze:'파괴할 손패 한 장을 선택하세요. 그 셉터는 150G를 받습니다.',suppression:'대상 손패에서 제거할 주문을 선택하세요.',sacrifice:'추가 비용으로 버릴 카드를 선택하세요.',territoryTarget:'영지 능력의 대상을 선택하세요.',teleMove:'이동할 칸을 선택하세요.',mindseeker:'북 맨 위에서 몇 번째 카드를 파괴할지 선택하세요.',fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 Object.assign(labels,C.spellActions);Object.assign(hints,C.spellHints);
 labels.shrineChoice='성소 효과 선택';hints.shrineChoice='성소에서 받을 효과를 고르세요.';
 let room=null,customBook=null,draft=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
@@ -277,7 +277,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'soltisArea':case 'comboArea':case 'plagueArea':return (x+1)+'지역';
     case 'prophecyKind':case 'fortuneDraw':return {creature:'크리처',item:'아이템',spell:'주문'}[x];
     case 'route':return (x+1)+'번 · '+(C.elements[s.tiles[x].type]||s.tiles[x].type);
-    case 'targetLand':case 'abilityLand':case 'teleTo':{
+    case 'targetLand':case 'abilityLand':case 'teleTo':case 'towerTo':{
       const tile=s.tiles[x],unit=tile.unit,board=C.board(s),gate=board.gateNames?.[board.gates[x]];
       if(gate)return (x+1)+'번 · '+gate;
       return (x+1)+'번 · '+(C.elements[tile.type]||tile.type)+' · '+(unit?C.cards[unit.id].name+' ('+(tile.owner+1)+'P)':'빈 영지');
@@ -319,7 +319,7 @@ function placeHandPanel(){
   }
 }
 const mapViewButtons=[...$('mapViews').querySelectorAll('[data-zoom]')];
-let mapZoom='1.8',cameraTile=0,gateZoom=null;
+let mapZoom='1.8',cameraTile=0,targetZoom=null;
 try{
   const saved=localStorage.getItem('cept-map-zoom');
   if(mapViewButtons.some(b=>b.dataset.zoom===saved))mapZoom=saved;
@@ -399,14 +399,15 @@ function setMapCamera(root,x,y,zoom){
 function selectingGate(){
   return s?.phase==='spellTarget'&&s.spellEffect==='remission';
 }
+function selectingMapTarget(){return selectingGate()||s?.phase==='towerTarget';}
 function focusMapTile(index){
   cameraTile=index;
   const root=$('map'),tile=root.children[index];
   if(!tile?.classList.contains('tile')||!root.clientWidth||!viewport.clientHeight)return;
   const w=root.clientWidth,h=root.clientHeight,viewWidth=viewport.clientWidth,viewHeight=viewport.clientHeight;
   const free=measureMapFree(),freeWidth=free.right-free.left,freeHeight=free.bottom-free.top;
-  if(!selectingGate())gateZoom=null;
-  const preferred=selectingGate()?(gateZoom??(inspect<0?'1':mapZoom)):mapZoom;
+  if(!selectingMapTarget())targetZoom=null;
+  const preferred=selectingMapTarget()?(targetZoom??(inspect<0?'1':mapZoom)):mapZoom;
   const overview=preferred==='1';
   const cover=Math.max(viewWidth/w,viewHeight/h);
   const zoom=overview?Math.min(1,freeWidth/w,freeHeight/h):
@@ -426,8 +427,8 @@ for(const button of mapViewButtons){
   button.setAttribute('aria-pressed',String(button.dataset.zoom===mapZoom));
   button.onclick=()=>{
     $('mapViews').open=false;
-    if(selectingGate()){
-      gateZoom=button.dataset.zoom;focusMapTile(cameraTile);return;
+    if(selectingMapTarget()){
+      targetZoom=button.dataset.zoom;focusMapTile(cameraTile);return;
     }
     mapZoom=button.dataset.zoom;
     for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(b===button));
@@ -509,12 +510,12 @@ function map(){
   root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
   const standing=s.phase==='over'?-1:s.players[s.turn].pos;
   const canTarget=!pending&&!C.isComputer(s,C.actor(s))&&(!room||room.seat===C.actor(s)&&!room.busy);
-  const targets=new Map(canTarget&&['spellTarget','territoryTarget','teleMove'].includes(s.phase)?
-    (room?room.choices:C.choices(s)).filter(a=>['targetLand','abilityLand','teleTo'].includes(a[0])).map(a=>[a[1],a]):[]);
+  const targets=new Map(canTarget&&['spellTarget','territoryTarget','teleMove','towerTarget'].includes(s.phase)?
+    (room?room.choices:C.choices(s)).filter(a=>['targetLand','abilityLand','teleTo','towerTo'].includes(a[0])).map(a=>[a[1],a]):[]);
   const exits=new Set(s.phase==='fork'?(room?room.choices:C.choices(s)).filter(a=>a[0]==='route').map(a=>a[1]):[]);
   s.tiles.forEach((t,n)=>{
     const name=m.gateNames?.[m.gates[n]]||({light:'빛의 성소',dark:'어둠의 성소'}[m.shrineKinds?.[n]])||C.elements[t.type]||t.type,owner=t.owner>=0?s.players[t.owner].name:'미점유';
-    const b=btn('',e=>{if(e?.target.closest('.pawn-action')){launchPawnActions();return;}if(s.phase==='fork'&&canTarget&&exits.has(n)){act(['route',n]);return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect?' chosen':''));
+    const b=btn('',e=>{if(e?.target.closest('.pawn-action')){launchPawnActions();return;}if(s.phase==='fork'&&canTarget&&exits.has(n)){act(['route',n]);return;}if(s.phase==='towerTarget'&&targets.has(n)){act(targets.get(n));return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect||n===s.towerAt?' chosen':''));
     const [r,c]=m.position[n];b.style.left=((m.rows+c-r+.3)*half)+'%';
     b.style.top=(11+(r+c-2)*half*.5)+'cqw';
     if(m.stage){
@@ -562,7 +563,7 @@ function map(){
     });
     b.append(pawns);root.append(b);
   });
-  focusMapTile(inspect>=0?inspect:s.players[s.turn].pos);
+  focusMapTile(inspect>=0?inspect:s.towerAt??s.players[s.turn].pos);
   const center=$('center');center.classList.toggle('market-center',s.mapId==='market'&&!s.battle);
   center.classList.toggle('turn-status',!s.battle&&inspect<0);
   if(s.battle){
@@ -585,6 +586,8 @@ function map(){
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));
     }else if(t.type==='모프'){
       center.append(el('span','처음 배치한 크리처의 속성을 얻습니다. 변한 속성은 영지가 비어도 유지됩니다.'));
+    }else if(t.type==='사령탑'){
+      center.append(el('span','멈추면 빈 영지에 소환하거나 적 영지를 원격으로 침략할 수 있습니다.'));
     }else if(t.type==='마력 트랩'){
       center.append(el('span','적립 '+(t.trapMagic??0)+'G · 통과하거나 멈출 때 주사위 합 0–3이면 전액 획득, 4–5면 유지, 6 이상이면 보유 마력 20% 적립'));
     }else if(t.type==='분수'){
@@ -598,6 +601,8 @@ function map(){
     return;
   }
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.phase==='over'?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.phase==='over'?winLabel():s.die?'주사위 '+s.die:m.name),el('span',(m.gates?'게이트 ':'요새 ')+p.flags.length+'/'+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  if(s.phase==='towerTarget')center.lastElementChild.textContent='사령탑 · 목표 영지를 터치하세요';
+  if(s.phase==='towerDeploy')center.lastElementChild.textContent='사령탑 · '+(s.towerAt+1)+'번 영지 · 하단 손패에서 선택';
   if(selectingGate()&&targets.size)center.lastElementChild.textContent='경유할 게이트를 선택하세요';
   center.dataset.rolled=String(!!s.die||s.phase==='over');
 }
@@ -777,7 +782,9 @@ function render(){
   const menuKey=[s.round,s.turn,s.phase,s.logSequence||0,room?.revision||0,optional].join(':');
   if(menuState.game!==s||menuState.key!==menuKey){
     const gateOnMap=selectingGate()&&choices.some(([kind])=>kind==='targetLand');
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap};
+    const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!towerOnMap};
+    if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;
   }
