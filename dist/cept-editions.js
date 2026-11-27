@@ -186,7 +186,10 @@ const CepterEditions=(()=>{
     sharazad:{support:true},algasphere:{stationary:true},banshee:{},bookworm:{},hyde:{},
     healer:{regenerate:true},spittingcobra:{},archer:{},holyllama:{},witch:{},goldentotem:{stationary:true},
     fate:{},mystic:{},necromancer:{scrollCritical:true},conjurer:{scrollCritical:true},
-    goobaqueen:{},gooba:{generatedOnly:true},sleipnir:{}
+    goobaqueen:{},gooba:{generatedOnly:true},sleipnir:{},
+    gremlin:{},blackorb:{effect:'orb',protectItem:true},fireshield:{},holygrail:{},
+    magicshield:{hp:30},magussmirror:{hp:20},smoketorch:{hp:20},stonehail:{st:30,critical:3},
+    tearinghalo:{st:30,protectItem:true},knightsshield:{},spikedshield:{},vorpalsword:{st:30},prismaticwand:{}
   };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));

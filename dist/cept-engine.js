@@ -1478,7 +1478,7 @@ function createCepter(edition="ps2"){
         const remaining=Math.min(out.finalHP[side],unit.hp);
         return (territory?220:0)+(out.finalHP[side]>0?35:0)+remaining*.35-Math.min(80,out.finalHP[1-side])*.2
           -(k==='equip'?6+price(p,c,s)*.16:0)+(k==='equip'&&plan.pair(key(unit),n)?15:0)
-          +(out.revengeValue||0)*(defending?-.3:.3)+(handheld&&!territory&&out.noToll&&!defending&&s.battle.from==null?toll(s,s.tiles[s.battle.at])*.6:0);
+          +(out.revengeValue||0)*(defending?-.3:.3)-(out.magicLoss?.[side]||0)*.3+(handheld&&!territory&&out.noToll&&!defending&&s.battle.from==null?toll(s,s.tiles[s.battle.at])*.6:0);
       }
       if(k==='summon'&&plan.ready(n))return (skill?development(k,x,y,c):70)+22;
       if(skill){

@@ -652,7 +652,24 @@ const {chromium}=require('playwright');
       assert.match(await handheldPage.locator('.battle-outcome').innerText(),/침략 승리/);
       await handheldPage.locator('[data-action=continue]').tap();
       assert.deepEqual(await handheldPage.evaluate(()=>[s.phase,s.turn,s.tiles[5].owner,s.players[0].cash]),['spell',1,0,140]);
-      console.log('3ds 2012 '+width+'x'+height+': independent edition, 41-map archive, single die, Power Crown, Metal Bug, allied land upgrade and Sleipnir invasion by touch OK');
+      await handheldPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);
+        const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+        s=C.start(2,2,6000,'3ds-original-bend');s.phase='attack';s.players[0].pos=3;
+        s.players[0].hand=[];s.players[1].hand=[id('holygrail')];s.players[1].cash=100;
+        s.battle={at:3,inv:id('minotaur'),atkItem:null,defItem:null};
+        Object.assign(s.tiles[3],{type:1,owner:1,unit:{id:id('minotaur'),hp:40}});
+        pending=false;render();
+      });
+      await handheldPage.locator('[data-action=bare]').tap();
+      await handheldPage.getByRole('button',{name:'내 차례 확인'}).tap();
+      await handheldPage.locator('[data-action=equip]').tap();
+      await handheldPage.getByRole('button',{name:'내 차례 확인'}).tap();
+      await handheldPage.locator('.battle-log summary').tap();
+      assert.match(await handheldPage.locator('.battle-log').innerText(),/피해 무효.*마력 −120G/);
+      await handheldPage.locator('[data-action=continue]').tap();
+      assert.deepEqual(await handheldPage.evaluate(()=>[s.phase,C.actor(s)]),['sell',1]);
+      console.log('3ds 2012 '+width+'x'+height+': independent edition, 41-map archive, single die, Power Crown, Metal Bug, allied land upgrade Sleipnir invasion and Holy Grail debt by touch OK');
       await handheldPage.close();
     }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});

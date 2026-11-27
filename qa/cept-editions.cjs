@@ -1185,6 +1185,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     const s=C.start(2,2,0,intro);
     const attackerId=id(attacker),guard=id('minotaur');assert.ok(attackerId>=0&&guard>=0);
     Object.assign(s,{phase:'attack',battle:{at:3,inv:attackerId,atkItem:null,defItem:null}});
+    s.players[0].pos=3;
     Object.assign(s.tiles[3],{type:1,owner:1,unit:{id:guard,hp:40}});
     if(st!=null){
       s.battle.from=8;
@@ -1414,5 +1415,40 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(invade,['bare']));assert.ok(invade.battle.won);
   assert.ok(C.play(invade,['continue']));
   assert.deepEqual([invade.phase,invade.turn,invade.tiles[5].owner,invade.tiles[7].owner,invade.players[0].cash],['spell',1,0,-1,940]);
-  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities and reflect timing OK');
+  const grail=fight('minotaur',null,'holygrail');
+  assert.deepEqual([grail.players[1].cash,grail.battle.strikes[0].effect],[780,'block']);
+  const grailScroll=fight('minotaur','nuclearfusion','holygrail');
+  assert.deepEqual([grailScroll.players[1].cash,grailScroll.battle.strikes[0].effect],[900,'block']);
+  const grailDebt=fight('minotaur',null,'holygrail',null,s=>{s.players[1].cash=100;});
+  assert.ok(C.play(grailDebt,['continue']));
+  assert.deepEqual([grailDebt.phase,C.actor(grailDebt)],['sell',1]);
+  const orb=fight('minotaur','blackorb','countershield');
+  assert.ok(orb.battle.won);
+  assert.equal(orb.battle.strikes[0].effect,'hit');
+
+  const spike=fight('catoblepas',null,'spikedshield');
+  assert.deepEqual(spike.battle.strikes[0].hp,[35,25]);
+  assert.equal(spike.battle.strikes[0].notes.some(line=>line.includes('설욕')),false);
+  assert.equal(fight('minotaur',null,'knightsshield').battle.strikes[0].effect,'block');
+  assert.equal(fight('goblin','battleaxe','knightsshield').battle.strikes[0].effect,'hit');
+  assert.equal(fight('goblin',null,'fireshield').battle.strikes[0].effect,'block');
+  assert.equal(fight('nightmare',null,'smoketorch').battle.strikes[0].effect,'block');
+  assert.equal(fight('minotaur','nuclearfusion','magicshield').battle.strikes[0].effect,'block');
+  assert.equal(fight('minotaur','nuclearfusion','magussmirror').battle.strikes[0].effect,'reflect');
+
+  for(const [unit,damage] of [['minotaur',45],['goblin',30]]){
+    const halo=fight(unit,'tearinghalo',null);
+    assert.ok(halo.battle.strikes[0].notes.some(line=>line.includes(damage+' 피해')));
+  }
+  const stone=fight('minotaur','stonehail',null,null,s=>{s.tiles[3].unit={id:id('harpy'),hp:30};});
+  assert.ok(stone.battle.strikes.find(hit=>hit.side===0).notes.some(line=>line.includes('45 피해')));
+  const vorpal=fight('goblin','vorpalsword',null);
+  assert.ok(vorpal.battle.strikes[0].notes.some(line=>line.includes('75 피해')));
+  const prism=fight('goblin','prismaticwand',null);
+  assert.deepEqual([prism.battle.attackST,prism.battle.startHP[0]],[60,70]);
+  const gremlin=fight('gremlin',null,'countershield');
+  assert.equal(gremlin.battle.strikes[0].effect,'hit');
+  const protectedOrb=fight('minotaur','blackorb',null,null,s=>{s.tiles[3].unit={id:id('thief'),hp:40};});
+  assert.ok(protectedOrb.battle.won,'Thief cannot steal Black Orb');
+  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities and defense/scroll equipment timing OK');
 }

@@ -136,8 +136,13 @@ const CepterExtraBattle=(()=>{
         d.hp+=damage;d.absorbed=true;lines.push('화속성 피해 흡수');return 'heal';
       }
       if(orb)return;
-      const rate=d.g==='holygrail'||d.n==='charon'?2:d.u.enchant==='simulacrum'?3:0;
-      if(rate){s.players[d.seat].cash-=damage*rate;lines.push('피해 무효 · 마력 −'+damage*rate+'G');return 'block';}
+      const rate=d.g==='holygrail'?(s.edition==='3ds'?3:2):d.n==='charon'?2:d.u.enchant==='simulacrum'?3:0;
+      if(rate){
+        const cost=damage*rate;
+        s.players[d.seat].cash-=cost;
+        if(s.predict&&s.edition==='3ds'){b.magicLoss??=[0,0];b.magicLoss[d.defending?1:0]+=cost;}
+        lines.push('피해 무효 · 마력 −'+cost+'G');return 'block';
+      }
       if(d.g==='talisman'||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(a.element===0||d.element===0)||
         ['knightshield','knightsshield'].includes(d.g)&&fx.strength(a.u)>=40||d.n==='grindylow'&&fx.strength(a.u)<=30||
         ['nymph','yeti'].includes(d.n)&&a.element===0||d.n==='dhampir'&&a.element===2||d.n==='kraken'&&a.element===-1){
