@@ -352,6 +352,7 @@ const CepterCreatureText=(()=>{
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
     const special=C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
+      C.edition==='revolt'&&key==='kaiserpenguin'?'전투 시작 시 상대가 사용한 도구, 두루마리 또는 지원 크리처를 파괴합니다.':
       C.edition==='revolt'&&key==='triton'?'아이템을 사용하고 생존하면 전투가 끝날 때 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='halfling'?'모든 속성 영지에서 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='cactuswall'?'수·풍 속성 상대와 싸울 때 전투 HP가 50 오릅니다.':

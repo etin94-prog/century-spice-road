@@ -798,10 +798,11 @@ function createCepter(edition="ps2"){
         extra.itemStart(a,d);
         const destroy=a.n==='gremlin'||['talisman','gremlinamulet'].includes(a.g)||a.g==='stinkbottle'&&(d.gear?.category==='tool'||d.gear?.kind==='creature');
         const target=d.gear?.category;
+        const penguin=revolt&&a.n==='kaiserpenguin'&&(target==='tool'||target==='scroll'||d.gear?.kind==='creature');
         const monarch=a.n==='abyssalmonarch'&&d.gear?.kind==='item'&&['weapon','tool'].includes(target);
         const gremlin=a.g==='gremlinclaw'&&['weapon','scroll','tool'].includes(target)||
           a.g==='gremlintooth'&&(['armor','tool'].includes(target)||d.gear?.kind==='creature');
-        if((destroy||gremlin||monarch)&&!extra.protectedGear(d))useGear(d);
+        if((destroy||gremlin||monarch||penguin)&&!extra.protectedGear(d))useGear(d);
       }
       const originalIds=sides.map(a=>a.u.id);
       extra.forms(A,originalIds[1]);extra.forms(D,originalIds[0]);
@@ -832,6 +833,7 @@ function createCepter(edition="ps2"){
       if(a.n==='drool')a.st=count(1)*10;
       if(handheld&&a.n==='shadefolk')a.st=s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===d.element).length*10;
       if(a.n==='undine')a.hp=count(1)*20;
+      if(revolt&&a.n==='gargoyle'&&a.defending)a.st=50;
       if(revolt&&a.n==='cactuswall'&&[1,3].includes(d.element))a.hp+=50;
       if(revolt&&a.n==='tigerweta'&&board(s).links[b.at].some(at=>at!==b.from&&s.tiles[at].owner===a.seat)){
         a.st+=20;a.hp+=20;
@@ -969,7 +971,7 @@ function createCepter(edition="ps2"){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
         if(revolt&&a.g==='ringofthesuccubus'&&d.n!=='scylla'){
-          const fixed=d.gear?.category==='scroll'||d.g==='petrifystone'||d.c.evoBattle==='landST'||d.n==='spectre'||d.u.enchant==='liquidform';
+          const fixed=d.gear?.category==='scroll'||d.g==='petrifystone'||d.c.evoBattle==='landST'||d.n==='spectre'||d.n==='gargoyle'&&d.defending||d.u.enchant==='liquidform';
           if(!fixed)d.st=Math.max(0,d.st-fx.strength(d.u));
           d.u.st=0;lines.push('서큐버스 링 · 상대 기본 ST 0');
         }else if(attacker==='succubus'||!revolt&&a.g==='ringofthesuccubus'||creatureEffects&&a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
