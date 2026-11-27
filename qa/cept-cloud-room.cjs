@@ -13,7 +13,7 @@ async function main(){
     const base=publicSite?'https://etin94-prog.github.io/century-spice-road/cept.html?ceptQA=1':
       'http://127.0.0.1:'+server.address().port+'/cept.html?emulator=1';
     const clockMode=process.argv.includes('--clock');
-    const cases=clockMode?[[2,'ps2']]:process.argv.includes('--recover-only')?[[4,'ps2']]:[[2,'saturn'],[3,'dc'],[4,'ps2']];
+    const cases=clockMode?[[2,'ps2']]:process.argv.includes('--recover-only')?[[4,'ps2']]:process.argv.includes('--begins-only')?[[4,'begins']]:[[2,'saturn'],[3,'dc'],[4,'ps2'],[4,'begins']];
     for(const [humans,edition] of cases){
       const pages=[],errors=[];
       for(let i=0;i<humans;i++){
@@ -29,7 +29,7 @@ async function main(){
       catch(e){throw Error('Room creation: '+await host.locator('#roomHelp').innerText(),{cause:e});}
       const invite=await host.inputValue('#roomWait input'),hostBook=await host.evaluate(()=>chosenBook());
       const custom=humans===4?await host.evaluate(()=>C.presets.fire.slice().reverse()):null;
-      if(custom)await pages.at(-1).addInitScript(deck=>localStorage.setItem('cept-book-v1',JSON.stringify(deck)),custom);
+      if(custom)await pages.at(-1).addInitScript(({deck,key})=>localStorage.setItem(key,JSON.stringify(deck)),{deck:custom,key:'cept-book-v1'+(edition==='begins'?'-begins':'')});
       await Promise.all(pages.slice(1).map(p=>p.goto(invite)));
       if(custom){
         await pages[1].getByRole('button',{name:'이 북으로 참가'}).waitFor();
@@ -41,6 +41,17 @@ async function main(){
           catch(e){return String(e.code||e.message).toLowerCase().includes('permission');}
         });
         assert.equal(duplicate,true);
+        if(edition==='begins'){
+          const shortBookRejected=await pages[1].evaluate(async()=>{
+            const {getAuth}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js');
+            const {getDatabase,ref,update}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+            const uid=getAuth().currentUser.uid,id=new URL(location.href).searchParams.get('ceptRoom');
+            const book=JSON.stringify(C.presets.intro.slice(1));
+            try{await update(ref(getDatabase(),'ceptRooms/'+id),{'seats/s1':uid,'openingBooks/s1':book});return false;}
+            catch(e){return String(e.code||e.message).toLowerCase().includes('permission');}
+          });
+          assert.equal(shortBookRejected,true);
+        }
       }
       const expectedBooks=new Map();
       await Promise.all(pages.slice(1).map(async(p,i)=>{
@@ -69,6 +80,16 @@ async function main(){
       assert.equal(opening.hasOpeningBooks,false);
       for(let seat=1;seat<humans;seat++)assert.deepEqual(opening.books[seat],expectedBooks.get(bySeat[seat]));
       const spectator=bySeat[1];
+      if(edition==='begins'){
+        assert.equal(opening.books.every(deck=>deck.length===40),true);
+        assert.deepEqual(await spectator.evaluate(()=>s.players.map(p=>p.bookCount)),[35,36,36,36]);
+        await spectator.reload();await spectator.waitForFunction(()=>room?.seat===1&&room.started);
+        assert.deepEqual(await spectator.evaluate(()=>s.players.map(p=>p.hand.length)),[0,4,0,0]);
+        await Promise.all(pages.map(p=>p.context().close()));
+        assert.deepEqual(errors,[]);
+        console.log('Begins cloud four-seat 40-card opening books and private reconnect OK');
+        continue;
+      }
       if(clockMode){
         const [revision,deadline]=await spectator.evaluate(()=>[room.revision,s.deadlineAt]);
         assert.ok(deadline>Date.now(),'Clock was armed on the opening decision');

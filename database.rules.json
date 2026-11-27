@@ -18,7 +18,7 @@
         "openingBooks": {
           "$slot": {
             ".write": "auth != null && !data.exists() && newData.exists() && ($slot === 's1' || $slot === 's2' || $slot === 's3') && data.parent().parent().child('meta/openingBooks').val() === true && !data.parent().parent().child('views').exists() && !data.parent().parent().child('seats').child($slot).exists() && newData.parent().parent().child('seats').child($slot).val() === auth.uid",
-            ".validate": "newData.isString() && newData.val().matches(/^\\[[0-9]{1,4}(,[0-9]{1,4}){49}\\]$/)"
+            ".validate": "newData.isString() && (newData.val().matches(/^\\[[0-9]{1,4}(,[0-9]{1,4}){49}\\]$/) || (newData.parent().parent().child('meta/edition').val() === 'begins' && newData.val().matches(/^\\[[0-9]{1,4}(,[0-9]{1,4}){39}\\]$/)))"
           }
         },
         "recoveryTickets": {
