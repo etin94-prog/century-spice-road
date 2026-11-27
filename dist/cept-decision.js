@@ -38,6 +38,7 @@ function shopMenu(controls,choices,p){
 function decisionText(action,p){
   const [kind,x,y]=action,here=s.tiles[p.pos];
   if(kind==='shrineChoice')return C.shrineDetails[x];
+  if(kind==='ability'||kind==='totem')return CepterCreatureText.territorySummary(C,C.cards[s.tiles[x].unit.id]);
   if(['targetLand','abilityLand','teleTo'].includes(kind)){
     const tile=s.tiles[x],unit=tile.unit;
     if(kind==='targetLand'&&s.spellEffect==='remission')return '게이트를 경유한 것으로 표시합니다.';

@@ -2,6 +2,7 @@ const assert=require('node:assert/strict');
 const ps2=require('../dist/cept-engine');
 const describeSpell=require('../dist/cept-spell-text');
 const describeItem=require('../dist/cept-item-text');
+const creatureText=require('../dist/cept-creature-text');
 for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
   const C=edition==='ps2'?ps2:ps2.createEdition(edition);
   const spells=C.cards.filter(c=>!c.unlisted&&c.kind==='spell');
@@ -24,7 +25,28 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
     if(card.catalogOnly)assert.equal(summary,undefined,edition+' '+card.name+' is catalog-only');
     else assert.match(summary||'',/[가-힣]/,edition+' '+card.name+' should have a Korean effect');
   }
-  console.log(edition,spells.filter(c=>!c.catalogOnly).length,'spell and',items.filter(c=>!c.catalogOnly).length,'item summaries are in Korean');
+  const creatures=C.cards.filter(c=>!c.unlisted&&c.kind==='creature');
+  for(const card of creatures){
+    const summary=creatureText.describe(C,card);
+    if(card.catalogOnly)assert.equal(summary,undefined,edition+' '+card.name+' is catalog-only');
+    else{
+      assert.match(summary||'',/[가-힣]/,edition+' '+card.name+' should have a Korean effect');
+      const printed=card.catalog?.ability?.replace(/(?:Item Limit|Land Limit): (?:no\w+ ?)+/g,'').trim();
+      if(printed&&printed!=='-')assert.notEqual(summary,'기본 ST와 HP로 전투합니다.',edition+' '+card.name+' has an ability');
+      const price=C.territoryAbilityCost(card);
+      if(price!=null){
+        const territory=creatureText.territorySummary(C,card);
+        assert.ok(territory?.startsWith('영지 능력 '+price+'G · '),edition+' '+card.name+' land ability');
+        assert.ok(summary.includes(territory));
+      }
+    }
+  }
+  const unit=name=>creatures.find(c=>!c.catalogOnly&&C.combo.key(c)===name);
+  if(unit('dragon'))assert.match(creatureText.describe(C,unit('dragon')),['ps1','saturn'].includes(edition)?/ST가 10, 수비할 때 전투 HP가 10/:/ST가 20 오르고 전투 HP가 20/);
+  if(unit('deathgaze'))assert.match(creatureText.describe(C,unit('deathgaze')),['ps1','saturn'].includes(edition)?/60%/:/80%/);
+  if(unit('fontaciel'))assert.match(creatureText.describe(C,unit('fontaciel')),/영지 능력 50G.*내 모든 크리처.*100/);
+  if(unit('firebeak'))assert.match(creatureText.describe(C,unit('firebeak')),/선제.*수·풍 속성 상대에게 강타.*관통/);
+  console.log(edition,'Korean summaries cover',...[spells,items,creatures].map(group=>group.filter(c=>!c.catalogOnly).length),'spells/items/creatures');
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);

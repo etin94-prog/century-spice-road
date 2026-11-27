@@ -260,42 +260,14 @@ $('storeBook').onclick=()=>{
 function localAbility(c){
   if(c.kind==='spell')return describeCepterSpell(C,c);
   if(c.kind==='item')return describeCepterItem(C,c);
-  const original=C.combo.key(c);
-  if(C.edition==='saga'&&c.elements){
-    return {
-      crimsonvine:'일반 공격이 명중하면 준 피해만큼 HP를 회복합니다.',
-      flammefleur:'전투 ST는 내 화·지 영지 수 ×10입니다. 살아남고 피해를 한 번도 주지 못하면 상대를 격파합니다.',
-      fontaciel:'전투 HP는 내 수·풍 영지 수 ×10입니다. 영지 명령 50G로 내 크리처의 최대 HP를 5 올립니다. 상한은 100입니다.',
-      frostbeast:'화·수·지·풍 속성의 일반 공격을 반사합니다.',
-      gogma:'선제. 영지 명령 200G로 대상 레벨 1 영지를 레벨 3으로 올립니다.',
-      jackolantern:'후공. 일반 공격이 명중하면 남은 기본 HP의 두 배만큼 상대 마력을 빼앗습니다.',
-      magmaavatar:'전투 ST와 HP는 내 화·지 영지 수 ×15입니다.',
-      stormavatar:'전투 ST와 HP는 내 수·풍 영지 수 ×15입니다.',
-      stymphalides:'수·풍 크리처의 지형 보너스를 관통합니다.',
-      warlock:'단일 대상 주문과 영지 능력의 대상이 되지 않습니다. 두루마리 강타. 영지 명령 60G로 대상 셉터에게 안티 매직을 부여합니다.'
-    }[original];
-  }
-  if(C.edition==='ps2'){
-    const text={
-      quetzalcoatl:'응원 · 카드 자체에 선제가 있는 크리처는 전투 중 ST +10',
-      bard:'공격이 명중하고 상대가 살아남으면 빈 땅으로 이동합니다. 빈 땅이 없으면 바드가 파괴됩니다.',
-      catoblepas:'장비 없이 전투하면 전투 종료 시 상대의 기본 ST만큼 상대에게 피해를 줍니다.',
-      nymph:'공격 명중 시 상대의 최대 HP가 30 이하면 40% 확률로 상대를 내 손패에 넣습니다. 손패에 빈자리가 필요합니다.',
-      gooba:'구바 퀸이 영지 능력으로 빈 땅에 소환합니다.',
-      carbunfly:'카벙클이 드래곤플라이의 지원을 받아 합체합니다. 선제와 두루마리 반사를 가지며, 전투에서 쓰러지면 카벙클로 돌아옵니다.',
-      bundlegear:'배틀 기어 α와 β가 지원으로 합체합니다. 두루마리를 무효화하며 주문·영지 능력의 대상이 되지 않습니다.'
-    }[original];
-    if(text)return text;
-  }
-  if(original==='manticore')return ['ps2','dc'].includes(C.edition)?'전투 중 ST와 HP는 남은 손패 수 × 10':'전투 중 ST는 현재 HP와 동일';
-  if(original==='chimera')return '선제 · 주인이 주회 보너스를 받으면 ST +10 (최대 80)';
-
+  return CepterCreatureText.describe(C,c);
 }
 function stats(c){
   if(c.kind!=='creature')return localAbility(c)||c.catalog?.ability||c.name;
-  const base=c.st+' ST / '+c.hp+' HP';
-  return [base,c.first?'선제':null,c.half?'일반 피해 절반':null,c.stationary?'방어 전용':null,c.support?'크리처로 지원 가능':null,c.confuse?'공격 명중 시 혼란':null,
-    c.landBan!=null?C.elements[c.landBan]+' 배치 불가':null,c.ban?.map(v=>({weapon:'무기',armor:'방어구',scroll:'두루마리'})[v]+' 불가').join('·')].filter(Boolean).join(' · ');
+  const equipment={weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구'};
+  const banned=c.ban?.map(v=>equipment[v]).filter(Boolean)||[];
+  return [c.st+' ST / '+c.hp+' HP',c.landBan!=null?C.elements[c.landBan]+' 배치 불가':null,
+    banned.length?banned.join('·')+' 장비 불가':null].filter(Boolean).join(' · ');
 }
 function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
   switch(k){
@@ -310,7 +282,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
       if(gate)return (x+1)+'번 · '+gate;
       return (x+1)+'번 · '+(C.elements[tile.type]||tile.type)+' · '+(unit?C.cards[unit.id].name+' ('+(tile.owner+1)+'P)':'빈 영지');
     }
-    case 'ability':case 'totem':return (x+1)+'번 영지';
+    case 'ability':case 'totem':return (x+1)+'번 · '+C.cards[s.tiles[x].unit.id].name;
     case 'eraseDraw':return '위에서 '+(x+1)+'번째';
     case 'sacrifice':return c.name;
     case 'abilityPlayer':case 'targetPlayer':return s.players[x].name;

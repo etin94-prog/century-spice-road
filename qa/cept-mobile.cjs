@@ -344,5 +344,36 @@ const {chromium}=require('playwright');
       console.log('begins',width+'x'+height,'Korean armor and scroll damage from mobile battle OK');
       await page.close();
     }
+    const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+    await archerPage.route('https://**',r=>r.abort());
+    await archerPage.goto(pathToFileURL(path.resolve(__dirname,'../dist/cept.html')).href);
+    const archer=await archerPage.evaluate(()=>{
+      const id=C.cards.findIndex(c=>C.combo.key(c)==='archer');
+      return {id,name:C.cards[id].name};
+    });
+    await archerPage.locator('#editor summary').tap();
+    await archerPage.selectOption('#cardScope','usable');
+    await archerPage.locator('#cardSearch').fill(archer.name);
+    await archerPage.locator('.catalog-open').getByText(archer.name,{exact:true}).tap();
+    const archerDetail=await archerPage.locator('#catalogAbility').evaluate(p=>p.firstChild.textContent);
+    assert.match(archerDetail,/영지 능력 30G.*적 크리처.*10 피해/);
+    await archerPage.locator('#closeCard').tap();
+    await archerPage.locator('#editor summary').tap();
+    await archerPage.locator('#config .match-start .primary').tap();
+    await archerPage.evaluate(id=>{
+      s=C.start(2,2,5000,'classic');pending=false;
+      const goblin=C.cards.findIndex(c=>C.combo.key(c)==='goblin');
+      s.phase='land';s.players[0].pos=0;s.players[0].cash=1000;
+      Object.assign(s.tiles[1],{owner:0,type:3,unit:{id,hp:C.cards[id].hp}});
+      Object.assign(s.tiles[2],{owner:1,type:3,unit:{id:goblin,hp:30}});
+      render();
+    },archer.id);
+    const ability=archerPage.locator('[data-action=ability]');
+    assert.equal(await ability.locator('.decision-preview').innerText(),archerDetail);
+    await ability.tap();
+    await archerPage.locator('[data-action=abilityLand]').tap();
+    assert.deepEqual(await archerPage.evaluate(()=>[s.players[0].cash,s.tiles[2].unit.hp]),[970,20]);
+    console.log('ps2 844x390: Korean Archer description and territory command cost and damage OK');
+    await archerPage.close();
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
