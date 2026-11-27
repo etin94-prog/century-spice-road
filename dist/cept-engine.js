@@ -216,7 +216,7 @@ function createCepter(edition="ps2"){
   }
   function updatePrices(s,before){
     if(!before)return;
-    if(edition!=='ps2'){
+    if(edition!=='ps2'&&edition!=='saga'){
       landValues(s).forEach((v,k)=>{s.prices[k]=Math.max(1,s.prices[k]+Math.trunc((v-before[k])/100));});
       return;
     }
@@ -313,6 +313,10 @@ function createCepter(edition="ps2"){
     }
     note(s,'성소 · '+(event===0?'지역 전체 크리처 최대 HP의 50% 피해':elements[element]+' 영지 크리처 '+(event===1?'HP 회복':'최대 HP의 20% 피해')));
   }
+  function transitDestination(map,at,type,remaining){
+    const dest=map.transit?.[at];
+    if(dest!=null&&(type==='다리'||type==='강제 전송진'||!remaining&&(type==='전송진'||map.graph)))return dest;
+  }
   function advance(s,next,preview=false){
     const p=s.players[s.turn],m=board(s);
     const path=[p.pos];
@@ -356,8 +360,8 @@ function createCepter(edition="ps2"){
           });
         }
         return;}
-      const dest=m.transit?.[next];
-      if(dest!=null&&(t.type==='다리'||(t.type==='전송진'||m.graph)&&!s.remaining)){
+      const dest=transitDestination(m,next,t.type,s.remaining);
+      if(dest!=null){
         p.pos=dest;p.previous=next;path.push(dest);
         note(s,t.type+' · '+(next+1)+'번 → '+(dest+1)+'번');
       }
@@ -819,7 +823,7 @@ function createCepter(edition="ps2"){
     const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
     const previousChains=trackChains?chainCounts(s):null;
     if(k==='roll'){delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
-    const before=(edition==='ps2'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
+    const before=(edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
     function mapEffect(type,label,tile=p.pos,extra={}){
       s.mapEffect={sequence:(s.mapEffect?.sequence||0)+1,type,label,tile,source:p.pos,...extra};
     }
@@ -1028,8 +1032,8 @@ function createCepter(edition="ps2"){
         const gate=m.gates?.[next];
         if((revolt?gate!=null:tile.type==='성')&&total(s,traveler)>=s.target)return 10000;
         if(revolt?gate!=null&&!walker.flags.includes(gate):m.forts.includes(next)&&!walker.flags.some(f=>m.types[f]===tile.type))bonus+=25;
-        const jump=m.transit?.[next];
-        if(jump!=null&&(tile.type==='다리'||(tile.type==='전송진'||m.graph)&&left===1)){prev=next;next=jump;}
+        const jump=transitDestination(m,next,tile.type,left-1);
+        if(jump!=null){prev=next;next=jump;}
         if(left===1||tile.unit?.enchant==='quicksand'||!allied(s,tile.owner,traveler)&&((fx.name(tile.unit)==='oldwillow'&&tile.type===0)||(fx.name(tile.unit)==='kelpie'&&tile.type===1)))break;
         const links=m.links[next],exits=links.filter(n=>links.length===1||n!==prev);
         if(exits.length!==1)return bonus;
@@ -1171,11 +1175,11 @@ function createCepter(edition="ps2"){
           for(let k=0;k<queue.length;k++){
             const [at,prev,d]=queue[k],key=at+'/'+prev;if(seen.has(key))continue;seen.add(key);
             if(goals.includes(at))return 9-d+(skill>=2?landing(x,p.pos,s.remaining)/12:0);
-            const dest=m.transit?.[at];
-            if(dest!=null&&(m.types[at]==='전송진'||m.graph&&m.types[at]!=='다리')&&prev!==dest)queue.push([dest,at,d+1]);
-            const pos=dest!=null&&m.types[at]==='다리'?dest:at;
+            const type=m.types[at],dest=m.transit?.[at],immediate=transitDestination(m,at,type,1);
+            if(dest!=null&&immediate==null&&(type==='전송진'||m.graph)&&prev!==dest)queue.push([dest,at,d+1]);
+            const pos=immediate??at,entry=immediate==null?prev:at;
             const exits=m.links[pos];
-            exits.filter(n=>exits.length===1||n!==prev).forEach(n=>queue.push([n,pos,d+1]));
+            exits.filter(n=>exits.length===1||n!==entry).forEach(n=>queue.push([n,pos,d+1]));
           }return -10000;
         }
         case 'buySymbol':return p.cash>300&&y<=5&&p.symbols[x]<10?2:-2;

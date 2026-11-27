@@ -25,6 +25,15 @@ const CepterMaps=(()=>{
   campaignMaps['campaign-lantern'].areaCount=2;
   const stages=typeof module==='undefined'?CepterStages:require('./cept-stage-data.js');
   const maps={classic,dunnan,market,...campaignMaps};
+  const eastRing=ring.map(([row,col])=>[row,col+6]);
+  const crosswindTypes=[
+    '성',1,2,0,'북쪽 요새','전송진',1,'강제 전송진',3,3,0,2,'남쪽 요새',2,'신전',0,
+    '점술관',0,2,1,'동쪽 요새',3,1,'신전',2,0,3,'강제 전송진',1,'전송진',3,0
+  ];
+  const crosswind=map('쌍류의 관문 · 창작 지도',[...ring,...eastRing],crosswindTypes,[4,12,20],100,7,
+    [...loop(16),...loop(16).map(([a,b])=>[a+16,b+16])],crosswindTypes.map((_,at)=>Number(at>=16)),250);
+  const sagaPractice={'saga-original-crosswind':{...crosswind,areaCount:2,section:'arena',graph:true,startCash:250,fortBonus:100,
+    castles:[0],checkpoints:crosswind.forts,transit:{5:24,7:18,27:2,29:8}}};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];
@@ -39,6 +48,7 @@ const CepterMaps=(()=>{
     maps['legacy-ps2-'+stage.stage]=playable(stage);
     maps['ps2-'+stage.stage]=playable({...stage,...layouts[stage.stage-1]});
   }
+  Object.defineProperty(maps,'sagaPractice',{value:sagaPractice});
   return maps;
 })();
 if(typeof module!=='undefined')module.exports=CepterMaps;

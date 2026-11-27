@@ -73,6 +73,7 @@ const CepterEditions=(()=>{
         graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
         ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{})};
     }
+    if(edition==='saga')Object.assign(result,original.sagaPractice);
     return result;
   }
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');

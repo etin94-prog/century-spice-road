@@ -50,7 +50,7 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,17],['revolt',489,34],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,34],['begins',400,15]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -629,4 +629,55 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(loser.s.battle.finalHP[1],0);
   assert.notEqual(loser.s.players[1].book.at(0),loser.a);
   console.log('Edition Boomerang return, Begins armor protection, scroll reduction, reflection, and surviving book return OK');
+}
+
+{
+  const C=ps2.createEdition('saga'),mapId='saga-original-crosswind';
+  assert.ok(!ps2.maps[mapId]);
+  const game=()=>C.start(2,2,5000,mapId),map=C.maps[mapId];
+  assert.equal(map.areaCount,2);
+  assert.deepEqual([...new Set(map.areas)],[0,1]);
+  const walk=(from,previous,remaining)=>{
+    const s=game();s.phase='fork';s.remaining=remaining;s.visited=[];
+    Object.assign(s.players[0],{pos:from,previous});
+    return s;
+  };
+  const passed=walk(4,3,2);
+  assert.deepEqual(C.routePreview(passed,['route',5]).at,6);
+  assert.ok(C.play(passed,['route',5]));
+  assert.deepEqual(passed.lastMove.path,[4,5,6]);
+  const stopped=walk(4,3,1);
+  assert.deepEqual(C.routePreview(stopped,['route',5]).at,24);
+  assert.ok(C.play(stopped,['route',5]));
+  assert.deepEqual(stopped.lastMove.path,[4,5,24]);
+  const crossed=walk(6,5,2);
+  const preview=C.routePreview(crossed,['route',7]);
+  assert.deepEqual([preview.at,preview.remaining,preview.phase],[18,1,'fork']);
+  assert.ok(C.play(crossed,['route',7]));
+  assert.deepEqual(crossed.lastMove.path,[6,7,18]);
+  assert.deepEqual(C.choices(crossed),[['route',17],['route',19]]);
+  assert.ok(C.play(crossed,['route',19]));
+  assert.equal(crossed.players[0].pos,19);
+  const returned=walk(26,25,1);
+  assert.ok(C.play(returned,['route',27]));
+  assert.deepEqual(returned.lastMove.path,[26,27,2]);
+
+  const economy=game(),goblin=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='goblin');
+  economy.phase='land';economy.players[0].cash=1000;
+  for(const at of [3,17])Object.assign(economy.tiles[at],{owner:0,unit:{id:goblin,hp:30}});
+  assert.equal(economy.prices.length,8);
+  assert.deepEqual([C.chain(economy,economy.tiles[3]),C.chain(economy,economy.tiles[17])],[1,1]);
+  assert.ok(C.play(economy,['level',3,2]));
+  assert.deepEqual([economy.prices[0],economy.prices[4]],[11,10]);
+  const saved=JSON.parse(JSON.stringify(economy));
+  assert.deepEqual(saved.prices,economy.prices);
+  assert.equal(C.board(saved).areaCount,2);
+  const compound=game();
+  compound.tiles[3].base=80;compound.tiles[3].owner=0;compound.tiles[3].unit={id:goblin,hp:30};
+  for(const level of [2,3]){
+    Object.assign(compound,{phase:'land',turn:0});compound.players[0].cash=1000;
+    assert.ok(C.play(compound,['level',3,level]));
+  }
+  assert.deepEqual([compound.prices[0],compound.priceRemainder[0],compound.prices[4]],[12,40,10]);
+  console.log('Saga independent area chains, fractional symbol prices, and normal/mandatory warp movement and previews OK');
 }

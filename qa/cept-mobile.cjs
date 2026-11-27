@@ -404,6 +404,27 @@ const {chromium}=require('playwright');
       console.log('ps2 '+width+'x'+height+': mobile symbol buy, sell, debt liquidation, focus and stale confirmation OK');
       await page.close();
     }
+    const sagaPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+    const sagaUrl=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));
+    sagaUrl.searchParams.set('edition','saga');
+    await sagaPage.route('https://**',r=>r.abort());
+    await sagaPage.goto(sagaUrl.href);
+    await sagaPage.selectOption('#mapChoice','saga-original-crosswind');
+    assert.match(await sagaPage.locator('#stagePreview figcaption').innerText(),/32칸 · 2지역 · 요새 3곳/);
+    await sagaPage.locator('#config .match-start .primary').tap();
+    assert.equal(await sagaPage.locator('#map .tile').count(),32);
+    await sagaPage.locator('#mapViews summary').tap();
+    await sagaPage.locator('#mapViews [data-zoom="1"]').tap();
+    await sagaPage.getByRole('button',{name:/^8번 강제 전송진/}).tap();
+    assert.match(await sagaPage.locator('#center').innerText(),/1지역.*강제 전송진.*통과하거나 멈추면 19번으로 이동/s);
+    await sagaPage.evaluate(()=>{
+      s.phase='fork';s.remaining=2;s.visited=[];
+      Object.assign(s.players[0],{pos:6,previous:5});inspect=-1;render();
+    });
+    await sagaPage.locator('.route-option').filter({hasText:'8번 방향'}).tap();
+    assert.deepEqual(await sagaPage.evaluate(()=>[s.players[0].pos,s.remaining,s.phase]),[18,1,'fork']);
+    console.log('saga 844x390: original two-area map selection and mandatory portal touch OK');
+    await sagaPage.close();
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
     await archerPage.route('https://**',r=>r.abort());
     await archerPage.goto(pathToFileURL(path.resolve(__dirname,'../dist/cept.html')).href);

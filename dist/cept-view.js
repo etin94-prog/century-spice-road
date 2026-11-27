@@ -569,7 +569,7 @@ function map(){
   if(inspect>=0){
     const t=s.tiles[inspect],u=t.unit;
     const closeInspect=btn('✕',()=>{inspect=-1;render();},'inspect-close');closeInspect.setAttribute('aria-label','칸 정보 닫기');
-    center.append(closeInspect,el('small',(inspect+1)+'번 칸'),el('b',m.gateNames?.[m.gates[inspect]]||({light:'빛의 성소',dark:'어둠의 성소'}[m.shrineKinds?.[inspect]])||C.elements[t.type]||t.type));
+    center.append(closeInspect,el('small',(inspect+1)+'번 칸'+(m.areaCount>1?' · '+(t.area+1)+'지역':'')),el('b',m.gateNames?.[m.gates[inspect]]||({light:'빛의 성소',dark:'어둠의 성소'}[m.shrineKinds?.[inspect]])||C.elements[t.type]||t.type));
     if(u){
       const c=C.cards[u.id],effect=C.cards.find(card=>u.enchant&&C.combo.key(card)===u.enchant);
       const status=u.poisoned?'독':u.confused?'혼란':u.enchant==='paralysis'?'마비':u.enchant==='phantasm'?'판타즘':effect?.name;
@@ -578,9 +578,10 @@ function map(){
     }else if(t.type==='카드 상점'){
       const stock=C.shopStock(s,inspect);
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));
-    }else if(t.type==='전송진'){
+    }else if(['전송진','강제 전송진'].includes(t.type)){
       const destination=m.transit?.[inspect];
-      center.append(el('span',destination==null?'목적지 미설정 · 이동 효과 없음':'정지 시 '+(destination+1)+'번으로 이동'));
+      const when=t.type==='강제 전송진'?'통과하거나 멈추면 ':'정지 시 ';
+      center.append(el('span',destination==null?'목적지 미설정 · 이동 효과 없음':when+(destination+1)+'번으로 이동'));
     }else center.append(el('span',m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':'점유 크리처 없음'));
     if(targets.has(inspect)){const action=targets.get(inspect);center.append(btn((inspect+1)+'번 · '+labels[action[0]]+' 확정',()=>act(action),'primary'));}
     return;
