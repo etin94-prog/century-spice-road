@@ -1318,6 +1318,34 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     if(duplicate)assert.ok(mirror.battle.lines.some(line=>line.startsWith('미러 월드')));
   }
 
+  for(const [name,cost,owner,extra,verify] of [
+    ['alp',50,1,{},t=>assert.equal(t.unit.fatigued,true)],
+    ['captaincock',60,0,{fatigued:true},t=>assert.equal(t.unit.fatigued,undefined)],
+    ['domovikha',80,0,{},t=>assert.equal(t.unit.enchant,'landprotection')],
+    ['hyde',50,1,{},t=>assert.equal(t.unit.enchant,'paralysis')],
+    ['screamer',40,1,{},t=>assert.equal(t.unit.enchant,'antielement')],
+    ['hidebehind',40,0,{},t=>assert.equal(t.unit.enchant,'camouflage')],
+    ['kawahime',30,1,{st:5},t=>assert.equal(t.unit.st,0)]
+  ]){
+    const match=fixtures();
+    place(match,5,0,name,30);
+    place(match,6,owner,'fate',40,extra);
+    place(match,7,2,'fate',40,extra);
+    assert.ok(C.play(match,['secretArt',5]));
+    assert.ok(C.choices(match).some(([kind,at])=>kind==='secretLand'&&at===6));
+    if(['alp','captaincock','domovikha','screamer','hidebehind'].includes(name))
+      assert.ok(!C.choices(match).some(([kind,at])=>kind==='secretLand'&&at===7));
+    assert.ok(C.play(match,['secretLand',6]));
+    assert.equal(match.players[0].cash,100-cost);
+    assert.equal(!!match.tiles[5].unit.fatigued,!C.cards[card(name)].vigorous);
+    verify(match.tiles[6]);
+  }
+  const peace=fixtures();
+  place(peace,5,0,'rockshell',30);
+  assert.ok(C.play(peace,['secretArt',5]));
+  assert.equal(peace.tiles[5].unit.enchant,'peace');
+  assert.equal(C.toll(peace,peace.tiles[5]),0);
+
   const trained=Array.from({length:6}).reduce(C.evo.won,C.evo.fresh());
   for(const [part,key,expectedCost,check] of [
     [32,'heal',10,g=>assert.equal(g.tiles[6].unit.hp,40)],

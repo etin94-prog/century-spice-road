@@ -259,7 +259,9 @@ const CepterEditions=(()=>{
         const art={
           archbishop:'dispel',goldentotem:'offering',fate:'draw',healer:'heal',elvenarcher:'arrow',
           dwarvenminer:'lapGain',holyllama:'dice6',armoreddragon:'neutralBlast',
-          hardrockdragon:'fireAirBlast',lightningdragon:'waterEarthBlast',fay:'strength',burnacle:'blind',caladrius:'boost',uriel:'worldDispel'
+          hardrockdragon:'fireAirBlast',lightningdragon:'waterEarthBlast',fay:'strength',burnacle:'blind',caladrius:'boost',uriel:'worldDispel',
+          alp:'fatigue',captaincock:'recover',domovikha:'protect',hyde:'paralyze',rockshell:'peace',
+          screamer:'disableTerrain',hidebehind:'camouflage',kawahime:'loseStrength'
         }[slug];
         if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
         if(slug==='dwarvenminer')c.tollFactor=1.5;

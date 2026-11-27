@@ -315,7 +315,15 @@ const CepterCombos = (() => {
       blind:{cost:50,label:'적 영지 통행료 절반',enchant:'fog',enemy:true},
       boost:{cost:40,label:'전투 ST·HP +20',enchant:'vitality',beneficial:true},
       weaken:{cost:40,label:'전투 ST·HP −20',enchant:'disease'},
-      worldDispel:{cost:50,label:'전장 전체 저주 제거'}
+      worldDispel:{cost:50,label:'전장 전체 저주 제거'},
+      fatigue:{cost:50,label:'적 크리처에 피로 부여',setFatigue:true,enemy:true},
+      recover:{cost:60,label:'내 크리처의 피로 제거',setFatigue:false,own:true,beneficial:true},
+      protect:{cost:80,label:'내 크리처에 주문 대상 보호',enchant:'landprotection',own:true,beneficial:true},
+      paralyze:{cost:50,label:'크리처를 마비',enchant:'paralysis'},
+      peace:{cost:50,label:'자기 영지 침략 금지 · 통행료 0G',enchant:'peace',self:true,beneficial:true},
+      disableTerrain:{cost:40,label:'적 크리처의 지형 효과 무효',enchant:'antielement',enemy:true},
+      camouflage:{cost:40,label:'내 크리처에 지형 효과',enchant:'camouflage',own:true,beneficial:true},
+      loseStrength:{cost:30,label:'기본 ST −10',strength:-10}
     };
     const secretArt=card=>arts[card?.secretArt];
     function secretTargets(s,from){
@@ -323,14 +331,17 @@ const CepterCombos = (() => {
       const key=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn],art=arts[key];
       if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
       if(key==='worldDispel')return activeWorld(s)?[['secretSelf',from]]:[];
-      if(['offering','draw','lapGain','dice6'].includes(key))return [['secretSelf',from]];
+      if(['offering','draw','lapGain','dice6'].includes(key)||art.self&&src.unit.enchant!==art.enchant)return [['secretSelf',from]];
+      if(art.self)return [];
       return s.tiles.flatMap((t,at)=>{
         if(!t.unit)return [];
         if(key==='dispel')return enchanted(t.unit)?[['secretLand',at]]:[];
         if(!targetable(s,t))return [];
         if(key==='heal'&&t.owner===s.turn&&!immuneHP(t)&&t.unit.hp<max(t.unit))return [['secretLand',at]];
         if(key==='strength'&&strength(t.unit)<100)return [['secretLand',at]];
-        if(art.enemy&&allied(s,t.owner,s.turn))return [];
+        if(art.enemy&&allied(s,t.owner,s.turn)||art.own&&t.owner!==s.turn)return [];
+        if(art.setFatigue!=null&&!!t.unit.fatigued!==art.setFatigue)return [['secretLand',at]];
+        if(art.strength<0&&strength(t.unit)>0)return [['secretLand',at]];
         if(art.enchant&&t.unit.enchant!==art.enchant)return [['secretLand',at]];
         if(art.damage&&!immuneHP(t)&&
           (!art.elements||art.elements.includes(cards[t.unit.id].element)))return [['secretLand',at]];
@@ -349,6 +360,9 @@ const CepterCombos = (() => {
       if(card.secretArt==='dice6'){clearCepter(p);p.word=6;}
       if(card.secretArt==='worldDispel')delete s.world;
       if(card.secretArt==='strength')target.unit.st=Math.min(100,strength(target.unit)+20);
+      if(art.setFatigue===true)target.unit.fatigued=true;
+      if(art.setFatigue===false)delete target.unit.fatigued;
+      if(art.strength<0)target.unit.st=Math.max(0,strength(target.unit)+art.strength);
       if(art.enchant){clear(target.unit);target.unit.enchant=art.enchant;target.unit.caster=s.turn;}
       if(art.damage)damage(s,target,art.damage);
       note(s,p.name+' · '+card.name+' 비술 · '+art.label);
@@ -368,6 +382,9 @@ const CepterCombos = (() => {
       if(art==='worldDispel')utility=Object.hasOwn(worlds,activeWorld(s))?(s.world.until-s.round)*4:0;
       if(art==='strength')utility=(friendly?1:-1)*Math.min(20,100-strength(t.unit));
       if(spec.enchant)utility=(friendly===!!spec.beneficial?1:-1)*(15+(t.level-1)*8);
+      if(art==='peace')utility=t.level>=3?-15:8;
+      if(spec.setFatigue!=null)utility=18+t.level*3;
+      if(spec.strength<0)utility=(friendly?-1:1)*Math.min(-spec.strength,strength(t.unit));
       if(spec.damage)utility=(friendly?-1:1)*(t.unit.hp<=spec.damage?50+(t.level-1)*10:spec.damage);
       return utility-spec.cost*.25-(card.vigorous?0:4);
     }
