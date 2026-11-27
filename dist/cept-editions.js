@@ -212,6 +212,11 @@ const CepterEditions=(()=>{
         giantnautilus:2,kaiserpenguin:2,triton:2,wallofice:2,gargoyle:2,sage:2,squirrine:2,wallofstone:2,breezespirit:2,cornfolk:2,
         knight:2,tornado:2,angelcape:4,goldenhammer:1,mace:2,magicshield:3,tearinghalo:1,escape:2,holybanishment:1,holyword3:2,
         liquidform:1,prophecy:2,purify:2,quintessence:2,rayoflaw:1,spiritwalk:2
+      },
+      revoltTenetPraise:{
+        giantnautilus:2,hellgrammite:2,kaiserpenguin:2,triton:2,gargoyle:2,mummy:2,rocktroll:2,sage:2,breezespirit:2,knight:2,
+        thunderspawn:2,tornado:2,angelcape:2,diamondarmor:2,goldenhammer:2,tearinghalo:2,trident:2,barrier:2,escape:2,fly:2,
+        holybanishment:2,prophecy:2,purify:1,quintessence:2,rayoflaw:1,spiritwalk:2
       }
     });
     if(edition!=='saga'&&edition!=='begins')return presets;
@@ -377,6 +382,7 @@ const CepterEditions=(()=>{
     scylla:{blocksAttackAbilities:true},greattusker:{blocksFirst:true},
     cactuswall:{stationary:true,regenerate:true},tigerweta:{},mummy:{stationary:true},
     kaiserpenguin:{},gargoyle:{first:true},sage:{support:true,protectGear:true,scrollCritical:true},
+    hellgrammite:{},serpentfly:{first:true,bonusTerrain:[1]},thunderspawn:{},
     triton:{scrollCritical:true},dhampir:{},knight:{},gremlin:{},breezespirit:{remoteVacantElements:[1,3]},
     creepingcoin:{},halfling:{spellWard:true,anyTerrain:true},gelatinouswall:{stationary:true},undine:{},yeti:{},
     centaur:{first:true},wyvern:{first:true,remoteVacantElements:[3]},dryad:{support:true,supportElements:[-1,0,2],remoteVacantElements:[2]},

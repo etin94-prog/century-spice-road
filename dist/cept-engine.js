@@ -642,7 +642,9 @@ function createCepter(edition="ps2"){
     const remoteVacant=cards[unit.id].remoteVacantElements;
     const nearby=name==='roadrunner'?links[from].flatMap(j=>links[j]).filter(j=>j!==from):links[from];
     const remote=s.tiles.flatMap((tile,j)=>{
-      if(name==='aerogoetia'&&unit.enchant!=='paralysis'&&tile.type===3&&tile.owner>=0&&!allied(s,owner,tile.owner))return [j];
+      if(tile.unit&&!allied(s,owner,tile.owner)&&unit.enchant!=='paralysis'){
+        if(name==='aerogoetia'&&tile.type===3||revolt&&name==='thunderspawn'&&!combo.matchesTerrain(cards[tile.unit.id],tile.type))return [j];
+      }
       if(tile.owner>=0||!territoryType(tile.type))return [];
       if(remoteVacant?.includes(tile.type)&&unit.enchant!=='paralysis')return [j];
       if(tile.area!==area)return [];
@@ -765,7 +767,8 @@ function createCepter(edition="ps2"){
   function terrainHP(t,unit,card,name,muted){
     if(unit.enchant==='antielement')return 0;
     const any=!muted&&unit.enchant!=='paralysis'&&((card.c??card).anyTerrain||['hornedchameleon','abyssalmonarch'].includes(name)||unit.enchant==='camouflage');
-    return any&&(typeof t.type==='number'||t.type==='복합')?10*t.level:landBonus(card,t);
+    const bonus=!muted&&unit.enchant!=='paralysis'&&(card.c??card).bonusTerrain?.includes(t.type);
+    return any&&(typeof t.type==='number'||t.type==='복합')||bonus?10*t.level:landBonus(card,t);
   }
   function battleGround(s,b){
     const tile=s.tiles[b.at],guard=cards[tile.unit.id],name=key(guard);
@@ -834,6 +837,7 @@ function createCepter(edition="ps2"){
       if(handheld&&a.n==='shadefolk')a.st=s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===d.element).length*10;
       if(a.n==='undine')a.hp=count(1)*20;
       if(revolt&&a.n==='gargoyle'&&a.defending)a.st=50;
+      if(revolt&&a.n==='thunderspawn')a.st+=count(1)*10;
       if(revolt&&a.n==='cactuswall'&&[1,3].includes(d.element))a.hp+=50;
       if(revolt&&a.n==='tigerweta'&&board(s).links[b.at].some(at=>at!==b.from&&s.tiles[at].owner===a.seat)){
         a.st+=20;a.hp+=20;
@@ -1097,7 +1101,7 @@ function createCepter(edition="ps2"){
     }
     function revive(a){
       const scarab=a.g==='necroscarab'&&(edition!=='saga'||itemEnd&&a.defeatedByOpponent);
-      const form=scarab?(edition==='saga'?'skeleton':'zombie'):creatureEnd?({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld?{greatfossil:'tyrannosaurus'}:{})})[a.n]:null;
+      const form=scarab?(edition==='saga'?'skeleton':'zombie'):creatureEnd?({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]:null;
       if(!form||a.revived)return false;
       extra.transform(a,extra.ids.get(form));a.revived=true;
       return true;
@@ -1820,7 +1824,7 @@ function createCepter(edition="ps2"){
             return (out.won?value(s,s.tiles[p.pos])+100:out.noToll?toll(s,s.tiles[p.pos]):-60)-c.cost*.5-(cards[id]?.cost||0)*.5;}));
         }
         if(revolt&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);
-        if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia')){
+        if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia'||revolt&&fx.name(s.tiles[x].unit)==='thunderspawn')){
           const src=s.tiles[x],out=forecast({at:y,from:x,inv:src.unit.id,invHP:src.unit.hp,attackerSeat:src.owner},null,false);
           return out.won?value(s,s.tiles[y])*1.4-value(s,src)+25:-100;
         }

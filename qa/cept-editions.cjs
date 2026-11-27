@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -307,6 +307,33 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(flight.tiles[destination].unit?.id,unit);
     assert.equal(flight.tiles[destination].unit?.fatigued,true);
   }
+  const raid=C.start(4,4,5000,'revolt-original-lantern-market',undefined,undefined,2,'teams');
+  const placeUnit=(at,name,type,owner)=>{
+    const id=card(C,name);
+    Object.assign(raid.tiles[at],{owner,type,unit:{id,hp:C.cards[id].hp}});
+  };
+  const ally=raid.teams.findIndex((team,seat)=>seat>0&&team===raid.teams[0]);
+  const enemy=raid.teams.findIndex(team=>team!==raid.teams[0]);
+  placeUnit(1,'thunderspawn',3,0);
+  placeUnit(6,'fighter',1,0);
+  placeUnit(8,'fighter',1,0);
+  placeUnit(14,'blueogre',1,enemy);
+  placeUnit(15,'goblin',2,enemy);
+  placeUnit(16,'goblin',2,ally);
+  Object.assign(raid,{phase:'land',visited:[1]});
+  Object.assign(raid.players[0],{pos:1,hand:[],cash:0,ai:true});
+  assert.ok(!C.board(raid).links[1].includes(15));
+  assert.ok(!C.choices(raid).some(a=>a[0]==='transfer'&&a[1]===1&&[14,16].includes(a[2])));
+  raid.tiles[1].unit.enchant='paralysis';
+  assert.ok(!C.choices(raid).some(a=>a[0]==='transfer'&&a[1]===1&&a[2]===15));
+  delete raid.tiles[1].unit.enchant;
+  assert.deepEqual(C.ai(raid),['transfer',1,15]);
+  assert.ok(C.play(raid,['transfer',1,15]));
+  assert.ok(C.play(raid,['bare'])&&C.play(raid,['bare']));
+  assert.deepEqual([raid.battle.attackST,raid.battle.won,raid.tiles[15].owner],[50,true,0]);
+  assert.equal(raid.tiles[1].unit,null);
+  assert.equal(raid.tiles[15].unit.fatigued,true);
+
   const ward=scenario(C,'magicbolt');
   Object.assign(ward.tiles[1],{owner:1,unit:{id:card(C,'halfling'),hp:30}});
   Object.assign(ward.tiles[2],{owner:1,unit:{id:card(C,'creepingcoin'),hp:20}});
@@ -988,7 +1015,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     revoltYumaResolve:'fighter:3 amazon:2 aqualing:3 gianteel:2 lizardman:3 wallofice:2 greenogre:2 rocktroll:2 squirrine:3 wallofstone:3 woodfolk:3 buckler:2 longsword:2 scalearmor:3 sparkball:2 stormspear:2 fly:2 holyword6:3 manna:2 shatter:2 windofhope:2',
     revoltYumaBonds:'ninja:2 amazon:2 gianteel:2 kingtortoise:1 lizardman:3 scylla:2 wallofice:2 dryad:3 greattusker:2 greenogre:2 squirrine:2 woodfolk:3 bindingwhip:2 scalearmor:2 sparkball:2 trident:2 wondercharm:2 blackout:2 earthshift:1 fatbody:2 fly:2 gift:2 holyword6:2 shatter:2 watershift:1',
     revoltSomniaSerenity:'borgess:4 creepingcoin:2 halfling:1 steamgear:1 trojanhorse:2 aqualing:2 blueogre:2 gelatinouswall:3 kingtortoise:2 megalodon:2 undine:4 yeti:2 forceanklet:2 ringofthesuccubus:2 stormshield:2 stormspear:2 trident:2 fly:2 foresight:2 freezecyclone:1 holyword3:2 reincarnation:3 squeeze:2 watershift:1',
-    revoltTenetBelief:'giantnautilus:2 kaiserpenguin:2 triton:2 wallofice:2 gargoyle:2 sage:2 squirrine:2 wallofstone:2 breezespirit:2 cornfolk:2 knight:2 tornado:2 angelcape:4 goldenhammer:1 mace:2 magicshield:3 tearinghalo:1 escape:2 holybanishment:1 holyword3:2 liquidform:1 prophecy:2 purify:2 quintessence:2 rayoflaw:1 spiritwalk:2'
+    revoltTenetBelief:'giantnautilus:2 kaiserpenguin:2 triton:2 wallofice:2 gargoyle:2 sage:2 squirrine:2 wallofstone:2 breezespirit:2 cornfolk:2 knight:2 tornado:2 angelcape:4 goldenhammer:1 mace:2 magicshield:3 tearinghalo:1 escape:2 holybanishment:1 holyword3:2 liquidform:1 prophecy:2 purify:2 quintessence:2 rayoflaw:1 spiritwalk:2',
+    revoltTenetPraise:'giantnautilus:2 hellgrammite:2 kaiserpenguin:2 triton:2 gargoyle:2 mummy:2 rocktroll:2 sage:2 breezespirit:2 knight:2 thunderspawn:2 tornado:2 angelcape:2 diamondarmor:2 goldenhammer:2 tearinghalo:2 trident:2 barrier:2 escape:2 fly:2 holybanishment:2 prophecy:2 purify:1 quintessence:2 rayoflaw:1 spiritwalk:2'
   };
   const revoltCatalog=ps2.createEdition('revolt');
   for(const [name,entries] of Object.entries(revoltBooks)){
@@ -1130,7 +1158,16 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(gargoyle.defendST,70);assert.equal(gargoyle.strikes[0].side,1);
   assert.equal(revolt('mace',null,'gargoyle','fighter').s.battle.attackST,50);
   assert.equal(dealt(revolt('sparkball','diamondarmor','sage','fighter')),60);
-  console.log('Revolt seven exact AI books, terrain defenses, battle payouts, item effects and Yeti threshold OK');
+  const hatch=revolt(null,null,'fighter','hellgrammite');
+  assert.equal(hatch.C.combo.key(hatch.C.cards[hatch.s.tiles[1].unit.id]),'serpentfly');
+  assert.equal(hatch.s.tiles[1].unit.hp,30);
+  assert.ok(!hatch.s.battle.won);
+  assert.equal(revolt(null,null,'fighter','serpentfly',terrain(1)).s.battle.landHP,30);
+  const thunder=revolt(null,null,'thunderspawn','fighter',(state,id)=>{
+    for(const at of [6,8])Object.assign(state.tiles[at],{owner:0,type:1,unit:{id:id('fighter'),hp:40}});
+  }).s.battle;
+  assert.equal(thunder.attackST,50);
+  console.log('Revolt eight exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   for(const [attacker,elementalGuard] of [['flameacolyte','pillarofflame'],['aquaacolyte','kingtortoise'],['terraacolyte','dwarf'],['aeroacolyte','griffon']]){
     const matched=begins(null,null,attacker,elementalGuard);
