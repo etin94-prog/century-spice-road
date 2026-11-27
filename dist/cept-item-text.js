@@ -81,6 +81,7 @@ const describeCepterItem=(()=>{
     const key=C.combo.key(card),name=aliases[key]||key,firstEdition=C.edition==='ps1'||C.edition==='saturn';
     const pieces=[],scroll=card.category==='scroll',fixedST=['reflect','nullify'].includes(card.effect);
     const signed=(label,n)=>label+' '+(n>0?'+':'−')+Math.abs(n);
+    if(C.edition==='3ds'&&key==='lifestealer')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(fixedST)pieces.push('전투 ST를 0으로 맞춥니다.');
     if(!scroll&&(card.st||card.hp))pieces.push('전투 중 '+[card.st&&signed('ST',card.st),card.hp&&signed('HP',card.hp)].filter(Boolean).join(' · '));
     if(scroll&&card.st)pieces.push('두루마리 공격력 '+card.st);

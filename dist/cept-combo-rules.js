@@ -98,7 +98,7 @@ const CepterCombos = (() => {
         else if(e==='mutation'){
           clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
-        if(s.edition==='revolt'&&['greed','vitality','disease'].includes(e))draw(p,s);
+        if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){
           const a=v.unit;

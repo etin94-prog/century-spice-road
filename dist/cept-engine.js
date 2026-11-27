@@ -6,7 +6,7 @@ function createCepter(edition="ps2"){
   const maps=editions?editions.boards(edition,originalMaps):originalMaps;
   const original=typeof module==='undefined'?CepterCards:require('./cept-cards.js');
   const board=s=>maps[(s.mapId?.startsWith('ps2-')&&!s.layoutRevision?'legacy-':'')+(s.mapId||'classic')];
-  const firstEdition=edition==='saturn'||edition==='ps1',revolt=edition==='revolt';
+  const firstEdition=edition==='saturn'||edition==='ps1',revolt=edition==='revolt',handheld=edition==='3ds';
   const elements=['화','수','지','풍'];
   const creature=(name,element,st,hp,cost)=>({name,kind:'creature',element,st,hp,cost});
   const item=(name,st,hp,cost)=>({name,kind:'item',st,hp,cost});
@@ -148,13 +148,13 @@ function createCepter(edition="ps2"){
     return storyDecks.get(name);
   }
   const teamLayouts={teams:[0,1,0,1],'teams-12':[0,0,1,1],'teams-14':[0,1,1,0]};
-  function start(count,humans,target=4000,mapId=editions?edition+'-1':'classic',template=presets.intro,aiBook=template,aiLevel=0,alliance='auto',roundLimit=0){
+  function start(count,humans,target=4000,mapId=handheld?'3ds-original-bend':editions?edition+'-1':'classic',template=presets.intro,aiBook=template,aiLevel=0,alliance='auto',roundLimit=0){
     const storyNames=storyAlliances[mapId];
     const storyCast=!!storyNames&&['story','story-leo'].includes(aiBook)&&count===4&&(alliance==='teams'||alliance==='auto'&&target===0);
     if(aiBook==='story-leo'&&mapId!=='ps2-14')throw Error('레오 동맹은 콴제에서 선택할 수 있습니다.');
     const mapGoal=target===0;
-    if(mapGoal)target=maps[mapId]?.storyGoal??5000;
-    if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||!(mapGoal&&target===maps[mapId]?.storyGoal||[3000,4000,5000,6000,7000,8000,9000,10000,12000].includes(target))||!Object.hasOwn(maps,mapId)||!validBook(template)||(!storyCast&&!validBook(aiBook))||![0,1,2,3].includes(aiLevel))throw Error('대국 설정 오류');
+    if(mapGoal)target=maps[mapId]?.storyGoal??maps[mapId]?.defaultGoal??5000;
+    if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||!(mapGoal&&target===(maps[mapId]?.storyGoal??maps[mapId]?.defaultGoal)||[3000,4000,5000,6000,7000,8000,9000,10000,12000].includes(target))||!Object.hasOwn(maps,mapId)||!validBook(template)||(!storyCast&&!validBook(aiBook))||![0,1,2,3].includes(aiLevel))throw Error('대국 설정 오류');
     if(!['auto','duel',...Object.keys(teamLayouts)].includes(alliance)||Object.hasOwn(teamLayouts,alliance)&&count!==4)throw Error('동맹전은 4인 대국입니다.');
     if(![0,20,30,40,60].includes(roundLimit))throw Error('지원하지 않는 라운드 제한입니다.');
     const layout=teamLayouts[alliance]||(count===4&&alliance==='auto'&&mapGoal&&storyNames?teamLayouts.teams:null);
@@ -238,7 +238,7 @@ function createCepter(edition="ps2"){
   }
   function updatePrices(s,before){
     if(!before)return;
-    if(edition!=='ps2'&&edition!=='saga'){
+    if(!handheld&&edition!=='ps2'&&edition!=='saga'){
       landValues(s).forEach((v,k)=>{s.prices[k]=Math.max(1,s.prices[k]+Math.trunc((v-before[k])/100));});
       return;
     }
@@ -440,10 +440,20 @@ function createCepter(edition="ps2"){
         }
         if(t.type==='성'&&p.flags.length===(m.checkpoints||m.forts).length){
           const cashBeforeLap=p.cash;p.lap++;p.flags=[];
-          const lapIncrement=edition==='saga'?m.bonus/10:20;
-          p.cash+=m.bonus+Math.floor(lapIncrement*(p.lap-1))+20*s.tiles.filter(v=>v.owner===s.turn).length;
-          const bonus=(p.symbols||[]).reduce((sum,n,k)=>sum+(n&&s.players.every(q=>q===p||q.symbols[k]<n)?n*s.prices[k]:0),0);
-          p.cash+=Math.floor(bonus/10);if(p.sagaFeast){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);delete p.sagaFeast;}if(p.status==='triumph'){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);extraSpells.clearCepter(p);}
+          const lapIncrement=edition==='saga'||handheld?m.bonus/10:20;
+          const lands=s.tiles.filter(v=>handheld?allied(s,v.owner,s.turn):v.owner===s.turn).length;
+          p.cash+=m.bonus+Math.floor(lapIncrement*(p.lap-1))+(handheld?s.players.length*10:20)*lands;
+          if(handheld){
+            for(const [k,n] of p.symbols.entries()){
+              if(!n)continue;
+              const sideCount=seat=>s.players.reduce((sum,q,i)=>sum+(allied(s,seat,i)?q.symbols[k]:0),0);
+              const own=sideCount(s.turn);
+              if(s.players.every((_,i)=>allied(s,s.turn,i)||sideCount(i)<own))p.cash+=Math.floor(n*s.prices[k]/10);
+            }
+          }else{
+            const bonus=p.symbols.reduce((sum,n,k)=>sum+(n&&s.players.every(q=>q===p||q.symbols[k]<n)?n*s.prices[k]:0),0);
+            p.cash+=Math.floor(bonus/10);
+          }if(p.sagaFeast){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);delete p.sagaFeast;}if(p.status==='triumph'){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);extraSpells.clearCepter(p);}
           for(const v of s.tiles){
             if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit)))continue;
             const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+Math.floor(max/5));
@@ -742,7 +752,7 @@ function createCepter(edition="ps2"){
         if(a.u.enchant==='regeneration')a.hp+=20;
         if(a.u.enchant==='vitality'){a.hp+=20;a.st+=20;}
         if(a.u.enchant==='disease'){a.hp-=20;a.st-=20;}
-        if(!revolt&&a.u.enchant==='greed')a.hp-=10;
+        if(!revolt&&!handheld&&a.u.enchant==='greed')a.hp-=10;
         if(a.element===-1&&extra.boost('borgess',a))a.hp+=20;
         if(a===A&&extra.boost('tetramorph',a))a.hp-=20;
         if(extra.boost('virus',a))a.hp-=10;
@@ -825,7 +835,17 @@ function createCepter(edition="ps2"){
       for(let j=0;j<(['cerberus','pushpull'].includes(a.n)?2:1)&&a.hp>0&&d.hp>0&&a.away==null&&d.away==null&&!a.stolen&&!d.stolen;j++){
         const start=lines.length;
         if(!muted&&a.u.enchant==='paralysis'){lines.push('마비 · 공격 불가');break;}
-        const effect=hit(a,d)||'hit';b.strikes.push({effect,side:a===A?0:1,hp:health(),notes:lines.slice(start)});
+        const effect=hit(a,d)||'hit';
+        if(handheld&&!muted&&a.hp>0&&a.st>0&&a.gear?.category!=='scroll'&&['block','reflect'].includes(effect)){
+          if(a.n==='ixtol'){d.hp=0;lines.push('설욕 · 상대 파괴');}
+          else if(a.n==='kodama'||a.g==='lifestealer'){
+            d.u.mhp=Math.max(0,fx.max(d.u)-30);
+            d.u.hp=Math.min(d.u.hp,d.u.mhp);
+            d.hp=d.u.mhp?Math.min(d.hp,d.u.mhp+d.land):0;
+            lines.push('설욕 · 상대 최대 HP −30');
+          }
+        }
+        b.strikes.push({effect,side:a===A?0:1,hp:health(),notes:lines.slice(start)});
       }
     }
     const creatureEnd=!muted&&!active('basaltidol');
@@ -883,8 +903,10 @@ function createCepter(edition="ps2"){
       const opponent=a===A?D:A;
       if(a.g==='eternalmail'&&a.hp>0)s.players[a.seat].book.unshift(a.item);
       if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent);
-      if(a.n==='valkyria'&&a.hp>0&&opponent.hp<=0){
-        const st=fx.strength(a.u);a.u.st=Math.max(st,Math.min(80,st+10));lines.push('발키리아 · 승리 후 ST '+a.u.st);
+      if((a.n==='valkyria'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0){
+        const st=fx.strength(a.u);
+        a.u.st=Math.max(st,Math.min(a.n==='ixtol'?100:80,st+10));
+        lines.push(a.c.name+' · 승리 후 ST '+a.u.st);
       }
     }
     const onLand=a=>a.hp>0&&a.away==null&&!a.stolen&&!a.returned;
@@ -941,7 +963,7 @@ function createCepter(edition="ps2"){
     }
     const sides=board(s).die;
     const die=()=>fx.idol(s,'ironidol')?4+Math.floor(Math.random()*3):1+Math.floor(Math.random()*sides);
-    const roll=()=>p.status==='haste'?6+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
+    const roll=()=>p.status==='haste'?(handheld?5:6)+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
     const faces=fixed!=null?[fixed]:s.fly?[roll(),roll()]:[roll()];
     return {faces,total:faces.reduce((a,b)=>a+b,0),sides};
   }
@@ -980,7 +1002,7 @@ function createCepter(edition="ps2"){
     const previousChains=trackChains?chainCounts(s):null;
     if(k==='roll'){delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
-    const before=!gemTerrain&&(edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
+    const before=!gemTerrain&&(handheld||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
     function mapEffect(type,label,tile=p.pos,extra={}){
       s.mapEffect={sequence:(s.mapEffect?.sequence||0)+1,type,label,tile,source:p.pos,...extra};
     }
@@ -1488,5 +1510,7 @@ function createCepter(edition="ps2"){
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.
 const modernEditionsReady=typeof module!=='undefined'||typeof CepterEditionModern!=='undefined';
-const Cepter=createCepter(['dc','saturn','ps1'].includes(editionParam)||modernEditionsReady&&['saga','revolt','begins'].includes(editionParam)?editionParam:'ps2');
+const handheldEditionReady=typeof module!=='undefined'||typeof CepterEdition2012!=='undefined';
+const Cepter=createCepter(['dc','saturn','ps1'].includes(editionParam)||handheldEditionReady&&editionParam==='3ds'||
+  modernEditionsReady&&['saga','revolt','begins'].includes(editionParam)?editionParam:'ps2');
 if(typeof module!=='undefined'){module.exports=Cepter;module.exports.createEdition=createCepter;}

@@ -178,16 +178,18 @@ const describeCepterSpell=(()=>{
     const e=card.effect,edition=C.edition;
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
     switch(e){
-      case 'greed':if(edition==='revolt')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';break;
+      case 'greed':if(edition==='revolt'||edition==='3ds')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';break;
       case 'growthbody':if(edition==='revolt')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';break;
-      case 'haste':if(edition==='revolt')return '고른 셉터가 다음 두 번 굴리는 주사위 합을 6~8로 제한합니다.';break;
+      case 'haste':if(edition==='3ds')return '고른 셉터의 주사위 눈을 2라운드 동안 5~7로 제한합니다.';if(edition==='revolt')return '고른 셉터가 다음 두 번 굴리는 주사위 합을 6~8로 제한합니다.';break;
       case 'disease':case 'vitality':
-        if(edition==='revolt')return '고른 크리처의 전투 ST와 HP를 각각 20 '+(e==='disease'?'낮추고':'높이고')+' 카드 한 장을 뽑습니다.';break;
+        if(edition==='revolt'||edition==='3ds')return '고른 크리처의 전투 ST와 HP를 각각 20 '+(e==='disease'?'낮추고':'높이고')+' 카드 한 장을 뽑습니다.';break;
       case 'manna':return '(완료한 주회 수 + 1) × '+(card.magicPerLap||50)+'G를 얻습니다.';
       case 'fly':return edition==='revolt'?'이번 차례에 주사위를 3개 굴립니다.':'이번 차례에 주사위를 2개 굴립니다.';
       case 'bolt':return '고른 '+(['ps1','saturn'].includes(edition)?'':'적 ')+'크리처에게 20 피해를 줍니다.';
       case 'landdrain':return '고른 적의 보유 영지 한 곳당 '+(edition==='saga'?20:30)+'G를 빼앗습니다.';
-      case 'reincarnation':if(edition==='revolt'||edition==='begins')return '현재 손패를 모두 버리고 버린 수보다 한 장 더 뽑습니다.';break;
+      case 'reincarnation':if(['revolt','begins','3ds'].includes(edition))return '현재 손패를 모두 버리고 버린 수보다 한 장 더 뽑습니다.';break;
+      case 'upheaval':case 'sink':case 'wildgrowth':case 'weathering':
+        if(edition==='3ds')return '고른 레벨 3 이하 영지를 '+({upheaval:'화',sink:'수',wildgrowth:'지',weathering:'풍'}[e])+' 속성으로 바꿉니다.';break;
       case 'quintessence':if(edition==='revolt')return '고른 레벨 4 이하 영지를 복합 속성으로 바꿉니다.';break;
     }
     return text[e]||C.spellDescriptions?.[e];

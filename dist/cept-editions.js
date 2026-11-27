@@ -3,8 +3,16 @@ const CepterEditions=(()=>{
   // Saga, Revolt and Begins live in their own file so the older editions do not download them.
   const modern=typeof module==='undefined'?(typeof CepterEditionModern==='undefined'?null:CepterEditionModern):require('./cept-edition-data-modern');
   if(modern){Object.assign(data.cards,modern.cards);Object.assign(data.maps,modern.maps);}
-  const modernSets={saga:'culdcept-saga',revolt:'culdcept-revolt',begins:'culdcept-begins'};
-  const names={ps2:'컬드셉트 2 · PS2',dc:'컬드셉트 세컨드 · DC',saturn:'컬드셉트 · 새턴',ps1:'컬드셉트 익스팬션 · PS1',saga:'컬드셉트 사가 · Xbox 360',revolt:'컬드셉트 리볼트 · 3DS',begins:'컬드셉트 비긴즈'};
+  const handheld=typeof module==='undefined'?(typeof CepterEdition2012==='undefined'?null:CepterEdition2012):require('./cept-edition-data-2012');
+  if(handheld)data.cards['3ds']=handheld.cards;
+  const handheldRefs={
+    cards:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-card-lists/culdcept-3ds-complete-card-list',
+    maps:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-map-list',
+    rules:'https://www.nintendo.co.jp/3ds/acbj/man_acbj2.pdf',
+    decks:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-player-decks'
+  };
+  const modernSets={'3ds':'culdcept-3ds',saga:'culdcept-saga',revolt:'culdcept-revolt',begins:'culdcept-begins'};
+  const names={ps2:'컬드셉트 2 · PS2',dc:'컬드셉트 세컨드 · DC',saturn:'컬드셉트 · 새턴',ps1:'컬드셉트 익스팬션 · PS1','3ds':'컬드셉트 · 3DS 2012',saga:'컬드셉트 사가 · Xbox 360',revolt:'컬드셉트 리볼트 · 3DS',begins:'컬드셉트 비긴즈'};
   const categories={ed:'dual',en:'neutral',ef:'fire',ew:'water',ee:'earth',ea:'air',iw:'weapon',ia:'armor',it:'tool',is:'scroll',si:'sflash',mi:'mflash',sc:'senchant',mc:'menchant',sa:'공격 주문',sd:'방어 주문',sm:'이동 주문',so:'기타 주문'};
   const land={ef:'R',ew:'B',ee:'G',ea:'Y',cd:'+[]',nf:'R',nw:'B',ne:'G',na:'Y',nn:'N'};
   const equipment={xw:'Weapon',xa:'Armor',xt:'Tool',xs:'Scroll'};
@@ -55,6 +63,7 @@ const CepterEditions=(()=>{
   }
   const sagaShrineKinds={'mt-etumer':{4:'light',52:'dark'},zanador:{46:'light',64:'dark'}};
   function boards(edition,original){
+    if(edition==='3ds')return {...original.handheldPractice};
     const result={};
     for(const [index,m] of data.maps[edition].entries()){
       const types=m.types.map(t=>tiles[t]),forts=types.flatMap((t,i)=>String(t).endsWith('요새')?[i]:[]);
@@ -79,6 +88,15 @@ const CepterEditions=(()=>{
   }
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');
   const modernSpellEffects={
+    '3ds':{
+      barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',disease:'disease',drainmagic:'drainmagic',
+      escape:'escape',find:'find',foresight:'foresight',forestleap:'forestleap',lakeleap:'lakeleap',
+      mountainleap:'mountainleap',plainleap:'plainleap',greed:'greed',growthbody:'growthbody',haste:'haste',
+      holyword1:'word1',holyword2:'holyword2',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
+      landdrain:'landdrain',lifestream:'lifestream',magicbolt:'bolt',manna:'manna',prophecy:'prophecy',rayoflaw:'rayoflaw',
+      reincarnation:'reincarnation',shatter:'shatter',sink:'sink',upheaval:'upheaval',vitality:'vitality',
+      weathering:'weathering',wildgrowth:'wildgrowth',windofhope:'windofhope'
+    },
     saga:{magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
@@ -162,7 +180,7 @@ const CepterEditions=(()=>{
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
     for(const [i,r] of data.cards[edition].entries()){
-      const slug=r.name.toLowerCase().replace(/[^a-z0-9]/g,''),id=index.get(slug),base=cards[id];
+      const slug=r.slug||r.name.toLowerCase().replace(/[^a-z0-9]/g,''),id=index.get(slug),base=cards[id];
       const category=categories[r.type],kind=r.type[0]==='e'?'creature':r.type[0]==='i'?'item':'spell';
       const path=base?.catalog.path||((kind==='creature'?category:kind+'s')+'/'+slug);
       const traits={'援護':'support','再生':'regenerate','先制':'first','後手':'last','防御型':'stationary',...(edition==='revolt'?{Vigorous:'vigorous'}:{})};
@@ -179,11 +197,11 @@ const CepterEditions=(()=>{
       const pair=edition==='saga'?sagaPairs[slug]:null;
       const element=pair?-2:battleElements.indexOf(category);
       const format=(arr,lookup)=>arr.map(k=>lookup[k]).filter(Boolean).join(',');
-      const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
+      const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:edition==='3ds'?handheldRefs.cards:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
         ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
       const c={...(compatible?base:{}),name,catalog,element,kind,category,cost:r.cost,ban:r.ban.map(k=>equipment[k].toLowerCase()),catalogOnly:!(compatible||variant||simple),unlisted:false,hasArt:!!base,...(modernSets[edition]?{editionArt:r.image}:{firstArt:r.image})};
       if(kind==='spell'&&modernSets[edition]){
-        const effect=modernSpellEffects[edition][slug]||(sharedModernSpells.includes(slug)?slug:null);
+        const effect=modernSpellEffects[edition][slug]||(edition!=='3ds'&&sharedModernSpells.includes(slug)?slug:null);
         if(effect){c.effect=effect;c.catalogOnly=false;}
         if(edition==='begins'&&slug==='manna')c.magicPerLap=100;
       }
@@ -202,6 +220,11 @@ const CepterEditions=(()=>{
       }
       if(edition==='revolt'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
+      if(edition==='3ds'&&slug==='countershield')Object.assign(c,{catalogOnly:false,effect:'reflect',st:0,hp:0});
+      if(edition==='3ds'&&slug==='lifestealer')Object.assign(c,{catalogOnly:false,st:40,hp:0});
+      if(edition==='3ds'&&slug==='kodama')Object.assign(c,{catalogOnly:false,support:true});
+      if(edition==='3ds'&&slug==='ixtol')c.catalogOnly=false;
+      if(edition==='3ds'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}
       if(first&&slug==='giantspider'){c.paralyze=true;c.statusRaces=['rh','rb'];}
       if(first&&slug==='giantsnake'){c.poison=true;c.statusRaces=['rh','rb','rd'];}
@@ -242,6 +265,6 @@ const CepterEditions=(()=>{
       presets[name]=build([...ids,...presets.fire]);
     }
   }
-  return {names,boards,configure};
+  return {names,boards,configure,handheldRefs,handheldMaps:handheld?.maps};
 })();
 if(typeof module!=='undefined')module.exports=CepterEditions;

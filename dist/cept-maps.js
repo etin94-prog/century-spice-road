@@ -60,6 +60,23 @@ const CepterMaps=(()=>{
     [4,12],100,12,[...loop(16),[14,16],[16,17],[17,18],[18,6],[2,19],[19,17],[17,20],[20,10]],Array(21).fill(0));
   revoltPractice['revolt-original-circle-court']={...circleCourt,areaCount:1,section:'arena',graph:true,startCash:250,
     castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
+  const handheldBend=map('솔바람 굽이 · 창작 지도',[...ring,[2,3],[3,3],[3,4],[4,4]],
+    ['성',0,1,0,3,1,2,2,1,3,1,0,'남쪽 요새',2,3,0,1,2,3,0],
+    [12],100,6,[...loop(16),[2,16],[16,17],[17,18],[18,19],[19,7]],Array(20).fill(0),200);
+  const handheldMarket=map('물결 장터 · 창작 지도',[...ring,[2,2],[3,2],[3,3],[3,4],[4,4]],
+    ['성',1,0,2,'북쪽 요새',3,1,1,2,3,0,1,'남쪽 요새',0,2,3,1,'신전',3,2,0],
+    [4,12],100,8,[...loop(16),[1,16],[16,17],[17,18],[18,19],[19,20],[20,7]],Array(21).fill(0),250);
+  const farRing=ring.map(([row,col])=>[row+1,col+6]);
+  const twoShore=[...ring,...farRing,[3,6],[4,6]];
+  const handheldShore=map('쌍안 해협 · 창작 지도',twoShore,
+    ['성',1,2,0,'북쪽 요새',3,0,1,3,0,2,2,0,1,3,1,2,0,2,0,'동쪽 요새',3,1,0,1,3,2,3,0,2,1,3,1,'신전'],
+    [4,20],100,9,[...loop(16),...loop(16).map(([a,b])=>[a+16,b+16]),[6,32],[32,31],[7,33],[33,30]],
+    twoShore.map(([,col])=>Number(col>6)),250);
+  const handheldPractice={
+    '3ds-original-bend':{...handheldBend,areaCount:1,section:'arena',graph:true,startCash:200,fortBonus:100,defaultGoal:6000},
+    '3ds-original-market':{...handheldMarket,areaCount:1,section:'arena',graph:true,startCash:250,fortBonus:100,defaultGoal:7000},
+    '3ds-original-shore':{...handheldShore,areaCount:2,section:'arena',graph:true,startCash:250,fortBonus:120,defaultGoal:8000}
+  };
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];
@@ -76,7 +93,8 @@ const CepterMaps=(()=>{
   }
   Object.defineProperties(maps,{
     sagaPractice:{value:sagaPractice},
-    revoltPractice:{value:revoltPractice}
+    revoltPractice:{value:revoltPractice},
+    handheldPractice:{value:handheldPractice}
   });
   return maps;
 })();

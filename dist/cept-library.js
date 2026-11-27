@@ -11,29 +11,47 @@ else{
     if(group.children.length)stageSelect.append(group);
   }
   document.title=document.querySelector('.intro h1').textContent=CepterEditions.names[C.edition];
-  const modernEdition={saga:'CULDCEPT SAGA',revolt:'CULDCEPT REVOLT',begins:'CULDCEPT BEGINS'}[C.edition];
+  const modernEdition={'3ds':'CULDCEPT 3DS · 2012',saga:'CULDCEPT SAGA',revolt:'CULDCEPT REVOLT',begins:'CULDCEPT BEGINS'}[C.edition];
   document.querySelector('.intro [lang=en]').textContent=modernEdition||(C.edition==='dc'?'CULDCEPT SECOND':'CULDCEPT');
   const profile={dc:'2nd',saturn:'1st',ps1:'1ex'}[C.edition];
   const references=el('details');references.append(el('summary','판본 자료'));
   const list=el('p');
-  if(modernEdition)list.append(sourceLink('https://culdceptcentral.com/culdcept-'+C.edition,'판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+C.edition+'/table','지도 목록'));
+  if(C.edition==='3ds'){
+    const ref=CepterEditions.handheldRefs,maps=CepterEditions.handheldMaps;
+    list.append(sourceLink(ref.cards,'2012 카드 도감'),' · ',sourceLink(ref.maps,'2012 지도 목록'),' · ',
+      sourceLink(ref.rules,'공식 매뉴얼'),' · ',sourceLink(ref.decks,'공개 플레이어 북'));
+    const archive=el('details');archive.append(el('summary','원작 지도 수치 · '+maps.length+'개'));
+    const pick=el('select');pick.setAttribute('aria-label','2012 지도 자료');
+    pick.append(...maps.map((m,i)=>new Option(m.name,i)));
+    const values=el('p'),show=()=>{
+      const m=maps[+pick.value];
+      const sections={story:'스토리',arena:'대전',download:'다운로드'};
+      values.textContent=[sections[m.section],m.tiles?m.tiles+'칸':null,m.areas?m.areas+'지역':null,
+        m.die?'최대 주사위 '+m.die:null,m.goal?'목표 '+m.goal+'G':null,
+        m.start!=null?'시작 '+m.start+'G':null,m.lap!=null?'주회 '+m.lap+'G':null,
+        m.forts?'요새 '+m.forts+' · '+m.fortBonus+'G':null].filter(Boolean).join(' · ');
+    };
+    pick.onchange=show;show();archive.append(pick,values);references.append(list,archive);
+  }else if(modernEdition)list.append(sourceLink('https://culdceptcentral.com/culdcept-'+C.edition,'판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+C.edition+'/table','지도 목록'));
   else list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
   if(modernEdition);
   else if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
   else list.append(' · ',sourceLink('https://culdceptcentral.com/culdcept-ps2dc/culdcept-ps2dc-guides/706-cps2-guides-dcfaq','DC판 공략'));
-  references.append(list);$('config').before(references);
+  if(C.edition!=='3ds')references.append(list);
+  $('config').before(references);
   $('alliance').options[0].textContent='개인전';
 }
 const stageFeatureLabels={'Temple':'신전','Shrine':'성소','Fortune-Teller':'점술관','Fortune Teller':'점술관','Card Shop':'카드 상점','none':'없음'};
 function showStage(){
   const m=C.maps[stageSelect.value],preview=$('stagePreview');
-  $('target').querySelector('[value="0"]').textContent=(m.storyGoal?'스토리 목표 · ':'기본 목표 · ')+(m.storyGoal||5000)+'G';
+  $('target').querySelector('[value="0"]').textContent=(m.storyGoal?'스토리 목표 · ':'기본 목표 · ')+(m.storyGoal||m.defaultGoal||5000)+'G';
   if(m.graph){
     preview.hidden=false;preview.querySelector('img').hidden=true;
     const unlinked=m.types.filter((type,index)=>['전송진','강제 전송진'].includes(type)&&m.transit?.[index]==null).length;
     const warning=unlinked?' · 목적지 미설정 전송진 '+unlinked+'곳':'';
     const caption=preview.querySelector('figcaption');
     caption.textContent=m.types.length+'칸 · '+m.areaCount+'지역 · 요새 '+m.forts.length+'곳'+warning;
+    if(C.edition==='3ds')caption.append(' · 단일 주사위 1–'+m.die+' · 시작 '+m.startCash+'G');
     if(m.source)caption.append(' · ',sourceLink(m.source,'지도 참고 자료'));
     return;
   }

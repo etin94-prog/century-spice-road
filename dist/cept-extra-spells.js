@@ -85,6 +85,7 @@ const CepterExtraSpells=(()=>{
         if(empty||(Object.hasOwn(shifts,e)||e==='revoltlandtransfer')&&t.owner!==s.turn)return [];
         if(hybridShifts[e]&&(t.level>3||!Object.hasOwn(hybridShifts[e],t.type)))return [];
         if(e==='quintessence'&&s.edition==='revolt'&&t.level>=5)return [];
+        if(s.edition==='3ds'&&['sink','upheaval','weathering','wildgrowth'].includes(e)&&t.level>3)return [];
         if(!fx.targetable(s,t,category,e==='removecurse'))return [];
         if((hasTerrain||e==='influence')&&fx.idol(s,'jadeidol'))return [];
         if((e==='meteor'||e==='locust')&&fx.blockedLevel(s,t))return [];
@@ -247,7 +248,7 @@ const CepterExtraSpells=(()=>{
           case 'lightcraft':s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});break;
           case 'massgrowth':for(const v of land){if(fx.immuneHP(v))continue;const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,80-max));v.unit.mhp=max+gain;v.unit.hp+=gain;}break;
           case 'rayoflaw':for(const other of s.players)other.hand=other.hand.filter(id=>cards[id].cost<100);break;
-          case 'reincarnation':{const n=p.hand.length+Number(s.edition==='revolt'||s.edition==='begins');p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
+          case 'reincarnation':{const n=p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
           case 'revelation':case 'telegnosis':setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);if(e==='telegnosis')p.book.unshift(ids.get(e));break;
           case 'selenear':p.cash+=100*owning(s,s.turn).filter(t=>t.type===2).length;break;
           case 'soltis':return 'soltisPower';

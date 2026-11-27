@@ -569,6 +569,30 @@ const {chromium}=require('playwright');
       console.log('revolt '+width+'x'+height+': Spell Circle illustrated free choice and post-movement resume by touch OK');
       await circlePage.close();
     }
+    for(const [width,height] of [[320,568],[844,390]]){
+      const handheldPage=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await handheldPage.route('https://**',r=>r.abort());
+      const url=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));
+      url.searchParams.set('edition','3ds');
+      await handheldPage.goto(url.href);
+      assert.equal(await handheldPage.locator('#editionChoice').inputValue(),'3ds');
+      await handheldPage.getByText('판본 자료',{exact:true}).tap();
+      await handheldPage.getByText('원작 지도 수치 · 41개',{exact:true}).tap();
+      const archive=handheldPage.getByLabel('2012 지도 자료');
+      assert.equal(await archive.locator('option').count(),41);
+      assert.match(await archive.locator('..').innerText(),/최대 주사위 6.*목표 6000G/);
+      await handheldPage.getByText('판본 자료',{exact:true}).tap();
+      await handheldPage.selectOption('#mapChoice','3ds-original-bend');
+      await handheldPage.locator('#config .match-start .primary').tap();
+      assert.equal(await handheldPage.locator('#map .tile').count(),20);
+      assert.match(await handheldPage.locator('#round').innerText(),/6000G/);
+      await handheldPage.locator('#mapRoll').tap();
+      await handheldPage.locator('#game:not([inert])').waitFor();
+      assert.equal(await handheldPage.evaluate(()=>s.mapEffect.faces.length),1);
+      assert.ok(await handheldPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+      console.log('3ds 2012 '+width+'x'+height+': independent edition, 41-map archive, original board and single die by touch OK');
+      await handheldPage.close();
+    }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
     await archerPage.route('https://**',r=>r.abort());
     await archerPage.goto(pathToFileURL(path.resolve(__dirname,'../dist/cept.html')).href);

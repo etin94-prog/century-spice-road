@@ -244,6 +244,8 @@ const CepterCreatureText=(()=>{
     if(card.stationary)pieces.push('방어 전용. 손패에서 침략하거나 영지 이동에 사용할 수 없습니다.');
     if(card.support&&!(firstEdition&&key==='sorcerer'))pieces.push('지원. 장비를 고를 때 크리처를 사용할 수 있습니다.');
     if(card.regenerate&&!['greenmold','healer'].includes(key))pieces.push('생존하면 전투가 끝날 때 HP를 최대치까지 회복합니다.');
+    if(C.edition==='3ds'&&key==='ixtol')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대를 파괴합니다. 승리하면 기본 ST가 최대 100까지 10 오릅니다.');
+    if(C.edition==='3ds'&&key==='kodama')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');

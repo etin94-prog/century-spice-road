@@ -3,7 +3,7 @@ const ps2=require('../dist/cept-engine');
 const describeSpell=require('../dist/cept-spell-text');
 const describeItem=require('../dist/cept-item-text');
 const creatureText=require('../dist/cept-creature-text');
-for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
+for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins']){
   const C=edition==='ps2'?ps2:ps2.createEdition(edition);
   const spells=C.cards.filter(c=>!c.unlisted&&c.kind==='spell');
   const find=effect=>spells.find(c=>!c.catalogOnly&&c.effect===effect);
@@ -18,7 +18,7 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
   assert.match(describeSpell(C,find('manna')),edition==='begins'?/100G/:/50G/);
   if(find('fly'))assert.match(describeSpell(C,find('fly')),edition==='revolt'?/3개/:/2개/);
   if(find('landdrain'))assert.match(describeSpell(C,find('landdrain')),edition==='saga'?/20G/:/30G/);
-  if(find('reincarnation'))assert.equal(describeSpell(C,find('reincarnation')).includes('한 장 더'),['revolt','begins'].includes(edition));
+  if(find('reincarnation'))assert.equal(describeSpell(C,find('reincarnation')).includes('한 장 더'),['revolt','begins','3ds'].includes(edition));
   const items=C.cards.filter(c=>!c.unlisted&&c.kind==='item');
   for(const card of items){
     const summary=describeItem(C,card);
@@ -1104,4 +1104,75 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const repaid=debtor(-70);assert.equal(repaid.cash,10);
   const restart=debtor(-100);assert.deepEqual([restart.cash,restart.pos,restart.flags],[360,0,[]]);
   console.log('Revolt forced sale yields 80 percent, depleted player restarts at gate with 1.5x lap magic');
+}
+
+{
+  const C=ps2.createEdition('3ds'),archives=require('../dist/cept-edition-data-2012');
+  const names=Object.keys(C.maps),intro='3ds-original-bend',shore='3ds-original-shore';
+  const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const catalog=C.cards.filter(c=>!c.unlisted);
+  assert.equal(catalog.length,487);
+  assert.equal(new Set(catalog.map(c=>C.combo.key(c))).size,487);
+  assert.equal(archives.maps.length,41);
+  assert.deepEqual(archives.maps.find(m=>m.name==='Dunnan'),{name:'Dunnan',section:'story',goal:6000,die:6,areas:1,tiles:18,start:200,lap:200,forts:'S',fortBonus:100});
+  assert.ok(catalog.every(c=>!c.editionArt));
+  assert.equal(names.length,3);
+  assert.ok(Object.values(C.presets).every(C.validBook));
+  assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,3);
+  for(const mapId of names)for(const count of [2,3,4]){
+    const map=C.maps[mapId];
+    assert.ok(map.links.every((links,i)=>links.length&&links.every(j=>map.links[j].includes(i))));
+    const s=C.start(count,0,0,mapId,C.presets.fire,C.presets.stronghold,3,count===4?'teams':'duel');
+    assert.equal(s.players[0].cash,map.startCash);
+    const limit=20000;
+    for(let n=0;n<limit&&s.phase!=='over';n++)assert.ok(C.play(s,C.ai(s)),mapId+' '+s.phase);
+    assert.equal(s.phase,'over',mapId+' '+count+' seats');
+  }
+  const base=C.start(4,4,0,intro);
+  assert.deepEqual([base.edition,base.target,base.players[0].cash,base.prices.length],['3ds',6000,200,4]);
+  base.phase='roll';assert.ok(C.play(base,['roll']));
+  assert.equal(base.mapEffect.faces.length,1);assert.ok(base.die>=1&&base.die<=6);
+  base.phase='roll';base.fly=true;assert.ok(C.play(base,['roll']));
+  assert.equal(base.mapEffect.faces.length,2);
+  base.phase='roll';base.players[0].status='haste';assert.ok(C.play(base,['roll']));
+  assert.ok(base.die>=5&&base.die<=7);
+
+  const lap=C.start(4,4,0,shore,undefined,undefined,0,'teams');
+  Object.assign(lap,{phase:'fork',die:1,remaining:1});
+  Object.assign(lap.players[0],{pos:15,previous:14,lap:1,flags:[4,20],symbols:[3,0,0,0,0,0,0,0]});
+  lap.players[2].symbols[0]=2;lap.players[1].symbols[0]=4;
+  Object.assign(lap.tiles[10],{owner:2,unit:{id:id('goblin'),hp:30}});
+  assert.ok(C.play(lap,['route',0]));
+  assert.deepEqual([lap.players[0].lap,lap.players[0].cash],[2,568]);
+
+  const fight=(attacker,gear,shield,st)=>{
+    const s=C.start(2,2,0,intro);
+    const attackerId=id(attacker),guard=id('minotaur');assert.ok(attackerId>=0&&guard>=0);
+    Object.assign(s,{phase:'attack',battle:{at:3,inv:attackerId,atkItem:null,defItem:null}});
+    Object.assign(s.tiles[3],{type:1,owner:1,unit:{id:guard,hp:40}});
+    if(st!=null){
+      s.battle.from=8;
+      Object.assign(s.tiles[8],{owner:0,unit:{id:attackerId,hp:C.cards[attackerId].hp,st}});
+    }
+    s.players.forEach(q=>q.cash=1000);
+    s.players[0].hand=gear?[id(gear)]:[];s.players[1].hand=shield?[id(shield)]:[];
+    assert.ok(C.play(s,[gear?'equip':'bare',...(gear?[0]:[])]));
+    assert.ok(C.play(s,[shield?'equip':'bare',...(shield?[0]:[])]));
+    return s;
+  };
+  const block=fight('minotaur','lifestealer','gaseousform');
+  assert.ok(block.battle.lines.some(x=>x.includes('최대 HP −30')));
+  assert.equal(block.tiles[3].unit.mhp,10);
+  const hit=fight('minotaur','lifestealer',null);
+  assert.ok(!hit.battle.lines.some(x=>x.includes('설욕')));
+  const ixtol=fight('ixtol',null,'gaseousform');
+  assert.ok(ixtol.battle.won);assert.equal(ixtol.tiles[3].unit.st,C.cards[id('ixtol')].st+10);
+  const reflected=fight('ixtol',null,'countershield');
+  assert.equal(reflected.battle.strikes[0].effect,'reflect');assert.equal(reflected.battle.won,false);
+  assert.ok(!reflected.battle.lines.some(x=>x.includes('설욕')));
+  const survives=fight('ixtol',null,'countershield',10);
+  assert.equal(survives.battle.strikes[0].effect,'reflect');assert.ok(survives.battle.won);
+  const zero=fight('ixtol',null,'gaseousform',0);
+  assert.ok(!zero.battle.lines.some(x=>x.includes('설욕')));
+  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income, Revenge and reflect timing OK');
 }
