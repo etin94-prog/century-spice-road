@@ -49,7 +49,7 @@ const CepterExtraSpells=(()=>{
     if(p.status==='fairylight')p.cash+=p.hand.length*10;
     if(p.status==='torture')p.cash-=p.hand.filter(id=>cards[id].kind==='spell').length*20;
   }
-  function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim}){
+  function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
@@ -62,7 +62,7 @@ const CepterExtraSpells=(()=>{
     const replacement=(s,t)=>s.players[t.owner].hand.flatMap((id,j)=>cards[id].kind==='creature'&&canOccupy(cards[id],t)&&deployable(s,id)?[['replaceCard',j,id]]:[]);
     function chariotExits(s,from){
       const tile=s.tiles[from],links=board(s).links;
-      return [...new Set(links[from].flatMap(i=>links[i]))].filter(i=>i!==from&&territoryType(s.tiles[i].type)&&!combo.allied(s,tile.owner,s.tiles[i].owner)&&s.tiles[i].unit?.enchant!=='peace');
+      return [...new Set(links[from].flatMap(i=>links[i]))].filter(i=>i!==from&&territoryType(s.tiles[i].type)&&!combo.allied(s,tile.owner,s.tiles[i].owner)&&canInvade(s,tile.owner,s.tiles[i].owner)&&s.tiles[i].unit?.enchant!=='peace');
     }
     function targets(s,e){
       if(e==='remission'){
@@ -87,7 +87,7 @@ const CepterExtraSpells=(()=>{
         if(e==='quintessence'&&s.edition==='revolt'&&t.level>=5)return [];
         if(s.edition==='3ds'&&['sink','upheaval','weathering','wildgrowth'].includes(e)&&t.level>3)return [];
         if(!fx.targetable(s,t,category,e==='removecurse'))return [];
-        if((hasTerrain||e==='influence')&&fx.idol(s,'jadeidol'))return [];
+        if((hasTerrain||e==='influence')&&(fx.idol(s,'jadeidol')||combo.activeWorld(s)==='solidworld'))return [];
         if((e==='meteor'||e==='locust')&&fx.blockedLevel(s,t))return [];
         if(e==='chariot'&&(t.owner!==s.turn||!chariotExits(s,i).length))return [];
         if((e==='bistair'||e==='parasite')&&!enemy(s,t.owner)||e==='banishingray'&&cards[t.unit.id].element!==-1)return [];

@@ -285,6 +285,7 @@ function createCepter(edition="ps2"){
   const debtSaleValue=(s,t)=>revolt?Math.floor(value(s,t)*.8):value(s,t);
   const revoltLapBase=(map,laps)=>Math.floor(map.bonus*(1+laps/10));
   const personalTotal=(s,i)=>s.tiles.reduce((v,t)=>v+(t.owner===i?value(s,t):0),s.players[i].cash)+(s.players[i].symbols||[]).reduce((v,n,k)=>v+n*s.prices[k],0);
+  const canInvade=(s,attacker,defender)=>defender<0||combo.activeWorld(s)!=='mercifulworld'||total(s,attacker)<=total(s,defender);
   const total=(s,i)=>s.teams?s.players.reduce((sum,_,j)=>sum+(allied(s,i,j)?personalTotal(s,j):0),0):personalTotal(s,i);
   function vacate(t,release=false){t.owner=-1;if(release)t.level=1;t.unit=null;}
   function landValues(s){
@@ -332,14 +333,14 @@ function createCepter(edition="ps2"){
   function stealableGems(buyer,seller){
     return seller.symbols.flatMap((count,e)=>count>0&&buyer.symbols[e]<20?Array(count).fill(e):[]);
   }
-  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim});
+  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade});
   function spellHP(s,t,e){
     const u=t.unit;
     if(e==='bolt')return u.hp-fx.damageAmount(s,t,20);
     if(fx.immuneHP(t))return u.hp;
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
   }
-  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim});
+  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
   const roundGain=s=>Math.min(50,19+s.round);
@@ -610,7 +611,7 @@ function createCepter(edition="ps2"){
     const tile=s.tiles[at],p=s.players[s.turn];
     if(!territoryType(tile.type)||allied(s,tile.owner,s.turn))return [];
     const kind=tile.owner<0?'summon':'invade';
-    if(kind==='invade'&&(tile.unit?.enchant==='peace'||['sagaFear','pacifism'].includes(p.status)))return [];
+    if(kind==='invade'&&(!canInvade(s,s.turn,tile.owner)||tile.unit?.enchant==='peace'||['sagaFear','pacifism'].includes(p.status)))return [];
     return p.hand.flatMap((id,j)=>usableCreature(s,s.turn,id,tile,kind)?[[kind,j]]:[]);
   }
   function towerTargets(s){
@@ -626,7 +627,7 @@ function createCepter(edition="ps2"){
     if(s.phase==='mindseeker')return Array.from({length:Math.min(6,(s.players[s.spellTarget].book?.length??s.players[s.spellTarget].bookCount??0))},(_,j)=>['eraseDraw',j]);
     if(s.phase==='secretTarget')return [...fx.secretTargets(s,s.secretFrom),['secretCancel']];
     if(s.phase==='territoryTarget')return fx.territoryTargets(s,s.abilityFrom);
-    if(s.phase==='teleMove')return board(s).links[s.teleFrom].filter(n=>territoryType(s.tiles[n].type)&&!allied(s,s.tiles[n].owner,s.tiles[s.teleFrom].owner)&&s.tiles[n].unit?.enchant!=='peace').map(n=>['teleTo',n]);
+    if(s.phase==='teleMove')return board(s).links[s.teleFrom].filter(n=>territoryType(s.tiles[n].type)&&!allied(s,s.tiles[n].owner,s.tiles[s.teleFrom].owner)&&canInvade(s,s.tiles[s.teleFrom].owner,s.tiles[n].owner)&&s.tiles[n].unit?.enchant!=='peace').map(n=>['teleTo',n]);
     const i=actor(s),p=s.players[i],t=s.tiles[p.pos],options=[];
     const hand=(kind,k)=>p.hand.forEach((id,j)=>{
       const c=cards[id],usable=kind==='creature'?usableCreature(s,i,id,t,k):
@@ -691,7 +692,7 @@ function createCepter(edition="ps2"){
       case 'towerTarget':return [...towerTargets(s),['towerCancel']];
       case 'towerDeploy':return [...towerCards(s,s.towerAt),['towerCancel']];
       case 'land':
-        if(t.owner>=0&&(handheld||revolt?!allied(s,t.owner,i):t.owner!==i)&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
+        if(t.owner>=0&&(handheld||revolt?!allied(s,t.owner,i):t.owner!==i)&&canInvade(s,i,t.owner)&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
         if(t.owner>=0&&!allied(s,t.owner,i))options.push(['pay']);
         {
           if(t.owner<0&&territoryType(t.type))hand('creature','summon');
@@ -701,7 +702,7 @@ function createCepter(edition="ps2"){
               if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
             for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
-              if(v.unit.enchant!=='thornfetter'&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld||revolt?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
+              if(v.unit.enchant!=='thornfetter'&&canInvade(s,v.owner,s.tiles[dest].owner)&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld||revolt?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
             }
             if(p.cash>=elementCost(v))elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
             p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!sacrificeRequired(s,cards[id])||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id],s)<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
@@ -948,6 +949,11 @@ function createCepter(edition="ps2"){
         }
       }
       if(s.predict)b.revengeValue=(b.revengeValue||0)+(a===A?1:-1)*impact;
+    }
+    if(combo.activeWorld(s)==='mirrorworld')for(const a of sides){
+      const count=s.tiles.filter(v=>v.unit?.id===a.u.id).length;
+      if(count<2)continue;
+      a.hp=0;lines.push('미러 월드 · '+a.c.name+' 격파');
     }
     const priority=(a,d)=>muted?0:a.g==='hourglass'||d.g!=='hourglass'&&(a.c.first||a.gear?.first||a.u.enchant==='wing'||['earthamulet','wingedboots','sling','swordofthefalcon','ringofthesuccubus','ringofthevampire'].includes(a.g)||a.defending&&active('silveridol'))?1:a.c.last||a.gear?.last?-1:0;
     const order=priority(D,A)>priority(A,D)?[D,A]:[A,D];

@@ -188,7 +188,7 @@ const CepterExtraBattle=(()=>{
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(a.n==='fungonoid')grow(a,10);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
-        if((a.n==='basilisk'||a.n==='leveler'&&t.type!==3)&&!onBoard('jadeidol')&&!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed')t.level=Math.max(1,t.level-1);
+        if((a.n==='basilisk'||a.n==='leveler'&&t.type!==3)&&!fx.blockedLevel(s,t))t.level=Math.max(1,t.level-1);
       }
       if(a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
       if(a.u.enchant==='thornfetter'&&a.hp>0)a.hp=Math.min(a.hp,a.u.hp)-20;
@@ -210,7 +210,7 @@ const CepterExtraBattle=(()=>{
         if(a.g==='coinofpiety')p.symbols[symbol]+=10;
       }
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
-      if(a.n==='leviathan'&&!onBoard('jadeidol'))t.type=1;
+      if(a.n==='leviathan'&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld')t.type=1;
       if(a.n==='ghoul'){a.heal=true;a.hp=fx.max(a.u);}
       if(s.edition!=='3ds'&&a.n==='raksas'){
         const most=Math.max(0,...other.symbols),at=other.symbols.indexOf(most);

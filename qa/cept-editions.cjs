@@ -1276,6 +1276,48 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(defender.hand.length,blocked?0:1);
   }
 
+  const solid=fixtures();
+  solid.players[0].cash=1200;solid.players[0].pos=5;
+  solid.players[0].hand=[card('solidworld'),card('watershift')];
+  place(solid,5,0,'fate',40);
+  solid.tiles[5].level=3;
+  assert.ok(C.play(solid,['cast',0]));
+  solid.phase='spell';
+  assert.ok(C.play(solid,['cast',0]));
+  assert.deepEqual(C.choices(solid),[['fizzle']]);
+  assert.ok(C.play(solid,['fizzle']));
+  solid.phase='spellTarget';solid.spellEffect='meteor';
+  assert.deepEqual(C.choices(solid),[['fizzle']]);
+  solid.phase='land';
+  assert.ok(C.play(solid,['element',5,1]));
+  assert.deepEqual([solid.tiles[5].type,solid.tiles[5].level],[1,3]);
+
+  const mercy=fixtures();
+  mercy.players[0].cash=1200;mercy.players[2].cash=1100;mercy.players[1].cash=100;mercy.players[3].cash=100;
+  mercy.players[0].hand=[card('mercifulworld'),card('goblin')];
+  place(mercy,5,2,'goblin',40);
+  place(mercy,6,1,'fate',40);
+  assert.ok(C.play(mercy,['cast',0]));
+  mercy.phase='land';mercy.players[0].pos=6;
+  assert.ok(C.choices(mercy).some(([kind])=>kind==='pay'));
+  assert.ok(!C.choices(mercy).some(([kind,a,b])=>kind==='invade'||kind==='transfer'&&a===5&&b===6));
+  mercy.players[1].cash=3000;
+  assert.ok(C.choices(mercy).some(([kind])=>kind==='invade'));
+  assert.ok(C.choices(mercy).some(([kind,a,b])=>kind==='transfer'&&a===5&&b===6));
+
+  for(const duplicate of [false,true]){
+    const mirror=fixtures();
+    mirror.players[0].hand=[card('mirrorworld')];
+    place(mirror,5,1,'fate',40);
+    if(duplicate)place(mirror,6,3,'fate',40);
+    assert.ok(C.play(mirror,['cast',0]));
+    mirror.phase='attack';mirror.battle={at:5,inv:card('goblin'),atkItem:null,defItem:null};
+    assert.ok(C.play(mirror,['bare'])&&C.play(mirror,['bare']));
+    assert.equal(mirror.battle.won,duplicate);
+    assert.equal(mirror.battle.strikes.length===0,duplicate);
+    if(duplicate)assert.ok(mirror.battle.lines.some(line=>line.startsWith('미러 월드')));
+  }
+
   const trained=Array.from({length:6}).reduce(C.evo.won,C.evo.fresh());
   for(const [part,key,expectedCost,check] of [
     [32,'heal',10,g=>assert.equal(g.tiles[6].unit.hp,40)],

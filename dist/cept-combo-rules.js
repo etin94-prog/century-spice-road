@@ -3,6 +3,9 @@ const CepterCombos = (() => {
   const worlds={
     brightworld:{name:'브라이트 월드',description:'크리처를 배치할 때 영지 보유와 카드 제물 비용을 무시합니다.'},
     jointworld:{name:'조인트 월드',description:'화·지 영지는 서로 연쇄하고, 수·풍 영지도 서로 연쇄합니다.'},
+    mercifulworld:{name:'머시풀 월드',description:'순위가 낮은 셉터의 영지를 침략할 수 없습니다.'},
+    mirrorworld:{name:'미러 월드',description:'전투 시작 시 지도에 같은 카드가 2장 이상 배치된 전투 크리처를 파괴합니다.'},
+    solidworld:{name:'솔리드 월드',description:'주문이나 능력으로 영지 레벨이 내려가거나 속성이 바뀌지 않습니다.'},
     naturalworld:{name:'내추럴 월드',description:'크리처의 비술, 전투 종료, 파괴 시 능력이 발동하지 않습니다.'},
     darkworld:{name:'다크 월드',description:'저주가 걸린 크리처는 주문·비술의 대상으로 지정할 수 없습니다.'},
     mistyworld:{name:'미스티 월드',description:'셉터는 주문의 대상으로 지정할 수 없습니다.'},
@@ -34,7 +37,7 @@ const CepterCombos = (() => {
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
   function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
-  function rules(cards,{board,draw,value,vacate,note,claim}){
+  function rules(cards,{board,draw,value,vacate,note,claim,canInvade}){
     const names=cards.map(key);
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
@@ -43,7 +46,7 @@ const CepterCombos = (() => {
     const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n);
     const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek';
     const landLevelLocked=t=>levelLocked(t)||name(t.unit)==='trampleweed';
-    const blockedLevel=(s,t)=>landLevelLocked(t)||idol(s,'jadeidol');
+    const blockedLevel=(s,t)=>landLevelLocked(t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
     function targetable(s,t,category='sflash',dispel=false){
       if(!t.unit)return false;
       const n=name(t.unit);
@@ -84,7 +87,7 @@ const CepterCombos = (() => {
       return s.tiles.flatMap((t,n)=>{
         if(!targetable(s,t,cards[ids.get(e)]?.catalog?.category))return [];
         if(['evilblast','shrink'].includes(e)&&allied(s,i,t.owner))return [];
-        if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return territoryType(d.type)&&!allied(s,d.owner,t.owner)&&d.unit?.enchant!=='peace';}))return [];
+        if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return territoryType(d.type)&&!allied(s,d.owner,t.owner)&&canInvade(s,t.owner,d.owner)&&d.unit?.enchant!=='peace';}))return [];
         if(e==='exile'&&(!enchanted(t.unit)||cards[t.unit.id].catalog?.additionalCost))return [];
         if(['landtransfer','relief'].includes(e)&&t.owner!==i)return [];
         if(e==='relief'&&(s.reliefFrom===n||!s.tiles.some((v,j)=>j!==n&&v.owner===i&&targetable(s,v))))return [];
@@ -538,6 +541,9 @@ const CepterCombos = (() => {
         if(e==='darkworld')return tiles.reduce((score,t)=>score+(enchanted(t.unit)?advantage(t)*(2+t.level):0),0);
         if(e==='mistyworld')return s.players.reduce((score,q,i)=>score+(friend(i)?1:-1)*(q.cash>=1000?12:0),0);
         if(e==='naturalworld')return tiles.reduce((score,t)=>score+(cards[t.unit.id].secretArt||cards[t.unit.id].regenerate||cards[t.unit.id].evoLegacy? -advantage(t)*8:0),0);
+        if(e==='mercifulworld')return s.players.some((q,i)=>!friend(i)&&q.cash>p.cash)?9:0;
+        if(e==='mirrorworld')return tiles.reduce((score,t)=>score+(tiles.some(v=>v!==t&&v.unit.id===t.unit.id)?-advantage(t)*6:0),0);
+        if(e==='solidworld')return friendly.reduce((score,t)=>score+Math.max(0,t.level-2)*5,0);
         if(e==='brightworld')return p.hand.filter(id=>cards[id].kind==='creature'&&cards[id].catalog?.additionalCost).length*8-4;
         if(e==='jointworld')return tiles.reduce((score,t)=>score+(typeof t.type==='number'&&tiles.some(v=>t!==v&&t.area===v.area&&allied(s,v.owner,t.owner)&&typeof v.type==='number'&&Math.abs(v.type-t.type)===2)?advantage(t)*9:0),0);
         return s.players.reduce((score,q,i)=>score+(friend(i)?-1:1)*q.hand.reduce((tax,id)=>tax+(cards[id].catalog?.rarity==='S'?1:['R','E'].includes(cards[id].catalog?.rarity)?2:0),0),0);
