@@ -170,7 +170,6 @@ const CepterEditions=(()=>{
       fire:build(edition==='begins'?24:30,edition==='begins'?9:12,.78,edition==='revolt'?'bolt brightworld shatter drainmagic':'bolt shatter drainmagic windofhope manna'),
       stronghold:build(edition==='begins'?21:26,edition==='begins'?11:14,.25,edition==='revolt'?'barrier jointworld darkworld lifestream manna':'barrier lifestream heal windofhope manna')
     };
-    if(edition!=='saga'&&edition!=='begins')return presets;
     const ids=new Map(pool.map(id=>[cards[id].catalog.path.split('/').pop(),id]));
     function addNamedBooks(books){
       for(const [key,entries] of Object.entries(books)){
@@ -179,6 +178,28 @@ const CepterEditions=(()=>{
       }
       return presets;
     }
+    // Culdcept Central's Revolt AI deck records for Alicia, Gen and Yuma.
+    if(edition==='revolt')return addNamedBooks({
+      revoltAliciaEntry:{
+        fighter:2,goblin:4,skeleton:4,statue:4,phlogiston:4,redogre:1,aqualing:2,blueogre:1,wallofice:2,greenogre:1,
+        squirrine:2,wallofstone:2,blitzraven:4,yellowogre:1,chainmail:2,mace:2,growthbody:2,holyword1:2,holyword3:2,holyword6:2,
+        manna:2,windofhope:2
+      },
+      revoltGenSerious:{
+        skeleton:2,gascloud:3,gladiator:2,kingvaran:2,minotaur:3,phlogiston:3,blitzraven:2,cornfolk:3,griffon:2,spectre:2,
+        yellowogre:3,battleaxe:4,chainmail:3,magmahammer:2,scalearmor:3,growthbody:2,holyword1:2,holyword6:3,magicbolt:2,shatter:2
+      },
+      revoltYumaFellowship:{
+        fighter:2,goblin:4,statue:4,amazon:4,aqualing:2,lizardman:3,wallofice:2,greenogre:3,squirrine:3,wallofstone:2,
+        chainmail:3,longsword:2,mace:3,sparkball:1,fly:3,holyword6:3,manna:3,windofhope:3
+      },
+      revoltYumaResolve:{
+        fighter:3,amazon:2,aqualing:3,gianteel:2,lizardman:3,wallofice:2,greenogre:2,rocktroll:2,squirrine:3,wallofstone:3,
+        woodfolk:3,buckler:2,longsword:2,scalearmor:3,sparkball:2,stormspear:2,fly:2,holyword6:3,manna:2,shatter:2,
+        windofhope:2
+      }
+    });
+    if(edition!=='saga'&&edition!=='begins')return presets;
     if(edition==='begins')return addNamedBooks({
       beginsArtAssault:{
         abyssalmonarch:1,hornedchameleon:3,gascloud:3,flameacolyte:3,flamegoetia:2,aeroacolyte:3,aerogoetia:2,fighter:2,
@@ -334,10 +355,11 @@ const CepterEditions=(()=>{
     const elements=[...parts[2].matchAll(/\[(\w+)\]/g)].map(([,name])=>battleElements.indexOf(name));
     return {[elementalTraits[parts[1]]]:elements};
   }
-  // Only enable Begins items whose printed effects the battle engine handles.
   const revoltBattleCards={
     gascloud:{half:true},woodfolk:{support:true},bandit:{support:true},borgess:{},ninja:{first:true,scrollCritical:true},
     statue:{stationary:true},trojanhorse:{support:true},
+    phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},
+    sparkball:{st:40},magmahammer:{st:20,criticalOwnElements:[0,2]},stormspear:{st:20,criticalOwnElements:[1,3]},
     batteringram:{st:30},buckler:{},magicshield:{hp:30},magussmirror:{hp:20},
     petrifystone:{},prismaticwand:{},tearinghalo:{st:30,protectItem:true}
   };
@@ -351,6 +373,7 @@ const CepterEditions=(()=>{
     aquagoetia:{innateScroll:40,half:true},flamegoetia:{innateScroll:40},aerogoetia:{innateScroll:40,first:true},abyssalmonarch:{innateScroll:50}
   };
   const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y'};
+  // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},
     batteringram:{st:20},gremlinamulet:{},rathunter:{},boomerang:{st:20,hp:10},
@@ -377,7 +400,7 @@ const CepterEditions=(()=>{
     tearinghalo:{st:30,protectItem:true},knightsshield:{},spikedshield:{},vorpalsword:{st:30},prismaticwand:{}
   };
   const sagaStarterEffects={
-    aqualing:{blocksSmall:true},blitzraven:{criticalSmall:true},phlogiston:{invadeST:20},
+    aqualing:{blocksSmall:true},blitzraven:{criticalMHP:30},phlogiston:{invadeST:20},
     wallofice:{stationary:true,battleHP:30},tornado:{stationary:true,first:true,battleST:30,battleHP:-10},
     creepingflame:{stationary:true},
     freezingwind:{st:30,hp:0,scrollCriticalElements:[0,2]},firestone:{st:30,hp:0,scrollCriticalElements:[1,3]}

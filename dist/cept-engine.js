@@ -779,7 +779,7 @@ function createCepter(edition="ps2"){
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
-        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,criticalSmall:false,battleHP:0,invadeST:0,doubleAttack:false,
+        a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,criticalMHP:0,battleHP:0,invadeST:0,doubleAttack:false,
           criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
         useGear(a);
       }
@@ -896,7 +896,7 @@ function createCepter(edition="ps2"){
       if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||!muted&&(matches(a.gear?.scrollCriticalElements,d)||matches(a.c.scrollCriticalElements,d))||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
-        !muted&&a.c.criticalSmall&&fx.max(d.u)<=30||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
+        !muted&&a.c.criticalMHP&&fx.max(d.u)<=a.c.criticalMHP||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
       const ward=muted?null:extra.protect(a,d,damage,scroll,penetrates,orb);
       if(ward==='block'||ward==='heal')return ward;
       const reflected=ward==='reflect'||scroll&&d.n==='carbuncle';
@@ -946,7 +946,7 @@ function createCepter(edition="ps2"){
         if(attacker==='samurai'&&(firstEdition?d.c.catalog?.race==='rh':fx.max(d.u)<=30)&&!s.predict&&Math.random()<(firstEdition ? .3 : .6))d.hp=0;
         if(attacker==='cleric'&&d.element===-1&&!s.predict&&Math.random()<.8)d.hp=0;
         if(attacker==='willothewisp'||attacker==='amazon'&&!a.gear){
-          const amount=Math.min(s.players[d.seat].cash,attacker==='amazon'?(s.players[a.seat].lap+1)*20:Math.min(a.hp,a.u.hp)*2);
+          const amount=Math.min(s.players[d.seat].cash,attacker==='amazon'?(s.players[a.seat].lap+1)*(s.edition==='revolt'?30:20):Math.min(a.hp,a.u.hp)*2);
           s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
         }
         if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'){

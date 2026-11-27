@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsArtAssault','beginsTidalGuard']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -923,6 +923,43 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     Object.assign(state.tiles[8],{owner:1,type:2,unit:{id:card('borgess'),hp:30}});
   }).s.battle;
   assert.deepEqual(patron.startHP,[60,50]);
+  const revoltBooks={
+    revoltAliciaEntry:'fighter:2 goblin:4 skeleton:4 statue:4 phlogiston:4 redogre:1 aqualing:2 blueogre:1 wallofice:2 greenogre:1 squirrine:2 wallofstone:2 blitzraven:4 yellowogre:1 chainmail:2 mace:2 growthbody:2 holyword1:2 holyword3:2 holyword6:2 manna:2 windofhope:2',
+    revoltGenSerious:'skeleton:2 gascloud:3 gladiator:2 kingvaran:2 minotaur:3 phlogiston:3 blitzraven:2 cornfolk:3 griffon:2 spectre:2 yellowogre:3 battleaxe:4 chainmail:3 magmahammer:2 scalearmor:3 growthbody:2 holyword1:2 holyword6:3 magicbolt:2 shatter:2',
+    revoltYumaFellowship:'fighter:2 goblin:4 statue:4 amazon:4 aqualing:2 lizardman:3 wallofice:2 greenogre:3 squirrine:3 wallofstone:2 chainmail:3 longsword:2 mace:3 sparkball:1 fly:3 holyword6:3 manna:3 windofhope:3',
+    revoltYumaResolve:'fighter:3 amazon:2 aqualing:3 gianteel:2 lizardman:3 wallofice:2 greenogre:2 rocktroll:2 squirrine:3 wallofstone:3 woodfolk:3 buckler:2 longsword:2 scalearmor:3 sparkball:2 stormspear:2 fly:2 holyword6:3 manna:2 shatter:2 windofhope:2'
+  };
+  const revoltCatalog=ps2.createEdition('revolt');
+  for(const [name,entries] of Object.entries(revoltBooks)){
+    const deck=revoltCatalog.presets[name];
+    assert.ok(revoltCatalog.validBook(deck),name);
+    const counts={};
+    for(const index of deck){
+      const slug=revoltCatalog.cards[index].catalog.path.split('/').pop();
+      counts[slug]=(counts[slug]||0)+1;
+    }
+    assert.deepEqual(counts,Object.fromEntries(entries.split(' ').map(pair=>{
+      const [slug,n]=pair.split(':');
+      return [slug,Number(n)];
+    })));
+  }
+  const dealt=({s})=>s.battle.startHP[1]-s.battle.strikes[0].hp[1];
+  assert.equal(dealt(revolt(null,'chainmail','phlogiston','fighter')),45);
+  assert.equal(dealt(revolt(null,'chainmail','phlogiston','fighter',s=>{s.tiles[1].unit.mhp=50;})),30);
+  assert.equal(revolt(null,null,'goblin','aqualing').s.battle.strikes[0].effect,'block');
+  assert.equal(dealt(revolt('sparkball',null,'goblin','aqualing')),30);
+  assert.equal(revolt('fighter',null,'squirrine','fighter').s.battle.attackST,60);
+  assert.equal(revolt('longsword',null,'fighter','cornfolk').s.players[1].cash,1200);
+  const lap2=s=>{s.players[0].lap=1;};
+  assert.equal(revolt(null,null,'amazon','fighter',lap2).s.players[1].cash,940);
+  assert.equal(revolt('mace',null,'amazon','fighter',lap2).s.players[1].cash,1000);
+  for(const [item,unit] of [['magmahammer','redogre'],['magmahammer','greenogre'],['stormspear','blueogre'],['stormspear','yellowogre']]){
+    const result=revolt(item,'diamondarmor',unit,'fighter');
+    assert.equal(result.s.battle.attackST,60);
+    assert.equal(dealt(result),90);
+    assert.equal(dealt(revolt(item,'diamondarmor','fighter','fighter')),60);
+  }
+  console.log('Revolt four exact AI books, MHP boundaries, rewards, and equipped-element critical hits OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   for(const [attacker,elementalGuard] of [['flameacolyte','pillarofflame'],['aquaacolyte','kingtortoise'],['terraacolyte','dwarf'],['aeroacolyte','griffon']]){
     const matched=begins(null,null,attacker,elementalGuard);
