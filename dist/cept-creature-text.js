@@ -280,7 +280,8 @@ const CepterCreatureText=(()=>{
       burnacle:'고른 영지에 안개를 걸어 통행료를 절반으로 줄입니다.',
       creepingflame:'이 크리처를 인접한 영지 한 곳으로 이동합니다. 상대 영지라면 침략합니다.',
       rockshell:'이 영지의 침략을 막고 통행료를 0G로 바꿉니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
-    const effect=(C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
+    const begins={goldentotem:'400G를 얻고 이 크리처는 파괴됩니다.'};
+    const effect=(C.edition==='begins'?begins[key]:C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
   function describe(C,card){
@@ -295,7 +296,7 @@ const CepterCreatureText=(()=>{
     if(C.edition==='3ds'&&key==='shadefolk')pieces.push('전투 ST는 상대 크리처와 같은 속성의 배치 크리처 수 × 10입니다. 설욕 시 상대 셉터의 마력 30%를 빼앗습니다.');
     if(C.edition==='3ds'&&key==='catoblepas')pieces.push('설욕 시 전투 영지의 레벨을 1 내립니다.');
     if(C.edition==='3ds'&&key==='raksas')pieces.push('설욕 시 상대 셉터가 가장 많이 보유한 종류의 호부 30%를 빼앗습니다.');
-    if(card.freeToll)pieces.push('이 영지의 통행료는 0G입니다. 전투에서 파괴되면 티라노사우루스로 부활합니다.');
+    if(card.freeToll&&key!=='gemoid')pieces.push('이 영지의 통행료는 0G입니다. 전투에서 파괴되면 티라노사우루스로 부활합니다.');
     if(C.edition==='3ds'&&key==='ixtol')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대를 파괴합니다. 승리하면 기본 ST가 최대 100까지 10 오릅니다.');
     if(C.edition==='3ds'&&key==='kodama')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(C.edition==='3ds'&&key==='mystic')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 60 이상이면 70% 확률로 즉사시킵니다.');
@@ -313,6 +314,8 @@ const CepterCreatureText=(()=>{
     if(card.criticalSmall)pieces.push('최대 HP 30 이하인 상대를 일반 공격하면 강타합니다.');
     if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
+    if(C.edition==='begins'&&card.innateScroll)pieces.push('금술. 장비 없이 공격하면 두루마리 피해 '+card.innateScroll+'을 줍니다.');
+    if(card.scrollCriticalElements?.length)pieces.push(card.scrollCriticalElements.map(e=>C.elements[e]).join('·')+' 속성 상대에게 두루마리 강타가 적용됩니다.');
     if(card.evo){
       if(card.spellWard)pieces.push('주문과 비술의 대상으로 지정할 수 없습니다.');
       if(card.protectGear)pieces.push('장비가 파괴되거나 빼앗기지 않습니다.');

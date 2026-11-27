@@ -320,7 +320,17 @@ const CepterEditions=(()=>{
     return {[elementalTraits[parts[1]]]:elements};
   }
   // Only enable Begins items whose printed effects the battle engine handles.
+  const beginsCreatures={
+    gascloud:{half:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},
+    flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
+    aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
+    terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},
+    aeroacolyte:{innateScroll:30,scrollCriticalElements:[3]},
+    aquagoetia:{innateScroll:40,half:true}
+  };
   const beginsGear={
+    gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},
+    batteringram:{st:20},gremlinamulet:{},boomerang:{st:20,hp:10},
     buckler:{},countershield:{effect:'reflect'},diamondarmor:{st:-30,hp:60,last:true},
     earthshield:{},fireshield:{},watershield:{},windshield:{},
     eternalmail:{hp:40},knightsshield:{},magicshield:{hp:30},spikedshield:{},
@@ -413,6 +423,7 @@ const CepterEditions=(()=>{
         c.hp=Number(gearClauses.find(v=>v.startsWith('HP'))?.slice(2)||0);
         c.first=gearClauses.includes('先制');c.last=gearClauses.includes('後手');
       }
+      if(edition==='begins'&&kind==='creature'&&Object.hasOwn(beginsCreatures,slug))Object.assign(c,{catalogOnly:false},beginsCreatures[slug]);
       if(edition==='begins'&&kind==='item'&&Object.hasOwn(beginsGear,slug)){
         Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
       }

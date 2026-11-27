@@ -871,7 +871,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
-  const fight=(edition,attacker,defender,weapon,armor)=>{
+  const fight=(edition,attacker,defender,weapon,armor,prepare)=>{
     const C=edition==='ps2'?ps2:ps2.createEdition(edition);
     const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
     const atk=id(attacker),def=id(defender),w=weapon?id(weapon):-1,a=armor?id(armor):-1;
@@ -882,6 +882,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     s.players.forEach(p=>{p.cash=1000;p.hand=[];});
     if(w>=0)s.players[0].hand.push(w);
     if(a>=0)s.players[1].hand.push(a);
+    prepare?.(s,id);
     s.players[0].pos=at;s.phase='attack';s.battle={at,inv:atk,atkItem:null,defItem:null};
     assert.ok(C.play(s,w>=0?['equip',0]:['bare']));
     assert.ok(C.play(s,a>=0?['equip',0]:['bare']));
@@ -896,7 +897,37 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(description.includes('선제'),first);
     assert.equal(description.includes('돌아옵니다'),!first);
   }
-  const begins=(w,a,attacker='fighter',defender='goblin')=>fight('begins',attacker,defender,w,a);
+  const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
+  for(const [attacker,elementalGuard] of [['flameacolyte','pillarofflame'],['aquaacolyte','kingtortoise'],['terraacolyte','dwarf'],['aeroacolyte','griffon']]){
+    const matched=begins(null,null,attacker,elementalGuard);
+    assert.equal(matched.s.battle.attackST,30);
+    assert.equal(matched.s.battle.startHP[1]-matched.s.battle.strikes[0].hp[1],Math.min(45,matched.s.battle.startHP[1]));
+    assert.match(creatureText.describe(matched.C,matched.C.cards[matched.s.battle.forms[0]]),/금술.*30/);
+  }
+  const boosted=begins(null,null,'goblin','hornedchameleon',(state,card)=>{
+    state.tiles[1].type=0;
+    Object.assign(state.tiles[8],{owner:1,type:2,unit:{id:card('borgess'),hp:30}});
+  }).s.battle;
+  assert.deepEqual(boosted.startHP,[50,60]);
+  assert.match(begins('airslasher',null,'fighter','griffon').s.battle.strikes[0].notes.join(' '),/105 피해/);
+  assert.match(begins('flametongue',null,'fighter','kingtortoise').s.battle.strikes[0].notes.join(' '),/105 피해/);
+  const normalArt=begins(null,null,'flameacolyte','fighter');
+  const equippedArt=begins('mace','gaseousform','flameacolyte','fighter');
+  assert.equal(normalArt.s.battle.strikes[0].hp[1],10);
+  assert.equal(equippedArt.s.battle.strikes[0].effect,'block','equipping a weapon suppresses Forbidden Art');
+  assert.equal(begins(null,'magicshield','aquaacolyte','fighter').s.battle.strikes[0].effect,'block');
+  const goetia=begins(null,null,'fighter','aquagoetia');
+  assert.equal(goetia.s.battle.strikes[0].hp[1],10);assert.equal(goetia.s.battle.defendST,40);
+  assert.equal(begins(null,null,'fighter','gascloud').s.battle.strikes[0].hp[1],10);
+  assert.equal(begins(null,null,'fighter','decoy').s.battle.strikes[0].effect,'reflect');
+  assert.equal(begins('batteringram',null,'goblin','wallofstone').s.battle.won,true);
+  const gremlin=begins('gremlinamulet','chainmail');
+  assert.equal(gremlin.s.battle.startHP[1],30);
+  const returning=begins('boomerang',null);
+  assert.ok(returning.s.players[0].hand.includes(returning.w));
+  const defeated=begins('boomerang','countershield');
+  assert.equal(defeated.s.battle.finalHP[0],0);
+  assert.ok(!defeated.s.players[0].hand.includes(defeated.w));
   const {s:scroll}=begins('nuclearfusion');
   const {s:tower}=begins('nuclearfusion','towershield');
   assert.equal(scroll.battle.startHP[1]-scroll.battle.strikes[0].hp[1],30);
@@ -2348,6 +2379,12 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const before=p.cash,territory=C.value(s,s.tiles[siteA]);
   assert.ok(C.play(s,['cast',0])&&C.play(s,['targetLand',siteA]));
   assert.deepEqual([s.tiles[siteA].owner,s.tiles[siteA].unit,p.cash],[-1,null,before-C.cards[id('revoltlandtransfer')].cost+Math.floor(territory*.8)]);
+  const totem=C.start(2,2,5000,'begins-1'),totemOwner=totem.players[0];
+  Object.assign(totem.tiles[2],{owner:0,type:0,unit:{id:C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)==='goldentotem'),hp:30}});
+  Object.assign(totemOwner,{cash:100,pos:2});totem.phase='land';
+  assert.ok(C.play(totem,['totem',2]));
+  assert.equal(totemOwner.cash,500);assert.equal(totem.tiles[2].unit,null);
+
   const ford=C.start(4,4,0,'begins-original-ford');
   assert.equal(C.board(ford).name,'돌등 여울 · 창작 지도');
   assert.equal(ford.tiles.length,25);

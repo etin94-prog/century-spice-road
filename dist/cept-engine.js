@@ -875,7 +875,7 @@ function createCepter(edition="ps2"){
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
       if(scroll&&['deathgaze','pegasus'].includes(d.n))return 'block';
-      if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||!muted&&matches(a.gear?.scrollCriticalElements,d)||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
+      if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||!muted&&(matches(a.gear?.scrollCriticalElements,d)||matches(a.c.scrollCriticalElements,d))||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
         !muted&&a.c.criticalSmall&&fx.max(d.u)<=30||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
@@ -1029,7 +1029,7 @@ function createCepter(edition="ps2"){
         a.hp=d.hp=0;
       }
       if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition)a.hp=Math.min(a.hp,a.u.hp)-10;}
-      if(a.g==='boomerang'&&edition!=='saga'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
+      if(a.g==='boomerang'&&edition!=='saga'&&edition!=='begins'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0)a.hp-=20;
       if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
       if(!muted&&a.u.enchant==='bulimia'&&a.hp>0){
@@ -1121,6 +1121,7 @@ function createCepter(edition="ps2"){
           owner.cash+=gain;lines.push('젤라티너스 월 · '+gain+'G 획득');
         }
       }
+      if(edition==='begins'&&itemEnd&&a.hp>0&&a.g==='boomerang'&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
       if(edition==='saga'&&itemEnd&&a.hp>0){
         if(['boomerang','soulray'].includes(a.g)&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
         if(a.g==='doomneedle'&&opponent.hp>0){combo.clear(opponent.u);opponent.u.enchant='senility';lines.push('둠 니들 · 노쇠');}
@@ -1418,7 +1419,7 @@ function createCepter(edition="ps2"){
       case 'fizzle':delete s.reliefFrom;mapEffect('cast','대상 없음');s.phase='roll';break;
       case 'roll':{const {faces,total,sides,zeroBased,haste}=movementRoll(s,p);if(haste&&!--p.hasteRolls)fx.clearCepter(p);s.die=total;if(revolt)s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(pathSwitch(s,p.pos,p.previous)){delete p.reverse;move(s,p.dir||1);break;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
-      case 'totem':p.cash+=handheld?200:300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
+      case 'totem':p.cash+=handheld?200:edition==='begins'?400:300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
       case 'switchFlip':flipPaths(s,'방향 변경');s.phase='land';break;
       case 'switchKeep':s.phase='land';break;
       case 'towerAim':s.phase='towerTarget';break;
