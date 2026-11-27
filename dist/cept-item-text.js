@@ -21,6 +21,12 @@ const describeCepterItem=(()=>{
     doomneedle:'양쪽이 생존하면 상대에게 노쇠를 부여해 다음 전투 종료 시 파괴되게 합니다.',
     metamorphosebelt:'전투 중 그라스 스트라이더(ST 40, HP 40)로 변신합니다. 선제 공격과 상대의 남은 손패 한 장당 전투 ST +10을 얻으며, 생존 시 원래 형태로 돌아옵니다.',
     neutralcloak:'장착한 크리처는 전투 중 무속성이 됩니다.',
+    aurastrike:'장착한 크리처의 기본 ST만큼 두루마리 피해를 줍니다.',
+    magmashield:'화·지 크리처가 장착하면 일반 공격을 무효화합니다.',
+    mirrorhoplon:'상대가 장비를 사용하지 않았으면 일반 공격과 두루마리를 반사합니다.',
+    reactivearmor:'전투 시작 시 상대가 장착한 무기를 파괴합니다.',
+    gremlinseye:'전투 시작 시 상대 장비가 N 등급이 아니면 파괴합니다.',
+    squidmantle:'상대의 공격 성공 시 효과가 발동하지 않습니다.',
     cursedseal:'장착한 크리처가 상대에게 격파되면 상대 크리처의 기본 HP 절반만큼 피해를 줍니다.',
     tombstone:'장착한 크리처가 상대에게 격파되면 손패가 여섯 장이 될 때까지 카드를 뽑습니다.',
     daggerofmite:'현재 순위에 20을 곱한 만큼 전투 ST를 올립니다.',
@@ -105,6 +111,7 @@ const describeCepterItem=(()=>{
     if(fixedST)pieces.push('전투 ST를 0으로 맞춥니다.');
     if(!scroll&&(card.st||card.hp))pieces.push('전투 중 '+[card.st&&signed('ST',card.st),card.hp&&signed('HP',card.hp)].filter(Boolean).join(' · '));
     if(scroll&&card.st)pieces.push('두루마리 공격력 '+card.st);
+    if(card.scrollTerritoryElements)pieces.push('내 '+list(card.scrollTerritoryElements)+' 영지 수 × 10만큼 두루마리 피해를 줍니다.');
     if(card.scrollCriticalElements?.length)pieces.push(list(card.scrollCriticalElements)+' 상대에게 두루마리 강타가 적용됩니다.');
     if(Object.hasOwn(scrollCritical,name))pieces.push(list([scrollCritical[name]])+' 상대에게 두루마리 강타가 적용됩니다.');
     if(card.first&&name!=='hourglass')pieces.push('선제');
@@ -131,8 +138,10 @@ const describeCepterItem=(()=>{
     if(name==='necroscarab'&&C.edition==='saga')pieces.push('장착한 크리처가 상대에게 격파되면 스켈레톤으로 변합니다.');
     if(name==='boomerang'&&!firstEdition)pieces.push(C.edition==='begins'?'장착한 크리처가 생존하면 전투 후 이 장비가 돌아옵니다.':
       C.edition==='saga'?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
-    if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(C.edition==='begins'?7:firstEdition?5:10)+'G를 얻습니다.');
+    if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(['begins','revolt'].includes(C.edition)?7:firstEdition?5:10)+'G를 얻습니다.');
     if(name==='towershield'&&card.halveScroll)pieces.push('일반 공격과 두루마리 피해를 절반으로 줄입니다.');
+    else if(C.edition==='revolt'&&['magmaarmor','stormarmor'].includes(name))pieces.push('내 '+list(name==='magmaarmor'?[0,2]:[1,3])+' 영지 한 곳당 전투 HP가 20 오릅니다.');
+    else if(C.edition==='revolt'&&name==='silverplow')pieces.push('장착한 크리처가 생존하면 교전 영지 레벨이 1 오릅니다.');
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(C.edition==='begins'&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(!(C.edition==='3ds'&&key==='holygrail'||C.edition==='saga'&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);

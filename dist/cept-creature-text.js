@@ -383,7 +383,7 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='tigerweta'?'전투 영지에 인접한 내 영지가 있으면 전투 ST와 HP가 20씩 오릅니다.':
       C.edition==='revolt'&&key==='mummy'?'전투에서 격파되면 이번 주회 번호 × 40G를 얻습니다.':
       C.edition==='revolt'&&key==='creepingcoin'?'전투가 끝나거나 전투 및 주문으로 파괴되면 100G를 얻습니다.':
-      C.edition==='revolt'&&key==='scylla'?'생존하면 전투가 끝날 때 상대 크리처의 영지 통행료를 무효화합니다.':
+      C.edition==='revolt'&&key==='scylla'?'상대의 공격 성공 시 효과가 발동하지 않습니다. 생존하면 전투가 끝날 때 상대 크리처의 영지 통행료를 무효화합니다.':
       C.edition==='revolt'&&key==='phoenix'?'전투에서 격파되면 손패에 돌아옵니다. 이미 10장이면 파괴됩니다.':
       C.edition==='revolt'&&key==='amazon'?'장비 없이 일반 공격으로 피해를 주면 이번 주회 번호 × 30G를 상대에게서 빼앗습니다.':
       firstEdition?(firstRules[key]||battle[key]):battle[key];

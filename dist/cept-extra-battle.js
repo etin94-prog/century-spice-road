@@ -92,6 +92,10 @@ const CepterExtraBattle=(()=>{
     }
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
+      if(s.edition==='revolt'&&['magmaarmor','stormarmor'].includes(a.g)){
+        const elements=a.g==='magmaarmor'?[0,2]:[1,3];
+        a.hp+=lands.filter(t=>elements.includes(t.type)).length*20;
+      }
       if(s.edition==='saga'){
         if(a.n==='pangolin'){
           if(s.predict)a.hp=Math.floor((a.hp+30)/2);
@@ -161,10 +165,10 @@ const CepterExtraBattle=(()=>{
     }
     function protect(a,d,damage,scroll,penetrates,orb){
       if(scroll){
-        if(d.g==='magussmirror'||d.n==='carbunfly'){
-          a.hp-=damage;lines.push('두루마리 반사');return 'reflect';
-        }
-        if(d.c.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n)){lines.push('두루마리 무효');return 'block';}
+        const blocked=d.c.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n);
+        const reflected=d.g==='magussmirror'||d.n==='carbunfly'||s.edition==='revolt'&&d.g==='mirrorhoplon'&&!a.gear;
+        if(reflected&&!(s.edition==='revolt'&&blocked)){a.hp-=damage;lines.push('두루마리 반사');return 'reflect';}
+        if(blocked){lines.push('두루마리 무효');return 'block';}
         return;
       }
       const fire=side=>s.edition==='saga'?combo.hasElement(side,0):side.element===0;

@@ -1245,6 +1245,63 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     for(const at of [6,8])Object.assign(state.tiles[at],{owner:0,type:1,unit:{id:id('fighter'),hp:40}});
   }).s.battle;
   assert.equal(thunder.attackST,50);
+  assert.equal(revolt(null,'goldengoose','fighter','goblin').s.players[1].cash,1210);
+  assert.equal(revolt(null,'tombstone','fighter','goblin').s.players[1].hand.length,6);
+  const emptyBook=revolt(null,'tombstone','fighter','goblin',state=>{
+    Object.assign(state.players[1],{template:[],book:[]});
+  }).s;
+  assert.equal(emptyBook.players[1].hand.length,0);
+  const plow=revolt('silverplow','chainmail','fighter','goblin',state=>{
+    state.tiles[1].type=2;state.tiles[1].level=3;
+  }).s;
+  assert.equal(plow.tiles[1].level,4);
+  assert.match(plow.battle.lines.join(' '),/영지 Lv\.4/);
+  const brokenPlow=revolt('silverplow','claymore','goblin','fighter',state=>{
+    state.tiles[1].level=3;Object.assign(state.tiles[1].unit,{hp:70,mhp:70});
+  }).s;
+  assert.equal(brokenPlow.tiles[1].level,3);
+  assert.match(revolt('vorpalsword','chainmail','fighter','fighter').s.battle.strikes[0].notes.join(' '),/105 피해/);
+  assert.deepEqual(revolt('tonfa','chainmail','goblin','fighter').s.battle.strikes.map(v=>v.side),[0,0,1]);
+  assert.equal(revolt('murasame',null,'fighter','decoy').s.battle.won,true);
+  assert.equal(revolt('murasame','sphereshield','goblin','fighter').s.battle.strikes[0].effect,'hit');
+  const sphere=revolt(null,'sphereshield','fighter','fighter').s.battle;
+  assert.equal(sphere.defendST,0);
+  assert.equal(sphere.strikes[0].effect,'block');
+  assert.equal(revolt('sparkball','sphereshield').s.battle.strikes[0].effect,'hit');
+  assert.equal(revolt(null,'mirrorhoplon','fighter','fighter').s.battle.strikes[0].effect,'reflect');
+  assert.equal(revolt('mace','mirrorhoplon','fighter','fighter').s.battle.strikes[0].effect,'hit');
+  assert.equal(revolt(null,'mirrorhoplon','minotaur','migoal').s.battle.strikes[0].effect,'block');
+  assert.equal(revolt(null,'magmashield','fighter','redogre').s.battle.strikes[0].effect,'block');
+  assert.equal(revolt(null,'magmashield','minotaur','blueogre').s.battle.strikes[0].effect,'hit');
+  assert.equal(revolt(null,'neutralcloak','fighter','redogre',state=>{state.tiles[1].type=0;}).s.battle.landHP,0);
+  const mantle=revolt('bindingwhip','squidmantle','fighter','fighter').s;
+  assert.equal(mantle.tiles[1].unit.enchant,undefined);
+  assert.deepEqual(mantle.battle.strikes.map(v=>v.side),[0,1]);
+  assert.equal(revolt('longsword','reactivearmor','fighter','fighter').s.battle.attackST,40);
+  assert.equal(revolt('sparkball','reactivearmor','fighter','fighter').s.battle.strikes[0].hp[1],30);
+  assert.equal(revolt('gremlinseye','chainmail','fighter','fighter').s.battle.startHP[1],70);
+  assert.equal(revolt('gremlinseye','magussmirror','fighter','fighter').s.battle.startHP[1],40);
+  assert.equal(revolt('gremlinseye','angelcape','fighter','fighter').s.battle.startHP[1],80);
+  for(const [gear,types] of [['magmaarmor',[0,2]],['stormarmor',[1,3]]]){
+    const boosted=revolt(null,gear,'fighter','fighter',(state,id)=>{
+      for(const [i,type] of types.entries())Object.assign(state.tiles[4+i],{type,owner:1,unit:{id:id('fighter'),hp:40}});
+    }).s.battle;
+    assert.equal(boosted.startHP[1],80);
+    assert.equal(boosted.defendST,40);
+  }
+  const auraStrike=revolt('aurastrike','chainmail','fighter','redogre',state=>{
+    state.tiles[1].type=0;state.tiles[1].level=3;
+  }).s.battle;
+  assert.equal(auraStrike.attackST,40);
+  assert.match(auraStrike.strikes[0].notes.join(' '),/지형 보너스 관통.*40 피해/);
+  for(const [gear,types,guard] of [['burningrod',[0,2,2],'blueogre'],['chillingblast',[1,3,3],'greenogre']]){
+    const scroll=revolt(gear,'chainmail','fighter',guard,(state,id)=>{
+      for(const [i,type] of types.entries())Object.assign(state.tiles[4+i],{type,owner:0,unit:{id:id('fighter'),hp:40}});
+    }).s.battle;
+    assert.equal(scroll.attackST,30);
+    assert.match(scroll.strikes[0].notes.join(' '),/45 피해/);
+  }
+  console.log('Revolt 18 items tested across battle timing, pierce, ward priority, destruction, hand refill and territory effects');
   console.log('Revolt eight exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   const lv3=type=>state=>Object.assign(state.tiles[1],{type,level:3});
