@@ -60,7 +60,10 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(Object.keys(C.maps).length,mapCount);
   const savedMaps={saga:{'saga-11':'chariot','saga-13':'the-speckled-band'},revolt:{'revolt-1':'battle-wagon','revolt-34':'yin-yang-flat'},begins:{'begins-10':'fortune-alley','begins-11':'holy-hammer','begins-15':'x'}};
   for(const [id,slug] of Object.entries(savedMaps[edition]||{}))assert.equal(C.maps[id].slug,slug);
-  for(const book of Object.values(C.presets))assert.ok(C.validBook(book));
+  for(const book of Object.values(C.presets)){
+    assert.equal(book.length,edition==='begins'?40:50);
+    assert.ok(C.validBook(book));
+  }
   if(!modern&&edition!=='dc'){
     const sneph=C.start(2,0,0,edition+'-2');
     assert.equal(sneph.target,7000);assert.equal(sneph.players[0].cash,edition==='ps1'?440:450);
@@ -2385,6 +2388,18 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(totem,['totem',2]));
   assert.equal(totemOwner.cash,500);assert.equal(totem.tiles[2].unit,null);
 
+  const current=C.presets.intro;
+  const used=new Set(current);
+  const old=[...current,...C.cards.flatMap((c,i)=>!c.unlisted&&!c.catalogOnly&&c.kind==='creature'&&!used.has(i)?[i]:[]).slice(0,10)];
+  assert.equal(C.bookSize,40);assert.equal(old.length,50);
+  assert.ok(!C.validBook(old)&&C.validLegacyBook(old));
+  assert.throws(()=>C.start(2,2,5000,'begins-1',old),/대국 설정 오류/);
+  const opening=C.start(2,2,5000,'begins-1');
+  assert.deepEqual(opening.players.map(p=>[p.template.length,p.hand.length,p.book.length]),[[40,5,35],[40,4,36]]);
+  assert.ok(!C.setOpeningBook(opening,1,old));assert.ok(C.setOpeningBook(opening,1,C.presets.fire));
+  const savedOpening=structuredClone(opening);
+  savedOpening.players[1].template=old;
+  assert.ok(C.setOpeningBook(savedOpening,1,old));assert.equal(savedOpening.players[1].book.length,46);
   const ford=C.start(4,4,0,'begins-original-ford');
   assert.equal(C.board(ford).name,'돌등 여울 · 창작 지도');
   assert.equal(ford.tiles.length,25);

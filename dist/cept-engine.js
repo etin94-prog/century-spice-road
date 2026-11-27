@@ -88,7 +88,8 @@ function createCepter(edition="ps2"){
   const canEquip=(unit,gear)=>gear.kind==='item'?!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')):
     gear.kind==='creature'&&(unit.support||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
-  if(editions)editions.configure(edition,cards,presets);
+  const bookSize=edition==='begins'?40:50;
+  if(editions)editions.configure(edition,cards,presets,bookSize);
   const evo=revolt?(typeof module==='undefined'?CepterEvo:require('./cept-evo')):null;
   if(evo)cards=evo.catalog(cards);
   const modern=!!presets.stronghold;
@@ -108,8 +109,8 @@ function createCepter(edition="ps2"){
     });
     s.phase='spellCircle';
   }
-  function validBook(book){
-    if(!Array.isArray(book)||book.length!==50)return false;
+  function validateBookSize(book,size){
+    if(!Array.isArray(book)||book.length!==size||size!==bookSize&&!(edition==='begins'&&size===50))return false;
     const counts=new Map(),evoSlots=new Set();
     for(const id of book){
       if(!Number.isSafeInteger(id))return false;
@@ -123,6 +124,8 @@ function createCepter(edition="ps2"){
     }
     return true;
   }
+  const validBook=book=>validateBookSize(book,bookSize);
+  const validLegacyBook=book=>edition==='begins'&&validateBookSize(book,50);
   function shuffledBook(template=starter){
     const book=template.slice();
     for(let i=book.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[book[i],book[j]]=[book[j],book[i]];}
@@ -169,7 +172,7 @@ function createCepter(edition="ps2"){
   }
   function setOpeningBook(s,seat,template){
     const p=s.players[seat];
-    if(!p||p.ai||s.round!==1||s.turn!==0||s.phase!=='spell'||!validBook(template))return false;
+    if(!p||p.ai||s.round!==1||s.turn!==0||s.phase!=='spell'||!validateBookSize(template,p.template?.length??bookSize))return false;
     dealOpeningBook(p,seat,template);
     if(evo&&s.teams){
       p.explicitOpening=true;
@@ -1833,11 +1836,11 @@ function createCepter(edition="ps2"){
     const selected=groups.map(group=>group.find(n=>byKey.has(n))).map(n=>byKey.get(n));
     if(selected.includes(undefined))return null;
     const book=[...new Set(selected)].flatMap(id=>Array(4).fill(id));
-    for(const id of presets.fire)if(book.length<50&&book.filter(v=>v===id).length<4)book.push(id);
+    for(const id of presets.fire)if(book.length<bookSize&&book.filter(v=>v===id).length<4)book.push(id);
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,bookSize,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

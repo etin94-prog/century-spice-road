@@ -131,7 +131,7 @@ const CepterEditions=(()=>{
       antielement:'antielement',disease:'disease',drought:'drought',fog:'fog',greed:'greed',vitality:'vitality',weakness:'weakness',
       peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze'}
   };
-  function modernBooks(cards,edition){
+  function modernBooks(cards,edition,bookSize){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
     function build(creatures,items,attackWeight,spells){
       const favored=spells.split(' ');
@@ -157,18 +157,18 @@ const CepterEditions=(()=>{
           }
         }
       }
-      add(groups.spell,50-creatures-items);
+      add(groups.spell,bookSize-creatures-items);
       add(groups.item,items);
       add(groups.creature,creatures);
-      add(groups.creature,50-deck.length);
-      add(groups.item,50-deck.length);
-      add(groups.spell,50-deck.length);
+      add(groups.creature,bookSize-deck.length);
+      add(groups.item,bookSize-deck.length);
+      add(groups.spell,bookSize-deck.length);
       return deck;
     }
     const presets={
-      intro:build(28,10,.5,'manna windofhope relief word6 foresight fly'),
-      fire:build(30,12,.78,edition==='revolt'?'bolt brightworld shatter drainmagic':'bolt shatter drainmagic windofhope manna'),
-      stronghold:build(26,14,.25,edition==='revolt'?'barrier jointworld darkworld lifestream manna':'barrier lifestream heal windofhope manna')
+      intro:build(edition==='begins'?22:28,edition==='begins'?8:10,.5,'manna windofhope relief word6 foresight fly'),
+      fire:build(edition==='begins'?24:30,edition==='begins'?9:12,.78,edition==='revolt'?'bolt brightworld shatter drainmagic':'bolt shatter drainmagic windofhope manna'),
+      stronghold:build(edition==='begins'?21:26,edition==='begins'?11:14,.25,edition==='revolt'?'barrier jointworld darkworld lifestream manna':'barrier lifestream heal windofhope manna')
     };
     if(edition!=='saga')return presets;
     const ids=new Map(pool.map(id=>[cards[id].catalog.path.split('/').pop(),id]));
@@ -380,7 +380,7 @@ const CepterEditions=(()=>{
     corrosiveknife:{},deathchoker:{st:30,pierceAll:true},doomneedle:{st:20},neutralcloak:{hp:20},metamorphosebelt:{},bladeofculdra:{st:40,hp:40},
     necroscarab:{},tombstone:{},cursedseal:{}
   };
-  function configure(edition,cards,presets){
+  function configure(edition,cards,presets,bookSize){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
     for(const [i,r] of data.cards[edition].entries()){
@@ -466,7 +466,7 @@ const CepterEditions=(()=>{
     }
     for(const c of cards)if(c.unlisted)c.catalogOnly=true;
     if(modernSets[edition]){
-      Object.assign(presets,edition==='3ds'?handheldBooks(cards):modernBooks(cards,edition));
+      Object.assign(presets,edition==='3ds'?handheldBooks(cards):modernBooks(cards,edition,bookSize));
       return;
     }
     function build(preferred){

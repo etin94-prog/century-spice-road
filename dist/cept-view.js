@@ -201,7 +201,13 @@ function storyCastSelected(){return $('count').value==='4'&&!!C.storyAlliances[$
 function chosenAiBook(){if(storyCastSelected())return $('mapChoice').value==='ps2-14'&&$('storyAlly').value==='leo'?'story-leo':'story';return $('tierChoice').value==='same'?chosenBook():(sourceBook($('aiChoice'))||tierBooks()).deck;}
 function chosenBook(){if(/^(source|combo)-/.test($('bookChoice').value))return sourceBook($('bookChoice')).deck;if($('bookChoice').value==='recommend')return tierBooks().player.deck;return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
 const bookKey='cept-book-v1'+(C.edition==='ps2'?'':'-'+C.edition);
-try{const data=JSON.parse(localStorage.getItem(bookKey));if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}}catch{}
+let legacyBook=null;
+try{
+  const data=JSON.parse(localStorage.getItem(bookKey));
+  if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}
+  else if(C.validLegacyBook(data))legacyBook=data;
+}catch{}
+$('bookHelp').textContent='카드를 합계 '+C.bookSize+'장, 종류별 최대 4장까지 담으세요.';
 const cardElements=c=>c.elements?.map(e=>C.elements[e]).join('·')||C.elements[c.element]||'무';
 const catalogTypes={dual:'복합 속성',neutral:'무속성',fire:'화속성',water:'수속성',earth:'지속성',air:'풍속성',weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구',sflash:'단일 즉시 주문',mflash:'복수 즉시 주문',senchant:'단일 지속 주문',menchant:'복수 지속 주문'};
 function showCatalogCard(c,id){
@@ -223,7 +229,7 @@ function showCatalogCard(c,id){
 $('closeCard').onclick=()=>$('cardDialog').close();
 function tallyBook(){
   const total=draft.reduce((a,b)=>a+b,0)+draftEvos.length;
-  $('bookCount').textContent=total+' / 50장';$('storeBook').disabled=total!==50;
+  $('bookCount').textContent=total+' / '+C.bookSize+'장';$('storeBook').disabled=total!==C.bookSize;
 }
 const cardsPerPage=24;
 let bookPage=0;
@@ -256,8 +262,7 @@ function filterBook(page=0){
   $('bookPages').hidden=matches.length<=cardsPerPage;
   $('prevCards').disabled=bookPage===0;$('nextCards').disabled=offset+rows.length>=matches.length;
 }
-function bookEditor(){
-  const book=chosenBook();
+function loadBookDraft(book){
   draft=C.cards.map((_,id)=>book.filter(n=>n===id).length);
   draftEvos=C.evo?book.filter(id=>C.cards[id]?.evo):[];
   if(C.evo)renderEvoEditor();
@@ -266,12 +271,15 @@ function bookEditor(){
 $('cardSearch').onkeydown=e=>{if(e.key==='Enter')e.preventDefault();};
 $('cardSearch').oninput=()=>filterBook();$('cardScope').onchange=()=>filterBook();$('cardKind').onchange=()=>filterBook();
 $('prevCards').onclick=()=>filterBook(bookPage-1);$('nextCards').onclick=()=>filterBook(bookPage+1);
+function bookEditor(){loadBookDraft(chosenBook());}
 $('editor').ontoggle=()=>{if($('editor').open&&!draft.length)bookEditor();};
 $('bookChoice').onchange=bookEditor;
+const legacyBookButton=legacyBook?btn('이전 50장 북 불러오기',()=>loadBookDraft(legacyBook)):null;
+if(legacyBookButton)$('bookHelp').after(legacyBookButton);
 $('storeBook').onclick=()=>{
   const book=[...draft.flatMap((n,id)=>Array(n).fill(id)),...draftEvos];if(!C.validBook(book))return;
   customBook=book;$('bookChoice').lastElementChild.disabled=false;$('bookChoice').value='custom';
-  try{localStorage.setItem(bookKey,JSON.stringify(book));$('bookCount').textContent='50장 · 북 저장 완료';}catch{$('bookCount').textContent='이번 창에서 사용할 북으로 설정했습니다.';}
+  try{localStorage.setItem(bookKey,JSON.stringify(book));legacyBookButton?.remove();$('bookCount').textContent=C.bookSize+'장 · 북 저장 완료';}catch{$('bookCount').textContent='이번 창에서 사용할 북으로 설정했습니다.';}
 };
 function localAbility(c){
   if(c.kind==='spell')return describeCepterSpell(C,c);
