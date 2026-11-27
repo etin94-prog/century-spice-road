@@ -629,6 +629,22 @@ const {chromium}=require('playwright');
       assert.match(await evoPage.locator('#hint').innerText(),/동맹 한도로 에보 2장/);
       await evoPage.locator('#buttons [data-action=level]').tap();
       assert.deepEqual(await evoPage.evaluate(()=>[s.tiles[3].owner,s.tiles[3].level,s.tiles[3].unit.fatigued]),[0,2,true]);
+      await evoPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;
+        s.phase='spell';s.turn=2;s.players[2].cash=100;
+        const card=name=>C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)===name);
+        Object.assign(s.tiles[3],{owner:0,unit:{id:card('elvenarcher'),hp:40}});
+        Object.assign(s.tiles[5],{owner:1,unit:{id:card('fate'),hp:25}});
+        render();
+      });
+      await evoPage.locator('#matchActionsToggle').tap();
+      await evoPage.locator('#buttons button[data-action=secretArt]').tap();
+      await evoPage.locator('#map .tile.targetable').tap();
+      if(await evoPage.evaluate(()=>s.phase==='secretTarget')){
+        await evoPage.getByRole('button',{name:'6번 · 대상 영지 확정'}).tap();
+      }
+      assert.deepEqual(await evoPage.evaluate(()=>[s.phase,s.tiles[5].unit.hp,s.players[2].cash,s.tiles[3].unit.fatigued]),['roll',15,80,true]);
+      console.log('revolt '+width+'x'+height+': Secret Art selected before roll with mobile map target OK');
       console.log('revolt '+width+'x'+height+': Evo training, 50-card book, summon, save one-time victory reward, alliance limit and allied land upgrade by touch OK');
       await evoPage.close();
     }

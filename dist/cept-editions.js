@@ -254,6 +254,10 @@ const CepterEditions=(()=>{
       if(edition==='begins'&&kind==='item'&&Object.hasOwn(beginsGear,slug)){
         Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
       }
+      if(edition==='revolt'){
+        const art={archbishop:'dispel',goldentotem:'offering',fate:'draw',healer:'heal',elvenarcher:'arrow'}[slug];
+        if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
+      }
       if(edition==='revolt'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
       if(edition==='3ds'&&slug==='countershield')Object.assign(c,{catalogOnly:false,effect:'reflect',st:0,hp:0});

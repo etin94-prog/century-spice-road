@@ -621,6 +621,7 @@ function createCepter(edition="ps2"){
     if(s.phase==='bookWorm')return s.players[s.spellTarget].hand.map((_,j)=>['wormDiscard',j]);
     if(s.phase==='sacrifice')return s.players[s.turn].hand.flatMap((_,j)=>j===s.pendingCard.index?[]:[['sacrifice',j]]);
     if(s.phase==='mindseeker')return Array.from({length:Math.min(6,(s.players[s.spellTarget].book?.length??s.players[s.spellTarget].bookCount??0))},(_,j)=>['eraseDraw',j]);
+    if(s.phase==='secretTarget')return [...fx.secretTargets(s,s.secretFrom),['secretCancel']];
     if(s.phase==='territoryTarget')return fx.territoryTargets(s,s.abilityFrom);
     if(s.phase==='teleMove')return board(s).links[s.teleFrom].filter(n=>territoryType(s.tiles[n].type)&&!allied(s,s.tiles[n].owner,s.tiles[s.teleFrom].owner)&&s.tiles[n].unit?.enchant!=='peace').map(n=>['teleTo',n]);
     const i=actor(s),p=s.players[i],t=s.tiles[p.pos],options=[];
@@ -631,7 +632,12 @@ function createCepter(edition="ps2"){
     });
     switch(s.phase){
       case 'shrineChoice':return s.shrineChoices.map(event=>['shrineChoice',event]);
-      case 'spell':if(p.status!=='lifeforce'&&p.status!=='bind')hand('spell','cast');options.push(['roll']);break;
+      case 'spell':
+        if(p.status!=='lifeforce'&&p.status!=='bind'){
+          hand('spell','cast');
+          if(revolt)for(const at of territory(s))if(fx.secretTargets(s,at).length)options.push(['secretArt',at]);
+        }
+        options.push(['roll']);break;
       case 'spellTarget':{
         const effect=s.spellEffect;
         if(effect==='stealgem'){
@@ -688,7 +694,7 @@ function createCepter(edition="ps2"){
           if(t.owner<0&&territoryType(t.type))hand('creature','summon');
           if(revolt&&t.type==='사령탑'&&towerTargets(s).length)options.push(['towerAim']);
           for(const n of territory(s)){
-            const v=s.tiles[n];if(fx.territoryTargets(s,n).length)options.push(['ability',n]);if(fx.name(v.unit)==='goldentotem'&&fx.canUseAbility(s,v))options.push(['totem',n]);for(let level=v.level+1;level<=5;level++){
+            const v=s.tiles[n];if(!revolt&&fx.territoryTargets(s,n).length)options.push(['ability',n]);if(!revolt&&fx.name(v.unit)==='goldentotem'&&fx.canUseAbility(s,v))options.push(['totem',n]);for(let level=v.level+1;level<=5;level++){
               if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
             for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
@@ -987,7 +993,7 @@ function createCepter(edition="ps2"){
       const p=s.players[a.seat];
       if(creatureEnd&&a.n==='cornfolk')p.cash+=200;
       if(creatureEnd&&a.n==='mummy')p.cash+=50*(p.lap+1);
-      if(creatureEnd&&(a.n==='fate'&&p.hand.length<6||a.c.evoLegacy==='draw'))draw(p,s);
+      if(creatureEnd&&(a.n==='fate'&&(revolt||p.hand.length<6)||a.c.evoLegacy==='draw'))draw(p,s);
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
       if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
       if(a.g==='goldengoose')p.cash+=(firstEdition?5:10)*fx.max(a.u);
@@ -1107,7 +1113,7 @@ function createCepter(edition="ps2"){
       delete s.pendingCard;s.phase=pending.phase;s.cardPaid=true;
       const ok=applyAction(s,pending.action);delete s.cardPaid;return ok;
     }
-    const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
+    const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','secretArt','secretLand','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
     const previousChains=trackChains||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
     if(k==='roll'){delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
@@ -1115,7 +1121,20 @@ function createCepter(edition="ps2"){
     function mapEffect(type,label,tile=p.pos,extra={}){
       s.mapEffect={sequence:(s.mapEffect?.sequence||0)+1,type,label,tile,source:p.pos,...extra};
     }
+    function castSecret(from,at){
+      fatigue(s.tiles[from].unit);
+      const label=fx.applySecret(s,from,at);
+      delete s.secretFrom;
+      mapEffect('cast',label,at,{source:from});
+      s.phase='roll';
+    }
     switch(k){
+      case 'secretArt':
+        if(fx.secretTargets(s,x)[0]?.[0]==='secretSelf')castSecret(x,x);
+        else{s.secretFrom=x;s.phase='secretTarget';}
+        break;
+      case 'secretLand':castSecret(s.secretFrom,x);break;
+      case 'secretCancel':delete s.secretFrom;s.phase='spell';break;
       case 'ability':{
         if(fx.territoryTargets(s,x)[0]?.[0]==='abilitySelf'){
           fatigue(s.tiles[x].unit);
@@ -1531,6 +1550,9 @@ function createCepter(edition="ps2"){
       if(extraSpells?.actions[k])return extra.scoreChoice(s,k,x,y);
       if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-c.cost/35;
       if(['targetLand','comboArea','targetPlayer'].includes(k)&&combo.type[s.spellEffect])return plan.scoreTarget(s.spellEffect,x);
+      if(k==='secretArt')return Math.max(...fx.secretTargets(s,x).map(([,at])=>fx.secretValue(s,x,at)));
+      if(k==='secretLand')return fx.secretValue(s,s.secretFrom,x);
+      if(k==='secretCancel')return -1000;
       if(k==='totem')return 130+(s.tiles[x].unit.enchant==='soulhunt'?50:0);
       if(k==='ability'){
         const unit=fx.name(s.tiles[x].unit);
@@ -1659,8 +1681,8 @@ function createCepter(edition="ps2"){
     for(const id of presets.fire)if(book.length<50&&book.filter(v=>v===id).length<4)book.push(id);
     return book;
   }
-  const territoryAbilityCost=card=>key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,evo,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
+  return {edition,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

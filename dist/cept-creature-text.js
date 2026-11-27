@@ -243,6 +243,9 @@ const CepterCreatureText=(()=>{
     witch:'고른 적의 손패에 있는 주문과 장비 한 장당 30G를 빼앗습니다.'
   };
   function territorySummary(C,card){
+    const art=C.secretArt?.(card);
+    if(art)return '비술 '+art.cost+'G · '+art.label+'. 주사위를 굴리기 전에 사용합니다.';
+    if(C.edition==='revolt')return;
     const key=C.combo.key(card),effect=(C.edition==='3ds'?handheldTerritory[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
@@ -263,7 +266,7 @@ const CepterCreatureText=(()=>{
     if(C.edition==='3ds'&&key==='kodama')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(C.edition==='3ds'&&key==='mystic')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 60 이상이면 70% 확률로 즉사시킵니다.');
     if(card.scrollCritical&&!battle[key]?.includes('두루마리'))pieces.push('두루마리 공격이 강타합니다.');
-    if(card.vigorous)pieces.push('활력. 영지 명령 후 피로 상태가 되지 않습니다.');
+    if(card.vigorous)pieces.push('활력. 영지 명령이나 비술 사용 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
     if(card.evo){
@@ -295,7 +298,8 @@ const CepterCreatureText=(()=>{
       const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
-    const special=firstEdition?(firstRules[key]||battle[key]):battle[key];
+    const special=C.edition==='revolt'&&key==='fate'?'전투에서 격파되면 카드 한 장을 뽑습니다.':
+      firstEdition?(firstRules[key]||battle[key]):battle[key];
     if(!card.basicBattle&&!card.revenge&&special)pieces.push(special);
     if(!firstEdition&&key==='samurai')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
     const landAbility=territorySummary(C,card);

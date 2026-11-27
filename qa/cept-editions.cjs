@@ -1110,6 +1110,65 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
+  const C=ps2.createEdition('revolt'),map='revolt-original-gem-route';
+  const card=name=>C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)===name);
+  const place=(s,i,owner,name,hp,extra={})=>Object.assign(s.tiles[i],{owner,unit:{id:card(name),hp,...extra}});
+  const fixtures=()=>{
+    const s=C.start(4,4,5000,map,undefined,undefined,2,'teams');
+    s.players[0].cash=100;
+    C.configureMatch(s,{recordReplay:true});
+    return s;
+  };
+  const s=fixtures();
+  place(s,1,0,'healer',12);
+  place(s,2,2,'elvenarcher',30);
+  place(s,3,1,'fate',10);
+  place(s,4,3,'fate',10,{enchant:'landprotection'});
+  place(s,5,0,'archbishop',7,{fatigued:true});
+  assert.deepEqual(C.choices(s).filter(a=>a[0]==='secretArt'),[['secretArt',1],['secretArt',2]]);
+  assert.ok(C.play(s,['secretArt',2]));
+  assert.deepEqual(C.choices(s),[['secretLand',3],['secretCancel']]);
+  assert.ok(!C.play(s,['secretLand',4]));
+  assert.ok(C.play(s,['secretCancel']));
+  assert.equal(s.players[0].cash,100);
+  assert.ok(!s.tiles[2].unit.fatigued);
+  assert.ok(C.play(s,['secretArt',2]));
+  assert.ok(C.play(s,['secretLand',3]));
+  assert.deepEqual([s.phase,s.players[0].cash,s.tiles[2].unit.fatigued,s.tiles[3].unit,s.mapEffect.source,s.mapEffect.tile],['roll',80,true,null,2,3]);
+  assert.ok(!C.choices(s).some(a=>a[0]==='secretArt'||a[0]==='cast'));
+  assert.ok(s.replay.steps.length>=3);
+
+  const heal=fixtures();
+  place(heal,1,2,'healer',12);
+  place(heal,3,0,'elvenarcher',29);
+  assert.ok(C.play(heal,['secretArt',1]));
+  assert.deepEqual(C.choices(heal),[['secretLand',3],['secretCancel']]);
+  assert.ok(C.play(heal,['secretLand',3]));
+  assert.deepEqual([heal.tiles[3].unit.hp,heal.players[0].cash,heal.tiles[1].unit.fatigued],[40,90,undefined]);
+
+  const dispel=fixtures();
+  place(dispel,1,0,'archbishop',30);
+  place(dispel,3,1,'fate',40,{enchant:'landprotection'});
+  assert.ok(C.play(dispel,['secretArt',1]));
+  assert.ok(C.play(dispel,['secretLand',3]));
+  assert.deepEqual([dispel.players[0].cash,dispel.tiles[3].unit.enchant,dispel.tiles[1].unit.fatigued],[70,undefined,undefined]);
+
+  const totem=fixtures();
+  place(totem,1,0,'goldentotem',30);
+  assert.deepEqual(C.ai(totem),['secretArt',1]);
+  assert.ok(C.play(totem,['secretArt',1]));
+  assert.deepEqual([totem.phase,totem.players[0].cash,totem.tiles[1].owner,totem.tiles[1].unit],['roll',300,-1,null]);
+
+  const fate=fixtures();
+  place(fate,1,0,'fate',40);
+  fate.players[0].hand=Array(6).fill(card('fate'));
+  assert.ok(C.play(fate,['secretArt',1]));
+  assert.deepEqual([fate.players[0].cash,fate.players[0].hand.length,fate.tiles[1].unit.fatigued],[60,7,true]);
+  fate.phase='land';
+  assert.ok(!C.choices(fate).some(a=>['ability','totem','secretArt'].includes(a[0])));
+  console.log('Revolt Secret Arts before rolling, alliance targeting, fatigue, cancel, lethal damage, card draw, spell ward and replay OK');
+}
+{
   const C=ps2.createEdition('revolt'),E=C.evo,map='revolt-original-gem-route';
   const evolved=Array.from({length:6}).reduce(E.won,E.fresh());
   const base=E.encode(E.fresh(),0),other=E.encode(E.fresh(),1);

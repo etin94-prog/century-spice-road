@@ -281,11 +281,57 @@ const CepterCombos = (() => {
       else if(n==='conjurer'||n==='goobaqueen')claim(v,s.turn,morph(null,n==='conjurer'?'baal':'gooba'));
       if(['conjurer','heatimp','windimp'].includes(n))destroy(s,src);
     }
+    const arts={
+      dispel:{cost:30,label:'크리처 저주 제거'},
+      offering:{cost:0,label:'토템 파괴 · 200G'},
+      draw:{cost:40,label:'카드 1장 뽑기'},
+      heal:{cost:10,label:'HP 30 회복'},
+      arrow:{cost:20,label:'적 크리처 HP −10'}
+    };
+    const secretArt=card=>arts[card?.secretArt];
+    function secretTargets(s,from){
+      const src=s.tiles[from];
+      const art=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn];
+      if(s.edition!=='revolt'||!art||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<arts[art].cost)return [];
+      if(art==='offering'||art==='draw')return [['secretSelf',from]];
+      return s.tiles.flatMap((t,at)=>{
+        if(!t.unit)return [];
+        if(art==='dispel')return enchanted(t.unit)?[['secretLand',at]]:[];
+        if(!targetable(s,t)||immuneHP(t))return [];
+        if(art==='heal'&&t.owner===s.turn&&t.unit.hp<max(t.unit))return [['secretLand',at]];
+        if(art==='arrow'&&!allied(s,t.owner,s.turn))return [['secretLand',at]];
+        return [];
+      });
+    }
+    function applySecret(s,from,at){
+      const p=s.players[s.turn],target=s.tiles[at],src=s.tiles[from];
+      const card=cards[src.unit.id],art=secretArt(card);
+      p.cash-=art.cost;
+      if(card.secretArt==='offering'){p.cash+=200;destroy(s,src);}
+      if(card.secretArt==='draw')draw(p,s);
+      if(card.secretArt==='dispel')clear(target.unit);
+      if(card.secretArt==='heal')target.unit.hp=Math.min(max(target.unit),target.unit.hp+30);
+      if(card.secretArt==='arrow')damage(s,target,10);
+      note(s,p.name+' · '+card.name+' 비술 · '+art.label);
+      return art.label;
+    }
+    function secretValue(s,from,at){
+      const card=cards[s.tiles[from].unit.id],t=s.tiles[at],p=s.players[s.turn];
+      const friendly=allied(s,s.turn,t.owner);
+      const art=card.secretArt;
+      let utility=0;
+      if(art==='offering')utility=200-value(s,t)-(t.level-1)*35;
+      if(art==='draw')utility=p.hand.length<5?35:4;
+      if(art==='dispel')utility=(friendly?1:-1)*(['peace','landprotection','regeneration','soulhunt','abilityplus'].includes(t.unit.enchant)?-16:14);
+      if(art==='heal')utility=Math.min(30,max(t.unit)-t.unit.hp)+(t.level-1)*4;
+      if(art==='arrow')utility=t.unit.hp<=10?50+(t.level-1)*10:10;
+      return utility-secretArt(card).cost*.25-(card.vigorous?0:4);
+    }
     function clearCepter(q){
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,sleipnirExits};
+      blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,sleipnirExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],
