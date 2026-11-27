@@ -286,20 +286,33 @@ const CepterCombos = (() => {
       offering:{cost:0,label:'토템 파괴 · 200G'},
       draw:{cost:40,label:'카드 1장 뽑기'},
       heal:{cost:10,label:'HP 30 회복'},
-      arrow:{cost:20,label:'적 크리처 HP −10'}
+      arrow:{cost:20,label:'적 크리처 HP −10',damage:10,enemy:true},
+      lapGain:{cost:0,label:'완주한 주 수 × 30G'},
+      dice6:{cost:50,label:'다음 주사위를 6으로 고정'},
+      neutralBlast:{cost:80,label:'무속성 크리처 HP −30',damage:30,elements:[-1]},
+      fireAirBlast:{cost:60,label:'화·풍 크리처 HP −20',damage:20,elements:[0,3]},
+      waterEarthBlast:{cost:60,label:'수·지 크리처 HP −20',damage:20,elements:[1,2]},
+      strength:{cost:50,label:'기본 ST +20 · 최대 100'},
+      blind:{cost:50,label:'적 영지 통행료 절반',enchant:'fog',enemy:true},
+      boost:{cost:40,label:'전투 ST·HP +20',enchant:'vitality',beneficial:true},
+      weaken:{cost:40,label:'전투 ST·HP −20',enchant:'disease'}
     };
     const secretArt=card=>arts[card?.secretArt];
     function secretTargets(s,from){
       const src=s.tiles[from];
-      const art=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn];
-      if(s.edition!=='revolt'||!art||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<arts[art].cost)return [];
-      if(art==='offering'||art==='draw')return [['secretSelf',from]];
+      const key=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn],art=arts[key];
+      if(s.edition!=='revolt'||!art||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
+      if(['offering','draw','lapGain','dice6'].includes(key))return [['secretSelf',from]];
       return s.tiles.flatMap((t,at)=>{
         if(!t.unit)return [];
-        if(art==='dispel')return enchanted(t.unit)?[['secretLand',at]]:[];
-        if(!targetable(s,t)||immuneHP(t))return [];
-        if(art==='heal'&&t.owner===s.turn&&t.unit.hp<max(t.unit))return [['secretLand',at]];
-        if(art==='arrow'&&!allied(s,t.owner,s.turn))return [['secretLand',at]];
+        if(key==='dispel')return enchanted(t.unit)?[['secretLand',at]]:[];
+        if(!targetable(s,t))return [];
+        if(key==='heal'&&t.owner===s.turn&&!immuneHP(t)&&t.unit.hp<max(t.unit))return [['secretLand',at]];
+        if(key==='strength'&&strength(t.unit)<100)return [['secretLand',at]];
+        if(art.enemy&&allied(s,t.owner,s.turn))return [];
+        if(art.enchant&&t.unit.enchant!==art.enchant)return [['secretLand',at]];
+        if(art.damage&&!immuneHP(t)&&
+          (!art.elements||art.elements.includes(cards[t.unit.id].element)))return [['secretLand',at]];
         return [];
       });
     }
@@ -311,21 +324,29 @@ const CepterCombos = (() => {
       if(card.secretArt==='draw')draw(p,s);
       if(card.secretArt==='dispel')clear(target.unit);
       if(card.secretArt==='heal')target.unit.hp=Math.min(max(target.unit),target.unit.hp+30);
-      if(card.secretArt==='arrow')damage(s,target,10);
+      if(card.secretArt==='lapGain')p.cash+=30*p.lap;
+      if(card.secretArt==='dice6'){clearCepter(p);p.word=6;}
+      if(card.secretArt==='strength')target.unit.st=Math.min(100,strength(target.unit)+20);
+      if(art.enchant){clear(target.unit);target.unit.enchant=art.enchant;target.unit.caster=s.turn;}
+      if(art.damage)damage(s,target,art.damage);
       note(s,p.name+' · '+card.name+' 비술 · '+art.label);
       return art.label;
     }
     function secretValue(s,from,at){
       const card=cards[s.tiles[from].unit.id],t=s.tiles[at],p=s.players[s.turn];
       const friendly=allied(s,s.turn,t.owner);
-      const art=card.secretArt;
+      const art=card.secretArt,spec=secretArt(card);
       let utility=0;
       if(art==='offering')utility=200-value(s,t)-(t.level-1)*35;
       if(art==='draw')utility=p.hand.length<5?35:4;
       if(art==='dispel')utility=(friendly?1:-1)*(['peace','landprotection','regeneration','soulhunt','abilityplus'].includes(t.unit.enchant)?-16:14);
       if(art==='heal')utility=Math.min(30,max(t.unit)-t.unit.hp)+(t.level-1)*4;
-      if(art==='arrow')utility=t.unit.hp<=10?50+(t.level-1)*10:10;
-      return utility-secretArt(card).cost*.25-(card.vigorous?0:4);
+      if(art==='lapGain')utility=p.lap*30;
+      if(art==='dice6')utility=p.word==null?13:-10;
+      if(art==='strength')utility=(friendly?1:-1)*Math.min(20,100-strength(t.unit));
+      if(spec.enchant)utility=(friendly===!!spec.beneficial?1:-1)*(15+(t.level-1)*8);
+      if(spec.damage)utility=(friendly?-1:1)*(t.unit.hp<=spec.damage?50+(t.level-1)*10:spec.damage);
+      return utility-spec.cost*.25-(card.vigorous?0:4);
     }
     function clearCepter(q){
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];

@@ -1166,7 +1166,59 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([fate.players[0].cash,fate.players[0].hand.length,fate.tiles[1].unit.fatigued],[60,7,true]);
   fate.phase='land';
   assert.ok(!C.choices(fate).some(a=>['ability','totem','secretArt'].includes(a[0])));
-  console.log('Revolt Secret Arts before rolling, alliance targeting, fatigue, cancel, lethal damage, card draw, spell ward and replay OK');
+  for(const [name,element,other,cost,damage] of [
+    ['armoreddragon',-1,0,80,30],['hardrockdragon',0,1,60,20],['lightningdragon',2,3,60,20]
+  ]){
+    const duel=fixtures();
+    place(duel,1,0,name,40);
+    const unit=e=>C.presets.intro.find(id=>C.cards[id].kind==='creature'&&C.cards[id].element===e)??C.cards.findIndex(c=>!c.catalogOnly&&c.kind==='creature'&&c.element===e);
+    Object.assign(duel.tiles[2],{owner:1,unit:{id:unit(element),hp:40}});
+    Object.assign(duel.tiles[3],{owner:1,unit:{id:unit(other),hp:40}});
+    assert.ok(C.play(duel,['secretArt',1]));
+    assert.deepEqual(C.choices(duel),[...(name==='armoreddragon'?[['secretLand',1]]:[]),['secretLand',2],['secretCancel']]);
+    assert.ok(C.play(duel,['secretLand',2]));
+    assert.deepEqual([duel.players[0].cash,duel.tiles[2].unit.hp],[100-cost,40-damage]);
+  }
+  const llama=fixtures();
+  place(llama,1,0,'holyllama',30);
+  assert.ok(C.play(llama,['secretArt',1])&&C.play(llama,['roll']));
+  assert.deepEqual([llama.players[0].cash,llama.die,llama.mapEffect.faces], [50,6,[6]]);
+
+  const fay=fixtures();
+  place(fay,1,0,'fay',30);
+  place(fay,3,0,'healer',40,{st:90});
+  assert.ok(C.play(fay,['secretArt',1])&&C.play(fay,['secretLand',3]));
+  assert.equal(fay.tiles[3].unit.st,100);
+
+  const trained=Array.from({length:6}).reduce(C.evo.won,C.evo.fresh());
+  for(const [part,key,expectedCost,check] of [
+    [32,'heal',10,g=>assert.equal(g.tiles[6].unit.hp,40)],
+    [33,'arrow',20,g=>assert.equal(g.tiles[6].unit.hp,10)],
+    [34,'lapGain',0,g=>assert.equal(g.players[0].cash,160)],
+    [35,'dispel',30,g=>assert.equal(g.tiles[6].unit.enchant,undefined)],
+    [36,'blind',50,g=>assert.equal(g.tiles[6].unit.enchant,'fog')],
+    [37,'boost',40,g=>assert.equal(g.tiles[6].unit.enchant,'vitality')],
+    [38,'weaken',40,g=>assert.equal(g.tiles[6].unit.enchant,'disease')]
+  ]){
+    const recipe=C.evo.apply(trained,'ability',part),id=C.evo.encode(recipe,0);
+    assert.deepEqual(C.evo.decode(id).abilities,[part]);
+    assert.equal(C.cards[id].secretArt,key);
+    assert.equal(C.secretArt(C.cards[id]).cost,expectedCost);
+    assert.equal(C.evo.apply(recipe,'ability',part===32?33:32),null);
+    const deck=C.presets.intro.slice();deck[0]=id;
+    assert.deepEqual(C.evo.unpackBook(C.evo.packBook(deck)),deck);
+    const match=fixtures();
+    match.players[0].lap=2;
+    Object.assign(match.tiles[5],{owner:0,unit:{id,hp:30}});
+    place(match,6,part===32?0:1,'healer',20,part===35?{enchant:'landprotection'}:{});
+    assert.ok(C.play(match,['secretArt',5]));
+    if(key!=='lapGain')assert.ok(C.play(match,['secretLand',6]));
+    assert.equal(match.phase,'roll');
+    assert.equal(match.tiles[5].unit.fatigued,true);
+    assert.equal(match.players[0].cash,key==='lapGain'?160:100-expectedCost);
+    check(match);
+  }
+  console.log('Revolt native and Evo Secret Arts before rolling, alliance targeting, fatigue, cancel, lethal damage, card draw, spell ward and replay OK');
 }
 {
   const C=ps2.createEdition('revolt'),E=C.evo,map='revolt-original-gem-route';

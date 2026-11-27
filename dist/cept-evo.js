@@ -30,7 +30,14 @@ const CepterEvo=(()=>{
     ['ST 드레인','hit',5,20,{drainST:true}],
     ['통행료 상승','map',5,20,{tollFactor:1.5}],
     ['카드 유산','end',5,10,{evoLegacy:'draw'}],['마력 유산','end',5,20,{evoLegacy:'cash'}],
-    ['화·지 관통','attack',8,20,{pierceElements:[0,2]}],['수·풍 관통','attack',8,20,{pierceElements:[1,3]}]
+    ['화·지 관통','attack',8,20,{pierceElements:[0,2]}],['수·풍 관통','attack',8,20,{pierceElements:[1,3]}],
+    ['비술 · 치유','secret',5,10,{secretArt:'heal'}],
+    ['비술 · 마법 화살','secret',5,20,{secretArt:'arrow'}],
+    ['비술 · 마력 획득','secret',5,20,{secretArt:'lapGain'}],
+    ['비술 · 저주 해제','secret',5,10,{secretArt:'dispel'}],
+    ['비술 · 연막','secret',5,20,{secretArt:'blind'}],
+    ['비술 · 강화','secret',5,20,{secretArt:'boost'}],
+    ['비술 · 약화','secret',5,20,{secretArt:'weaken'}]
   ];
   const areas=['neutral','fire','water','earth','air'],colors='RBGY';
   const original={base:1_000_000_000,radices:[2,11,5,17,16,3,2,17,17]};

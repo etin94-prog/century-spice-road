@@ -255,8 +255,14 @@ const CepterEditions=(()=>{
         Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
       }
       if(edition==='revolt'){
-        const art={archbishop:'dispel',goldentotem:'offering',fate:'draw',healer:'heal',elvenarcher:'arrow'}[slug];
+        const art={
+          archbishop:'dispel',goldentotem:'offering',fate:'draw',healer:'heal',elvenarcher:'arrow',
+          dwarvenminer:'lapGain',holyllama:'dice6',armoreddragon:'neutralBlast',
+          hardrockdragon:'fireAirBlast',lightningdragon:'waterEarthBlast',fay:'strength',burnacle:'blind',caladrius:'boost'
+        }[slug];
         if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
+        if(slug==='dwarvenminer')c.tollFactor=1.5;
+        if(slug==='fay')c.scrollCritical=true;
       }
       if(edition==='revolt'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
