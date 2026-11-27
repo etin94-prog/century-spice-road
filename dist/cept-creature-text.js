@@ -187,6 +187,8 @@ const CepterCreatureText=(()=>{
     warlock:'단일 대상 주문과 영지 능력의 대상이 되지 않습니다. 두루마리로 공격하면 강타합니다.'
   };
   const territory={
+    metalbug:'HP가 줄어든 크리처 한 마리를 파괴한 뒤 자신도 파괴됩니다.',
+    sakuya:'고른 내 영지의 레벨이 3 이하라면 지 속성으로 바꿉니다.',
     archbishop:'고른 영지의 크리처에 걸린 인챈트를 해제합니다.',
     astralqueen:'맵의 모든 크리처에게 카무플라주를 부여합니다.',
     clockworkowl:'고른 셉터가 다음 이동 때 진행 방향을 새로 고릅니다.',
@@ -244,6 +246,10 @@ const CepterCreatureText=(()=>{
     if(card.stationary)pieces.push('방어 전용. 손패에서 침략하거나 영지 이동에 사용할 수 없습니다.');
     if(card.support&&!(firstEdition&&key==='sorcerer'))pieces.push('지원. 장비를 고를 때 크리처를 사용할 수 있습니다.');
     if(card.regenerate&&!['greenmold','healer'].includes(key))pieces.push('생존하면 전투가 끝날 때 HP를 최대치까지 회복합니다.');
+    if(C.edition==='3ds'&&key==='shadefolk')pieces.push('전투 ST는 상대 크리처와 같은 속성의 배치 크리처 수 × 10입니다. 설욕 시 상대 셉터의 마력 30%를 빼앗습니다.');
+    if(C.edition==='3ds'&&key==='catoblepas')pieces.push('설욕 시 전투 영지의 레벨을 1 내립니다.');
+    if(C.edition==='3ds'&&key==='raksas')pieces.push('설욕 시 상대 셉터가 가장 많이 보유한 종류의 호부 30%를 빼앗습니다.');
+    if(card.freeToll)pieces.push('이 영지의 통행료는 0G입니다. 전투에서 파괴되면 티라노사우루스로 부활합니다.');
     if(C.edition==='3ds'&&key==='ixtol')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대를 파괴합니다. 승리하면 기본 ST가 최대 100까지 10 오릅니다.');
     if(C.edition==='3ds'&&key==='kodama')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령 후 피로 상태가 되지 않습니다.');
@@ -262,7 +268,7 @@ const CepterCreatureText=(()=>{
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
     const special=firstEdition?(firstRules[key]||battle[key]):battle[key];
-    if(!card.basicBattle&&special)pieces.push(special);
+    if(!card.basicBattle&&!card.revenge&&special)pieces.push(special);
     if(!firstEdition&&key==='samurai')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
     const landAbility=territorySummary(C,card);
     if(landAbility)pieces.push(landAbility);

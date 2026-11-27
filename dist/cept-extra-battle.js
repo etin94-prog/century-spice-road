@@ -50,7 +50,7 @@ const CepterExtraBattle=(()=>{
       Object.assign(a,{u,c,n:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
       lines.push(c.name+' 변신');
     }
-    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||protectedItem(a.g);}
+    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.gear?.protectItem||protectedItem(a.g);}
     function convert(target,name){
       const remaining=target.hp;
       transform(target,ids.get(name));
@@ -182,7 +182,7 @@ const CepterExtraBattle=(()=>{
         if(lord.includes(a.n))s.players[a.seat].cash-=100;
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(a.n==='fungonoid')grow(a,10);
-        if(a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
+        if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
         if((a.n==='basilisk'||a.n==='leveler'&&t.type!==3)&&!onBoard('jadeidol')&&!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed')t.level=Math.max(1,t.level-1);
       }
       if(a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
@@ -207,7 +207,7 @@ const CepterExtraBattle=(()=>{
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
       if(a.n==='leviathan'&&!onBoard('jadeidol'))t.type=1;
       if(a.n==='ghoul'){a.heal=true;a.hp=fx.max(a.u);}
-      if(a.n==='raksas'){
+      if(s.edition!=='3ds'&&a.n==='raksas'){
         const most=Math.max(0,...other.symbols),at=other.symbols.indexOf(most);
         if(at>=0)other.symbols[at]-=Math.floor(most*.3);
       }

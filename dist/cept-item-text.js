@@ -81,6 +81,9 @@ const describeCepterItem=(()=>{
     const key=C.combo.key(card),name=aliases[key]||key,firstEdition=C.edition==='ps1'||C.edition==='saturn';
     const pieces=[],scroll=card.category==='scroll',fixedST=['reflect','nullify'].includes(card.effect);
     const signed=(label,n)=>label+' '+(n>0?'+':'−')+Math.abs(n);
+    if(C.edition==='3ds'&&key==='mindripper')pieces.push('설욕 시 전투 상대 셉터의 손패에서 무작위로 두 장을 파괴합니다.');
+    if(C.edition==='3ds'&&key==='soulcorrupter')pieces.push('설욕 시 상대 셉터가 가장 많이 보유한 종류의 호부 30%를 빼앗습니다.');
+    if(C.edition==='3ds'&&key==='powercrown')pieces.push('상대 크리처의 기본 ST만큼 전투 HP를 얻습니다. 설욕 시 상대를 그레이트 포실로 바꿉니다.');
     if(C.edition==='3ds'&&key==='lifestealer')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(fixedST)pieces.push('전투 ST를 0으로 맞춥니다.');
     if(!scroll&&(card.st||card.hp))pieces.push('전투 중 '+[card.st&&signed('ST',card.st),card.hp&&signed('HP',card.hp)].filter(Boolean).join(' · '));
@@ -102,7 +105,7 @@ const describeCepterItem=(()=>{
     if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(firstEdition?5:10)+'G를 얻습니다.');
     if(name==='towershield'&&card.halveScroll)pieces.push('일반 공격과 두루마리 피해를 절반으로 줄입니다.');
     else if(ability[card.effect]||ability[name])pieces.push(ability[card.effect]||ability[name]);
-    if(protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
+    if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };
 })();

@@ -1145,7 +1145,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(lap,['route',0]));
   assert.deepEqual([lap.players[0].lap,lap.players[0].cash],[2,568]);
 
-  const fight=(attacker,gear,shield,st)=>{
+  const fight=(attacker,gear,shield,st,prepare)=>{
     const s=C.start(2,2,0,intro);
     const attackerId=id(attacker),guard=id('minotaur');assert.ok(attackerId>=0&&guard>=0);
     Object.assign(s,{phase:'attack',battle:{at:3,inv:attackerId,atkItem:null,defItem:null}});
@@ -1156,6 +1156,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
     s.players.forEach(q=>q.cash=1000);
     s.players[0].hand=gear?[id(gear)]:[];s.players[1].hand=shield?[id(shield)]:[];
+    prepare?.(s);
     assert.ok(C.play(s,[gear?'equip':'bare',...(gear?[0]:[])]));
     assert.ok(C.play(s,[shield?'equip':'bare',...(shield?[0]:[])]));
     return s;
@@ -1163,6 +1164,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const block=fight('minotaur','lifestealer','gaseousform');
   assert.ok(block.battle.lines.some(x=>x.includes('최대 HP −30')));
   assert.equal(block.tiles[3].unit.mhp,10);
+  const kodama=fight('kodama',null,'gaseousform');
+  assert.equal(kodama.tiles[3].unit.mhp,10);
   const hit=fight('minotaur','lifestealer',null);
   assert.ok(!hit.battle.lines.some(x=>x.includes('설욕')));
   const ixtol=fight('ixtol',null,'gaseousform');
@@ -1174,5 +1177,87 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(survives.battle.strikes[0].effect,'reflect');assert.ok(survives.battle.won);
   const zero=fight('ixtol',null,'gaseousform',0);
   assert.ok(!zero.battle.lines.some(x=>x.includes('설욕')));
-  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income, Revenge and reflect timing OK');
+  const shade=fight('shadefolk',null,'gaseousform',null,s=>{
+    Object.assign(s.tiles[8],{owner:1,type:1,unit:{id:id('minotaur'),hp:40}});
+  });
+  assert.equal(shade.battle.attackST,20,'Shadefolk counts creature element across all owners, independent of land element');
+  assert.deepEqual(shade.players.map(p=>p.cash),[1276,644]);
+
+  const cat=fight('catoblepas',null,'gaseousform',null,s=>{s.tiles[3].level=4;});
+  assert.equal(cat.tiles[3].level,3);
+  const floor=fight('catoblepas',null,'gaseousform');
+  assert.equal(floor.tiles[3].level,1);
+  const poison=fight('catoblepas',null,null);
+  assert.ok(poison.battle.lines.some(line=>line.includes('독')));
+  assert.equal(poison.battle.lines.some(line=>line.includes('설욕')),false);
+
+  for(const [unit,gear] of [['raksas',null],['minotaur','soulcorrupter']]){
+    const s=fight(unit,gear,'gaseousform',null,state=>{
+      state.players[1].symbols=[1,3,17,9];
+      state.players[0].symbols=[0,2,1,0];
+    });
+    assert.deepEqual(s.players.map(p=>p.symbols),[[0,2,6,0],[1,3,12,9]]);
+  }
+  const plainRaksas=fight('raksas',null,null,null,s=>{s.players[1].symbols=[0,20,0,0];});
+  assert.ok(plainRaksas.battle.won);
+  assert.deepEqual(plainRaksas.players[1].symbols,[0,20,0,0],'2012 victory does not activate the PS2 Raksas effect');
+  const hands=fight('minotaur','mindripper','gaseousform',null,s=>{
+    s.players[1].hand.push(id('goblin'),id('minotaur'),id('wallofice'));
+  });
+  assert.equal(hands.players[1].hand.length,1);
+  assert.ok(hands.battle.lines.some(line=>line.includes('손패 2장 파괴')));
+  const crown=fight('minotaur','powercrown','gaseousform');
+  assert.deepEqual(crown.battle.startHP,[80,40]);
+  assert.equal(crown.tiles[3].unit.id,id('greatfossil'));
+  assert.equal(C.toll(crown,crown.tiles[3]),0);
+  assert.ok(C.play(crown,['continue']));
+  assert.deepEqual(crown.players.map(p=>p.cash),[940,920]);
+  const reflectCrown=fight('minotaur','powercrown','countershield');
+  assert.ok(reflectCrown.battle.noToll);
+  assert.equal(reflectCrown.battle.strikes[0].effect,'reflect');
+  const crownStats=fight('minotaur','powercrown','battleaxe');
+  assert.deepEqual(crownStats.battle.startHP,[80,40],'HP uses base ST before the opposing weapon bonus');
+  const protectedCrown=fight('minotaur','powercrown',null,null,s=>{
+    s.tiles[3].unit={id:id('thief'),hp:30};
+  });
+  assert.equal(protectedCrown.battle.startHP[0],60);
+  const fossil=fight('minotaur','battleaxe',null,null,s=>{
+    s.tiles[3].unit={id:id('greatfossil'),hp:30};
+  });
+  assert.equal(fossil.tiles[3].unit.id,id('tyrannosaurus'));
+  assert.equal(fossil.tiles[3].unit.hp,60);
+  assert.equal(fossil.battle.won,false);
+  assert.ok(C.toll(fossil,fossil.tiles[3])>0);
+
+  function command(name){
+    const s=C.start(2,2,0,intro);
+    s.phase='land';s.players[0].cash=1000;Object.assign(s.tiles[8],{owner:0,unit:{id:id(name),hp:C.cards[id(name)].hp}});
+    return s;
+  }
+  const bug=command('metalbug');
+  Object.assign(bug.tiles[3],{owner:1,unit:{id:id('minotaur'),hp:39}});
+  Object.assign(bug.tiles[4],{owner:1,unit:{id:id('minotaur'),hp:40}});
+  Object.assign(bug.tiles[5],{owner:1,unit:{id:id('minotaur'),hp:39,enchant:'landprotection'}});
+  assert.ok(C.play(bug,['ability',8]));
+  assert.deepEqual(C.choices(bug).filter(([kind])=>kind==='abilityLand'),[['abilityLand',3]]);
+  assert.ok(C.play(bug,['abilityLand',3]));
+  assert.deepEqual([bug.players[0].cash,bug.tiles[8].owner,bug.tiles[3].owner],[920,-1,-1]);
+  const sakuya=command('sakuya');
+  Object.assign(sakuya.tiles[3],{type:0,level:3,owner:0,unit:{id:id('goblin'),hp:30}});
+  Object.assign(sakuya.tiles[4],{type:0,level:4,owner:0,unit:{id:id('goblin'),hp:30}});
+  Object.assign(sakuya.tiles[5],{type:0,level:1,owner:1,unit:{id:id('goblin'),hp:30}});
+  assert.ok(C.play(sakuya,['ability',8]));
+  assert.ok(!C.choices(sakuya).some(([kind,i])=>kind==='abilityLand'&&[4,5].includes(i)));
+  assert.ok(C.play(sakuya,['abilityLand',3]));
+  assert.deepEqual([sakuya.players[0].cash,sakuya.tiles[3].type],[880,2]);
+  const heat=command('heatimp');
+  heat.players[1].symbols=[5,20,0,0];
+  assert.ok(C.play(heat,['ability',8]));
+  assert.ok(C.play(heat,['abilityPlayer',1]));
+  assert.deepEqual([heat.players[0].cash,heat.tiles[8].owner,heat.players[1].symbols[1]],[950,-1,12]);
+  const barometz=command('barometz');
+  barometz.players[0].lap=2;
+  assert.ok(C.play(barometz,['ability',8]));
+  assert.equal(barometz.players[0].cash,1090);
+  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income, all nine Revenge cards, four territory abilities and reflect timing OK');
 }

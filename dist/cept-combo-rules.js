@@ -179,6 +179,7 @@ const CepterCombos = (() => {
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
     const sagaTerritory={fontaciel:50,gogma:200,warlock:60};
+    const handheldTerritory={metalbug:80,sakuya:120,barometz:0,heatimp:50};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','barometz','quakebeast']);
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl']);
@@ -190,6 +191,10 @@ const CepterCombos = (() => {
         if(n==='fontaciel')return [['abilitySelf',from]];
         if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
         if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
+      }
+      if(s.edition==='3ds'){
+        if(n==='metalbug')return s.tiles.flatMap((v,j)=>j!==from&&targetable(s,v)&&v.unit.hp<max(v.unit)?[['abilityLand',j]]:[]);
+        if(n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&v.unit&&territoryType(v.type)&&v.type!==2&&v.level<=3&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
       }
       if(selfAbilities.has(n))return [['abilitySelf',from]];
       if(cepterAbilities.has(n)){
@@ -204,9 +209,13 @@ const CepterCombos = (() => {
         return [['abilityLand',j]];
       });
     }
-    const territoryCost=(s,n)=>(s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
+    const territoryCost=(s,n)=>s.edition==='3ds'?handheldTerritory[n]:(s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
     function territoryEffect(s,from,x){
       const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];p.cash-=territoryCost(s,n);
+      if(s.edition==='3ds'){
+        if(n==='metalbug'){destroy(s,v);destroy(s,src);return;}
+        if(n==='sakuya'){v.type=2;return;}
+      }
       if(s.edition==='saga'){
         if(n==='fontaciel'){
           for(const t of s.tiles){

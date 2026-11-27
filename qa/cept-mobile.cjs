@@ -590,7 +590,38 @@ const {chromium}=require('playwright');
       await handheldPage.locator('#game:not([inert])').waitFor();
       assert.equal(await handheldPage.evaluate(()=>s.mapEffect.faces.length),1);
       assert.ok(await handheldPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-      console.log('3ds 2012 '+width+'x'+height+': independent edition, 41-map archive, original board and single die by touch OK');
+      await handheldPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);
+        const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+        s=C.start(2,2,6000,'3ds-original-bend');s.phase='attack';s.players[0].pos=3;
+        s.players[0].hand=[id('powercrown'),id('battleaxe')];s.players[1].hand=[id('countershield'),id('battleaxe')];
+        s.battle={at:3,inv:id('minotaur'),atkItem:null,defItem:null};
+        Object.assign(s.tiles[3],{type:1,owner:1,unit:{id:id('minotaur'),hp:40}});
+        pending=false;render();
+      });
+      for(const seat of [0,1]){
+        if(seat)await handheldPage.getByRole('button',{name:'내 차례 확인'}).tap();
+        await handheldPage.locator('[data-kind=equip] button').tap();
+        const picker=handheldPage.locator('#turnPicker');
+        await picker.locator('.turn-picker-card').first().tap();
+        await picker.locator('.primary').tap();
+      }
+      await handheldPage.locator('.battle-log summary').tap();
+      assert.match(await handheldPage.locator('.battle-log').innerText(),/설욕.*그레이트 포실/);
+      assert.match(await handheldPage.locator('.battle-outcome').innerText(),/수비 성공/);
+      assert.ok(await handheldPage.evaluate(()=>s.battle.noToll&&s.battle.strikes[0].effect==='reflect'));
+      await handheldPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);
+        const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+        s=C.start(2,2,6000,'3ds-original-bend');s.phase='land';
+        Object.assign(s.tiles[8],{owner:0,unit:{id:id('metalbug'),hp:40}});
+        Object.assign(s.tiles[3],{owner:1,unit:{id:id('minotaur'),hp:39}});
+        pending=false;render();
+      });
+      await handheldPage.locator('[data-action=ability]').tap();
+      await handheldPage.locator('[data-action=abilityLand]').tap();
+      assert.deepEqual(await handheldPage.evaluate(()=>[s.tiles[8].owner,s.tiles[3].owner]),[-1,-1]);
+      console.log('3ds 2012 '+width+'x'+height+': independent edition, 41-map archive, single die, Power Crown and Metal Bug by touch OK');
       await handheldPage.close();
     }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});

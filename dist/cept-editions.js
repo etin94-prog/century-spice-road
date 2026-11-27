@@ -176,6 +176,13 @@ const CepterEditions=(()=>{
     freeze:{st:30,critical:0},firebolt:{st:30,critical:1},windcutter:{st:30,critical:2},
     stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40}
   };
+  const handheldSpecial={
+    shadefolk:{revenge:'magic'},catoblepas:{revenge:'level',poison:true},raksas:{revenge:'symbols'},
+    mindripper:{revenge:'hand',st:40,hp:0},soulcorrupter:{revenge:'symbols',st:40,hp:0},
+    powercrown:{revenge:'fossil',protectItem:true,st:0,hp:0},
+    ixtol:{revenge:'destroy'},kodama:{revenge:'shrink',support:true},lifestealer:{revenge:'shrink',st:40,hp:0},
+    greatfossil:{stationary:true,freeToll:true},metalbug:{},sakuya:{support:true},barometz:{stationary:true}
+  };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
@@ -221,9 +228,7 @@ const CepterEditions=(()=>{
       if(edition==='revolt'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
       if(edition==='3ds'&&slug==='countershield')Object.assign(c,{catalogOnly:false,effect:'reflect',st:0,hp:0});
-      if(edition==='3ds'&&slug==='lifestealer')Object.assign(c,{catalogOnly:false,st:40,hp:0});
-      if(edition==='3ds'&&slug==='kodama')Object.assign(c,{catalogOnly:false,support:true});
-      if(edition==='3ds'&&slug==='ixtol')c.catalogOnly=false;
+      if(edition==='3ds'&&Object.hasOwn(handheldSpecial,slug))Object.assign(c,{catalogOnly:false},handheldSpecial[slug]);
       if(edition==='3ds'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}
       if(first&&slug==='giantspider'){c.paralyze=true;c.statusRaces=['rh','rb'];}
