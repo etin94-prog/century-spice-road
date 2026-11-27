@@ -369,6 +369,8 @@ const CepterCreatureText=(()=>{
     if(card.blocksFirst)pieces.push('선제 능력이 있는 크리처의 일반 공격을 무효화합니다.');
     if(card.blocksSmall)pieces.push('최대 HP 30 이하인 상대의 일반 공격을 무효화합니다.');
     if(card.criticalMHP)pieces.push('최대 HP '+card.criticalMHP+' 이하인 상대를 일반 공격하면 강타합니다.');
+    if(C.edition==='3ds'&&key==='camazotz')pieces.push('상대 기본 ST만큼 전투 ST가 오릅니다. 적을 격파하면 상대가 가장 많이 보유한 한 종류의 호부를 30% 파괴합니다.');
+    if(C.edition==='3ds'&&key==='myrmecoleo')pieces.push('전투에서 격파되면 드래곤플라이로 변해 부활합니다.');
     if(C.edition==='3ds'&&key==='generalguan')pieces.push('배치된 최대 HP 50 이상 크리처 한 마리마다 전투 ST +5.');
     if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
@@ -404,8 +406,9 @@ const CepterCreatureText=(()=>{
       const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
-    const special=(C.edition==='revolt'||C.edition==='3ds'&&['chimera','pyromancer','sulfurousballoon'].includes(key))&&revoltBattle[key]?revoltBattle[key]:
-      (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba','golem'].includes(key))&&beginsBattle[key]?beginsBattle[key]:
+    const special=C.edition==='3ds'&&key==='powdereater'?'영지 이동 명령으로 이동할 때 원래 영지에도 분신을 남깁니다. 주문으로 이동하면 분신이 생기지 않습니다.':
+      (C.edition==='revolt'||C.edition==='3ds'&&['chimera','pyromancer','sulfurousballoon'].includes(key))&&revoltBattle[key]?revoltBattle[key]:
+      (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba','golem','leveller'].includes(key))&&beginsBattle[key]?beginsBattle[key]:
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':

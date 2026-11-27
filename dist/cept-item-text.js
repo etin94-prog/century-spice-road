@@ -118,6 +118,8 @@ const describeCepterItem=(()=>{
     const key=C.combo.key(card),name=aliases[key]||key,firstEdition=C.edition==='ps1'||C.edition==='saturn';
     const pieces=[],scroll=card.category==='scroll',fixedST=['reflect','nullify'].includes(card.effect);
     const signed=(label,n)=>label+' '+(n>0?'+':'−')+Math.abs(n);
+    const handheldBracelet=C.edition==='3ds'&&key==='powerbracelet';
+    if(handheldBracelet)pieces.push('전투의 기본 ST는 기본 ST의 두 배, 기본 HP는 최대 HP의 두 배로 계산합니다.');
     if(C.edition==='3ds'&&key==='holygrail')pieces.push('두루마리와 일반 공격을 무효화합니다. 일반 공격을 막으면 막은 피해량 × 3G의 마력을 잃습니다.');
     if(C.edition==='3ds'&&key==='tearinghalo')pieces.push('장착 크리처가 유속성이면 두루마리 공격이 강타합니다.');
     if(C.edition==='3ds'&&key==='mindripper')pieces.push('설욕 시 전투 상대 셉터의 손패에서 무작위로 두 장을 파괴합니다.');
@@ -162,7 +164,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='revolt'&&name==='silverplow')pieces.push('장착한 크리처가 생존하면 교전 영지 레벨이 1 오릅니다.');
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(C.edition==='begins'&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
-    else if(!(C.edition==='3ds'&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
+    else if(!(handheldBracelet||C.edition==='3ds'&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };

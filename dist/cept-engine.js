@@ -895,6 +895,8 @@ function createCepter(edition="ps2"){
       const count=(e)=>s.tiles.filter(v=>v.owner===a.seat&&v.type===e).length;
       if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){const gain=Math.max(0,Math.min(80,fx.max(a.u)+a.gear.hp)-fx.max(a.u));a.u.mhp=fx.max(a.u)+gain;a.u.hp+=gain;}
       if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
+      if(handheld&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
+      if(handheld&&a.n==='camazotz')a.st+=baseStrength[a===A?1:0];
       if(a.n==='vision')a.hp=30;
       if(a.n==='gigantherium'&&(begins?sides.some(side=>combo.enchanted(side.u)):combo.enchanted(t.unit)))a.hp-=20;
       if(a.n==='dragon'){
@@ -976,7 +978,7 @@ function createCepter(edition="ps2"){
         if(!firstEdition&&a.n==='sorcerer'&&!a.gear)a.st=20;
         if(['reflect','nullify'].includes(a.gear?.effect))a.st=0;
       }
-      if(a.g==='powerbracelet')a.st*=2;
+      if(!handheld&&a.g==='powerbracelet')a.st*=2;
       if(a.g==='petrifystone'){a.st=0;a.hp=80+a.land;}
       a.st=Math.max(0,a.st);
     }
@@ -1153,7 +1155,7 @@ function createCepter(edition="ps2"){
         const start=lines.length;
         if(!muted&&a.u.enchant==='paralysis'){lines.push('마비 · 공격 불가');break;}
         const effect=hit(a,d)||'hit';
-        if(edition==='saga'){
+        if(edition==='saga'||handheld){
           if(d.hp<=0)d.defeatedByOpponent=true;
           if(effect==='reflect'&&a.hp<=0)a.defeatedByOpponent=true;
         }
@@ -1437,7 +1439,7 @@ function createCepter(edition="ps2"){
       }else if(onLand(A))s.tiles[b.from].unit=A.u;
     }
     if(t.unit&&sides.some(a=>a.g==='rainbowpiece'&&a.hp>0))combo.clear(t.unit);
-    if(b.from!=null&&(won||!onLand(A))&&fx.name(s.tiles[b.from].unit)!=='powdereater')vacate(s.tiles[b.from]);
+    if(b.from!=null&&(won||!onLand(A))&&(handheld&&b.teleport||fx.name(s.tiles[b.from].unit)!=='powdereater'))vacate(s.tiles[b.from]);
     s.phase='result';note(s,b.lines.at(-1));
   }
   function configureMatch(s,{inputSeconds=0,suddenDeath=false,recordReplay=false}={}){
@@ -1538,7 +1540,7 @@ function createCepter(edition="ps2"){
         s.phase='attack';
       }else{
         claim(dst,src.owner,{...src.unit});combo.clear(dst.unit);
-        if(fx.name(src.unit)!=='powdereater')vacate(src);
+        if(handheld&&!territoryMove||fx.name(src.unit)!=='powdereater')vacate(src);
         if(label)mapEffect('cast',label+' 이동',at,{source:from});
         if(territoryMove)afterTerritory(s);else s.phase='roll';
       }
@@ -2054,6 +2056,11 @@ function createCepter(edition="ps2"){
       if(k==='targetLand'&&spellRevival(s,s.tiles[x],s.spellEffect))return -24;
       if(['targetLand','targetPlayer'].includes(k)&&extraTypes?.[s.spellEffect])return extra.scoreTarget(s,s.spellEffect,x);
       if(extraSpells?.actions[k])return extra.scoreChoice(s,k,x,y);
+      if(handheld&&(k==='cast'&&c.effect==='landtransfer'||k==='targetLand'&&s.spellEffect==='landtransfer')){
+        const scoreSale=t=>p.cash<220&&value(s,t)>=250?6+Math.min(value(s,t),800)/24-3*t.level:-20;
+        if(k==='targetLand')return scoreSale(s.tiles[x]);
+        return Math.max(-20,...fx.targets(s,'landtransfer').map(([,at])=>scoreSale(s.tiles[at])))-c.cost/35;
+      }
       if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-(revolt?price(p,c,s):c.cost)/35;
       if(['targetLand','comboArea','targetPlayer'].includes(k)&&combo.type[s.spellEffect])return plan.scoreTarget(s.spellEffect,x);
       if(k==='secretArt')return Math.max(...fx.secretTargets(s,x).map(([,at])=>secretScore(x,at)));
@@ -2118,6 +2125,9 @@ function createCepter(edition="ps2"){
           const at=s.towerAt??p.pos;
           if(c.synthesizedForm&&sacrificeRequired(s,c))return Math.max(...p.hand.flatMap((_,i)=>i===x?[]:[invasionValue(at,x,i)]));
           return invasionValue(at,x);
+        }
+        if(handheld&&k==='transfer'&&fx.name(s.tiles[x].unit)==='powdereater'&&s.tiles[y].owner<0){
+          return 26+value(s,s.tiles[y])/15+(s.tiles[y].type===3?4:0);
         }
         if(revolt&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);
         if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia'||revolt&&fx.name(s.tiles[x].unit)==='thunderspawn')){

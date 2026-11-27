@@ -274,10 +274,10 @@ const CepterExtraBattle=(()=>{
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(a.n==='fungonoid')grow(a,10);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
-        const leveller=s.edition==='begins'?a.n==='leveller':a.n==='leveler';
+        const leveller=['begins','3ds'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
         if((a.n==='basilisk'||leveller&&t.type!==3)&&t.level>1&&!fx.blockedLevel(s,t)){
           t.level--;
-          if(s.edition==='begins')lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
+          if(['begins','3ds'].includes(s.edition))lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
         }
       }
       if(a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
@@ -306,9 +306,13 @@ const CepterExtraBattle=(()=>{
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
       if(a.n==='leviathan'&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld')t.type=1;
       if(a.n==='ghoul'){a.heal=true;a.hp=fx.max(a.u);}
-      if(s.edition!=='3ds'&&a.n==='raksas'){
-        const most=Math.max(0,...other.symbols),at=other.symbols.indexOf(most);
-        if(at>=0)other.symbols[at]-=Math.floor(most*.3);
+      const camazotz=a.n==='camazotz'&&d.defeatedByOpponent;
+      if(s.edition!=='3ds'&&a.n==='raksas'||camazotz){
+        const most=Math.max(0,...other.symbols),at=other.symbols.indexOf(most),loss=Math.floor(most*.3);
+        if(loss>0){
+          other.symbols[at]-=loss;
+          if(camazotz)lines.push(a.c.name+' · 상대 호부 '+loss+'개 파괴');
+        }
       }
       if(a.n==='taotieh'){const st=fx.strength(a.u);a.u.st=Math.max(st,Math.min(80,st+10));grow(a,10);}
       if(a.g==='heartfibula'||a.g==='windamulet')grow(a,a.g==='heartfibula'?20:10);

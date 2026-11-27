@@ -223,6 +223,10 @@ const describeCepterSpell=(()=>{
       if(e==='dispelmagic')return '고른 셉터의 저주를 해제합니다. 사용한 주문은 북으로 돌아갑니다.';
     }
     if(edition==='3ds'&&['antielement','drought','fog'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
+    if(edition==='3ds'&&e==='charity')return '현재 순위와 같은 수의 카드를 뽑습니다.';
+    if(edition==='3ds'&&e==='landtransfer')return '내 영지 한 곳을 포기하고 현재 영지 가치만큼 마력을 얻습니다.';
+    if(edition==='3ds'&&e==='mutation')return '크리처의 최대 HP를 최대 100까지 20 올리고 독을 부여합니다. 전투 종료 시 독이 최대 HP의 절반만큼 피해를 줍니다.';
+    if(edition==='3ds'&&e==='turnover')return '기본 ST가 30 이하인 모든 크리처는 ST +20, 50 이상인 모든 크리처는 ST −20이 됩니다.';
     if(edition==='3ds'&&e==='earthshaker')return '최대 HP가 40 이상인 크리처가 배치된 모든 영지의 레벨을 1 낮춥니다. 최저 Lv.1.';
     if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
     if(edition==='revolt'&&e==='vortex')return '대상 크리처의 영지에서 전투 능력과 장비 효과를 무효화하고 카드 한 장을 뽑습니다.';

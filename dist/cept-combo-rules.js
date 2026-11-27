@@ -128,7 +128,7 @@ const CepterCombos = (() => {
       const tiles=s.tiles.filter(v=>v.unit&&(type[e]!=='area'||v.area===x));
       if(type[e]==='land'){
         if(e==='telekinesis'){s.teleFrom=x;return 'teleMove';}
-        if(e==='landtransfer'){p.cash+=value(s,t);vacate(t,true);p.book.unshift(ids.get(e));}
+        if(e==='landtransfer'){p.cash+=value(s,t);vacate(t,true);if(s.edition!=='3ds')p.book.unshift(ids.get(e));}
         else if(e==='exile')returnToHand(s,t);
         else if(e==='relief'){
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
@@ -156,7 +156,7 @@ const CepterCombos = (() => {
           const begins=s.edition==='begins',locked=begins&&immuneHP(t);
           clear(u);
           if(!locked&&!immuneHP(t)){
-            const next=Math.max(max(u),Math.min(begins||s.edition==='saga'?100:80,max(u)+20));
+            const next=Math.max(max(u),Math.min(['begins','saga','3ds'].includes(s.edition)?100:80,max(u)+20));
             if(!begins)u.hp+=next-max(u);
             u.mhp=next;
           }

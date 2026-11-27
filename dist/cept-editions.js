@@ -109,7 +109,8 @@ const CepterEditions=(()=>{
       incineration:'incineration',locust:'locust',phantasm:'phantasm',revelation:'revelation',revival:'revival',
       selenear:'selenear',simulacrum:'simulacrum',spartoi:'spartoi',spiritwalk:'spiritwalk',telegnosis:'telegnosis',
       torture:'torture',triumph:'triumph',magicbooster:'magicbooster',theft:'theft',
-      antielement:'antielement',permission:'permission',wordofrecall:'castlerecall',dreamterrain:'dreamterrain',earthshaker:'earthshaker'
+      antielement:'antielement',permission:'permission',wordofrecall:'castlerecall',dreamterrain:'dreamterrain',earthshaker:'earthshaker',
+      charity:'charity',landtransfer:'landtransfer',mutation:'mutation',turnover:'turnover'
     },
     saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
@@ -682,6 +683,8 @@ const CepterEditions=(()=>{
     colossus:{},decoy:{},dryad:{support:true},nike:{first:true},sprite:{blocksLarge:true},humbaba:{},jackalope:{support:true},neutralcloak:{st:0,hp:40},
     chimera:{first:true},dragon:{first:true},firedrake:{},flamelord:{scrollCritical:true},generalguan:{first:true},golem:{},
     salamander:{},fireamulet:{st:20,hp:10},oldwillow:{stationary:true},caitsith:{spellWard:true},sulfurousballoon:{},
+    burningtitan:{},camazotz:{},leveller:{},myrmecoleo:{last:true,reviveForm:'dragonfly'},powdereater:{},
+    powerbracelet:{st:0,hp:0},
     aurablade:{st:0,hp:0},coinofpiety:{st:0,hp:0},hellblaze:{st:40,hp:0},iksear:{st:0,hp:0,protectItem:true},
     kris:{st:30,hp:0,protectItem:true},offeringdoll:{st:0,hp:0},rainbowpiece:{st:0,hp:40,neutralizeScroll:true},
     shadowarmor:{st:0,hp:0},sleep:{st:0,hp:0},stinkbottle:{st:0,hp:0},trapezon:{st:0,hp:0},wingedboots:{st:0,hp:0,first:true,protectItem:true},

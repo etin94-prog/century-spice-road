@@ -12,7 +12,7 @@ const CepterExtraSpells=(()=>{
   const type={...ps2Type,holyword8:'player',landdrain:'player',chargingstep:'player',
     alarm:'global',chaospanic:'global',revoltPlague:'global',philosophy:'global',magicbooster:'global',castlerecall:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
     remission:'land',magicalleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',sigilofshrink:'land',debility:'land',debilitystrong:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
-    gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
+    gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
@@ -192,6 +192,12 @@ const CepterExtraSpells=(()=>{
       const max=Math.max(...counts),winners=counts.flatMap((n,i)=>n===max?[i]:[]);
       return max?sample(winners):t.type;
     }
+    function allianceRank(s){
+      const own=total(s,s.turn);
+      const ahead=s.players.flatMap((_,seat)=>total(s,seat)>own?[s.teams?.[seat]??seat]:[]);
+      return 1+new Set(ahead).size;
+    }
+    const turnoverChange=st=>st<=30?20:st>=50?-20:0;
     function massDamage(e,t){
       const card=cards[t.unit.id];
       switch(e){
@@ -337,6 +343,13 @@ const CepterExtraSpells=(()=>{
             p.cash+=rank*50;for(let n=0;n<rank;n++)draw(p,s);
             break;
           }
+          case 'charity':{const place=allianceRank(s);for(let n=0;n<place;n++)draw(p,s);break;}
+          case 'turnover':
+            for(const v of land){
+              const st=fx.strength(v.unit),change=turnoverChange(st);
+              if(change)v.unit.st=st+change;
+            }
+            break;
           case 'purify':p.cash+=purify(s)*50;break;
           case 'pacifism':for(const q of s.players)setStatus(s,q,e,2);break;
           case 'chaospanic':for(const q of s.players){clearCepter(q);q.reverse=true;}break;
@@ -559,6 +572,8 @@ const CepterExtraSpells=(()=>{
       if(e==='soulsteal'||e==='mistletoe')return p.status===e?0:7;
       if(e==='foresight'||e==='prophecy'||e==='find')return 6;
       if(e==='gift')return 10;
+      if(e==='charity')return 4*Math.min(allianceRank(s),Math.max(0,7-p.hand.length));
+      if(e==='turnover')return land.reduce((score,t)=>score+(enemy(s,t.owner)?-1:1)*turnoverChange(fx.strength(t.unit))/5,0);
       if(e==='purify')return s.tiles.some(t=>t.unit&&combo.enchanted(t.unit))||s.players.some(q=>q.status)?5:-10;
       if(e==='pacifism')return s.tiles.filter(t=>t.owner===s.turn&&t.level>2).length*2-3;
       if(e==='revoltphantasm')return s.tiles.filter(t=>t.owner===s.turn&&t.unit?.hp).length-3;

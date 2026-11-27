@@ -4459,7 +4459,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(catalog.every(c=>!c.editionArt));
   assert.equal(names.length,3);
   assert.ok(Object.values(C.presets).every(C.validBook));
-  assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,8);
+  assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,Object.keys(C.presets).length);
   const online=playerBooks.find(([, ,source])=>source==='956-c3ds-playerdecks-osf20130125');
   const onlineBook=C.presets['handheld-'+online[2]];
   assert.ok(C.validBook(onlineBook));
@@ -4813,6 +4813,40 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const asDefender=(name,extras={})=>s=>{
     const card=id(name);s.tiles[3].unit={id:card,hp:C.cards[card].hp,...extras};
   };
+  const bracelet=fight('minotaur','powerbracelet',null,35,s=>{
+    Object.assign(s.tiles[8].unit,{hp:10,mhp:50,enchant:'vitality'});
+  });
+  assert.deepEqual([bracelet.battle.attackST,bracelet.battle.startHP[0]],[90,120]);
+  assert.equal(bracelet.players[0].cash,910);
+
+  const camazotz=fight('camazotz',null,null,null,s=>{
+    s.players[1].symbols=[2,20,4,10];
+  });
+  assert.equal(camazotz.battle.attackST,60);
+  assert.deepEqual(camazotz.players[1].symbols,[2,14,4,10]);
+  const noCamazotz=fight('camazotz',null,null,null,s=>{
+    asDefender('tyrannosaurus',{st:0,enchant:'senility'})(s);s.players[1].symbols=[2,20,4,10];
+  });
+  assert.deepEqual(noCamazotz.players[1].symbols,[2,20,4,10]);
+  const larvae=fight('minotaur','battleaxe',null,null,asDefender('myrmecoleo'));
+  assert.equal(larvae.battle.strikes[0].side,0);
+  assert.deepEqual([larvae.tiles[3].owner,larvae.tiles[3].unit.id,larvae.tiles[3].unit.hp],[1,id('dragonfly'),20]);
+  for(const [type,level] of [[1,2],[3,3]]){
+    const levelled=fight('leveller',null,null,null,s=>{
+      s.tiles[3].type=type;s.tiles[3].level=3;asDefender('goblin',{st:0})(s);
+    });
+    assert.equal(levelled.tiles[3].level,level);
+  }
+  for(const [count,st] of [[4,60],[5,30]]){
+    const titan=fight('burningtitan',null,null,null,s=>{
+      for(const i of [1,5,6,8,9].slice(0,count))Object.assign(s.tiles[i],{owner:0,unit:{id:id('goblin'),hp:30}});
+    });
+    assert.equal(titan.battle.attackST,st);
+  }
+  const cratos=C.presets['handheld-914-c3ds-playerdecks-cratoslevel10'];
+  assert.ok(C.validBook(cratos));
+  assert.equal(cratos.filter(card=>card===id('camazotz')).length,4);
+
   const poisoned=fight('hornet',null,null,null,asDefender('tyrannosaurus',{st:0}));
   assert.ok(poisoned.battle.won&&poisoned.battle.lines.some(line=>line.includes('독 · 30 피해')));
   const drake=fight('firedrake',null,null,null,s=>{
@@ -4869,6 +4903,42 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     };
     const place=(s,at,name,owner,level=1)=>Object.assign(s.tiles[at],{type:0,owner,level,unit:{id:id(name),hp:C.cards[id(name)].hp}});
     const cast=(s,...action)=>assert.ok(C.play(s,['cast',0])&&(!action.length||C.play(s,action)));
+
+    const shifts=spell('turnover');
+    for(const [at,st] of [[1,30],[2,40],[3,50],[5,80]]){place(shifts,at,'goblin',at%4);shifts.tiles[at].unit.st=st;}
+    cast(shifts);
+    assert.deepEqual([1,2,3,5].map(at=>shifts.tiles[at].unit.st),[50,40,30,60]);
+    const benevolence=spell('charity');
+    benevolence.players.forEach((q,seat)=>{q.cash=seat%2?2000:1000;});
+    benevolence.players[0].book=[id('fly'),id('goblin'),id('minotaur'),id('wallofice')];
+    cast(benevolence);
+    assert.deepEqual([benevolence.players[0].cash,benevolence.players[0].hand],[950,[id('wallofice'),id('minotaur')]]);
+    const cap=spell('mutation');place(cap,1,'goblin',0);
+    Object.assign(cap.tiles[1].unit,{hp:70,mhp:90});
+    cast(cap,'targetLand',1);
+    assert.deepEqual([cap.tiles[1].unit.hp,cap.tiles[1].unit.mhp,cap.tiles[1].unit.poisoned],[80,100,true]);
+
+    const landSale=spell('landtransfer');
+    place(landSale,1,'goblin',0,3);place(landSale,2,'goblin',2,3);
+    const value=C.value(landSale,landSale.tiles[1]);
+    landSale.players[0].cash=150;
+    assert.deepEqual(C.ai(landSale),['cast',0]);
+    landSale.players[0].cash=1000;
+    assert.ok(C.play(landSale,['cast',0]));
+    assert.deepEqual(C.choices(landSale),[['targetLand',1]]);
+    assert.ok(C.play(landSale,['targetLand',1]));
+    assert.deepEqual([landSale.players[0].cash,landSale.tiles[1].owner,landSale.tiles[2].owner,landSale.players[0].book],[900+value,-1,2,[id('fly')]]);
+
+    const dust=spell('chariot');place(dust,1,'powdereater',0);
+    cast(dust,'targetLand',1);
+    const destination=C.choices(dust)[0][1];assert.ok(C.play(dust,['teleTo',destination]));
+    assert.deepEqual([dust.tiles[1].owner,dust.tiles[destination].unit.id],[-1,id('powdereater')]);
+    const dustCommand=C.start(2,2,0,intro,undefined,undefined,2);
+    dustCommand.phase='land';Object.assign(dustCommand.players[0],{pos:0,cash:0,ai:true});
+    place(dustCommand,1,'powdereater',0);
+    assert.equal(C.ai(dustCommand)[0],'transfer');
+    assert.ok(C.play(dustCommand,['transfer',1,2]));
+    assert.deepEqual([dustCommand.tiles[1].unit.id,dustCommand.tiles[2].unit.id],[id('powdereater'),id('powdereater')]);
 
     const acid=spell('acidrain');
     place(acid,1,'wallofice',1);place(acid,2,'goblin',3);
