@@ -211,6 +211,9 @@ const describeCepterSpell=(()=>{
     if(C.edition==='revolt'&&card.effect==='holybanishment')return '영지와 속성이 다른 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     const e=card.effect,edition=C.edition;
     if(edition==='begins'&&e==='revoltphantasm')return '모든 크리처에 HP 고정을 부여합니다. 주문의 효과로 현재 HP와 최대 HP가 변하지 않습니다.';
+    if(edition==='begins'&&e==='shrink')return '고른 적 크리처의 기본 ST, 현재 HP, 최대 HP를 각각 10 낮춥니다.';
+    if(edition==='begins'&&e==='meteor')return '고른 영지의 레벨을 2 낮춥니다. 연쇄가 없으면 레벨 1이 됩니다.';
+    if(edition==='begins'&&e==='quintessence')return '레벨 4 이하인 고른 영지를 복합 속성 영지로 바꿉니다.';
     if(edition==='begins'&&e==='telegnosis')return '1라운드 동안 위치와 관계없이 내 모든 영지에 명령할 수 있습니다. 사용한 주문은 북으로 돌아갑니다.';
     if(edition==='begins'&&e==='fly')return '이 차례에 주사위 2개를 굴려 합만큼 이동합니다. 주사위 제한은 두 눈에 모두 적용됩니다.';
     if(e==='massgrowth'&&card.synthesis==='item')return '모든 크리처의 최대 HP를 5 올립니다. 최대 100까지 적용됩니다. 제물로 아이템을 내면 내 크리처에게만 적용됩니다.';

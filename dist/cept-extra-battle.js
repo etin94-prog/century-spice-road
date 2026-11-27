@@ -215,11 +215,11 @@ const CepterExtraBattle=(()=>{
         d.hp+=damage;d.absorbed=true;lines.push('화속성 피해 흡수');return 'heal';
       }
       if(orb)return;
-      const rate=d.g==='holygrail'?(s.edition==='3ds'?3:2):d.n==='charon'?2:d.u.enchant==='simulacrum'?3:0;
+      const rate=d.g==='holygrail'?(['3ds','begins'].includes(s.edition)?3:2):d.n==='charon'?2:d.u.enchant==='simulacrum'?3:0;
       if(rate){
         const cost=damage*rate;
         s.players[d.seat].cash-=cost;
-        if(s.predict&&s.edition==='3ds'){b.magicLoss??=[0,0];b.magicLoss[d.defending?1:0]+=cost;}
+        if(s.predict&&['3ds','begins'].includes(s.edition)){b.magicLoss??=[0,0];b.magicLoss[d.defending?1:0]+=cost;}
         lines.push('피해 무효 · 마력 −'+cost+'G');return 'block';
       }
       if(d.g==='talisman'||s.edition==='revolt'&&d.g==='ragdoll'&&a.st>d.st||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(fire(a)||fire(d))||
@@ -290,7 +290,7 @@ const CepterExtraBattle=(()=>{
       if(a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
       if(s.edition!=='revolt'&&a.u.enchant==='thornfetter'&&a.hp>0)a.hp=Math.min(a.hp,a.u.hp)-20;
       if(a.u.enchant==='parasite')s.players[a.seat].cash-=100;
-      if(s.edition==='3ds'&&a.g==='offeringdoll'&&a.hp>0&&a.element>=0){
+      if(['3ds','begins'].includes(s.edition)&&a.g==='offeringdoll'&&a.hp>0&&a.element>=0){
         const i=t.area*4+a.element;
         if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
@@ -327,7 +327,7 @@ const CepterExtraBattle=(()=>{
         const before=fx.strength(a.u);
         a.u.st=Math.max(before,Math.min(100,before+10));
       }
-      if(s.edition!=='3ds'&&a.g==='offeringdoll'&&a.element>=0){
+      if(!['3ds','begins'].includes(s.edition)&&a.g==='offeringdoll'&&a.element>=0){
         const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
     }

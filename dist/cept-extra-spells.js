@@ -70,7 +70,7 @@ const CepterExtraSpells=(()=>{
     if(p.status==='fairylight')p.cash+=p.hand.length*10;
     if(p.status==='torture')p.cash-=p.hand.filter(id=>cards[id].kind==='spell').length*20;
   }
-  function rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade}){
+  function rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,chain,canOccupy,deployable,claim,canInvade}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
@@ -134,7 +134,7 @@ const CepterExtraSpells=(()=>{
         const empty=!t.unit,hasTerrain=Object.hasOwn(terrain,e)||Object.hasOwn(hybridShifts,e);
         if(empty||(Object.hasOwn(shifts,e)||e==='revoltlandtransfer')&&t.owner!==s.turn)return [];
         if(hybridShifts[e]&&(t.level>3||!Object.hasOwn(hybridShifts[e],t.type)))return [];
-        if(e==='quintessence'&&['3ds','revolt'].includes(s.edition)&&t.level>=5)return [];
+        if(e==='quintessence'&&['3ds','revolt','begins'].includes(s.edition)&&t.level>=5)return [];
         if(s.edition==='3ds'&&['sink','upheaval','weathering','wildgrowth'].includes(e)&&t.level>3)return [];
         if(!fx.targetable(s,t,category,e==='removecurse'))return [];
         if(secretSigils.has(e)&&(t.owner!==s.turn||fx.secretArt(cards[t.unit.id])||t.unit.enchant===e))return [];
@@ -252,7 +252,7 @@ const CepterExtraSpells=(()=>{
             return 'teleMove';
           case 'influence':t.type=influence(s,t);break;
           case 'locust':t.level=Math.max(1,t.level-1);break;
-          case 'meteor':t.level=1;break;
+          case 'meteor':t.level=s.edition==='begins'&&chain(s,t)>1?Math.max(1,t.level-2):1;break;
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
           case 'stoneblast':fx.spellHarm(s,t,30);break;
           case 'zap':fx.spellHarm(s,t,10);break;

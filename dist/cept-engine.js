@@ -375,20 +375,21 @@ function createCepter(edition="ps2"){
   }
   const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace,returnToBook});
   const landSpellDamage=e=>({bolt:20,evilblast:30}[e]??extraSpells?.landDamage[e]);
-  const hasLandDamage=e=>!!extraSpells?.landDamage[e]||(begins||handheld)&&['bolt','evilblast'].includes(e);
+  const hasLandDamage=e=>!!extraSpells?.landDamage[e]||(begins||handheld)&&['bolt','evilblast'].includes(e)||begins&&e==='shrink';
   function spellHP(s,t,e){
     const u=t.unit;
+    if(begins&&e==='shrink')return fx.immuneHP(t)?u.hp:Math.max(0,u.hp-10);
     const damage=landSpellDamage(e);
     if(damage)return u.hp-fx.damageAmount(s,t,damage);
     if(fx.immuneHP(t))return u.hp;
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
   }
   function spellRevival(s,t,e){
-    if((begins||handheld)&&landSpellDamage(e)&&fx.name(t.unit)==='jackalope'&&spellHP(s,t,e)===0)
+    if((begins||handheld)&&hasLandDamage(e)&&fx.name(t.unit)==='jackalope'&&spellHP(s,t,e)===0)
       return cards.find(c=>!c.unlisted&&key(c)==='humbaba')?.name;
   }
   const revivalLabel=(before,after)=>(begins||handheld)&&fx.name(before)==='jackalope'&&fx.name(after)==='humbaba'?cards[after.id].name+' 부활':null;
-  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
+  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,chain,canOccupy,deployable,claim,canInvade});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
   const beginsShrineModule=begins?(typeof module==='undefined'?CepterBeginsShrines:require('./cept-begins-shrines')):null;
@@ -895,7 +896,7 @@ function createCepter(edition="ps2"){
       const count=(e)=>s.tiles.filter(v=>v.owner===a.seat&&v.type===e).length;
       if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){const gain=Math.max(0,Math.min(80,fx.max(a.u)+a.gear.hp)-fx.max(a.u));a.u.mhp=fx.max(a.u)+gain;a.u.hp+=gain;}
       if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
-      if(handheld&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
+      if((handheld||begins)&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
       if(handheld&&a.n==='camazotz')a.st+=baseStrength[a===A?1:0];
       if(a.n==='vision')a.hp=30;
       if(a.n==='gigantherium'&&(begins?sides.some(side=>combo.enchanted(side.u)):combo.enchanted(t.unit)))a.hp-=20;
@@ -978,7 +979,7 @@ function createCepter(edition="ps2"){
         if(!firstEdition&&a.n==='sorcerer'&&!a.gear)a.st=20;
         if(['reflect','nullify'].includes(a.gear?.effect))a.st=0;
       }
-      if(!handheld&&a.g==='powerbracelet')a.st*=2;
+      if(!handheld&&!begins&&a.g==='powerbracelet')a.st*=2;
       if(a.g==='petrifystone'){a.st=0;a.hp=80+a.land;}
       a.st=Math.max(0,a.st);
     }
@@ -1247,10 +1248,11 @@ function createCepter(edition="ps2"){
       }
       if(a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
       if(a.g==='dynamite'||a.n==='wraith'||!revolt&&!muted&&a.u.enchant==='senility')a.hp=0;
-      if(!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed'&&(revolt?a.hp>0:a.hp>0||d.hp>0)&&(a.n==='leshy'||a.g==='silverplow')){
+      const plow=a.g==='silverplow'&&(!begins||a.hp>0);
+      if(!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed'&&(revolt?a.hp>0:a.hp>0||d.hp>0)&&(a.n==='leshy'||plow)){
         const previous=t.level;
-        t.level=Math.min(5,t.level+(a.n==='leshy')+(a.g==='silverplow'));
-        if(revolt&&previous!==t.level)lines.push((a.g==='silverplow'?a.gear.name:a.c.name)+' · 영지 Lv.'+t.level);
+        t.level=Math.min(5,t.level+(a.n==='leshy')+plow);
+        if((revolt||begins)&&previous!==t.level)lines.push((plow?a.gear.name:a.c.name)+' · 영지 Lv.'+t.level);
       }
       if(a.item!=null&&(a.n==='centaur'&&edition!=='saga'&&!begins&&(!revolt||a.hp>0)||['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
       a.n=originalName;
@@ -1719,8 +1721,14 @@ function createCepter(edition="ps2"){
           mapEffect('cast',label,x);break;
         }
         if(combo.type[s.spellEffect]){
-          s.phase=fx.apply(s,s.spellEffect,x);
-          mapEffect('cast',(k==='targetLand'&&revivalLabel(unit,tile.unit))||s.spellEffect,k==='comboArea'?p.pos:x);break;
+          const effect=s.spellEffect;
+          s.phase=fx.apply(s,effect,x);
+          let label=effect;
+          if(k==='targetLand'){
+            const damage=prior-(tile.unit?.hp??0);
+            label=revivalLabel(unit,tile.unit)||(begins&&effect==='shrink'?(damage>0?'−'+damage+' HP':'HP 변화 없음'):effect);
+          }
+          mapEffect('cast',label,k==='comboArea'?p.pos:x);break;
         }
         if(s.spellEffect==='heal'){
           unit.hp=spellHP(s,tile,'heal');

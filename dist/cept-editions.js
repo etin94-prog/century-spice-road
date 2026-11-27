@@ -169,7 +169,9 @@ const CepterEditions=(()=>{
       haste:'haste',slow:'slow',silence:'silence',triumph:'triumph',colorfrombeyond:'colorfrombeyond',
       camouflage:'camouflage',chariot:'chariot',relief:'relief',
       escape:'escape',mountainleap:'mountainleap',lakeleap:'lakeleap',forestleap:'forestleap',plainleap:'plainleap',
-      mutation:'mutation',removecurse:'removecurse',turntowall:'turntothewall'}
+      mutation:'mutation',removecurse:'removecurse',turntowall:'turntothewall',
+      corruption:'corruption',fairylight:'fairylight',goblinslair:'goblinslair',grace:'grace',
+      meteor:'meteor',quicksand:'quicksand',quintessence:'quintessence',shrink:'shrink',spartoi:'spartoi'}
   };
   // These three original books are the baseline used to calibrate Revolt difficulty.
   const revoltBaselineBooks={
@@ -691,7 +693,9 @@ const CepterEditions=(()=>{
     towershield:{halveScroll:true},vestment:{hp:30},
     glaive:{st:20,hp:20},drilllance:{st:20,pierceAll:true},aurablade:{},petrifystone:{},
     freeze:{st:30,critical:0},firebolt:{st:30,critical:1},windcutter:{st:30,critical:2},
-    stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40}
+    stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40},
+    gemoflife:{},holygrail:{},kris:{st:30,protectItem:true},offeringdoll:{},powerbracelet:{},prismaticwand:{},
+    silverplow:{hp:10},smoketorch:{hp:20},stinkbottle:{},tearinghalo:{st:30,protectItem:true},vorpalsword:{st:30}
   };
   const handheldSpecial={
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},

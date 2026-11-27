@@ -3810,6 +3810,36 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const rings=duel(hare,fighter,creature('ringofthesuccubus'),creature('mace'),100);
   assert.ok(rings.won);
   assert.equal(rings.strikes[1].hp[0],10);
+  const grail=duel(fighter,fighter,null,creature('holygrail'));
+  assert.equal(grail.strikes[0].effect,'block');
+  assert.equal(enemy.cash,-20);
+  assert.equal(duel(fighter,fighter,creature('freeze'),creature('holygrail')).strikes[0].effect,'block');
+  assert.equal(enemy.cash,100);
+  const bracelet=duel(goblin,fighter,creature('powerbracelet'));
+  assert.deepEqual([bracelet.attackST,bracelet.startHP[0]],[40,60]);
+  assert.ok(duel(fighter,goblin,creature('gemoflife'),null,55).finalHP.every(value=>value===0));
+  assert.equal(land.owner,-1);
+  duel(goblin,fighter,creature('silverplow'));
+  assert.equal(land.level,1);
+  duel(goblin,fighter,null,creature('silverplow'));
+  assert.equal(land.level,2);
+  const symbol=land.area*4;
+  creatures.prices[symbol]=10;
+  duel(minotaur,goblin,creature('offeringdoll'),null,70,0);
+  assert.deepEqual([creatures.battle.won,creatures.prices[symbol]],[false,13]);
+  const mirror=duel(minotaur,fighter,creature('prismaticwand'));
+  assert.deepEqual([mirror.attackST,mirror.startHP[0]],[80,80]);
+  const smoke=duel(fighter,fighter,creature('freeze'),creature('smoketorch'));
+  assert.equal(smoke.strikes[0].effect,'block');
+  const stale=duel(fighter,fighter,creature('stinkbottle'),creature('powerbracelet'));
+  assert.deepEqual(stale.startHP,[40,40]);
+  assert.ok(creatures.players[0].book.includes(creature('stinkbottle')));
+  const defendedKris=duel(fighter,fighter,creature('kris'),amulet);
+  assert.equal(defendedKris.attackST,70);
+  const tearing=duel(minotaur,goblin,creature('tearinghalo'));
+  assert.match(tearing.strikes[0].notes.join(' '),/45 피해/);
+  const vorpal=duel(goblin,fighter,creature('vorpalsword'));
+  assert.match(vorpal.strikes[0].notes.join(' '),/75 피해/);
   const goose=creature('goldengoose');
   assert.ok(duel(fighter,goblin,null,goose).won);
   assert.equal(enemy.cash,410);
@@ -4436,6 +4466,66 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(ford.phase,'fork');
   assert.ok(C.play(ford,['route',18]));
   assert.equal(ford.players[0].pos,18);assert.equal(ford.phase,'land');
+  {
+    const C=ps2.createEdition('begins');
+    const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+    const open=name=>{
+      const s=C.start(2,2,5000,'begins-original-ford');
+      assert.ok(id(name)>=0,name);
+      s.players.forEach(q=>{q.cash=1000;q.hand=[];});
+      s.players[0].hand=[id(name)];return s;
+    };
+    const cast=(s,...target)=>{
+      assert.ok(C.play(s,['cast',0]));
+      if(s.phase==='sacrifice')assert.ok(C.play(s,['sacrifice',1]));
+      if(target.length)assert.ok(C.play(s,target));
+    };
+    const mark=(s,at,level,owner=1)=>Object.assign(s.tiles[at],{owner,type:0,level,unit:{id:id('fighter'),hp:40}});
+    const retreat=open('shrink');mark(retreat,1,1);
+    retreat.tiles[1].unit.hp=28;
+    assert.equal(C.spellHP(retreat,retreat.tiles[1],'shrink'),18);
+    cast(retreat,'targetLand',1);
+    assert.deepEqual([retreat.tiles[1].unit.st,retreat.tiles[1].unit.hp,retreat.tiles[1].unit.mhp],[30,18,30]);
+    assert.match(retreat.mapEffect.label,/−10 HP/);
+    const shielded=open('shrink');mark(shielded,1,1);
+    shielded.tiles[1].unit.enchant='phantasm';
+    cast(shielded,'targetLand',1);
+    assert.deepEqual([shielded.tiles[1].unit.st,shielded.tiles[1].unit.hp],[30,40]);
+
+    for(const together of [false,true]){
+      const meteor=open('meteor');mark(meteor,1,5);
+      if(together)mark(meteor,2,2);
+      meteor.players[0].hand.push(id('goblin'));
+      cast(meteor,'targetLand',1);
+      assert.equal(meteor.tiles[1].level,together?3:1);
+    }
+    const blend=open('quintessence');mark(blend,1,4);mark(blend,2,5);
+    assert.ok(C.play(blend,['cast',0]));
+    assert.deepEqual(C.choices(blend),[['targetLand',1]]);
+    assert.ok(C.play(blend,['targetLand',1]));
+    assert.deepEqual([blend.tiles[1].type,blend.tiles[2].type],['복합',0]);
+    const sacrifice=open('goblinslair');
+    sacrifice.players[0].pos=1;sacrifice.players[0].hand.push(id('fighter'));
+    cast(sacrifice);
+    assert.deepEqual([sacrifice.tiles[1].unit.id,sacrifice.players[0].hand],[id('goblin'),[id('goblinslair')]]);
+    const quiet=open('spartoi');quiet.players[0].hand.push(id('fighter'));cast(quiet);
+    assert.equal(quiet.tiles.filter(t=>t.owner===0&&t.unit?.id===id('skeleton')).length,1);
+
+    const tax=open('corruption');tax.players[1].symbols[0]=15;
+    cast(tax,'targetPlayer',1);assert.equal(tax.players[1].cash,850);
+    const grace=open('grace');grace.players[1].symbols[0]=20;
+    cast(grace,'targetPlayer',1);
+    assert.equal(grace.players[0].cash,1000-C.cards[id('grace')].cost+Math.floor(20*grace.prices[0]*.15));
+    const fairies=open('fairylight');fairies.players[1].hand=Array(3).fill(id('goblin'));
+    cast(fairies,'targetPlayer',1);fairies.phase='land';
+    assert.ok(C.play(fairies,['pass']));assert.equal(fairies.players[1].cash,1030);
+
+    const sands=open('quicksand');mark(sands,1,2);
+    cast(sands,'targetLand',1);
+    Object.assign(sands,{phase:'fork',die:3,remaining:3});
+    assert.ok(C.play(sands,['route',1]));
+    assert.deepEqual([sands.players[0].pos,sands.remaining,sands.tiles[1].unit.enchant],[1,0,undefined]);
+  }
   console.log('Begins spells, 100 MHP cap, redraw, 80 percent land liquidation and original Ford routes OK');
 }
 for(const edition of ['dc','ps1','saturn']){

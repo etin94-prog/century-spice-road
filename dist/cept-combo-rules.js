@@ -136,11 +136,12 @@ const CepterCombos = (() => {
           const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;returnToBook(s,i,ids.get(e));
         }else if(e==='evilblast')spellHarm(s,t,30);
         else if(immuneHP(t)&&['shrink','growthbody','temperance'].includes(e)){
-          if(e==='shrink'&&s.edition==='saga')u.st=Math.max(0,strength(u)-10);
+          if(e==='shrink'&&['saga','begins'].includes(s.edition))u.st=Math.max(0,strength(u)-10);
           return 'roll';
         }
         else if(e==='shrink'){
-          if(s.edition==='saga')u.st=Math.max(0,strength(u)-10);
+          if(['saga','begins'].includes(s.edition))u.st=Math.max(0,strength(u)-10);
+          if(s.edition==='begins')u.hp=Math.max(0,u.hp-10);
           shrinkHealth(s,t,10);
         }
         else if(e==='growthbody'){
