@@ -109,7 +109,6 @@ const CepterExtraBattle=(()=>{
         if(a.n==='lavakin'){a.st-=s.round;a.hp+=s.round;}
         if([0,2].includes(a.element)&&boost('hellpyron',a))a.st+=10;
         if([1,3].includes(a.element)&&boost('lordofbane',a))a.st+=10;
-        if(a.defending&&boost('otohime',a))a.hp+=10;
         if(a.n==='hiveworker'){
           const amount=10*s.tiles.filter((v,j)=>j!==b.from&&fx.name(v.unit)==='hiveworker').length;
           a.st+=amount;a.hp+=amount;
@@ -167,7 +166,9 @@ const CepterExtraBattle=(()=>{
         case 'aspidochelone':a.st+=s.round;a.hp+=s.round;break;
         case 'weretiger':if(s.round>=25){a.st-=20;a.hp-=20;}break;
       }
+      if((s.edition==='revolt'||s.edition==='begins')&&a.defending&&boost('otohime',a))a.hp+=10;
       if(s.edition==='begins'){
+        if(a.n==='doomreaper')a.st+=5*(s.destroyedCount||0);
         if(a.n==='paleglobster'){a.st+=t.level*10;a.hp+=t.level*10;}
         if(a.n==='redcap')a.st=a.hp=20*s.tiles.filter(v=>fx.name(v.unit)==='goblin').length;
         if(a.n==='goblin'&&boost('redcap',a))a.st+=20;
@@ -237,12 +238,13 @@ const CepterExtraBattle=(()=>{
         lines.push('공격 무효');return 'block';
       }
     }
-    function vacant(a){
-      const pool=s.tiles.flatMap((v,j)=>j!==b.at&&j!==b.from&&v.owner<0&&combo.territoryType(v.type)?[j]:[]);
+    function vacant(a,type=null){
+      const pool=s.tiles.flatMap((v,j)=>j!==b.at&&j!==b.from&&v.owner<0&&combo.territoryType(v.type)&&(type==null||v.type===type)?[j]:[]);
       const at=pick(pool);
       if(at==null){
         a.hp=0;
         if(s.edition==='revolt'&&a.g==='argentkey')lines.push(a.gear.name+' · 빈 영지가 없어 격파');
+        if(s.edition==='begins'&&a.n==='amabie')lines.push(a.c.name+' · 빈 수 영지가 없어 격파');
       }else{a.away=at;lines.push((at+1)+'번 빈 영지로 이동');}
     }
     function onHit(a,d,damage){
@@ -274,7 +276,7 @@ const CepterExtraBattle=(()=>{
       if(['ghoul','hugespider'].includes(n)){combo.clear(d.u);d.u.enchant='paralysis';}
       if(n==='hunbaba'){combo.clear(d.u);d.u.poisoned=true;}
       if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
-        n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||n==='yeti'&&d.element===0&&chance(.6)||n==='dhampir'&&d.element===2&&chance(.6)){
+        s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||n==='yeti'&&d.element===0&&chance(.6)||n==='dhampir'&&d.element===2&&chance(.6)){
         d.hp=0;lines.push('즉사');
       }
       if(s.edition==='revolt'&&a.gear?.instantDeathElements?.some(e=>combo.hasElement(d,e))&&d.hp>0&&chance(.6)){
@@ -284,6 +286,11 @@ const CepterExtraBattle=(()=>{
       if((n==='bard'||s.edition==='revolt'&&a.g==='argentkey')&&d.hp>0)vacant(a);
     }
     function end(a,d,creatureEnd){
+      if(s.edition==='begins'&&creatureEnd&&a.n==='doomreaper'&&!a.defending){
+        s.players[a.seat].cash+=100;
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[0]-=100;}
+        lines.push(a.c.name+' · 침략 마력 100G 획득');
+      }
       if(creatureEnd&&a.hp>0){
         if(s.edition==='saga'&&a.n==='flammefleur'&&!a.dealtDamage&&d.hp>0){d.hp=0;lines.push('전투 종료 · 피해를 주지 못해 상대 격파');}
         if(lord.includes(a.n)){
@@ -320,6 +327,10 @@ const CepterExtraBattle=(()=>{
       a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
     }
     function victory(a,d){
+      if(s.edition==='begins'){
+        if(a.n==='nezha')a.u.mhp=Math.min(100,fx.max(a.u)+10);
+        if(a.n==='mattocktail'&&t.level<5&&!fx.levelLocked(t)){t.level++;lines.push(a.c.name+' · 영지 Lv.'+t.level);}
+      }
       const p=s.players[a.seat],other=s.players[d.seat],symbol=t.area*4+t.type;
       if(typeof t.type==='number'&&s.prices[symbol]!=null){
         if(a.n==='sanctumguard')p.symbols[symbol]+=5;
@@ -328,7 +339,7 @@ const CepterExtraBattle=(()=>{
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
       if(a.n==='leviathan'&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld')t.type=1;
       if(a.n==='ghoul'){a.heal=true;a.hp=fx.max(a.u);}
-      const camazotz=a.n==='camazotz'&&d.defeatedByOpponent;
+      const camazotz=a.n==='camazotz'&&(s.edition==='begins'||d.defeatedByOpponent);
       if(s.edition!=='3ds'&&a.n==='raksas'||camazotz){
         const most=Math.max(0,...other.symbols),at=other.symbols.indexOf(most),loss=Math.floor(most*.3);
         if(loss>0){
@@ -336,7 +347,14 @@ const CepterExtraBattle=(()=>{
           if(camazotz)lines.push(a.c.name+' · 상대 호부 '+loss+'개 파괴');
         }
       }
-      if(a.n==='taotieh'){const st=fx.strength(a.u);a.u.st=Math.max(st,Math.min(80,st+10));grow(a,10);}
+      if(a.n==='taotieh'){
+        const st=fx.strength(a.u),native=s.edition==='begins',gain=native?20:10;
+        a.u.st=Math.max(st,Math.min(native?100:80,st+gain));
+        if(native){
+          const max=Math.min(100,fx.max(a.u)+gain);
+          a.u.mhp=max;a.u.hp=Math.min(max,a.u.hp+gain);a.hp+=gain;a.heal=true;
+        }else grow(a,gain);
+      }
       if(a.g==='heartfibula'||a.g==='windamulet')grow(a,a.g==='heartfibula'?20:10);
       if(s.edition==='3ds'&&a.g==='wateramulet'){
         const before=fx.strength(a.u);
@@ -346,7 +364,7 @@ const CepterExtraBattle=(()=>{
         const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
     }
-    return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,end,victory,transform,convert,ids,boost};
+    return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,end,victory,transform,convert,vacant,ids,boost};
   }
   return {rules,protectedItem};
 })();

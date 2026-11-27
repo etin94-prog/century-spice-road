@@ -268,11 +268,12 @@ const CepterCombos = (() => {
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
       fate:40,mystic:30,necromancer:30,conjurer:80,goobaqueen:20,sleipnir:60
     };
-    const beginsTerritory={sakuya:120,fay:50,algasphere:60,healer:10,archbishop:30,domovikha:80,archer:20};
+    const beginsTerritory={sakuya:120,fay:50,algasphere:60,healer:10,archbishop:30,domovikha:80,archer:20,
+      burnacle:50,sanguivore:50,amabie:40,swampspawn:50,landurchin:40};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','necromancer','barometz','quakebeast']);
     const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides'};
-    const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
-    const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl','burnacle']);
+    const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl','swampspawn']);
+    const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl','burnacle','swampspawn','landurchin']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
     function territoryMoveExits(s,from,adjacentOnly=false){
       const links=board(s).links,adjacent=links[from],src=s.tiles[from];
@@ -304,7 +305,8 @@ const CepterCombos = (() => {
           v.owner===s.turn&&v.type!==2&&!terrainLocked(s,v)&&targetable(s,v)?[['abilityLand',j]]:[]);
         if(n==='fay')return s.tiles.flatMap((v,j)=>targetable(s,v)&&strength(v.unit)<100?[['abilityLand',j]]:[]);
         if(n==='algasphere'&&(immuneHP(tile)||max(tile.unit)>=100))return [];
-        if(n==='healer')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&v.unit.hp<max(v.unit)?[['abilityLand',j]]:[]);
+        if(n==='healer'||n==='sanguivore'||n==='amabie')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&
+          (n==='sanguivore'||(n==='healer'?v.unit.hp<max(v.unit):max(v.unit)<100))?[['abilityLand',j]]:[]);
       }
       if(s.edition==='3ds'){
         if(n==='necromancer'&&s.lastDestroyed==null)return [];
@@ -333,6 +335,13 @@ const CepterCombos = (() => {
       if(s.edition==='begins'){
         if(n==='sakuya'){v.type=2;return;}
         if(n==='fay'){v.unit.st=Math.min(100,strength(v.unit)+20);return;}
+        if(n==='sanguivore'){shrinkHealth(s,v,10);return;}
+        if(n==='amabie'){
+          const gain=Math.min(10,100-max(v.unit));
+          v.unit.mhp=max(v.unit)+gain;v.unit.hp+=gain;return;
+        }
+        if(n==='swampspawn'){clearCepter(q);q.status='slow';q.diceLimitRolls=2;return;}
+        if(n==='burnacle'||n==='landurchin'){clear(v.unit);v.unit.enchant=n==='burnacle'?'fog':'immobilize';return;}
         if(n==='algasphere'){
           const gain=Math.min(20,100-max(src.unit));
           src.unit.mhp=max(src.unit)+gain;src.unit.hp+=gain;return;

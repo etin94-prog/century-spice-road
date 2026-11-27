@@ -264,7 +264,22 @@ const CepterCreatureText=(()=>{
     lunatichare:'생존하면 상대의 기본 ST와 HP를 바꿉니다. 카드로 돌아갈 때까지 바뀐 능력치가 유지됩니다.',
     jackalope:'주문으로 파괴되면 같은 영지에서 험바바로 부활합니다.',
     humbaba:'교전에 참여하지 않고 지도에 있으면 풍 속성 크리처의 전투 ST를 10 낮춥니다.',
-    aspidochelone:'전투 ST와 HP에 현재 라운드 수를 더합니다.'
+    aspidochelone:'전투 ST와 HP에 현재 라운드 수를 더합니다.',
+    taotieh:'상대를 격파하고 생존하면 기본 ST·현재 HP·최대 HP가 20씩 오릅니다. 기본 ST와 최대 HP 상한은 100입니다.',
+    sphinx:'전투에 참여하지 않은 채 배치되어 있으면 지 크리처의 전투 HP를 10 낮춥니다. 일반 공격이 명중하면 상대에게 수면을 부여합니다.',
+    wendigo:'일반 공격이 명중하면 상대 크리처에 안개를 걸어 통행료를 줄입니다.',
+    avenger:'내 총마력 순위에 10을 곱한 만큼 전투 ST와 HP가 오릅니다.',
+    camazotz:'상대 기본 ST만큼 전투 ST가 오릅니다. 승리하면 상대가 가장 많이 가진 종류의 호부를 30% 잃게 합니다.',
+    juggernaut:'상대 기본 ST가 40 이상이면 강타하고 방어형 상대에게 명중하면 즉사시킵니다. 완주 보상으로 HP가 회복되지 않습니다.',
+    mattocktail:'상대를 격파하고 생존하면 교전 영지 레벨을 1 올립니다. 최고 레벨은 5입니다.',
+    nezha:'일반 공격은 지형 HP 보너스를 관통합니다. 내 영지가 상대보다 두 곳 이상 적으면 전투 ST +30. 승리하면 최대 HP가 최대 100까지 10 오릅니다.',
+    amabie:'양쪽이 살아남으면 빈 수 영지로 이동합니다. 빈 수 영지가 없으면 파괴됩니다.',
+    otohime:'교전에 참여하지 않은 채 배치되어 있으면 방어 측 전투 HP +10. 양쪽이 생존하면 상대에게 노쇠를 부여합니다.',
+    kudzufolk:'전투에서 격파될 때 내 영지가 네 곳 이하라면 그린 몰드로 부활합니다.',
+    landurchin:'상대 크리처의 영지 이동 명령으로 침략받지 않습니다.',
+    shamblingvine:'내 지 영지 한 곳당 전투 ST가 10 오릅니다. 전투하는 크리처 중 하나에 인챈트가 있으면 전투 HP가 20 오릅니다.',
+    deathworm:'상대의 일반 공격 무효화와 반사를 무시합니다.',
+    doomreaper:'이번 대국에서 파괴된 크리처 한 마리당 전투 ST가 5 오릅니다. 침략 전투가 끝나면 100G를 얻습니다.'
   };
   const firstRules={
     dragon:'침략할 때 전투 ST가 10, 수비할 때 전투 HP가 10 오릅니다.',
@@ -329,7 +344,11 @@ const CepterCreatureText=(()=>{
       creepingflame:'이 크리처를 인접한 영지 한 곳으로 이동합니다. 상대 영지라면 침략합니다.',
       rockshell:'이 영지의 침략을 막고 통행료를 0G로 바꿉니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
     const begins={goldentotem:'400G를 얻고 이 크리처는 파괴됩니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',
-      algasphere:'자신의 HP와 최대 HP를 20 올립니다. 최대 HP는 100까지 오릅니다.'};
+      algasphere:'자신의 HP와 최대 HP를 20 올립니다. 최대 HP는 100까지 오릅니다.',
+      burnacle:'고른 영지의 통행료를 절반으로 줄입니다.',sanguivore:'고른 크리처의 최대 HP를 10 낮춥니다.',
+      amabie:'고른 크리처의 HP와 최대 HP를 10 올립니다. 최대 HP는 100까지 오릅니다.',
+      swampspawn:'고른 셉터가 다음 두 번 굴리는 주사위 눈을 1~3으로 제한합니다.',
+      landurchin:'고른 크리처가 영지 명령으로 이동하지 못하게 합니다.'};
     const effect=(C.edition==='begins'?begins[key]:C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
@@ -447,7 +466,7 @@ const CepterCreatureText=(()=>{
     if(card.remoteVacantElements?.length)pieces.push('어느 지역이든 빈 '+targets(card.remoteVacantElements)+' 영지로 이동할 수 있습니다.');
     if(card.remoteVacant)pieces.push('어느 지역의 빈 영지로든 이동할 수 있습니다.');
     if(!card.basicBattle&&!card.revenge&&special&&!card.remoteVacant&&!card.remoteVacantElements)pieces.push(special);
-    if(!firstEdition&&key==='samurai')pieces.push(C.edition==='revolt'?'일반 공격으로 피해를 준 상대의 기본 ST가 40 이상이면 70% 확률로 즉사시킵니다.':'일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
+    if(!firstEdition&&C.edition!=='begins'&&key==='samurai')pieces.push(C.edition==='revolt'?'일반 공격으로 피해를 준 상대의 기본 ST가 40 이상이면 70% 확률로 즉사시킵니다.':'일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
     const landAbility=territorySummary(C,card);
     if(landAbility)pieces.push(landAbility);
     return pieces.length?pieces.join(' · '):'기본 ST와 HP로 전투합니다.';

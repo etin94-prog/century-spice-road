@@ -13,7 +13,7 @@ const CepterExtraSpells=(()=>{
     alarm:'global',chaospanic:'global',revoltPlague:'global',philosophy:'global',magicbooster:'global',castlerecall:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
     remission:'land',magicalleap:'land',shadowleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',sigilofshrink:'land',debility:'land',debilitystrong:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
-    armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',
+    armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',beginsculdra:'global',immobilize:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
@@ -340,6 +340,15 @@ const CepterExtraSpells=(()=>{
             break;
           case 'disbelief':
             for(const q of s.players)q.cash-=symbolCount(q)*5;
+            break;
+          case 'beginsculdra':{
+            const average=sharedCash(s);
+            for(const q of s.players){clearCepter(q);q.cash=average;q.word=6;}
+            for(const v of land)if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);
+            break;
+          }
+          case 'immobilize':
+            for(const v of land){combo.clear(v.unit);v.unit.enchant='immobilize';}
             break;
           case 'armageddon':case 'beginstempest':
           case 'acidrain':case 'avalanche':case 'energyflash':case 'elementalrage':

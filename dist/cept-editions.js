@@ -175,7 +175,8 @@ const CepterEditions=(()=>{
       meteor:'meteor',quicksand:'quicksand',quintessence:'quintessence',shrink:'shrink',spartoi:'spartoi',wordofrecall:'castlerecall',exchange:'replace',gift:'gift',theft:'theft',
       bistair:'beginsbistair',iksear:'beginsiksear',selenear:'beginsselenear',terrair:'beginsterrair',
       shadowleap:'shadowleap',spiritwalk:'spiritwalk',liquidform:'liquidform',armageddon:'armageddon',
-      tempest:'beginstempest',scarestorm:'scarestorm',disbelief:'disbelief'}
+      tempest:'beginstempest',scarestorm:'scarestorm',disbelief:'disbelief',blasttrap:'blasttrap',
+      culdra:'beginsculdra',immobilize:'immobilize'}
   };
   // These three original books are the baseline used to calibrate Revolt difficulty.
   const revoltBaselineBooks={
@@ -696,6 +697,10 @@ const CepterEditions=(()=>{
     archer:{},dhampir:{},holyllama:{remoteVacantElements:[3]},mothman:{first:true},myrmecoleo:{last:true,reviveForm:'dragonfly'},
     nue:{},powdereater:{},pulgasari:{},succubus:{},witch:{scrollCritical:true},
     barong:{},onyx:{anyTerrain:true,neutralizeScroll:true,criticalLargeMHP:40},redcap:{},paleglobster:{immutableHP:true},
+    littlegray:{},mandrake:{},taotieh:{},sphinx:{},wendigo:{},avenger:{},burnacle:{stationary:true},camazotz:{},
+    juggernaut:{noLapHeal:true},mattocktail:{first:true},nezha:{pierceAll:true},sanguivore:{scrollCritical:true},
+    amabie:{},otohime:{},swampspawn:{stationary:true},kudzufolk:{},landurchin:{stationary:true},
+    shamblingvine:{pierceElements:[0,2]},deathworm:{},doomreaper:{},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},

@@ -3690,7 +3690,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual(playable,['1339-infernal-vacation','1342-mothman-and-friends','1343-aggroaf','1344-kelpez','1345-budget-raging-river',
     '1347-power-surge','1348-esupports#main','1348-esupports#alternate','1349-willowisp#main','1349-willowisp#alternate','1350-meme-book',
     '1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead','1356-support-deck-for-chapter-15',
-    '1359-brynhildr','1366-selenear','1372-bonzey-buddy','1374-mosquito-water','1378-little-wonders']);
+    '1359-brynhildr','1362-iksear','1363-bistair','1366-selenear','1367-resident-evil','1369-spell-damage',
+    '1372-bonzey-buddy','1374-mosquito-water','1376-lets-water-the-plants','1378-little-wonders']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -4476,6 +4477,107 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     for(const at of [0,4,8,19])assert.ok(!reachable.includes(at));
     assert.ok(C.play(shadow,['targetLand',7]));
     assert.deepEqual([shadow.players[0].pos,shadow.die,shadow.phase,C.choices(shadow)],[7,0,'land',[['pass']]]);
+  }
+
+
+  {
+    const avenger=creature('avenger');
+    assert.equal(duel(avenger,goblin).attackST,50);
+    const ghoul=duel(creature('taotieh'),goblin);
+    assert.ok(ghoul.won);
+    assert.deepEqual([land.unit.st,land.unit.hp,land.unit.mhp],[60,60,60]);
+    assert.equal(duel(creature('juggernaut'),creature('wallofice'),null,null,60,2).finalHP[1],0);
+    assert.ok(duel(creature('mattocktail'),goblin).won);
+    assert.equal(land.level,2);
+    assert.deepEqual(duel(fighter,creature('mandrake'),null,null,50,2).finalHP,[0,0]);
+    assert.equal(duel(creature('deathworm'),creature('decoy'),null,null,30,2).strikes[0].effect,'hit');
+    assert.equal(duel(creature('wendigo'),fighter,vest,null,100,2).won,false);
+    assert.equal(land.unit.enchant,'fog');
+    duel(creature('sphinx'),fighter,vest,null,100,2);
+    assert.equal(land.unit.enchant,'sleep');
+    const priorSymbols=enemy.symbols.slice();
+    enemy.symbols[2]=10;
+    assert.equal(duel(creature('camazotz'),fighter,null,null,40,2).attackST,60);
+    assert.equal(enemy.symbols[2],7);
+    enemy.symbols=priorSymbols;
+
+    const originalArmy=creatures.tiles.map(t=>({...t}));
+    for(const at of [5,6,7])Object.assign(creatures.tiles[at],{owner:1,type:0,unit:{id:goblin,hp:30}});
+    assert.equal(duel(creature('nezha'),goblin,null,null,30,2).attackST,50);
+    assert.ok(land.unit?.mhp===40);
+    for(const at of [5,6])Object.assign(creatures.tiles[at],{owner:0,type:2,unit:{id:goblin,hp:30}});
+    assert.equal(duel(creature('shamblingvine'),goblin,null,null,30,2).attackST,40);
+    originalArmy.forEach((t,i)=>{if(i!==2)Object.assign(creatures.tiles[i],t);});
+    const restored=duel(fighter,creature('kudzufolk'),axe,null,30,2);
+    assert.equal(restored.finalForms[1],creature('greenmold'));
+    assert.equal(land.unit.id,creature('greenmold'));
+    for(const at of [5,6,7,9])Object.assign(creatures.tiles[at],{owner:1,type:0,unit:{id:goblin,hp:30}});
+    assert.ok(duel(fighter,creature('kudzufolk'),axe,null,30,2).won);
+    originalArmy.forEach((t,i)=>{if(i!==2)Object.assign(creatures.tiles[i],t);});
+    const captured=duel(goblin,creature('amabie'),null,null,40,2);
+    assert.ok(captured.won);
+    assert.ok(creatures.tiles.some((t,at)=>at!==2&&t.type===1&&t.owner===1&&t.unit?.id===creature('amabie')));
+    originalArmy.forEach((t,i)=>{if(i!==2)Object.assign(creatures.tiles[i],t);});
+    duel(creature('otohime'),fighter,vest,null,100,2);
+    assert.equal(land.unit.enchant,'senility');
+    creatures.destroyedCount=4;
+    assert.equal(duel(creature('doomreaper'),goblin).attackST,50);
+    assert.equal(creatures.players[0].cash,300);
+
+    function landCommand(name){
+      const s=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+      Object.assign(s.players[0],{cash:300,pos:2});
+      Object.assign(s.tiles[2],{owner:0,unit:{id:creature(name),hp:C.cards[creature(name)].hp}});
+      Object.assign(s.tiles[3],{owner:2,unit:{id:fighter,hp:30}});
+      s.phase='land';
+      return s;
+    }
+    function aim(s,action=['abilityLand',3]){
+      assert.ok(C.play(s,['ability',2]));
+      assert.ok(C.play(s,action));
+    }
+    const am=landCommand('amabie');aim(am);
+    assert.deepEqual([am.players[0].cash,am.tiles[3].unit.hp,am.tiles[3].unit.mhp],[260,40,50]);
+    const shrunk=landCommand('sanguivore');aim(shrunk);
+    assert.deepEqual([shrunk.players[0].cash,shrunk.tiles[3].unit.hp,shrunk.tiles[3].unit.mhp],[250,30,30]);
+    const taxed=landCommand('burnacle');
+    const lastToll=C.toll(taxed,taxed.tiles[3]);
+    aim(taxed);
+    assert.equal(C.toll(taxed,taxed.tiles[3]),Math.floor(lastToll/2));
+    const blocked=landCommand('landurchin');aim(blocked);
+    assert.equal(blocked.tiles[3].unit.enchant,'immobilize');
+
+    const rooted=landCommand('fighter');
+    Object.assign(rooted.tiles[3],{owner:1,unit:{id:creature('landurchin'),hp:50}});
+    assert.ok(!C.choices(rooted).some(([k,from,to])=>k==='transfer'&&from===2&&to===3));
+    rooted.tiles[3].unit.enchant='paralysis';
+    assert.ok(C.choices(rooted).some(([k,from,to])=>k==='transfer'&&from===2&&to===3));
+    const swamp=landCommand('swampspawn');aim(swamp,['abilityPlayer',1]);
+    assert.deepEqual([swamp.players[0].cash,swamp.players[1].status,swamp.players[1].diceLimitRolls],[250,'slow',2]);
+
+    const merge=landCommand('fighter');
+    merge.phase='spell';
+    Object.assign(merge.players[0],{hand:[creature('culdra')],cash:450});
+    [100,200,300].forEach((cash,index)=>{merge.players[index+1].cash=cash;});
+    merge.tiles[2].unit.hp=17;
+    assert.ok(C.play(merge,['cast',0]));
+    assert.ok(merge.players.every(p=>p.cash===242&&p.word===6));
+    assert.equal(merge.tiles[2].unit.hp,40);
+    merge.phase='spell';merge.players[0].hand=[creature('immobilize')];
+    assert.ok(C.play(merge,['cast',0]));
+    assert.ok(merge.tiles.filter(t=>t.unit).every(t=>t.unit.enchant==='immobilize'));
+    merge.phase='land';
+    assert.ok(!C.choices(merge).some(([kind])=>kind==='transfer'));
+
+    for(const [roll,expectedCash,expectedHP] of [[1,150,20],[2,250,40]]){
+      const trap=landCommand('fighter');
+      Object.assign(trap.players[0],{pos:6,previous:5,dir:1,word:roll,cash:250});
+      Object.assign(trap.tiles[7],{owner:1,type:1,unit:{id:fighter,hp:40,enchant:'blasttrap'}});
+      trap.phase='roll';
+      assert.ok(C.play(trap,['roll']));
+      assert.deepEqual([trap.players[0].cash,trap.tiles[7].unit.hp],[expectedCash,expectedHP]);
+      if(roll===1)assert.equal(trap.tiles[7].unit.enchant,undefined);
+    }
   }
 
   const curse=C.start(2,2,6000,'begins-original-ford');
