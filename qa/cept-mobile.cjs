@@ -544,6 +544,31 @@ const {chromium}=require('playwright');
       console.log('revolt '+width+'x'+height+': gem store pause, trade quote, opponent payout and resume by touch OK');
       await gemPage.close();
     }
+    for(const [width,height] of [[320,568],[844,390]]){
+      const circlePage=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await circlePage.route('https://**',r=>r.abort());
+      await circlePage.goto(trapUrl.href);
+      await circlePage.selectOption('#mapChoice','revolt-original-circle-court');
+      await circlePage.locator('#config .match-start .primary').tap();
+      await circlePage.evaluate(()=>{
+        const id=name=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===name);
+        Object.assign(s,{phase:'fork',die:1,rollSum:1,remaining:1,circlePools:[[id('manna')],[id('magicbolt')]]});
+        Object.assign(s.players[0],{pos:2,previous:1,cash:600});
+        render();
+      });
+      const route=circlePage.locator('.route-option').filter({hasText:'20번 방향'});
+      assert.match(await route.innerText(),/마법진.*무료/);
+      await route.tap();
+      await circlePage.locator('[data-open=circleCast]').tap();
+      const picker=circlePage.locator('#turnPicker[open]');
+      assert.deepEqual(await picker.locator('.turn-picker-card .card-cost').allTextContents(),['0G','0G']);
+      await picker.locator('.turn-picker-card').first().tap();
+      await picker.getByRole('button',{name:'마법진 주문 확정'}).tap();
+      assert.deepEqual(await circlePage.evaluate(()=>[s.phase,s.players[0].pos,s.players[0].cash]),['land',19,650]);
+      assert.equal(await circlePage.locator('#mapRoll').isHidden(),true);
+      console.log('revolt '+width+'x'+height+': Spell Circle illustrated free choice and post-movement resume by touch OK');
+      await circlePage.close();
+    }
     const archerPage=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
     await archerPage.route('https://**',r=>r.abort());
     await archerPage.goto(pathToFileURL(path.resolve(__dirname,'../dist/cept.html')).href);

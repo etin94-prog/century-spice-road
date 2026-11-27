@@ -154,6 +154,13 @@ const describeCepterSpell=(()=>{
     redivision:'모든 셉터의 현재 마력을 합산해 같은 몫으로 나눕니다. 나머지는 버립니다.',
     stealgem:'적 셉터가 보유한 속성석 한 개를 무작위로 가져옵니다. 보석 상점이 없는 지도에서는 마력 80G를 가져옵니다.',
     obliterate:'모든 셉터가 속성석 보유량 × 70G를 잃습니다. 보석 상점이 없는 지도에서는 모두 보유 마력의 10%를 잃습니다.',
+    gift:'내 순위에 50G를 곱한 만큼 마력을 얻고, 순위와 같은 수의 카드를 북에서 뽑습니다.',
+    purify:'셉터와 영지에 걸린 인챈트를 지우고 제거한 효과 종류마다 50G를 얻습니다.',
+    revoltphantasm:'지도 위 모든 크리처에 판타즘을 부여해 주문과 영지 능력으로 HP가 변하지 않게 합니다.',
+    stoneblast:'땅 또는 바람 속성 크리처 한 마리에게 30 피해를 줍니다.',
+    holybanishment:'영지와 속성이 다른 크리처를 소유자의 손패로 돌려보냅니다.',
+    liquidform:'고른 크리처의 전투 ST와 HP를 각각 10~70으로 정하는 인챈트를 걸고 카드 한 장을 뽑습니다.',
+    pacifism:'모든 셉터의 침략을 2라운드 동안 제한합니다.',
     remoteswitch:'모든 분기 스위치의 방향을 바꿉니다. 스위치가 없는 지도에서는 카드 1장을 뽑습니다. 사용한 카드는 북으로 돌아갑니다.',
     remission:'아직 지나지 않은 게이트 한 곳을 골라 통과 기록을 채웁니다. 미통과 게이트가 두 곳 이상이어야 합니다.',
     restore:'고른 크리처의 피로를 해제하고 HP를 최대치까지 회복시킵니다.',
@@ -171,6 +178,11 @@ const describeCepterSpell=(()=>{
     const e=card.effect,edition=C.edition;
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
     switch(e){
+      case 'greed':if(edition==='revolt')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';break;
+      case 'growthbody':if(edition==='revolt')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';break;
+      case 'haste':if(edition==='revolt')return '고른 셉터가 다음 두 번 굴리는 주사위 합을 6~8로 제한합니다.';break;
+      case 'disease':case 'vitality':
+        if(edition==='revolt')return '고른 크리처의 전투 ST와 HP를 각각 20 '+(e==='disease'?'낮추고':'높이고')+' 카드 한 장을 뽑습니다.';break;
       case 'manna':return '(완료한 주회 수 + 1) × '+(card.magicPerLap||50)+'G를 얻습니다.';
       case 'fly':return edition==='revolt'?'이번 차례에 주사위를 3개 굴립니다.':'이번 차례에 주사위를 2개 굴립니다.';
       case 'bolt':return '고른 '+(['ps1','saturn'].includes(edition)?'':'적 ')+'크리처에게 20 피해를 줍니다.';

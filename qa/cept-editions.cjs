@@ -50,7 +50,7 @@ for(const edition of ['ps2','dc','ps1','saturn','saga','revolt','begins']){
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,38],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,18],['revolt',489,39],['begins',400,15]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -1010,4 +1010,98 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const ai=approach(1,0);
   assert.equal(C.ai(ai)[0],'buyGem');
   console.log('Revolt gem shop pass/stop, caps, opponent purchase, price movement, spells, replay and AI OK');
+}
+
+{
+  const C=ps2.createEdition('revolt'),mapId='revolt-original-circle-court';
+  const groupA='escape gift greed growthbody spiritwalk vitality barrier purify haste windofhope massphantasm manna lifestream restore revival reincarnation'.split(' ');
+  const groupB='elementalwrath quintessence shatter stoneblast turntothewall disease drainmagic bindingmist pacifism blackout holybanishment holyword3 magicbolt liquidform rayoflaw'.split(' ');
+  const id=name=>C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)===name);
+  function base(){
+    const s=C.start(4,4,5000,mapId),p=s.players[0];
+    Object.assign(p,{pos:2,previous:1,cash:600,hand:[id('goblin')],book:Array(10).fill(id('goblin'))});
+    Object.assign(s,{phase:'fork',die:1,rollSum:1,remaining:1});
+    Object.assign(s.tiles[3],{owner:0,unit:{id:id('minotaur'),hp:12,fatigued:true}});
+    Object.assign(s.tiles[8],{owner:1,unit:{id:id('wallofstone'),hp:40}});
+    s.players[1].hand=[id('longsword')];
+    return s;
+  }
+  const draw=base();
+  C.configureMatch(draw,{recordReplay:true});
+  assert.equal(C.routePreview(draw,['route',19]).phase,'spellCircle');
+  assert.equal(draw.circlePools,undefined);
+  assert.ok(C.play(draw,['route',19]));
+  assert.deepEqual(draw.circlePools.map(p=>p.length),[15,14]);
+  const first=draw.circleOffers.slice();
+  assert.deepEqual(draw.replay.steps.at(-1).circleOffers,first);
+  assert.ok(C.play(draw,['circleSkip']));
+  assert.equal(draw.phase,'land');
+  Object.assign(draw,{phase:'fork',die:1,remaining:1});
+  Object.assign(draw.players[0],{pos:16,previous:14});
+  assert.ok(C.play(draw,['route',17]));
+  assert.equal(draw.players[0].pos,17);
+  assert.ok(draw.circleOffers.every(card=>!first.includes(card)));
+  assert.deepEqual(draw.circlePools.map(p=>p.length),[14,13]);
+
+  const pass=base();pass.die=2;pass.remaining=2;
+  assert.ok(C.play(pass,['route',19]));assert.equal(pass.players[0].pos,17);
+  assert.equal(pass.phase,'spellCircle');
+  const past=base();Object.assign(past,{die:2,remaining:2});Object.assign(past.players[0],{pos:17,previous:16});
+  assert.ok(C.play(past,['route',19]));assert.equal(past.players[0].pos,2);
+  assert.equal(past.circlePools,undefined);
+
+  for(const name of [...groupA,...groupB]){
+    const s=base(),selected=id(name),p=s.players[0];
+    assert.ok(selected>=0&&!C.cards[selected].catalogOnly,name);
+    Object.assign(s,{phase:'spellCircle',circleOffers:[selected]});
+    Object.assign(p,{pos:19,previous:2,hand:[id('goblin')]});
+    assert.ok(C.play(s,['circleCast',selected]),name);
+    if(s.phase==='spellTarget'){
+      const actions=C.choices(s);
+      const aim=actions.find(([kind,x])=>kind==='targetLand'&&x===8||kind==='targetPlayer'&&x===1)||actions[0];
+      assert.notEqual(aim[0],'fizzle',name);
+      assert.ok(C.play(s,aim),name);
+    }
+    if(s.phase==='shatter')assert.ok(C.play(s,['breakCard',0]));
+    assert.equal(s.phase,'land',name);
+    assert.equal(s.circleCasting,undefined,name);
+    assert.equal(s.circleOffers,undefined,name);
+    assert.ok(!C.choices(s).some(([kind])=>kind==='roll'),name);
+    if(name==='manna')assert.deepEqual([p.cash,p.hand],[650,[id('goblin')]]);
+    if(name==='escape')assert.ok(p.pos!==19&&C.territoryType(s.tiles[p.pos].type));
+    if(name==='stoneblast')assert.equal(s.tiles[8].unit.hp,10);
+    if(name==='turntothewall')assert.equal(s.tiles[8].unit.id,id('wallofstone'));
+    if(name==='pacifism')assert.ok(s.players.every(q=>q.status==='pacifism'));
+  }
+  const fast=base();fast.phase='spellCircle';fast.circleOffers=[id('haste')];
+  assert.ok(C.play(fast,['circleCast',id('haste')]));
+  assert.ok(C.play(fast,['targetPlayer',0]));
+  assert.equal(fast.players[0].hasteRolls,2);
+  for(const count of [1,0]){
+    fast.phase='roll';
+    assert.ok(C.play(fast,['roll']));
+    assert.ok(fast.die>=6&&fast.die<=8);
+    assert.equal(fast.players[0].hasteRolls??0,count);
+  }
+
+  const peace=base();peace.phase='land';peace.players[0].pos=8;peace.players[0].status='pacifism';
+  assert.ok(!C.choices(peace).some(([k])=>k==='invade'));
+  console.log('Revolt Spell Circle shared pools, stop-only activation, replay, all 31 spells, two-roll Haste and Pacifism OK');
+}
+
+{
+  const C=ps2.createEdition('revolt'),mapId='revolt-original-gem-route';
+  function debtor(cash){
+    const s=C.start(2,2,5000,mapId);
+    s.phase='land';Object.assign(s.players[0],{cash,pos:3,lap:2});
+    Object.assign(s.tiles[1],{owner:0,unit:{id:C.cards.findIndex(c=>C.combo.key(c)==='goblin'),hp:30}});
+    assert.ok(C.play(s,['pass']));
+    assert.equal(s.phase,'sell');
+    assert.equal(C.debtSaleValue(s,s.tiles[1]),80);
+    assert.ok(C.play(s,['sell',1]));
+    return s.players[0];
+  }
+  const repaid=debtor(-70);assert.equal(repaid.cash,10);
+  const restart=debtor(-100);assert.deepEqual([restart.cash,restart.pos,restart.flags],[360,0,[]]);
+  console.log('Revolt forced sale yields 80 percent, depleted player restarts at gate with 1.5x lap magic');
 }

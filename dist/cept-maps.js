@@ -55,6 +55,11 @@ const CepterMaps=(()=>{
     [4,12],100,12,[...loop(16),[6,16],[16,17],[17,18],[18,14]],Array(19).fill(0));
   revoltPractice['revolt-original-gem-route']={...gemRoute,areaCount:1,section:'arena',graph:true,gemStore:true,startCash:300,
     castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
+  const circleCourt=map('별빛 제단 · 창작 지도',[...ring,[3,2],[3,3],[3,4],[2,3],[4,3]],
+    ['성',0,1,1,'동쪽 게이트',3,0,2,1,3,0,1,'서쪽 게이트',2,3,0,2,'마법진',1,'마법진',3],
+    [4,12],100,12,[...loop(16),[14,16],[16,17],[17,18],[18,6],[2,19],[19,17],[17,20],[20,10]],Array(21).fill(0));
+  revoltPractice['revolt-original-circle-court']={...circleCourt,areaCount:1,section:'arena',graph:true,startCash:250,
+    castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
   const storyGoals=[5000,6000,6000,8000,8000,8000,9000,9000,9000,8000,9000,9000,9000,9000,10000,12000];

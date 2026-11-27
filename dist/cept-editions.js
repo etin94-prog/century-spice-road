@@ -85,7 +85,10 @@ const CepterEditions=(()=>{
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
       freezecyclone:'freezecyclone',insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation',
       alarm:'alarm',disaster:'fatigueddisaster',elementalwrath:'elementalwrath',landtransfer:'revoltlandtransfer',
-      magmashift:'magmashift',stormshift:'stormshift',quintessence:'quintessence',redivision:'redivision',remission:'remission',restore:'restore',remoteswitch:'remoteswitch',stealgem:'stealgem',obliteration:'obliterate'},
+      magmashift:'magmashift',stormshift:'stormshift',quintessence:'quintessence',redivision:'redivision',remission:'remission',restore:'restore',remoteswitch:'remoteswitch',stealgem:'stealgem',obliteration:'obliterate',
+      escape:'escape',gift:'gift',greed:'greed',growthbody:'growthbody',spiritwalk:'spiritwalk',vitality:'vitality',
+      purify:'purify',haste:'haste',massphantasm:'revoltphantasm',revival:'revival',stoneblast:'stoneblast',
+      turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -197,6 +200,8 @@ const CepterEditions=(()=>{
       if(edition==='begins'&&kind==='item'&&Object.hasOwn(beginsGear,slug)){
         Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
       }
+      if(edition==='revolt'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
+      if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}
       if(first&&slug==='giantspider'){c.paralyze=true;c.statusRaces=['rh','rb'];}
       if(first&&slug==='giantsnake'){c.poison=true;c.statusRaces=['rh','rb','rd'];}

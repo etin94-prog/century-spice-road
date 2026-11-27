@@ -92,12 +92,13 @@ const CepterCombos = (() => {
         }else if(e==='evilblast')damage(s,t,30);
         else if(immuneHP(t)&&['shrink','growthbody','temperance'].includes(e))return 'roll';
         else if(e==='shrink'){u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)destroy(s,t);}
-        else if(e==='growthbody'){u.mhp=max(u)+10;u.hp+=10;}
+        else if(e==='growthbody'){const gain=s.edition==='revolt'?Math.max(0,Math.min(10,100-max(u))):10;u.mhp=max(u)+gain;u.hp+=gain;}
         else if(e==='weakness')u.st=0;
         else if(e==='temperance'){u.mhp=30;u.hp=Math.min(30,u.hp);}
         else if(e==='mutation'){
           clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
+        if(s.edition==='revolt'&&['greed','vitality','disease'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){
           const a=v.unit;
@@ -145,6 +146,7 @@ const CepterCombos = (() => {
         if(['silence','haste','despair','slow'].includes(e)){
           q.status=e;
           if(s.edition==='ps2')q.enchantDeadline=(s.round+1)*s.players.length+s.turn;
+          else if(s.edition==='revolt'&&e==='haste')q.hasteRolls=2;
           else q.statusUntil=s.round+2;
         }
       }else{
@@ -250,7 +252,7 @@ const CepterCombos = (() => {
       if(['conjurer','heatimp','windimp'].includes(n))destroy(s,src);
     }
     function clearCepter(q){
-      for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','sagaClemency','sagaService','sagaFeast'])delete q[field];
+      for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
       blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect};

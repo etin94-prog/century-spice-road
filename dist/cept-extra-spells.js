@@ -11,9 +11,10 @@ const CepterExtraSpells=(()=>{
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
   const type={...ps2Type,holyword8:'player',landdrain:'player',
     alarm:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
-    remission:'land',restore:'land',revoltlandtransfer:'land',
+    remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',holybanishment:'land',liquidform:'land',
+    gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
-  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath']);
+  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const enemyOnly=new Set(['babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture']);
@@ -35,7 +36,7 @@ const CepterExtraSpells=(()=>{
   const actions={soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처'};
   const hints={soltisPower:'일곱 권능 중 하나를 고르세요.',soltisArea:'내 크리처를 회복할 지역을 고르세요.',foresightCard:'북 맨 위의 카드 중 손패에 넣을 카드를 고르세요.',prophecyKind:'뽑을 카드 종류를 고르세요.',mesmerCard:'상대 손패에서 사용할 주문을 고르세요.',replaceCard:'영지 주인의 손패에서 교체할 크리처를 고르세요.'};
   function clearCepter(p){
-    for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','sagaClemency','sagaService','sagaFeast'])delete p[field];
+    for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','hasteRolls','sagaClemency','sagaService','sagaFeast'])delete p[field];
   }
   const time=s=>(s.round-1)*s.players.length+s.turn;
   function setStatus(s,q,name,rounds=duration[name]){
@@ -48,7 +49,7 @@ const CepterExtraSpells=(()=>{
     if(p.status==='fairylight')p.cash+=p.hand.length*10;
     if(p.status==='torture')p.cash-=p.hand.filter(id=>cards[id].kind==='spell').length*20;
   }
-  function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,value,canOccupy,deployable,claim}){
+  function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
@@ -89,6 +90,8 @@ const CepterExtraSpells=(()=>{
         if((e==='meteor'||e==='locust')&&fx.blockedLevel(s,t))return [];
         if(e==='chariot'&&(t.owner!==s.turn||!chariotExits(s,i).length))return [];
         if((e==='bistair'||e==='parasite')&&!enemy(s,t.owner)||e==='banishingray'&&cards[t.unit.id].element!==-1)return [];
+        if(e==='stoneblast'&&![2,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
+        if(e==='holybanishment'&&matchesLand(cards[t.unit.id],t.type))return [];
         if(e==='replace'&&!replacement(s,t).length)return [];
         return [['targetLand',i]];
       });
@@ -110,7 +113,7 @@ const CepterExtraSpells=(()=>{
     }
     function warp(s,at){
       const p=s.players[s.turn];s.die=0;s.visited=[];s.remaining=0;
-      if(at===p.pos){arrived(s);return s.phase;}
+      if(at===p.pos){if(s.circleCasting)return 'land';arrived(s);return s.phase;}
       s.spellArrival=true;s.remaining=1;advance(s,at);p.dir=0;p.previous=null;return s.phase;
     }
     function forgetPeek(s,seat){for(const q of s.players)if(q.peek?.seat===seat)delete q.peek;}
@@ -144,6 +147,20 @@ const CepterExtraSpells=(()=>{
         case 'elementalwrath':return matchesLand(cards[t.unit.id],t.type)?0:20;
       }
     }
+    function purify(s){
+      const kinds=new Set();
+      for(const q of s.players){
+        const key=q.word!=null?'word'+q.word:q.status||['antiMagic','invisible','dream','reverse','chooseDirection'].find(k=>q[k]);
+        if(key)kinds.add(key);
+        clearCepter(q);
+      }
+      for(const t of s.tiles){
+        const u=t.unit;
+        if(u){for(const key of [u.enchant,u.poisoned?'poison':null,u.confused?'confused':null])if(key)kinds.add(key);combo.clear(u);}
+        if(t.enchant){kinds.add(t.enchant);delete t.enchant;}
+      }
+      return kinds.size;
+    }
     function apply(s,e,x){
       const p=s.players[s.turn],q=s.players[x],t=s.tiles[x],u=t?.unit;
       if(type[e]==='land'){
@@ -160,7 +177,15 @@ const CepterExtraSpells=(()=>{
           case 'locust':t.level=Math.max(1,t.level-1);break;
           case 'meteor':t.level=1;break;
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
-          case 'turntothewall':morph(t,ids.get((['pillarofflame','wallofice','wallofstone','hurricane'])[cards[u.id].element]||'statue'));break;
+          case 'stoneblast':fx.harm(s,t,30);break;
+          case 'holybanishment':s.players[t.owner].hand.push(u.id);vacate(t);break;
+          case 'liquidform':combo.clear(u);u.enchant=e;u.caster=s.turn;draw(p,s);break;
+          case 'turntothewall':{
+            const forms=s.edition==='revolt'?['creepingflame','wallofice','wallofstone','tornado']:['pillarofflame','wallofice','wallofstone','hurricane'];
+            morph(t,ids.get(forms[cards[u.id].element]||'statue'));
+            if(s.edition==='revolt'&&u.fatigued)t.unit.fatigued=true;
+            break;
+          }
           case 'removecurse':if(u)combo.clear(u);delete t.enchant;break;
           case 'replace':s.replaceAt=x;return 'replaceCard';
           case 'magicfountain':combo.clear(u);u.enchant=e;break;
@@ -207,6 +232,14 @@ const CepterExtraSpells=(()=>{
           case 'foresight':
             if(!p.book.length)resetBook(s,s.turn);return 'foresightCard';
           case 'prophecy':if(!p.book.length)resetBook(s,s.turn);return 'prophecyKind';
+          case 'gift':{
+            const wealth=personalTotal(s,s.turn),rank=1+s.players.filter((_,j)=>personalTotal(s,j)>wealth).length;
+            p.cash+=rank*50;for(let n=0;n<rank;n++)draw(p,s);
+            break;
+          }
+          case 'purify':p.cash+=purify(s)*50;break;
+          case 'pacifism':for(const q of s.players)setStatus(s,q,e,2);break;
+          case 'revoltphantasm':for(const v of land){combo.clear(v.unit);v.unit.enchant='phantasm';}break;
           case 'alarm':for(const v of owning(s,s.turn))if(v.unit)delete v.unit.fatigued;break;
           case 'redivision':{const cash=sharedCash(s);for(const q of s.players)q.cash=cash;break;}
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
@@ -307,6 +340,9 @@ const CepterExtraSpells=(()=>{
         return sign*(2*(Number(after)-Number(before))*weight+2*change);
       }
       switch(e){
+        case 'stoneblast':return -sign*fx.damageAmount(s,t,30)/4;
+        case 'holybanishment':return -sign*(5+weight+t.unit.hp/8);
+        case 'liquidform':return sign*(40-t.unit.hp)/7;
         case 'restore':return sign*((fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3)+(t.unit.fatigued?4+weight:0));
         case 'revoltlandtransfer':return p.cash<160?Math.min(value(s,t),300)/10-2*weight:-20;
         case 'meteor':case 'locust':return -sign*(t.level-1)*(e==='meteor'?10:5);
@@ -347,6 +383,10 @@ const CepterExtraSpells=(()=>{
       if(e==='soltis')return 19;
       if(e==='soulsteal'||e==='mistletoe')return p.status===e?0:7;
       if(e==='foresight'||e==='prophecy'||e==='find')return 6;
+      if(e==='gift')return 10;
+      if(e==='purify')return s.tiles.some(t=>t.unit&&combo.enchanted(t.unit))||s.players.some(q=>q.status)?5:-10;
+      if(e==='pacifism')return s.tiles.filter(t=>t.owner===s.turn&&t.level>2).length*2-3;
+      if(e==='revoltphantasm')return s.tiles.filter(t=>t.owner===s.turn&&t.unit?.hp).length-3;
       if(e==='reincarnation'&&s.edition!=='ps2')return p.hand.length<=2?10:p.hand.every(id=>cards[id].kind!=='creature')?7:1;
       if(e==='revelation'||e==='telegnosis')return mine.length&&p.status!=='enlightenment'?5:0;
       return 2;

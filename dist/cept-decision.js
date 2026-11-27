@@ -6,6 +6,7 @@ function routeOption(action){
   if(info.phase==='fork')landing+=' · 갈림길에서 '+info.remaining+'칸 남음';
   else if(info.phase==='over')landing+=' · 목표 달성';
   else if(info.phase==='shop')landing+=' · 카드 1장 구매 가능';
+  else if(info.phase==='spellCircle')landing+=' · 주문 한 장 무료 사용';
   else if(info.phase==='gemStore')landing+=' · 속성석 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(info.phase==='temple')landing+=' · 호부 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+info.toll+'G');
@@ -44,6 +45,7 @@ function shopMenu(controls,choices,p){
 
 function decisionText(action,p){
   const [kind,x,y]=action,position=s.towerAt??p.pos,here=s.tiles[position];
+  if(kind==='circleCast')return '마법진 사용 비용 0G';
   if(kind==='switchKeep'||kind==='switchFlip')return '다음 이동 '+(C.pathSwitch(s,p.pos,p.previous,kind==='switchFlip').to+1)+'번 칸';
   if(kind==='shrineChoice')return C.shrineDetails[x];
   if(kind==='ability'||kind==='totem')return CepterCreatureText.territorySummary(C,C.cards[s.tiles[x].unit.id]);
@@ -85,7 +87,7 @@ function decisionText(action,p){
 function actionCard(action,p){
   const [kind,x,id]=action;
   if(['foresightCard','replaceCard','mesmerCard'].includes(kind))return id;
-  if(kind==='buyCard')return x;
+  if(kind==='buyCard'||kind==='circleCast')return x;
   if(kind==='exchange')return p.hand[id];
   if(['cast','equip','discard','summon','invade','sacrifice'].includes(kind))return p.hand[x];
   if(['breakCard','wormDiscard','suppressCard'].includes(kind))return s.players[s.spellTarget]?.hand[x];
@@ -151,7 +153,7 @@ function openTurnPicker(entries,title,preferred=-1){
     option.setAttribute('aria-pressed','false');
     if(card){
       const art=cardSeal(entry.id);art.alt='';option.prepend(art);
-      const cost=card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
+      const cost=entry.action[0]==='circleCast'?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
       if(Number.isFinite(cost))option.append(el('small',cost+'G','card-cost'));
       if(card.kind==='creature')option.append(el('small','ST '+card.st+' · HP '+card.hp,'card-power'));
     }

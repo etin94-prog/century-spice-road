@@ -60,7 +60,8 @@ function showReplay(replay){
     if(next.disabled)stop();
     status.textContent=[step+'/'+replay.steps.length,f.round+'라운드',step?replay.names[f.seat]:'대전 시작',
       f.timeout?'시간 초과':null,replayActionNames[f.action]||labels[f.action]||f.action,
-      f.die?'주사위 '+f.die:null,f.effect?.[1],replayVerdict(replay,f)].filter(Boolean).join(' · ');
+      f.die?'주사위 '+f.die:null,Array.isArray(f.circleOffers)?f.circleOffers.map(id=>C.cards[id]?.name).filter(Boolean).join(' / '):null,
+      f.effect?.[1],replayVerdict(replay,f)].filter(Boolean).join(' · ');
     wealth.replaceChildren(...f.players.map(([at,cash,total],i)=>{
       const gems=Array.isArray(f.gems?.[i])&&Array.isArray(f.gemPrices)?f.gems[i].flatMap((n,e)=>n?[C.elements[e]+' '+n+'개 × '+f.gemPrices[e]+'G']:[]):[];
       return el('li',replay.names[i]+' · '+(at+1)+'번 칸 · '+cash+'G · 총 '+total+'G'+(gems.length?' · '+gems.join(', '):''));
