@@ -1590,7 +1590,7 @@ function createCepter(edition="ps2"){
       case 'teleTo':{
         const from=s.teleFrom,territoryMove=s.territoryMove;
         delete s.teleFrom;delete s.territoryMove;
-        const chariotMove=(begins||revolt)&&s.spellEffect==='chariot';
+        const chariotMove=(begins||revolt||handheld)&&s.spellEffect==='chariot';
         const label=chariotMove?'채리엇':territoryMove==='adjacent'?'크리핑 플레임':territoryMove?'슬레이프니르':null;
         moveWithAbility(from,x,territoryMove,label);
         break;

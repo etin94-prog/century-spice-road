@@ -438,7 +438,7 @@ function setMapCamera(root,x,y,zoom){
   placeMapRoll(root,x,y,zoom);
 }
 function selectingSpellMapTarget(){
-  if(C.edition==='revolt'&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
+  if(['revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
   return s?.phase==='spellTarget'&&['remission','magicalleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong'].includes(s.spellEffect);
 }
 function selectingSecretPlayer(){

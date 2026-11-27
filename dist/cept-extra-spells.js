@@ -92,7 +92,7 @@ const CepterExtraSpells=(()=>{
         const dest=s.tiles[i];
         return i!==from&&territoryType(dest.type)&&!combo.allied(s,tile.owner,dest.owner)&&
           canInvade(s,tile.owner,dest.owner)&&dest.unit?.enchant!=='peace'&&
-          (!['saga','revolt'].includes(s.edition)||canOccupy(cards[tile.unit.id],dest));
+          (!['saga','revolt','3ds'].includes(s.edition)||canOccupy(cards[tile.unit.id],dest));
       });
     }
     function leapDestinations(s){

@@ -4781,6 +4781,68 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(gremlin.battle.strikes[0].effect,'hit');
   const protectedOrb=fight('minotaur','blackorb',null,null,s=>{s.tiles[3].unit={id:id('thief'),hp:40};});
   assert.ok(protectedOrb.battle.won,'Thief cannot steal Black Orb');
+  {
+    const spells='acidrain avalanche backward banishingray bistair chariot corruption drought fairylight fog incineration locust phantasm revelation revival selenear simulacrum spartoi spiritwalk telegnosis torture triumph'.split(' ');
+    assert.ok(spells.every(name=>id(name)>=0));
+    const spell=name=>{
+      const s=C.start(4,4,0,intro,undefined,undefined,2,'teams');
+      s.players.forEach(p=>{p.cash=1000;p.hand=[];});
+      s.players[0].hand=[id(name)];s.players[0].book=[id('fly')];
+      return s;
+    };
+    const place=(s,at,name,owner,level=1)=>Object.assign(s.tiles[at],{type:0,owner,level,unit:{id:id(name),hp:C.cards[id(name)].hp}});
+    const cast=(s,...action)=>assert.ok(C.play(s,['cast',0])&&(!action.length||C.play(s,action)));
+
+    const acid=spell('acidrain');
+    place(acid,1,'wallofice',1);place(acid,2,'goblin',3);
+    cast(acid);
+    assert.deepEqual([acid.tiles[1].unit.hp,acid.tiles[2].unit.hp],[10,30]);
+
+    const snow=spell('avalanche');
+    place(snow,1,'minotaur',1,5);place(snow,2,'minotaur',1,4);
+    cast(snow);
+    assert.deepEqual([snow.tiles[1].unit.hp,snow.tiles[2].unit.hp],[10,40]);
+
+    const claim=spell('banishingray');
+    place(claim,1,'goblin',1);place(claim,2,'minotaur',1);
+    assert.ok(C.play(claim,['cast',0]));
+    assert.deepEqual(C.choices(claim),[['targetLand',1]]);
+    assert.ok(C.play(claim,['targetLand',1]));
+    assert.equal(claim.tiles[1].owner,-1);
+
+    const chariot=spell('chariot');
+    place(chariot,1,'goblin',0);
+    cast(chariot,'targetLand',1);
+    assert.ok(chariot.players[0].book.includes(id('chariot')));
+    const [at]=C.choices(chariot).flatMap(([kind,at])=>kind==='teleTo'&&chariot.tiles[at].owner<0?[at]:[]);
+    assert.ok(C.board(chariot).links[1].some(v=>C.board(chariot).links[v].includes(at)));
+    assert.ok(C.play(chariot,['teleTo',at]));
+    assert.deepEqual([chariot.phase,chariot.tiles[1].owner,chariot.tiles[at].owner],['roll',-1,0]);
+
+    for(const name of ['drought','fog']){
+      const enchant=spell(name);
+      place(enchant,1,'minotaur',1,3);
+      const before=C.toll(enchant,enchant.tiles[1]);
+      cast(enchant,'targetLand',1);
+      assert.deepEqual(enchant.players[0].hand,[id('fly')]);
+      assert.equal(enchant.tiles[1].unit.enchant,name);
+      if(name==='fog')assert.equal(C.toll(enchant,enchant.tiles[1]),Math.floor(before/2));
+    }
+    const ashes=spell('incineration');ashes.destroyedCount=6;
+    cast(ashes);
+    assert.deepEqual([ashes.destroyedCount,ashes.players[0].cash],[0,1110]);
+
+    const memory=spell('revival');memory.players[1].book=[];
+    cast(memory,'targetPlayer',1);
+    assert.deepEqual([...memory.players[1].book].sort(),[...memory.players[1].template].sort());
+
+    const command=spell('telegnosis');
+    place(command,2,'minotaur',0);
+    cast(command);
+    command.phase='land';
+    assert.ok(C.choices(command).some(([kind,at])=>kind==='level'&&at===2));
+    assert.ok(command.players[0].book.includes(id('telegnosis')));
+  }
   const samples=[];
   const worker=createContext({URLSearchParams,location:{search:'?edition=3ds'},postMessage:data=>samples.push(data)});
   worker.self=worker;
@@ -4792,5 +4854,5 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }})`,worker);
   assert.equal(samples.at(-1).done,true);
   assert.deepEqual([...samples.at(-1).finished],[160,160]);
-  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities, defense/scroll equipment and 320 seat-rotation samples OK');
+  console.log('2012 3DS 22 more spells, catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities, defense/scroll equipment and 320 seat-rotation samples OK');
 }

@@ -163,7 +163,8 @@ const CepterCombos = (() => {
           u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
         if(s.edition==='begins'&&e==='camouflage')returnToBook(s,i,ids.get(e));
-        if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||s.edition==='revolt'&&e==='vortex'||
+        if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||
+          s.edition==='3ds'&&['drought','fog'].includes(e)||s.edition==='revolt'&&e==='vortex'||
           s.edition==='begins'&&['antielement','disease','drought','fog','greed','vitality','weakness'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){

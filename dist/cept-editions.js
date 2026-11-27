@@ -102,7 +102,12 @@ const CepterEditions=(()=>{
       holyword1:'word1',holyword2:'holyword2',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       landdrain:'landdrain',lifestream:'lifestream',magicbolt:'bolt',manna:'manna',prophecy:'prophecy',rayoflaw:'rayoflaw',
       reincarnation:'reincarnation',shatter:'shatter',sink:'sink',upheaval:'upheaval',vitality:'vitality',
-      weathering:'weathering',wildgrowth:'wildgrowth',windofhope:'windofhope'
+      weathering:'weathering',wildgrowth:'wildgrowth',windofhope:'windofhope',
+      acidrain:'acidrain',avalanche:'avalanche',backward:'backward',banishingray:'banishingray',bistair:'bistair',
+      chariot:'chariot',corruption:'corruption',drought:'drought',fairylight:'fairylight',fog:'fog',
+      incineration:'incineration',locust:'locust',phantasm:'phantasm',revelation:'revelation',revival:'revival',
+      selenear:'selenear',simulacrum:'simulacrum',spartoi:'spartoi',spiritwalk:'spiritwalk',telegnosis:'telegnosis',
+      torture:'torture',triumph:'triumph'
     },
     saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',

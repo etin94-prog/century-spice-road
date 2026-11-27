@@ -222,6 +222,7 @@ const describeCepterSpell=(()=>{
       if(e==='reinforce')return '고른 지역의 모든 크리처의 기본 ST를 최대 100까지 10 올립니다.';
       if(e==='dispelmagic')return '고른 셉터의 저주를 해제합니다. 사용한 주문은 북으로 돌아갑니다.';
     }
+    if(edition==='3ds'&&['drought','fog'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
     if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
     if(edition==='revolt'&&e==='vortex')return '대상 크리처의 영지에서 전투 능력과 장비 효과를 무효화하고 카드 한 장을 뽑습니다.';
     if(edition==='revolt'&&e==='mindseeker')return '적의 북 맨 위 카드 최대 6장을 보고 한 장을 파괴한 뒤, 내 북에서 한 장을 뽑습니다.';
