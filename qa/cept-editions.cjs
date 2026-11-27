@@ -1717,6 +1717,81 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(actual,expected);
     assert.deepEqual(counts,{creature:28,item:9,spell:13});
   }
+  const idolMatch=()=>C.start(2,2,5000,'saga-original-crosswind');
+  const place=(s,at,name,owner,type,level=1)=>{
+    const c=C.cards[id(name)];
+    Object.assign(s.tiles[at],{owner,type,level,unit:{id:id(name),hp:c.hp}});
+  };
+  const commands=idolMatch();
+  Object.assign(commands.players[0],{pos:2,cash:500,hand:[id('goblin')]});
+  commands.phase='land';
+  place(commands,2,'fay',0,0);
+  for(const action of ['ability','transfer','exchange','level','element'])assert.ok(C.choices(commands).some(([k])=>k===action));
+  place(commands,8,'leadidol',1,0);
+  for(const action of ['transfer','exchange'])assert.ok(!C.choices(commands).some(([k])=>k===action));
+  for(const action of ['ability','level','element'])assert.ok(C.choices(commands).some(([k])=>k===action));
+  commands.tiles[8].unit.enchant='paralysis';
+  assert.ok(C.choices(commands).some(([k])=>k==='transfer'));
+  place(commands,8,'ebonyidol',1,0);
+  assert.ok(!C.choices(commands).some(([k])=>k==='ability'));
+  assert.ok(C.choices(commands).some(([k])=>k==='exchange'));
+
+  const prices=idolMatch(),buyer=prices.players[0];
+  place(prices,8,'ivoryidol',1,0);
+  for(const [name,g] of [['magicbolt',50],['shadowarmor',45],['comet',240]])assert.equal(C.price(buyer,C.cards[id(name)],prices),g);
+  prices.tiles[8].unit.enchant='paralysis';
+  assert.equal(C.price(buyer,C.cards[id('comet')],prices),120);
+  Object.assign(buyer,{pos:2,cash:300,hand:[id('soulcollector')]});
+  prices.phase='land';
+  assert.ok(!C.choices(prices).some(([k])=>k==='summon'));
+  place(prices,8,'goldidol',1,0);
+  assert.ok(C.play(prices,['summon',0]));
+  assert.equal(C.combo.key(C.cards[prices.tiles[2].unit.id]),'soulcollector');
+  assert.equal(buyer.cash,240);
+  const gold=idolMatch();
+  Object.assign(gold.players[0],{pos:2,cash:300,hand:[id('nightfiend')]});
+  gold.phase='land';place(gold,8,'goldidol',1,0);
+  assert.ok(C.choices(gold).some(([k])=>k==='summon'));
+  gold.tiles[8].unit.enchant='paralysis';
+  assert.ok(!C.choices(gold).some(([k])=>k==='summon'));
+
+  const protectedLands=idolMatch();
+  place(protectedLands,2,'sakuya',0,0);
+  place(protectedLands,3,'minotaur',1,0,3);
+  Object.assign(protectedLands.players[0],{pos:2,cash:500,hand:[id('comet'),id('goblin')]});
+  protectedLands.phase='land';
+  assert.ok(C.choices(protectedLands).some(([k])=>k==='ability'));
+  place(protectedLands,8,'jadeidol',1,0);
+  assert.ok(!C.choices(protectedLands).some(([k])=>k==='ability'));
+  assert.ok(C.choices(protectedLands).some(([k])=>k==='element'));
+  protectedLands.phase='spell';
+  const shielded=structuredClone(protectedLands);
+  assert.ok(C.play(shielded,['cast',0])&&C.play(shielded,['sacrifice',1]));
+  assert.deepEqual(C.choices(shielded),[['fizzle']]);
+  assert.equal(shielded.tiles[3].level,3);
+  protectedLands.tiles[8].unit.enchant='paralysis';
+  assert.ok(C.play(protectedLands,['cast',0])&&C.play(protectedLands,['sacrifice',1])&&C.play(protectedLands,['targetLand',3]));
+  assert.equal(protectedLands.tiles[3].level,1);
+
+  const harm=idolMatch();
+  harm.players[0].cash=500;harm.players[0].hand=[id('magicbolt'),id('magicbolt')];
+  place(harm,3,'minotaur',1,0);
+  place(harm,8,'clayidol',1,0);
+  assert.ok(C.play(harm,['cast',0])&&C.play(harm,['targetLand',3]));
+  assert.equal(harm.tiles[3].unit.hp,30);
+  harm.phase='spell';harm.tiles[8].unit.enchant='paralysis';
+  assert.ok(C.play(harm,['cast',0])&&C.play(harm,['targetLand',3]));
+  assert.equal(harm.tiles[3].unit.hp,10);
+  for(const word of [undefined,1]){
+    for(let sample=0;sample<12;sample++){
+      const dice=idolMatch();
+      place(dice,8,'ironidol',1,0);
+      if(word)dice.players[0].word=word;
+      assert.ok(C.play(dice,['roll']));
+      assert.ok(word?dice.die===word:[4,5,6].includes(dice.die));
+    }
+  }
+  console.log('Saga seven active map Idols: paralysis, summon costs, dice, territory commands and damage protection OK');
   assert.equal(C.presets.sagaImmediate.filter(id=>C.cards[id].doublecast).length,10);
   assert.equal(C.presets.sagaAffinity.filter(id=>['sagabistair','sagaselenear'].includes(C.cards[id].effect)).length,6);
   const special=['reincarnation','cleanse','crusher','debility','fistfight','illness','mimicry','paralyzer','zap','bulimia','fatbody','hustle','poisonmind'];

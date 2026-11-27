@@ -43,7 +43,7 @@ const CepterCombos = (() => {
     const max=u=>u.mhp??cards[u.id].hp;
     const strength=u=>u.st??cards[u.id].st;
     const name=u=>names[u?.id]??key(cards[u?.id]);
-    const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n);
+    const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n&&(s.edition!=='saga'||t.unit.enchant!=='paralysis'));
     const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek';
     const landLevelLocked=t=>levelLocked(t)||name(t.unit)==='trampleweed';
     const blockedLevel=(s,t)=>landLevelLocked(t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
@@ -69,7 +69,7 @@ const CepterCombos = (() => {
       death(s,u.id);vacate(t);
     }
     function damageAmount(s,t,n){
-      return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,'crayidol')?10:0)));
+      return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,s.edition==='saga'?'clayidol':'crayidol')?10:0)));
     }
     function damage(s,t,n,caster=s.turn){
       t.unit.hp-=damageAmount(s,t,n);
@@ -247,7 +247,7 @@ const CepterCombos = (() => {
         if(n==='fontaciel'||n==='rockshell')return [['abilitySelf',from]];
         if(n==='hypnosloth')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
         if(n==='tokebi'||n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&
-          (n==='tokebi'||v.type!==2)?[['abilityLand',j]]:[]);
+          (n==='tokebi'||v.type!==2&&!idol(s,'jadeidol'))?[['abilityLand',j]]:[]);
         if(n==='fay'||n==='lichenoid')return s.tiles.flatMap((v,j)=>targetable(s,v)&&
           (n==='fay'?strength(v.unit)<100:!immuneHP(v)&&max(v.unit)<100)?[['abilityLand',j]]:[]);
         if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);

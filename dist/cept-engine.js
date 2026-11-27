@@ -74,7 +74,7 @@ function createCepter(edition="ps2"){
     if(n==='windcutter'){c.st=30;c.critical=2;}
     if(n==='sphinx')c.confuse=true;
   }
-  const deployable=(s,id)=>!s.tiles.some(v=>fx.name(v.unit)==='marbleidol')||!s.tiles.some(v=>v.unit?.id===id);
+  const deployable=(s,id)=>!fx.idol(s,'marbleidol')||!s.tiles.some(v=>v.unit?.id===id);
   function canOccupy(c,t){
     const terrain=claimTerrain(t,c),color='RBGY'[terrain]||(terrain==='무속성'?'N':'');
     const banned=c.catalog?.placement?.split(',').filter(Boolean)||[];
@@ -363,7 +363,7 @@ function createCepter(edition="ps2"){
     const p=s.players[s.turn];
     if(revolt)p.cash+=roundGain(s);
     extraSpells?.startTurn(s,cards);
-    for(let j=0;j<(s.tiles.some(t=>fx.name(t.unit)==='brassidol')?2:1);j++){draw(p,s);if(p.status==='despair')p.hand.pop();}
+    for(let j=0;j<(fx.idol(s,'brassidol')?2:1);j++){draw(p,s);if(p.status==='despair')p.hand.pop();}
     s.phase=!revolt&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
   }
   function price(p,c,s){
@@ -700,15 +700,16 @@ function createCepter(edition="ps2"){
         {
           if(s.immediateAt==null&&t.owner<0&&territoryType(t.type))hand('creature','summon');
           if(revolt&&t.type==='사령탑'&&towerTargets(s).length)options.push(['towerAim']);
+          const leadIdol=edition==='saga'&&fx.idol(s,'leadidol');
           for(const n of territory(s)){
             const v=s.tiles[n];if(!revolt&&fx.territoryTargets(s,n).length)options.push(['ability',n]);if(!revolt&&fx.name(v.unit)==='goldentotem'&&fx.canUseAbility(s,v))options.push(['totem',n]);for(let level=v.level+1;level<=5;level++){
               if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
-            for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
+            if(!leadIdol)for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
               if(v.unit.enchant!=='thornfetter'&&canInvade(s,v.owner,s.tiles[dest].owner)&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld||revolt?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
             }
             if(p.cash>=elementCost(v))elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
-            if(s.immediateAt==null)p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!sacrificeRequired(s,cards[id])||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id],s)<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
+            if(!leadIdol&&s.immediateAt==null)p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!sacrificeRequired(s,cards[id])||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id],s)<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
           }
           if(s.immediateAt!=null||t.owner<0||allied(s,t.owner,i))options.push(['pass']);
         }break;
@@ -743,7 +744,7 @@ function createCepter(edition="ps2"){
   }
   function resolve(s){
     const b=s.battle,t=s.tiles[b.at];
-    const lines=[],active=n=>s.tiles.some(t=>fx.name(t.unit)===n);
+    const lines=[],active=n=>fx.idol(s,n);
     const make=(u,seat,item,defending)=>{
       const c=cards[u.id],gear=cards[item];
       return {u:{...u},c,n:c.basicBattle?null:key(c),seat,gear,g:key(gear),item,defending,land:0,hp:u.hp,st:fx.strength(u),element:c.element,elements:c.elements};
