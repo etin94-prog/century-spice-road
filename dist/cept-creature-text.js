@@ -246,6 +246,15 @@ const CepterCreatureText=(()=>{
     gogma:'고른 레벨 1 영지를 레벨 3으로 올립니다.',
     warlock:'고른 셉터에게 안티 매직을 부여합니다.'
   };
+  const beginsBattle={
+    centaur:'전투에서 생존하면 사용한 아이템을 북에 넣고 남은 카드를 섞습니다.',
+    wereboar:'전투 중 ST가 30 오릅니다.',
+    roadrunner:'이동 명령으로 한 칸 또는 두 칸 떨어진 영지에 갈 수 있습니다.',
+    gigantherium:'전투하는 크리처 중 하나에 인챈트가 있으면 전투 HP가 20 줄어듭니다.',
+    sandman:'주문으로 현재 HP와 최대 HP를 바꿀 수 없습니다.',
+    manticore:'전투 ST와 HP는 내 손패 수 × 10입니다.',
+    aspidochelone:'전투 ST와 HP에 현재 라운드 수를 더합니다.'
+  };
   const firstRules={
     dragon:'침략할 때 전투 ST가 10, 수비할 때 전투 HP가 10 오릅니다.',
     golem:'전투에서 살아남으면 기본 ST가 10 줄어듭니다.',
@@ -351,7 +360,7 @@ const CepterCreatureText=(()=>{
       const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
-    const special=C.edition==='begins'&&key==='centaur'?'전투에서 생존하면 사용한 아이템을 북에 넣고 남은 카드를 섞습니다.':
+    const special=C.edition==='begins'&&beginsBattle[key]?beginsBattle[key]:
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':

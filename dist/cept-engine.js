@@ -659,7 +659,7 @@ function createCepter(edition="ps2"){
   function territoryDestinations(s,from){
     const {unit,area,owner}=s.tiles[from],name=fx.name(unit),links=board(s).links;
     const {remoteVacant,remoteVacantElements}=cards[unit.id];
-    const nearby=name==='roadrunner'?links[from].flatMap(j=>links[j]).filter(j=>j!==from):links[from];
+    const nearby=name==='roadrunner'?[...(begins?links[from]:[]),...links[from].flatMap(j=>links[j]).filter(j=>j!==from)]:links[from];
     const remote=s.tiles.flatMap((tile,j)=>{
       if(tile.unit&&!allied(s,owner,tile.owner)&&unit.enchant!=='paralysis'){
         if(name==='aerogoetia'&&tile.type===3||revolt&&name==='thunderspawn'&&!combo.matchesTerrain(cards[tile.unit.id],tile.type))return [j];
@@ -840,7 +840,7 @@ function createCepter(edition="ps2"){
       if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){const gain=Math.max(0,Math.min(80,fx.max(a.u)+a.gear.hp)-fx.max(a.u));a.u.mhp=fx.max(a.u)+gain;a.u.hp+=gain;}
       if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
       if(a.n==='vision')a.hp=30;
-      if(a.n==='gigantherium'&&combo.enchanted(t.unit))a.hp-=20;
+      if(a.n==='gigantherium'&&(begins?sides.some(side=>combo.enchanted(side.u)):combo.enchanted(t.unit)))a.hp-=20;
       if(a.n==='dragon'){
         if(firstEdition){if(a.defending)a.hp+=10;else a.st+=10;}
         else if(!a.defending){a.hp-=20;a.st+=20;}
@@ -850,7 +850,7 @@ function createCepter(edition="ps2"){
         const boost=5*s.tiles.filter(v=>(a.n==='coati'&&firstEdition?cards[v.unit?.id]?.catalog?.race==='rb':cards[v.unit?.id]?.element===2)).length;
         if(a.n==='mudman')a.hp+=boost;else a.st+=boost;
       }
-      if(a.n==='wereboar'&&!a.defending)a.st+=30;
+      if(a.n==='wereboar'&&(begins||!a.defending))a.st+=30;
       if(a.n==='pyrodrake'&&!a.gear){a.st+=20;a.hp+=20;}
       if(a.n==='mastermonk'&&!a.gear){a.st+=30;a.hp-=30;}
       if(a.n==='lilith')a.st=owner.hand.length*10;

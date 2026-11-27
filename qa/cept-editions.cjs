@@ -2840,9 +2840,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const land=creatures.tiles[2];Object.assign(land,{type:2,owner:1,level:3,unit:{id:gnome,hp:40}});
   const toll=C.toll(creatures,land);land.unit.id=creature('dwarf');
   assert.equal(toll,C.toll(creatures,land)*1.5);
-  function duel(inv,def,invItem=null,defItem=null,hp=C.cards[def].hp){
+  function duel(inv,def,invItem=null,defItem=null,hp=C.cards[def].hp,type=0){
     Object.assign(creatures,{phase:'attack',battle:{at:2,inv,atkItem:null,defItem:null}});
-    Object.assign(land,{unit:{id:def,hp,mhp:hp},owner:1,type:0,level:1});
+    Object.assign(land,{unit:{id:def,hp,mhp:hp},owner:1,type,level:1});
     creatures.players[0].cash=200;enemy.cash=200;enemy.hand=defItem==null?[]:[defItem];
     creatures.players[0].hand=invItem==null?[]:[invItem];
     assert.ok(C.play(creatures,invItem==null?['bare']:['equip',0]));
@@ -2861,6 +2861,59 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(neutralized.strikes[0].effect,'block');
     assert.equal(land.unit.hp,30);
   }
+  const verifiedTraits='nightmare pushpull wereboar greenmold lavawurm stormgiant firegiant ninja elf knight gargoyle sprite statue gianteel hellhound roadrunner lilith sandman pegasus caitsith hydra manticore coati mudman anubias steamgear wonderwall firebeak trojanhorse gigantherium aspidochelone dragon hornet';
+  for(const name of verifiedTraits.split(' '))assert.equal(C.cards[creature(name)].catalogOnly,false,name);
+  const giant=creature('firegiant'),giantEel=creature('gianteel'),merfolk=creature('merfolk');
+  const againstWater=duel(giant,merfolk,null,null,100);
+  assert.equal(againstWater.startHP[1]-againstWater.strikes[0].hp[1],Math.floor(C.cards[giant].st*1.5));
+  assert.equal(duel(creature('dwarf'),giantEel).strikes[0].effect,'block');
+  const piercing=duel(creature('lavawurm'),merfolk,null,null,100,1);
+  assert.equal(piercing.landHP,10);
+  assert.match(piercing.strikes[0].notes.join(' '),/지형 보너스 관통/);
+  const repeated=duel(creature('pushpull'),goblin,null,null,100);
+  assert.deepEqual(repeated.strikes.slice(0,2).map(strike=>strike.side),[0,0]);
+  const wereboar=creature('wereboar');
+  assert.equal(duel(goblin,wereboar).defendST,C.cards[wereboar].st+30);
+  assert.equal(duel(goblin,creature('gargoyle')).defendST,50);
+  const knight=creature('knight'),hitPoints=defenderHP=>{
+    const battle=duel(knight,goblin,null,creature('diamondarmor'),defenderHP);
+    return battle.startHP[1]-battle.strikes[0].hp[1];
+  };
+  assert.equal(hitPoints(49),C.cards[knight].st);
+  assert.equal(hitPoints(50),Math.floor(C.cards[knight].st*1.5));
+  duel(goblin,creature('greenmold'));
+  assert.equal(land.unit.hp,50);
+  assert.equal(duel(fighter,creature('pegasus'),creature('freeze'),null,100).strikes.find(strike=>strike.side===0)?.effect,'block');
+
+  const road=C.start(2,2,5000,'begins-original-ford'),runnerId=creature('roadrunner');
+  Object.assign(road.tiles[6],{owner:0,unit:{id:runnerId,hp:30}});
+  road.players[0].pos=6;road.phase='land';
+  const distances=C.choices(road).filter(([kind,from])=>kind==='transfer'&&from===6).map(([, ,to])=>to);
+  assert.ok(distances.includes(7)&&distances.includes(8));
+  assert.ok(!distances.includes(9));
+
+  const cursedRaid=C.start(2,2,5000,'begins-original-ford'),gigantherium=creature('gigantherium');
+  Object.assign(cursedRaid.tiles[2],{owner:0,unit:{id:gigantherium,hp:60,enchant:'phantasm'}});
+  Object.assign(cursedRaid.tiles[3],{owner:1,unit:{id:fighter,hp:40}});
+  Object.assign(cursedRaid,{phase:'attack',battle:{at:3,inv:gigantherium,from:2}});
+  assert.ok(C.play(cursedRaid,['bare'])&&C.play(cursedRaid,['bare']));
+  assert.equal(cursedRaid.battle.startHP[0],40);
+
+  const durable=C.start(2,2,5000,'begins-original-ford'),sandman=creature('sandman');
+  Object.assign(durable.tiles[2],{owner:1,unit:{id:sandman,hp:20}});
+  Object.assign(durable.tiles[3],{owner:1,unit:{id:fighter,hp:30}});
+  Object.assign(durable.players[0],{cash:500,hand:[id('globalinsectswarm')]});
+  assert.ok(C.play(durable,['cast',0]));
+  assert.equal(durable.tiles[2].unit.hp,20);
+  assert.equal(durable.tiles[3].unit.hp,10);
+
+  const rituals=C.start(2,2,5000,'begins-original-ford'),dragon=creature('dragon');
+  rituals.phase='land';Object.assign(rituals.players[0],{pos:2,cash:500,hand:[dragon]});
+  Object.assign(rituals.tiles[6],{type:0,owner:0,unit:{id:goblin,hp:30}});
+  assert.ok(!C.choices(rituals).some(([kind])=>kind==='summon'));
+  Object.assign(rituals.tiles[7],{type:0,owner:0,unit:{id:goblin,hp:30}});
+  assert.ok(C.choices(rituals).some(([kind])=>kind==='summon'));
+  rituals.tiles[2].type=1;assert.ok(!C.choices(rituals).some(([kind])=>kind==='summon'));
   const phoenixRelic=creature('phoenixamulet');
   assert.equal(C.cards[phoenixRelic].cost,0);
   assert.ok(duel(fighter,minotaur,axe,phoenixRelic).won);
