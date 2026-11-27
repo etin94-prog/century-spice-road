@@ -17,7 +17,7 @@ const labels={circleCast:'마법진 주문',circleSkip:'주문 없이 계속',bu
 const hints={spellCircle:'제시된 주문 중 한 장을 비용 없이 사용할 수 있습니다.',gemStore:'속성석을 거래하거나 이동을 계속하세요.',pathSwitch:'분기 스위치의 방향을 유지하거나 바꾸세요.',towerTarget:'지도에서 빈 영지나 침략할 적 영지를 누르세요.',towerDeploy:'하단 손패에서 사용할 크리처를 고르세요.',bookWorm:'북 웜으로 파괴할 상대 손패를 선택하세요.',squeeze:'파괴할 손패 한 장을 선택하세요. 그 셉터는 150G를 받습니다.',suppression:'대상 손패에서 제거할 주문을 선택하세요.',sacrifice:'추가 비용으로 버릴 카드를 선택하세요.',territoryTarget:'영지 능력의 대상을 선택하세요.',teleMove:'이동할 칸을 선택하세요.',mindseeker:'북 맨 위에서 몇 번째 카드를 파괴할지 선택하세요.',fortune:'북에서 뽑을 카드의 종류를 선택하세요.',fork:'지도에서 이동할 방향의 화살표를 누르세요.',temple:'지역과 속성을 골라 호부를 거래하거나 지나가세요.',spellTarget:'주문을 적용할 대상을 고르세요.',shatter:'선택한 셉터의 아이템이나 주문 한 장을 파괴하세요.',spell:'주문을 한 장 쓰거나 주사위를 굴리세요.',roll:'주문 효과가 준비됐습니다. 주사위를 굴리세요.',direction:'지도에서 출발할 방향의 화살표를 누르세요.',land:'도착한 칸의 행동 또는 영지 명령을 선택하세요.',attack:'침략자가 사용할 아이템을 고르세요.',defend:'방어자가 사용할 아이템을 고르세요.',result:'전투 결과를 확인하세요.',sell:'통행료를 충당할 영지를 선택하세요.',discard:'손패가 6장이 될 때까지 버릴 카드를 고르세요.'};
 Object.assign(labels,C.spellActions);Object.assign(hints,C.spellHints);
 labels.shrineChoice='성소 효과 선택';hints.shrineChoice='성소에서 받을 효과를 고르세요.';
-let room=null,customBook=null,draft=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
+let room=null,customBook=null,draft=[],draftEvos=[],s=null,pending=false,timer,focusCard=-1,inspect=-1;
 labels.leaveShop='구매하지 않고 나가기';
 hints.shop='이 상점에서 카드 한 장을 살 수 있습니다. 카드를 고르면 효과와 구매 후 잔액을 볼 수 있습니다.';
 function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
@@ -216,7 +216,7 @@ function showCatalogCard(c,id){
 }
 $('closeCard').onclick=()=>$('cardDialog').close();
 function tallyBook(){
-  const total=draft.reduce((a,b)=>a+b,0);
+  const total=draft.reduce((a,b)=>a+b,0)+draftEvos.length;
   $('bookCount').textContent=total+' / 50장';$('storeBook').disabled=total!==50;
 }
 const cardsPerPage=24;
@@ -251,7 +251,10 @@ function filterBook(page=0){
   $('prevCards').disabled=bookPage===0;$('nextCards').disabled=offset+rows.length>=matches.length;
 }
 function bookEditor(){
-  draft=C.cards.map((_,id)=>chosenBook().filter(n=>n===id).length);
+  const book=chosenBook();
+  draft=C.cards.map((_,id)=>book.filter(n=>n===id).length);
+  draftEvos=C.evo?book.filter(id=>C.cards[id]?.evo):[];
+  if(C.evo)renderEvoEditor();
   filterBook();tallyBook();
 }
 $('cardSearch').onkeydown=e=>{if(e.key==='Enter')e.preventDefault();};
@@ -260,7 +263,7 @@ $('prevCards').onclick=()=>filterBook(bookPage-1);$('nextCards').onclick=()=>fil
 $('editor').ontoggle=()=>{if($('editor').open&&!draft.length)bookEditor();};
 $('bookChoice').onchange=bookEditor;
 $('storeBook').onclick=()=>{
-  const book=draft.flatMap((n,id)=>Array(n).fill(id));if(!C.validBook(book))return;
+  const book=[...draft.flatMap((n,id)=>Array(n).fill(id)),...draftEvos];if(!C.validBook(book))return;
   customBook=book;$('bookChoice').lastElementChild.disabled=false;$('bookChoice').value='custom';
   try{localStorage.setItem(bookKey,JSON.stringify(book));$('bookCount').textContent='50장 · 북 저장 완료';}catch{$('bookCount').textContent='이번 창에서 사용할 북으로 설정했습니다.';}
 };
@@ -774,6 +777,10 @@ function render(){
       const row=el('li');row.append(el('span',(rank===1&&verdict.tie?'공동 ':'')+rank+'위 · '+sideName(j)),el('strong',wealth+'G'));standings.append(row);
     });
     controls.append(standings);
+    if(C.evo){
+      const earned=rewardEvos(s,room);
+      if(earned.length)controls.append(el('p','에보 드래곤 '+earned.map(i=>i+1).join('·')+' · AGE +1 · SP +5','chain-notice'));
+    }
     if(s.reward){
       const result=el('details');result.append(el('summary','승리 보상 카드 '+s.reward.length+'장'));
       const grid=el('div',null,'archive-cards');

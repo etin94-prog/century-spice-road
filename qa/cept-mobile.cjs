@@ -570,6 +570,56 @@ const {chromium}=require('playwright');
       await circlePage.close();
     }
     for(const [width,height] of [[320,568],[844,390]]){
+      const evoPage=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      await evoPage.route('https://**',r=>r.abort());
+      await evoPage.goto(trapUrl.href);
+      await evoPage.selectOption('#count','2');
+      await evoPage.selectOption('#humans','2');
+      await evoPage.locator('#editor summary').first().tap();
+      const ordinary=await evoPage.evaluate(()=>C.cards[C.presets.intro[0]].name);
+      await evoPage.locator('#cardSearch').fill(ordinary);
+      const quantity=evoPage.getByLabel(ordinary+' 수량',{exact:true});
+      const prior=Number(await quantity.inputValue());
+      assert.ok(prior>0);
+      await quantity.selectOption(String(prior-1));
+      const workshop=evoPage.locator('.evo-workshop');
+      await workshop.locator('summary').tap();
+      await workshop.getByLabel('성장 파츠',{exact:true}).selectOption('stUp');
+      await workshop.getByRole('button',{name:'성장 파츠 적용'}).tap();
+      assert.match(await workshop.locator('.evo-stats').innerText(),/AGE 0 · SP 1 · ST 30 · HP 30 · 10G/);
+      assert.equal(await workshop.getByLabel('능력 파츠',{exact:true}).locator('option:not([disabled])').count(),1);
+      await workshop.getByRole('button',{name:'북에 넣기'}).tap();
+      await evoPage.locator('#storeBook').tap();
+      await evoPage.reload();
+      assert.ok(await evoPage.evaluate(()=>customBook.length===50&&C.cards[customBook.find(id=>C.cards[id]?.evo)].st===30));
+      await evoPage.selectOption('#bookChoice','custom');
+      await evoPage.selectOption('#count','2');await evoPage.selectOption('#humans','2');
+      await evoPage.selectOption('#mapChoice','revolt-original-gem-route');
+      await evoPage.locator('#config .match-start .primary').tap();
+      await evoPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;
+        const dragon=s.players[0].template.find(id=>C.cards[id]?.evo);
+        s.phase='land';s.players[0].pos=3;s.players[0].hand=[dragon];
+        render();
+      });
+      await evoPage.locator('[data-action=summon]').tap();
+      assert.equal(await evoPage.evaluate(()=>C.cards[s.tiles[3].unit.id].st),30);
+      await evoPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;
+        Object.assign(s,{phase:'land',roundLimit:20,round:20,turn:1});
+        s.players[0].cash=4000;s.players[1].cash=300;s.players[1].pos=0;render();
+      });
+      await evoPage.locator('[data-action=pass]').tap();
+      assert.match(await evoPage.locator('#buttons').innerText(),/에보 드래곤 1 · AGE \+1 · SP \+5/);
+      await evoPage.reload();
+      await evoPage.locator('#resume').tap();
+      assert.deepEqual(await evoPage.evaluate(()=>[evoProfile.recipes[0].age,evoProfile.recipes[0].sp,evoProfile.rewarded.length]),[1,6,1]);
+      assert.equal(await evoPage.evaluate(()=>C.cards[customBook.find(id=>C.cards[id]?.evo)].evoAge),1);
+      assert.ok(await evoPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+      console.log('revolt '+width+'x'+height+': Evo training, 50-card book, summon, save and one-time victory reward by touch OK');
+      await evoPage.close();
+    }
+    for(const [width,height] of [[320,568],[844,390]]){
       const handheldPage=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
       await handheldPage.route('https://**',r=>r.abort());
       const url=pathToFileURL(path.resolve(__dirname,'../dist/cept.html'));

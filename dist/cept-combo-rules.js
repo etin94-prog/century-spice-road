@@ -30,7 +30,7 @@ const CepterCombos = (() => {
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
     const strength=u=>u.st??cards[u.id].st;
-    const name=u=>names[u?.id];
+    const name=u=>names[u?.id]??key(cards[u?.id]);
     const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n);
     const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek';
     const landLevelLocked=t=>levelLocked(t)||name(t.unit)==='trampleweed';
@@ -39,7 +39,7 @@ const CepterCombos = (() => {
       if(!t.unit)return false;
       const n=name(t.unit);
       return (dispel||t.unit.enchant!=='landprotection'&&!s.players[t.owner].invisible)&&
-        !(s.edition==='saga'&&n==='warlock')&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&category==='senchant');
+        !(s.edition==='saga'&&n==='warlock')&&!cards[t.unit.id].spellWard&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&category==='senchant');
     }
     function death(s,id){
       s.destroyedCount=(s.destroyedCount||0)+1;s.lastDestroyed=id;

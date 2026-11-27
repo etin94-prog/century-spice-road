@@ -50,7 +50,7 @@ const CepterExtraBattle=(()=>{
       Object.assign(a,{u,c,n:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
       lines.push(c.name+' 변신');
     }
-    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.gear?.protectItem||protectedItem(a.g);}
+    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g);}
     function convert(target,name){
       const remaining=target.hp;
       transform(target,ids.get(name));
@@ -129,7 +129,7 @@ const CepterExtraBattle=(()=>{
         if(d.g==='magussmirror'||d.n==='carbunfly'){
           a.hp-=damage;lines.push('두루마리 반사');return 'reflect';
         }
-        if(scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n)){lines.push('두루마리 무효');return 'block';}
+        if(d.c.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n)){lines.push('두루마리 무효');return 'block';}
         return;
       }
       if(d.n==='salamander'&&a.element===0){

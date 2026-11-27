@@ -6,6 +6,7 @@ const CepterRoomState = (() => {
     if(game.phase==='over'&&replay)state.replay=replay;
     for(const [i,player] of state.players.entries()){
       player.bookCount=player.book.length;
+      if(engine.evo&&game.phase==='over'&&i===seat)player.evoRewardBook=(player.template||[]).filter(id=>engine.cards[id]?.evo);
       delete player.book;delete player.template;delete player.recycleTemplate;
       if(i===seat)continue;
       delete player.peek;

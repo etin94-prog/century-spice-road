@@ -266,6 +266,12 @@ const CepterCreatureText=(()=>{
     if(card.vigorous)pieces.push('활력. 영지 명령 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
+    if(card.evo){
+      if(card.battleST)pieces.push('전투 ST +'+card.battleST);
+      if(card.spellWard)pieces.push('주문과 비술의 대상으로 지정할 수 없습니다.');
+      if(card.protectGear)pieces.push('장비가 파괴되거나 빼앗기지 않습니다.');
+      if(card.neutralizeScroll)pieces.push('두루마리 공격을 무효화합니다.');
+    }
     if(card.battleHP)pieces.push('전투 HP +'+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');
     if(card.pierceElements?.length)pieces.push(targets(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');

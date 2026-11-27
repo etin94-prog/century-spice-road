@@ -1110,6 +1110,62 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
+  const C=ps2.createEdition('revolt'),E=C.evo,map='revolt-original-gem-route';
+  const evolved=Array.from({length:6}).reduce(E.won,E.fresh());
+  const base=E.encode(E.fresh(),0),other=E.encode(E.fresh(),1);
+  assert.equal(E.apply(E.fresh(),'ability',1),null);
+  const trained=E.apply(E.fresh(),'growth','stUp');
+  assert.deepEqual([trained.st,trained.hp,trained.sp,E.summonCost(trained)],[30,30,1,10]);
+  const stamped=E.apply(evolved,'element',0);
+  const withFirst=E.apply(stamped,'ability',1);
+  assert.equal(E.apply(withFirst,'ability',2),null,'two parts in one group');
+  const fire=E.apply(E.apply(E.apply(withFirst,'ability',10),'land'),'discard');
+  const fireId=E.encode(fire,0);
+  assert.deepEqual([C.cards[fireId].element,C.cards[fireId].cost,C.cards[fireId].catalog.additionalCost],[0,10,'R,+[]']);
+  assert.ok(C.cards[fireId].first&&C.cards[fireId].neutralizeScroll);
+  assert.deepEqual(E.decode(fireId),{age:6,element:0,st:20,hp:30,land:1,discard:1,abilities:[1,10],slot:0});
+  const reduced=E.apply(fire,'removeAbility',10);
+  assert.equal(reduced.sp,fire.sp,'removing a part does not refund SP');
+  assert.equal(E.apply(E.fresh(),'land'),null);
+  assert.equal(E.encode(E.apply(evolved,'growth','hpDown'),0),null,'negative summon cost is not a playable card');
+  assert.equal(E.encode({...E.fresh(),st:80,hp:80,sp:0},0),null,'age zero cannot fund maximal stats');
+  assert.equal(Array.from({length:15}).reduce(E.won,E.fresh()).age,10);
+
+  const deck=C.presets.intro.slice();deck.splice(-2,2,fireId,other);
+  assert.ok(C.validBook(deck));
+  assert.ok(!C.validBook([...deck.slice(0,-1),base]),'only one recipe per Evo slot');
+  assert.ok(!C.validBook([...deck.slice(0,-1),1_999_999_999]));
+  assert.ok(!ps2.validBook(deck));
+
+  const s=C.start(4,4,5000,map,deck,deck,2,'teams');
+  C.configureMatch(s,{recordReplay:true});
+  assert.ok(C.setOpeningBook(s,1,[...deck.slice(0,-2),other,base]));
+  s.players[0].cash=600;s.phase='land';s.players[0].pos=3;s.players[0].hand=[fireId,C.presets.intro[0]];
+  assert.ok(!C.choices(s).some(([kind,i])=>kind==='summon'&&i===0));
+  Object.assign(s.tiles[1],{type:0,owner:0,unit:{id:base,hp:30}});
+  assert.ok(C.play(s,['summon',0]));
+  assert.equal(s.phase,'sacrifice');
+  assert.ok(C.play(s,['sacrifice',1]));
+  assert.deepEqual([s.tiles[3].unit.id,s.tiles[3].unit.hp,s.tiles[3].unit.fatigued,s.players[0].cash],[fireId,30,true,590]);
+  const restored=JSON.parse(JSON.stringify(s));
+  assert.equal(C.cards[restored.tiles[3].unit.id].name,'에보 드래곤 1');
+  assert.ok(restored.replay.steps.some(step=>step.tiles.some(([i,v])=>i===3&&v[3]===fireId)));
+  const State=require('../dist/cept-room-state');
+  assert.equal(State.view(C,restored,0).game.players[0].evoRewardBook,undefined);
+  restored.phase='over';restored.winner=0;
+  assert.deepEqual(State.view(C,restored,0).game.players[0].evoRewardBook,[fireId,other]);
+  assert.equal(State.view(C,restored,1).game.players[0].evoRewardBook,undefined);
+  const duel=C.start(2,2,5000,map,deck);
+  duel.phase='attack';duel.battle={at:3,inv:fireId,atkItem:null,defItem:null};
+  const guard=C.presets.fire.find(id=>C.cards[id].kind==='creature'&&!C.cards[id].first);
+  Object.assign(duel.tiles[3],{type:1,owner:1,unit:{id:guard,hp:60}});
+  assert.ok(C.play(duel,['bare']));assert.ok(C.play(duel,['bare']));
+  assert.equal(duel.battle.strikes[0].side,0);
+  assert.equal(duel.battle.attackST,20);
+  console.log('Revolt Breed training budget, part groups, legal book slots, summon costs, serialization, replay, privacy and first attack OK');
+}
+
+{
   const C=ps2.createEdition('3ds'),archives=require('../dist/cept-edition-data-2012');
   const names=Object.keys(C.maps),intro='3ds-original-bend',shore='3ds-original-shore';
   const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
