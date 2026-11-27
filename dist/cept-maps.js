@@ -76,6 +76,18 @@ const CepterMaps=(()=>{
     [4,12],100,12,[...loop(16),[14,16],[16,17],[17,18],[18,6],[2,19],[19,17],[17,20],[20,10]],Array(21).fill(0));
   revoltPractice['revolt-original-circle-court']={...circleCourt,areaCount:1,section:'arena',graph:true,startCash:250,
     castles:[0],checkpoints:[0,4,12],gates:{0:0,4:4,12:12},gateNames:{0:'북쪽 게이트',4:'동쪽 게이트',12:'서쪽 게이트'}};
+  const fordRing=ring.map(([row,col])=>[row+1,col+1]);
+  const ford=map('돌등 여울 · 창작 지도',[
+    ...fordRing,[1,2],[1,3],[1,4],[7,6],[7,5],[7,4],[3,4],[4,4],[5,4]
+  ],[
+    '성',1,0,2,'동쪽 요새',3,0,1,'무속성',2,3,1,'서쪽 요새',0,2,3,
+    2,'신전',1,0,'성소',3,1,'점술관',2
+  ],[4,12],90,6,[
+    ...loop(16),[0,16],[16,17],[17,18],[18,2],
+    [8,19],[19,20],[20,21],[21,10],[2,22],[22,23],[23,24],[24,10]
+  ],Array(25).fill(0),240);
+  const beginsPractice={'begins-original-ford':{...ford,areaCount:1,section:'arena',graph:true,startCash:250,
+    fortBonus:80,defaultGoal:6000,castles:[0],checkpoints:ford.forts}};
   const handheldBend=map('솔바람 굽이 · 창작 지도',[...ring,[2,3],[3,3],[3,4],[4,4]],
     ['성',0,1,0,3,1,2,2,1,3,1,0,'남쪽 요새',2,3,0,1,2,3,0],
     [12],100,6,[...loop(16),[2,16],[16,17],[17,18],[18,19],[19,7]],Array(20).fill(0),200);
@@ -110,6 +122,7 @@ const CepterMaps=(()=>{
   Object.defineProperties(maps,{
     sagaPractice:{value:sagaPractice},
     revoltPractice:{value:revoltPractice},
+    beginsPractice:{value:beginsPractice},
     handheldPractice:{value:handheldPractice}
   });
   return maps;

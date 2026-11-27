@@ -84,6 +84,7 @@ const CepterEditions=(()=>{
     }
     if(edition==='saga')Object.assign(result,original.sagaPractice);
     if(edition==='revolt')Object.assign(result,original.revoltPractice);
+    if(edition==='begins')Object.assign(result,original.beginsPractice);
     return result;
   }
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');

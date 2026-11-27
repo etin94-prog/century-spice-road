@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,39],['begins',400,15]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,39],['begins',400,16]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -2348,7 +2348,18 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const before=p.cash,territory=C.value(s,s.tiles[siteA]);
   assert.ok(C.play(s,['cast',0])&&C.play(s,['targetLand',siteA]));
   assert.deepEqual([s.tiles[siteA].owner,s.tiles[siteA].unit,p.cash],[-1,null,before-C.cards[id('revoltlandtransfer')].cost+Math.floor(territory*.8)]);
-  console.log('Begins spells, 100 MHP cap, redraw, and 80 percent land liquidation OK');
+  const ford=C.start(4,4,0,'begins-original-ford');
+  assert.equal(C.board(ford).name,'돌등 여울 · 창작 지도');
+  assert.equal(ford.tiles.length,25);
+  assert.equal(ford.target,6000);assert.equal(ford.players[0].cash,250);
+  assert.deepEqual(C.board(ford).checkpoints,[4,12]);
+  assert.deepEqual(C.board(ford).links[2].filter(j=>j!==1).sort((a,b)=>a-b),[3,18,22]);
+  Object.assign(ford.players[0],{pos:1,previous:0,word:2,dir:1});
+  ford.phase='roll';assert.ok(C.play(ford,['roll']));
+  assert.equal(ford.phase,'fork');
+  assert.ok(C.play(ford,['route',18]));
+  assert.equal(ford.players[0].pos,18);assert.equal(ford.phase,'land');
+  console.log('Begins spells, 100 MHP cap, redraw, 80 percent land liquidation and original Ford routes OK');
 }
 {
   const C=ps2.createEdition('3ds'),archives=require('../dist/cept-edition-data-2012');
