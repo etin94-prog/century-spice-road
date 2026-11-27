@@ -86,7 +86,8 @@ function createCepter(edition="ps2"){
   const allowed=(s,i,c,t)=>canOccupy(c,t)&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')||
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>(handheld?allied(s,i,t.owner):t.owner===i)&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
   const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')));
-  const canEquip=(unit,gear)=>gear.kind==='item'?!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')):
+  const canEquip=(unit,gear,active)=>gear.kind==='item'?!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor'))&&
+    !(begins&&active?.enchant==='metalform'&&gear.category==='armor'):
     gear.kind==='creature'&&(gear.itemCreature||unit.support&&(!unit.supportElements||unit.supportElements.some(e=>combo.hasElement(gear,e)))||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
   const bookSize=edition==='begins'?40:50;
@@ -739,7 +740,7 @@ function createCepter(edition="ps2"){
     if(s.phase==='sacrifice')return s.players[s.turn].hand.flatMap((_,j)=>j===s.pendingCard.index?[]:[['sacrifice',j]]);
     if(s.phase==='mindseeker')return Array.from({length:Math.min(6,(s.players[s.spellTarget].book?.length??s.players[s.spellTarget].bookCount??0))},(_,j)=>['eraseDraw',j]);
     if(s.phase==='secretTarget')return [...fx.secretTargets(s,s.secretFrom),['secretCancel']];
-    if(s.phase==='territoryTarget')return fx.territoryTargets(s,s.abilityFrom);
+    if(s.phase==='territoryTarget')return fx.territoryTargets(s,s.abilityFrom,s.borrowedAbility);
     if(s.phase==='teleMove')return fx.telekinesisExits(s,s.teleFrom).map(n=>['teleTo',n]);
     const i=actor(s),p=s.players[i],t=s.tiles[p.pos],options=[];
     const hand=(kind,k)=>p.hand.forEach((id,j)=>{
@@ -831,7 +832,7 @@ function createCepter(edition="ps2"){
         const unit=cards[s.phase==='attack'?s.battle.inv:tile.unit.id];
         p.hand.forEach((id,j)=>{const gear=cards[id];
           if((p.status!=='sagaBreak'||gear.kind!=='item')&&(!begins||p.status!=='silence'||gear.kind!=='creature')&&
-            price(p,gear,s)<=p.cash&&canEquip(unit,gear))options.push(['equip',j]);
+            price(p,gear,s)<=p.cash&&canEquip(unit,gear,fighter))options.push(['equip',j]);
         });options.push(['bare']);break;
       }
       case 'result':return [['continue']];
@@ -1051,7 +1052,7 @@ function createCepter(edition="ps2"){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
         const reflects=d.c.reflectNormal||matches(d.c.reflectElements,a)||guard?.reflectNormal||matches(guard?.reflectElements,a)||
           d.gear?.effect==='reflect'||d.n==='decoy'||revolt&&d.g==='mirrorhoplon'&&!a.gear;
-        const blocks=revolt&&d.u.enchant==='energyfield'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
+        const blocks=revolt&&d.u.enchant==='energyfield'||begins&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
           d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||
@@ -1683,10 +1684,13 @@ function createCepter(edition="ps2"){
         break;
       }
       case 'abilityLand':case 'abilityPlayer':{
-        fatigue(s.tiles[s.abilityFrom].unit);
-        const next=fx.territoryEffect(s,s.abilityFrom,x);delete s.abilityFrom;
-        mapEffect('cast','영지 능력',k==='abilityLand'?x:s.players[x].pos);
-        if(next)s.phase=next;else afterTerritory(s);break;
+        const from=s.abilityFrom,borrowed=s.borrowedAbility;
+        if(!borrowed)fatigue(s.tiles[from].unit);
+        const next=fx.territoryEffect(s,from,x,borrowed);
+        delete s.abilityFrom;delete s.borrowedAbility;
+        mapEffect('cast',borrowed?'템테이션 · 영지 능력':'영지 능력',k==='abilityLand'?x:s.players[x].pos,{source:from});
+        if(next)s.phase=next;else if(borrowed)s.phase='roll';else afterTerritory(s);
+        break;
       }
       case 'wormDiscard':{
         const victim=s.players[s.spellTarget],id=victim.hand.splice(x,1)[0];
@@ -1738,7 +1742,7 @@ function createCepter(edition="ps2"){
       case 'leaveTemple':resumeMove(s);break;
       case 'liquidate':p.cash+=s.prices[x]*y;p.symbols[x]-=y;debt(s);break;
       case 'shrineChoice':shrine.choose(s,x);break;
-      case 'soltisPower':case 'soltisArea':case 'foresightCard':case 'prophecyKind':case 'replaceCard':case 'stealCard':
+      case 'soltisPower':case 'soltisArea':case 'foresightCard':case 'prophecyKind':case 'replaceCard':case 'stealCard':case 'forgeCard':case 'reformCard':case 'poisonBookCard':
         s.phase=extra.choose(s,k,x);
         if(k==='foresightCard'&&s.shrineForesight){delete s.shrineForesight;s.phase='land';shrine.after(s);}
         mapEffect('cast',extraSpells.soltis[x]||extraSpells.actions[k]);break;
@@ -2129,6 +2133,7 @@ function createCepter(edition="ps2"){
         const t=s.tiles[j];return a-(t.owner>=0&&t.level>1&&!fx.blockedLevel(s,t)?sign(t)*value(s,t)*.4:0);
       },-value(s,src)*.6);
       if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld||begins?100:80)?handheld||begins?40:20:0;
+      if(n==='beacontower')return p.status!=='enlightenment'&&p.cash>=150&&s.tiles.some((t,at)=>at!==from&&t.owner===seat&&t.level<5&&!fx.blockedLevel(s,t))?28:-20;
       if(n==='fate')return p.hand.length<5?30:0;
       if(n==='necromancer')return p.hand.length<6?Math.max(24,cards[s.lastDestroyed].cost*.65):0;
       if(n==='barometz')return (p.lap+1)*30;
@@ -2180,6 +2185,12 @@ function createCepter(edition="ps2"){
         if(combo.type[effect])return plan.cast(effect);
         if(effect==='manna')return Math.max(1,p.lap)*6;
         return effect==='bolt'&&s.tiles.some(t=>t.unit&&!allied(s,t.owner,seat))?5:effect==='shatter'?2:-2;
+      }
+      if(begins&&(k==='cast'&&c.effect==='temptation'||k==='targetLand'&&s.spellEffect==='temptation')){
+        const worth=from=>fx.name(s.tiles[from].unit)==='goldentotem'?100:
+          Math.max(-40,...fx.territoryTargets(s,from,true).map(([kind,at])=>territoryValue(from,kind,at)));
+        if(k==='targetLand')return worth(x);
+        return Math.max(-40,...extra.targets(s,c.effect).map(([,from])=>worth(from)))/2-c.cost/15;
       }
       if(k==='cast'&&extraTypes?.[c.effect]){
         const effect=c.synthesizedEffect&&p.hand.some((id,j)=>j!==x&&matchesSynthesis(c,cards[id]))?c.synthesizedEffect:c.effect;

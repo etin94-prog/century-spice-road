@@ -3690,8 +3690,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual(playable,['1339-infernal-vacation','1342-mothman-and-friends','1343-aggroaf','1344-kelpez','1345-budget-raging-river',
     '1347-power-surge','1348-esupports#main','1348-esupports#alternate','1349-willowisp#main','1349-willowisp#alternate','1350-meme-book',
     '1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead','1356-support-deck-for-chapter-15',
-    '1359-brynhildr','1362-iksear','1363-bistair','1365-terrair','1366-selenear','1367-resident-evil','1369-spell-damage',
-    '1372-bonzey-buddy','1374-mosquito-water','1376-lets-water-the-plants','1377-assassin-red','1378-little-wonders']);
+    '1357-decoys-1-3','1358-raging-river-v3','1359-brynhildr','1360-how-about-no-v01','1361-2v2-drain','1362-iksear','1363-bistair','1364-wabbit-woods-1-1','1365-terrair','1366-selenear','1367-resident-evil','1368-mothra','1369-spell-damage',
+    '1372-bonzey-buddy','1374-mosquito-water','1375-kamikaze','1376-lets-water-the-plants','1377-assassin-red','1378-little-wonders']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -4485,6 +4485,87 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.play(forced,['teleTo',3]));
     assert.deepEqual([forced.tiles[2].unit,forced.tiles[3].owner,forced.tiles[3].unit,forced.phase],[null,1,{id:shark,hp:50},'roll']);
 
+    const roomView=require('../dist/cept-room-state').view;
+    const smith=casting('blacksmith');
+    smith.players[0].hand.push(fighter);
+    smith.players[1].hand=[goblin,fay];
+    smith.players[2].hand=[];
+    castSpell(smith);
+    assert.ok(C.choices(smith).some(([,seat])=>seat===0));
+    assert.ok(!C.choices(smith).some(([,seat])=>seat===2));
+    assert.ok(C.play(smith,['targetPlayer',1]));
+    assert.deepEqual(roomView(C,smith,0).choices,[['forgeCard',0,goblin],['forgeCard',1,fay]]);
+    assert.deepEqual(roomView(C,smith,0).game.players[1].hand,[]);
+    assert.deepEqual(roomView(C,smith,1).choices,[]);
+    assert.ok(C.play(smith,['forgeCard',1,fay]));
+    assert.equal(smith.players[1].hand[0],goblin);
+    assert.ok(['weapon','armor'].includes(C.cards[smith.players[1].hand[1]].category));
+
+    const reform=casting('reform',true),wind=creature('windofhope'),manna=creature('manna');
+    for(const [seat,q] of reform.players.entries()){if(seat!==0)q.hand=[goblin];q.hand.push(wind);q.book=[fay,wind,goblin,wind];}
+    reform.players[0].peek={seat:1,ids:[wind,goblin]};
+    reform.players[1].template=[wind,goblin];
+    reform.players[1].hand.unshift(goblin);
+    castSpell(reform,true);
+    assert.ok(!C.choices(reform).some(([,seat])=>seat===2));
+    assert.ok(C.play(reform,['targetPlayer',1]));
+    assert.deepEqual(C.choices(reform),[['reformCard',reform.players[1].hand.indexOf(wind),wind]]);
+    const reformAction=C.choices(reform)[0];
+    assert.ok(C.play(reform,reformAction));
+    assert.ok(reform.players.every(q=>!q.hand.includes(wind)&&q.hand.includes(manna)&&q.book.join() === [fay,manna,goblin,manna].join()));
+    assert.deepEqual([reform.players[1].template,reform.players[0].peek],[[wind,goblin],undefined]);
+
+    const poison=casting('poisonmind'),hidden=[axe,goblin,manna,wind,fay,fighter,barong];
+    poison.players[1].book=hidden.slice();
+    poison.players[0].peek={seat:1,ids:[barong,fighter]};
+    castSpell(poison);
+    assert.ok(C.play(poison,['targetPlayer',1]));
+    assert.deepEqual(roomView(C,poison,0).choices.map(([, ,id])=>id),hidden.slice(1).reverse());
+    assert.ok(poison.players.slice(1).every((_,index)=>roomView(C,poison,index+1).choices.length===0));
+    assert.ok(poison.players.every((_,seat)=>!roomView(C,poison,seat).game.players[1].book));
+    assert.ok(C.play(poison,['poisonBookCard',2,fay]));
+    assert.deepEqual(poison.players[1].book,hidden.filter(id=>id!==fay));
+    assert.equal(poison.players[0].peek,undefined);
+
+    const discord=casting('discord',true);
+    for(const [at,id,owner] of [[2,fighter,0],[3,fighter,1],[6,barong,2],[7,barong,3],[9,goblin,1]]){
+      Object.assign(discord.tiles[at],{owner,level:3,unit:{id,hp:40,enchant:'fog'}});
+    }
+    castSpell(discord,true);
+    const transformed=[2,3,6,7].filter(at=>discord.tiles[at].unit.id===goblin);
+    assert.ok([[2,3],[6,7]].some(group=>group.join()===transformed.join()));
+    assert.ok(transformed.every(at=>discord.tiles[at].level===3&&discord.tiles[at].unit.hp===30&&!discord.tiles[at].unit.enchant));
+
+    const armor=casting('metalform');
+    Object.assign(armor.tiles[3],{owner:1,type:1,unit:{id:goblin,hp:70,mhp:70}});
+    castSpell(armor);
+    assert.ok(C.play(armor,['targetLand',3]));
+    assert.equal(armor.tiles[3].unit.enchant,'metalform');
+    armor.players[1].hand=[vest,axe,creature('freeze')];armor.players[1].cash=500;
+    Object.assign(armor,{phase:'attack',battle:{at:3,inv:fighter,atkItem:null,defItem:null}});
+    assert.ok(C.play(armor,['bare']));
+    assert.deepEqual(C.choices(armor),[['equip',1],['equip',2],['bare']]);
+    assert.ok(C.play(armor,['bare']));
+    assert.equal(armor.battle.strikes[0].effect,'block');
+    armor.players[0].hand=[creature('freeze')];armor.players[0].cash=300;
+    Object.assign(armor,{phase:'attack',battle:{at:3,inv:fighter,atkItem:null,defItem:null}});
+    assert.ok(C.play(armor,['equip',0])&&C.play(armor,['bare']));
+    assert.equal(armor.battle.strikes[0].effect,'hit');
+
+    const temptation=casting('temptation');
+    const borrowed=creature('conjurer'),totem=creature('goldentotem');
+    Object.assign(temptation.tiles[3],{owner:1,type:1,unit:{id:borrowed,hp:30,enchant:'paralysis'}});
+    Object.assign(temptation.tiles[6],{owner:1,type:1,unit:{id:totem,hp:20,enchant:'paralysis'}});
+    castSpell(temptation);
+    assert.ok(C.play(temptation,['targetLand',3]));
+    assert.deepEqual([temptation.phase,temptation.turn,temptation.players[0].cash],['territoryTarget',0,380]);
+    assert.ok(C.play(temptation,['abilityLand',7]));
+    assert.deepEqual([temptation.phase,temptation.turn,temptation.players[0].cash,temptation.tiles[3].unit,temptation.tiles[7].owner,temptation.tiles[7].unit.id],['roll',0,380,null,0,creature('baal')]);
+    temptation.players[0].hand=[creature('temptation')];temptation.phase='spell';
+    castSpell(temptation);
+    assert.ok(C.play(temptation,['targetLand',6]));
+    assert.deepEqual([temptation.phase,temptation.turn,temptation.players[0].cash,temptation.tiles[6].unit],['roll',0,710,null]);
+
     const havoc=casting('armageddon',true);
     [
       [3,barong,50,3],[6,fighter,40,4],[7,goblin,30,2],[9,globster,40,3]
@@ -4589,6 +4670,19 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.ok(C.play(s,['ability',2]));
       assert.ok(C.play(s,action));
     }
+    const beacon=landCommand('beacontower');
+    for(const q of beacon.players)q.hand=[];
+    Object.assign(beacon.tiles[7],{owner:0,type:1,unit:{id:fighter,hp:40}});
+    assert.ok(!C.choices(beacon).some(([kind,at])=>kind==='level'&&at===7));
+    assert.ok(C.play(beacon,['ability',2]));
+    assert.deepEqual([beacon.players[0].cash,beacon.players[0].status],[250,'enlightenment']);
+    for(let n=0;n<3;n++){beacon.phase='land';assert.ok(C.play(beacon,['pass']));}
+    assert.equal(beacon.turn,0);beacon.phase='land';
+    assert.ok(C.choices(beacon).some(([kind,at])=>kind==='level'&&at===7));
+    assert.ok(C.play(beacon,['pass']));
+    for(let n=0;n<3;n++){beacon.phase='land';assert.ok(C.play(beacon,['pass']));}
+    assert.equal(beacon.turn,0);
+    assert.equal(beacon.players[0].status,undefined);
     const am=landCommand('amabie');aim(am);
     assert.deepEqual([am.players[0].cash,am.tiles[3].unit.hp,am.tiles[3].unit.mhp],[260,40,50]);
     const shrunk=landCommand('sanguivore');aim(shrunk);

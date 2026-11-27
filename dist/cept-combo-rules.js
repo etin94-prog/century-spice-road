@@ -277,7 +277,7 @@ const CepterCombos = (() => {
       fate:40,mystic:30,necromancer:30,conjurer:80,goobaqueen:20,sleipnir:60
     };
     const beginsTerritory={sakuya:120,fay:50,algasphere:60,healer:10,archbishop:30,domovikha:80,archer:20,
-      burnacle:50,sanguivore:50,amabie:40,swampspawn:50,landurchin:40};
+      burnacle:50,sanguivore:50,amabie:40,swampspawn:50,landurchin:40,beacontower:50};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','necromancer','barometz','quakebeast']);
     const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl','swampspawn']);
@@ -293,9 +293,10 @@ const CepterCombos = (() => {
           (!adjacentOnly||canOccupy(cards[src.unit.id],dst));
       });
     }
-    function territoryTargets(s,from){
+    function territoryTargets(s,from,borrowed=false){
       const tile=s.tiles[from],n=name(tile.unit),cost=territoryCost(s,n);
-      if(cost==null||s.players[s.turn].cash<cost||!canUseAbility(s,tile))return [];
+      if(borrowed&&n==='goldentotem')return [['abilitySelf',from]];
+      if(cost==null||(!borrowed&&(s.players[s.turn].cash<cost||!canUseAbility(s,tile))))return [];
       if(s.edition==='saga'){
         if(n==='creepingflame')return territoryMoveExits(s,from,true).length?[['abilitySelf',from]]:[];
         if(n==='fontaciel'||n==='rockshell'||n==='hellpyron'||n==='spudfolk'||Object.hasOwn(sagaEvolution,n))return [['abilitySelf',from]];
@@ -309,6 +310,7 @@ const CepterCombos = (() => {
         if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
       }
       if(s.edition==='begins'){
+        if(n==='beacontower')return [['abilitySelf',from]];
         if(n==='sakuya')return idol(s,'jadeidol')?[]:s.tiles.flatMap((v,j)=>
           v.owner===s.turn&&v.type!==2&&!terrainLocked(s,v)&&targetable(s,v)?[['abilityLand',j]]:[]);
         if(n==='fay')return s.tiles.flatMap((v,j)=>targetable(s,v)&&strength(v.unit)<100?[['abilityLand',j]]:[]);
@@ -338,9 +340,15 @@ const CepterCombos = (() => {
     }
     const territoryCost=(s,n)=>s.edition==='3ds'?handheldTerritory[n]:
       (s.edition==='begins'?beginsTerritory[n]:s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
-    function territoryEffect(s,from,x){
-      const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];p.cash-=territoryCost(s,n);
+    function territoryEffect(s,from,x,borrowed=false){
+      const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];
+      if(!borrowed)p.cash-=territoryCost(s,n);
       if(s.edition==='begins'){
+        if(n==='goldentotem'){p.cash+=400;destroy(s,src);return;}
+        if(n==='beacontower'){
+          clearCepter(p);p.status='enlightenment';p.enchantDeadline=(s.round+1)*s.players.length+s.turn;
+          return;
+        }
         if(n==='sakuya'){v.type=2;return;}
         if(n==='fay'){v.unit.st=Math.min(100,strength(v.unit)+20);return;}
         if(n==='sanguivore'){shrinkHealth(s,v,10);return;}

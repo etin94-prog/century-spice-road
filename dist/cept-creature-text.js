@@ -347,6 +347,7 @@ const CepterCreatureText=(()=>{
       algasphere:'자신의 HP와 최대 HP를 20 올립니다. 최대 HP는 100까지 오릅니다.',
       burnacle:'고른 영지의 통행료를 절반으로 줄입니다.',sanguivore:'고른 크리처의 최대 HP를 10 낮춥니다.',
       amabie:'고른 크리처의 HP와 최대 HP를 10 올립니다. 최대 HP는 100까지 오릅니다.',
+      beacontower:'자신에게 모든 내 영지 개발 효과를 겁니다. 다음 차례에 지나지 않은 내 영지에도 명령할 수 있습니다.',
       swampspawn:'고른 셉터가 다음 두 번 굴리는 주사위 눈을 1~3으로 제한합니다.',
       landurchin:'고른 크리처가 영지 명령으로 이동하지 못하게 합니다.'};
     const effect=(C.edition==='begins'?begins[key]:C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
