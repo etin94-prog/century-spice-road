@@ -16,3 +16,12 @@
 #board [data-region] { cursor: pointer; }
 #board [data-region]:focus-visible rect { stroke: #ffdd75; stroke-width: 4; }
 .mapNavigation { padding: 2px 8px; text-align: center; }
+
+.mapViewBar { display: flex; justify-content: flex-end; padding: 4px 6px 0; }
+.mapViewBar button { min-height: 44px; padding: 5px 10px; font-size: 13px; }
+.mapViewBar button[aria-pressed="true"] { background: #eacf91; color: #26352d; }
+#board .angledMap text { transform-box: fill-box; transform-origin: center; transform: scaleY(1.25); }
+
+.map:has(.angledMap) {
+  background: radial-gradient(ellipse at 48% 68%, #3c898b 0%, #205459 55%, #15373c 100%);
+}

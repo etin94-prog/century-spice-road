@@ -56,20 +56,29 @@ function optionText([k,x,y,z]){
   }
 }
 const compactMap=matchMedia('(max-width:600px), (orientation:landscape) and (max-height:600px)');
-let district=null;
+let district=null, angled=true;
+const mapAngle=$('mapAngle');
+mapAngle.onclick=()=>{
+  angled=!angled;
+  mapAngle.setAttribute('aria-pressed',String(angled));
+  render();
+};
 function board(interactive){
   const s=state,px=v=>300+v.x*55,py=v=>277+v.y*55;
   const box=s.mode==='sea'?'-155 -150 910 850':'0 0 600 550';
   const compact=interactive&&locationKinds.includes(selected)&&compactMap.matches;
   const [left,top,w,h]=box.split(' ').map(Number),cw=w/3,ch=h/3;
   const origin=n=>[left+(n%3)*cw,top+Math.floor(n/3)*ch];
-  const view=compact&&district!==null?[...origin(district).map(v=>v-20),cw+40,ch+40].join(' '):box;
+  const frame=compact&&district!==null?[...origin(district).map(v=>v-20),cw+40,ch+40]:[left,top,w,h];
+  const camera=angled?islandRelief.angle(frame):{view:frame.join(' '),transform:''};
   const regions=new Set();
-  const bits=['<svg viewBox="'+view+'" aria-label="카탄 섬 지도">',islandRelief.defs];
+  const bits=['<svg viewBox="'+camera.view+'" class="'+(angled?'angledMap':'')+'" aria-label="카탄 섬 지도">',
+    islandRelief.defs,'<g transform="'+camera.transform+'">'];
   const mid=e=>({x:(s.nodes[e.a].x+s.nodes[e.b].x)/2,y:(s.nodes[e.a].y+s.nodes[e.b].y)/2});
-  for(const [j,t] of s.tiles.entries()){
+  const tiles=[...s.tiles.entries()].sort(([,a],[,b])=>a.y-b.y||a.x-b.x);
+  for(const [j,t] of tiles){
     const x=px(t),y=py(t),robbed=s.robber===j;
-    bits.push(islandRelief.tile(t,x,y,robbed,s.merchant?.tile===j,t.res===8?'금광':R[t.res]||'사막',s.pirate===j));
+    bits.push(islandRelief.tile(t,x,y,robbed,s.merchant?.tile===j,t.res===8?'금광':R[t.res]||'사막',s.pirate===j,angled));
   }
   for(const e of s.edges){
     const a=s.nodes[e.a],b=s.nodes[e.b];
@@ -104,7 +113,7 @@ function board(interactive){
   }
   $('mapNavigation').hidden=!compact||district===null;
   if(compact&&district===null)$('hint').append(' 지도에서 구역을 먼저 고르세요.');
-  $('board').innerHTML=bits.join('')+'</svg>';
+  $('board').innerHTML=bits.join('')+'</g></svg>';
 }
 $('mapBack').onclick=()=>{district=null;render();};
 compactMap.addEventListener('change',()=>{

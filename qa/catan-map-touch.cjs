@@ -26,6 +26,16 @@ async function checkZoom(browser, mode, viewport) {
     const zoomed = await board.getAttribute('viewBox');
     assert.notEqual(zoomed, overview);
 
+    const angle = page.locator('#mapAngle');
+    assert.equal(await angle.getAttribute('aria-pressed'), 'true');
+    await angle.tap();
+    assert.equal(await angle.getAttribute('aria-pressed'), 'false');
+    assert.equal(await board.evaluate(svg => svg.classList.contains('angledMap')), false);
+    assert.notEqual(await board.getAttribute('viewBox'), zoomed);
+    await angle.tap();
+    assert.equal(await angle.getAttribute('aria-pressed'), 'true');
+    assert.equal(await board.getAttribute('viewBox'), zoomed);
+
     // A browser toolbar height change must not discard the selected district.
     await page.setViewportSize({ ...viewport, height: viewport.height - 32 });
     assert.equal(await board.getAttribute('viewBox'), zoomed);

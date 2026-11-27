@@ -21,11 +21,22 @@ const islandRelief = (() => {
     '<g id="rel-ridge"><path d="M-21 1l12 -15 8 -17 11 12 12 20 -17 4z" fill="#83877e"/><path d="M-21 1l20 -32 -4 22 -6 5z" fill="#c3c6b5"/><path d="M-1 -31l11 12 12 20 -14 -7z" fill="#596a67"/><path d="M-9 -16l8 -15 8 9 -4 -1 -4 -2 -4 8z" fill="#e6e8d8"/></g>'+
     '<g id="rel-sheep"><ellipse cx="2" cy="2" rx="8" ry="2.7" fill="#678053"/><path d="M-4 -2v4m6 -4v4" stroke="#574a3a" stroke-width="2"/><ellipse cy="-4" rx="7" ry="4" fill="#fff0cc"/><ellipse cx="6" cy="-4" rx="2.7" ry="3.2" fill="#675a46"/></g>';
   const defs = '<defs>'+shapes+'<linearGradient id="rel-light" x2=".85" y2="1"><stop stop-color="#fff2bb" stop-opacity=".22"/><stop offset="1" stop-color="#253a2f" stop-opacity=".18"/></linearGradient>'+
-    scenes.map((scene,i)=>'<g id="rel-tile'+i+'"><polygon points="'+surface+'" fill="'+base[i]+'"/><polygon points="'+surface+'" fill="url(#rel-light)" stroke="#fff2c4" stroke-opacity=".45"/>'+scene+'</g>').join('')+'</defs>';
-  function tile(t,x,y,robbed,merchant,name,pirate) {
+    '<pattern id="rel-grain" width="13" height="11" patternUnits="userSpaceOnUse"><circle cx="2" cy="3" r=".65" fill="#fff2cd"/><circle cx="9" cy="8" r=".65" fill="#292f28"/><path d="M5 6l2 1m3-5l2-1" stroke="#fff2cd" stroke-width=".5"/></pattern><linearGradient id="rel-cliff-lit" x2="0" y2="1"><stop stop-color="#9d7651"/><stop offset="1" stop-color="#453227"/></linearGradient>'+
+    '<linearGradient id="rel-cliff-shade" x2="0" y2="1"><stop stop-color="#6c5139"/><stop offset="1" stop-color="#322b23"/></linearGradient>'+
+    scenes.map((scene,i)=>'<g id="rel-tile'+i+'"><polygon points="'+surface+'" fill="'+base[i]+'"/><polygon points="'+surface+'" fill="url(#rel-light)" stroke="#fff2c4" stroke-opacity=".58"/><polygon points="'+surface+'" fill="url(#rel-grain)" opacity=".26"/>'+scene+'</g>').join('')+'</defs>';
+  // Project artwork and hit regions together so edges and intersections still align.
+  function angle([x,y,width,height]){
+    const shear=.14, rise=.72, pivot=277;
+    return {
+      transform:'matrix(1 0 '+shear+' '+rise+' '+(-pivot*shear)+' '+(pivot*(1-rise))+')',
+      view:[x+(y-pivot)*shear,y*rise+pivot*(1-rise),width+height*shear,height*rise].join(' ')
+    };
+  }
+  function tile(t,x,y,robbed,merchant,name,pirate,angled) {
     if(t.res===-2)return '<g transform="translate('+x+' '+y+')"><polygon points="'+surface+'" fill="#387f84" stroke="#70a4a0" stroke-width=".7"/><path d="M-22 -5q6 -4 12 0t12 0m2 10q5 -3 10 0t10 0" fill="none" stroke="#8cbab4"/>'+(pirate?'<text fill="white">해적</text>':'')+'</g>';
     const kind=t.res===8?4:t.res<0?5:t.res;
-    return '<g transform="translate('+x+' '+y+')"><path d="M-45 -26v56l45 26 45 -26v-56L0 0Z" fill="#654c34"/>'+use('tile'+kind,0,0)+
+    const edge=angled?'<path d="M-45 26L0 52v13l-45-26Z" fill="url(#rel-cliff-lit)"/><path d="M0 52l45-26v13L0 65Z" fill="url(#rel-cliff-shade)"/>':'<path d="M-45 26L0 52l45-26v4L0 56l-45-26Z" fill="#654c34"/>';
+    return '<g transform="translate('+x+' '+y+')">'+edge+use('tile'+kind,0,0)+
       (t.res===8?'<path d="M-16 -3l5 -6 6 3 -2 6zM5 -4l3 -7 7 4 -2 6z" fill="#ffd75e" stroke="#a27627"/>':'')+
       '<text y="8" fill="#fff9e4" stroke="#384031" stroke-width="3" paint-order="stroke" font-size="12">'+(merchant?'상인 · ':'')+name+'</text>'+
       (robbed||t.num?'<ellipse cy="27" rx="13" ry="12" fill="#78664c"/><ellipse cy="25" rx="13" ry="12" fill="'+(robbed?'#31433e':'#fff0c8')+'"/><text y="25" fill="'+(robbed?'white':[6,8].includes(t.num)?'#ad392c':'#283632')+'" font-size="'+(robbed?11:16)+'">'+(robbed?'도둑':t.num)+'</text>':'')+'</g>';
@@ -33,5 +44,5 @@ const islandRelief = (() => {
   function building(x,y,owner,color,city){
     return '<g transform="translate('+x+' '+y+')"><ellipse cx="3" cy="5" rx="13" ry="5" fill="#25312b" opacity=".42"/><g fill="'+color+'" stroke="#30392f" stroke-width="1.4">'+(city?'<path d="M-12 -4l5 -6 5 3v-7l6 -5 7 5v16L2 7l-14 -4z"/>':'<path d="M-10 -4l7 -9 8 3 6 8v6L2 8l-12 -4z"/>')+'</g><path d="M2 -1l9 -4v9L2 8z" fill="#192b29" opacity=".34"/><text x="-2" y="0" fill="#172529" font-size="9">'+(owner+1)+'</text></g>';
   }
-  return {defs,tile,building};
+  return {defs,tile,building,angle};
 })();
