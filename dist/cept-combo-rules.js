@@ -13,7 +13,7 @@ const CepterCombos = (() => {
   };
   const activeWorld=s=>s?.edition==='revolt'&&s.world?.until>s.round?s.world.effect:null;
   const groups = {
-    land: 'barricade greed regeneration vitality disease peace landprotection mine vortex soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
+    land: 'barricade greed regeneration vitality disease hustle bulimia fatbody peace landprotection mine vortex soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
     area: 'cramp reinforce insectswarm exorcism massphantasm sculpture desertstorm',
     player: 'holyword0 grace pain silence haste despair antimagic changeling wizardeye mindseeker waste wordofrecall suppression drainmagic slow holyword3 holywordx echo dimensiondoor squeeze',
     global: 'catastrophe tempest punisher icestorm fireexplosion thunderstorm deathcloud sonicwave demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker feast '+Object.keys(worlds).join(' ')
@@ -116,6 +116,10 @@ const CepterCombos = (() => {
           u.mhp=max(u)+gain;u.hp=s.edition==='begins'?Math.min(u.mhp,u.hp+10):u.hp+gain;
         }
         else if(e==='weakness')u.st=0;
+        else if(e==='fatbody'){
+          u.st=Math.max(0,strength(u)-20);
+          if(!immuneHP(t)){const increase=Math.max(0,Math.min(20,100-max(u)));u.mhp=max(u)+increase;u.hp+=increase;}
+        }
         else if(e==='temperance'){u.mhp=30;u.hp=Math.min(30,u.hp);}
         else if(e==='mutation'){
           clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
@@ -140,7 +144,10 @@ const CepterCombos = (() => {
         if(e==='antimagic')q.antiMagic=true;
         if(e==='waste')q.status=e;
         if(e==='wizardeye'){p.peek={seat:x,ids:q.book.slice(-6).reverse()};p.hand.push(ids.get(e));}
-        if(e==='mindseeker'){s.spellTarget=x;return 'mindseeker';}
+        if(e==='mindseeker'){
+          if(s.edition==='saga')p.peek={seat:x,ids:q.book.slice(-6).reverse()};
+          s.spellTarget=x;return 'mindseeker';
+        }
         if(e==='changeling'){
           for(const watcher of s.players)if(watcher.peek?.seat===x)delete watcher.peek;
           const slots=q.book.map((_,i)=>i);
@@ -522,7 +529,7 @@ const CepterCombos = (() => {
     const available=names.concat(friendly.map(t=>fx.name(t.unit)),friendly.map(t=>t.unit.enchant));
     const pair=(a,b)=>deckGroups.some(g=>g.some(row=>row.includes(a))&&g.some(row=>row.includes(b)&&!row.includes(a)));
     const ready=n=>deckGroups.some(g=>g.some(row=>row.includes(n))&&matches(g,available));
-    const hostile=new Set('disease weakness senility antielement evilblast shrink slow exile temperance silence despair waste pain wizardeye mindseeker changeling'.split(' '));
+    const hostile=new Set('bulimia disease weakness senility antielement evilblast shrink slow exile temperance silence despair waste pain wizardeye mindseeker changeling'.split(' '));
     const advantage=t=>friend(t.owner)?1:-1;
     function scoreTarget(e,x){
       if(type[e]==='area'){

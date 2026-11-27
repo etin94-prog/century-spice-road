@@ -2,6 +2,10 @@
 const describeCepterSpell=(()=>{
   const text={
     one:'이번 차례에 1칸 이동합니다.',
+    zap:'고른 크리처에게 10 피해를 줍니다.',
+    hustle:'고른 크리처의 전투 ST와 HP를 30씩 올립니다.',
+    bulimia:'고른 크리처가 전투에서 생존하면 주인의 손패 한 장을 무작위로 파괴합니다.',
+    fatbody:'고른 크리처의 최대 HP를 20 올리고 기본 ST를 20 낮춥니다.',
     six:'이번 차례에 6칸 이동합니다.',
     cash:'마력 100G를 얻습니다.',
     heal:'고른 크리처의 HP를 최대치까지 회복시킵니다.',
@@ -174,10 +178,11 @@ const describeCepterSpell=(()=>{
     stormshift:'고른 레벨 3 이하 영지를 수에서 풍 또는 풍에서 수로 바꿉니다.'
   };
   const fixed={holyword0:0,word1:1,holyword2:2,holyword3:3,word6:6,holyword8:8,holywordx:10};
-  return (C,card)=>{
+  function describe(C,card){
     if(card.kind!=='spell'||card.catalogOnly)return;
     const e=card.effect,edition=C.edition;
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
+    if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
     if(edition==='begins'){
       if(e==='revoltlandtransfer')return '내 영지 한 곳을 포기하고 현재 영지 가치의 80%를 마력으로 얻습니다.';
       if(e==='growthbody'||e==='massgrowth')return (e==='growthbody'?'고른 크리처의 현재 HP와 최대 HP를 10':'모든 크리처의 현재 HP와 최대 HP를 5씩')+' 올립니다. 최대 HP 상한은 100입니다.';
@@ -203,6 +208,10 @@ const describeCepterSpell=(()=>{
       case 'quintessence':if(edition==='revolt')return '고른 레벨 4 이하 영지를 복합 속성으로 바꿉니다.';break;
     }
     return text[e]||C.spellDescriptions?.[e];
+  }
+  return (C,card)=>{
+    const summary=describe(C,card);
+    return summary&&card.doublecast?summary+' 효과 처리 뒤 이 차례에 주문을 더 쓸 수 있습니다.':summary;
   };
 })();
 if(typeof module!=='undefined')module.exports=describeCepterSpell;

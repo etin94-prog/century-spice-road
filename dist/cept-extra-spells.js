@@ -11,7 +11,7 @@ const CepterExtraSpells=(()=>{
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
   const type={...ps2Type,holyword8:'player',landdrain:'player',
     alarm:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
-    remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',holybanishment:'land',liquidform:'land',
+    remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast']);
@@ -179,6 +179,7 @@ const CepterExtraSpells=(()=>{
           case 'meteor':t.level=1;break;
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
           case 'stoneblast':fx.harm(s,t,30);break;
+          case 'zap':fx.harm(s,t,10);break;
           case 'holybanishment':s.players[t.owner].hand.push(u.id);vacate(t);break;
           case 'liquidform':combo.clear(u);u.enchant=e;u.caster=s.turn;draw(p,s);break;
           case 'turntothewall':{
@@ -341,6 +342,7 @@ const CepterExtraSpells=(()=>{
         return sign*(2*(Number(after)-Number(before))*weight+2*change);
       }
       switch(e){
+        case 'zap':return -sign*(fx.damageAmount(s,t,10)+(t.unit.hp<=10?weight*4:0));
         case 'stoneblast':return -sign*fx.damageAmount(s,t,30)/4;
         case 'holybanishment':return -sign*(5+weight+t.unit.hp/8);
         case 'liquidform':return sign*(40-t.unit.hp)/7;

@@ -355,6 +355,7 @@ function createCepter(edition="ps2"){
     nextTurn(s);
   }
   function nextTurn(s){
+    delete s.doublecast;
     s.turn=(s.turn+1)%s.players.length;
     if(s.turn===0){s.round++;if(s.world?.until<=s.round)delete s.world;for(const t of s.tiles)if(t.unit?.expires<=s.round)combo.clear(t.unit);for(const q of s.players)if(q.statusUntil<=s.round&&q.status!=='waste')delete q.status;if(s.shineUntil<=s.round){s.prices=s.prices.map(v=>Math.max(1,Math.round(v/1.5)));delete s.shineUntil;}}
     if(s.turn===0&&board(s).pathSwitches&&s.round>=(s.switchRound??5))flipPaths(s,'자동 전환');
@@ -828,6 +829,7 @@ function createCepter(edition="ps2"){
         if(handheld&&a.g==='powercrown')a.hp+=baseStrength[a===A?1:0];
         if(a.u.enchant==='regeneration')a.hp+=20;
         if(a.u.enchant==='vitality'){a.hp+=20;a.st+=20;}
+        if(a.u.enchant==='hustle'){a.hp+=30;a.st+=30;}
         if(a.u.enchant==='disease'){a.hp-=20;a.st-=20;}
         if(!revolt&&!handheld&&edition!=='begins'&&a.u.enchant==='greed')a.hp-=10;
         if(a.element===-1&&extra.boost('borgess',a))a.hp+=20;
@@ -982,6 +984,10 @@ function createCepter(edition="ps2"){
       if(a.g==='boomerang'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0)a.hp-=20;
       if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
+      if(!muted&&a.u.enchant==='bulimia'&&a.hp>0){
+        const hand=s.players[a.seat].hand;
+        if(hand.length){hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);lines.push('불리미아 · 손패 1장 파괴');}
+      }
       if(a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
       if(a.g==='dynamite'||a.n==='wraith'||!muted&&a.u.enchant==='senility')a.hp=0;
       if(!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed'&&(a.hp>0||d.hp>0)&&(a.n==='leshy'||a.g==='silverplow'))t.level=Math.min(5,t.level+(a.n==='leshy')+(a.g==='silverplow'));
@@ -1124,7 +1130,7 @@ function createCepter(edition="ps2"){
     }
     const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','secretArt','secretLand','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
     const previousChains=trackChains||combo.activeWorld(s)==='jointworld'||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
-    if(k==='roll'){delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
+    if(k==='roll'){delete s.doublecast;delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
     const before=!gemTerrain&&(handheld||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
     function mapEffect(type,label,tile=p.pos,extra={}){
@@ -1218,7 +1224,9 @@ function createCepter(edition="ps2"){
       case 'circleCast':case 'mesmerCard':case 'cast':{
         const id=k==='circleCast'?x:k==='mesmerCard'?s.players[s.spellTarget].hand.splice(x,1)[0]:paid(s,p,x);
         if(k==='circleCast'){delete s.circleOffers;s.circleCasting=true;}
-        const c=cards[id],cash=p.cash;s.phase='roll';p.lastCast={name:key(c),round:s.round};
+        const c=cards[id],cash=p.cash;s.phase='roll';
+        if(c.doublecast)s.doublecast='pending';else delete s.doublecast;
+        p.lastCast={name:key(c),round:s.round};
         delete p.invisible;
         const spellType=extraTypes?.[c.effect]||combo.type[c.effect];
         if(spellType){
@@ -1355,6 +1363,9 @@ function createCepter(edition="ps2"){
           if(next==='endTurn')finish(s);else s.phase=next;
         }
         break;
+    }
+    if(s.doublecast==='pending'&&s.phase==='roll'){
+      s.doublecast='ready';s.phase='spell';note(s,'연속 주문 · 주사위를 굴리기 전에 주문을 더 쓸 수 있습니다.');
     }
     if(s.circleCasting&&['roll','land'].includes(s.phase)){
       s.phase='land';delete s.circleCasting;

@@ -1587,6 +1587,68 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
+  const C=ps2.createEdition('saga'),map=Object.keys(C.maps)[0];
+  const id=name=>C.cards.findIndex(card=>!card.unlisted&&!card.catalogOnly&&C.combo.key(card)===name);
+  const special=['reincarnation','cleanse','crusher','debility','fistfight','illness','mimicry','paralyzer','zap','bulimia','fatbody','hustle','poisonmind'];
+  for(const name of special){
+    assert.equal(C.cards[id(name)].doublecast,true);
+    assert.match(describeSpell(C,C.cards[id(name)]),/주문을 더 쓸 수 있습니다/);
+  }
+  const s=C.start(2,2,5000,map),p=s.players[0],q=s.players[1],goblin=id('goblin');
+  p.cash=1500;p.hand=['zap','debility','holyword8'].map(id);
+  const at=s.tiles.findIndex(t=>typeof t.type==='number');
+  Object.assign(s.tiles[at],{owner:1,unit:{id:goblin,hp:30}});
+  C.configureMatch(s,{recordReplay:true});
+  assert.ok(C.play(s,['cast',0]));
+  assert.equal(s.doublecast,'pending');
+  const saved=structuredClone(s);
+  assert.ok(C.play(saved,['targetLand',at]));
+  assert.equal(saved.tiles[at].unit.hp,20);
+  assert.deepEqual([saved.phase,saved.doublecast,saved.turn],['spell','ready',0]);
+  assert.ok(C.play(saved,['cast',0])&&C.play(saved,['targetLand',at]));
+  assert.equal(saved.tiles[at].unit.st,0);
+  assert.equal(saved.phase,'spell');
+  assert.ok(C.play(saved,['cast',0])&&C.play(saved,['targetPlayer',1]));
+  assert.equal(saved.phase,'roll');
+  assert.equal(saved.doublecast,undefined);
+  assert.equal(saved.players[1].word,8);
+  assert.equal(saved.replay.steps.length,6);
+
+  q.hand=[id('holyword8')];
+  p.hand=['crusher','reincarnation','holyword8'].map(id);p.book=[goblin,goblin];
+  assert.ok(C.play(s,['targetLand',at])&&C.play(s,['cast',0])&&C.play(s,['targetPlayer',1])&&C.play(s,['breakCard',0]));
+  assert.equal(q.hand.length,0);
+  assert.equal(s.phase,'spell');
+  assert.ok(C.play(s,['cast',0]));
+  assert.deepEqual(p.hand,[goblin]);
+  assert.equal(s.phase,'spell');
+  assert.ok(C.play(s,['roll']));
+  assert.equal(s.doublecast,undefined);
+  const proof=C.start(2,2,5000,map);
+  const [caster,victim]=proof.players;
+  caster.cash=1000;caster.hand=['fatbody','hustle','bulimia','poisonmind'].map(id);victim.book=[id('holyword8'),goblin];
+  Object.assign(proof.tiles[at],{owner:1,unit:{id:goblin,hp:30,mhp:90,st:25}});
+  assert.ok(C.play(proof,['cast',0])&&C.play(proof,['targetLand',at]));
+  assert.deepEqual([proof.tiles[at].unit.mhp,proof.tiles[at].unit.hp,proof.tiles[at].unit.st],[100,40,5]);
+  assert.ok(C.play(proof,['cast',0])&&C.play(proof,['targetLand',at]));
+  assert.equal(proof.tiles[at].unit.enchant,'hustle');
+  assert.ok(C.play(proof,['cast',0])&&C.play(proof,['targetLand',at]));
+  assert.equal(proof.tiles[at].unit.enchant,'bulimia');
+  assert.ok(C.play(proof,['cast',0])&&C.play(proof,['targetPlayer',1]));
+  const roomState=require('../dist/cept-room-state');
+  assert.deepEqual(roomState.view(C,proof,0).game.players[0].peek.ids,[goblin,id('holyword8')]);
+  assert.equal(roomState.view(C,proof,1).game.players[0].peek,undefined);
+  assert.ok(C.play(proof,['eraseDraw',1]));
+  assert.deepEqual(victim.book,[goblin]);
+  assert.equal(proof.phase,'spell');
+  victim.hand=[goblin];
+  proof.phase='attack';proof.battle={at,inv:goblin,atkItem:null,defItem:null};
+  assert.ok(C.play(proof,['bare'])&&C.play(proof,['bare']));
+  assert.equal(victim.hand.length,0);
+  assert.ok(proof.battle.lines.some(line=>line.startsWith('불리미아')));
+  console.log('Saga Doublecast: all 13 cards, reload, private choices, base and battle effects, roll exit OK');
+}
+{
   const C=ps2.createEdition('begins');
   const id=effect=>C.cards.findIndex(card=>!card.unlisted&&!card.catalogOnly&&card.effect===effect);
   const unit=C.cards.findIndex(card=>!card.unlisted&&!card.catalogOnly&&C.combo.key(card)==='goblin');

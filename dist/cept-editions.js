@@ -97,7 +97,10 @@ const CepterEditions=(()=>{
       reincarnation:'reincarnation',shatter:'shatter',sink:'sink',upheaval:'upheaval',vitality:'vitality',
       weathering:'weathering',wildgrowth:'wildgrowth',windofhope:'windofhope'
     },
-    saga:{magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage'},
+    saga:{magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
+      reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
+      illness:'disease',mimicry:'camouflage',paralyzer:'bindingmist',zap:'zap',
+      bulimia:'bulimia',fatbody:'fatbody',hustle:'hustle',poisonmind:'mindseeker'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
@@ -244,7 +247,10 @@ const CepterEditions=(()=>{
       const c={...(compatible?base:{}),name,catalog,element,kind,category,cost:r.cost,ban:r.ban.map(k=>equipment[k].toLowerCase()),catalogOnly:!(compatible||variant||simple),unlisted:false,hasArt:!!base,...(modernSets[edition]?{editionArt:r.image}:{firstArt:r.image})};
       if(kind==='spell'&&modernSets[edition]){
         const effect=modernSpellEffects[edition][slug]||(edition!=='3ds'&&sharedModernSpells.includes(slug)?slug:null);
-        if(effect){c.effect=effect;c.catalogOnly=false;}
+        if(effect){
+          c.effect=effect;c.catalogOnly=false;
+          if(edition==='saga'&&clauses.includes('Doublecast'))c.doublecast=true;
+        }
         if(edition==='revolt'&&['brightworld','darkworld','jointworld','mercifulworld','mirrorworld','mistyworld','naturalworld','solidworld','wasteworld'].includes(slug)){c.effect=slug;c.catalogOnly=false;}
         if(edition==='begins'&&slug==='manna')c.magicPerLap=100;
       }
