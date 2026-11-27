@@ -69,7 +69,9 @@ else{
     if(C.edition==='begins')references.append(editionBookArchive(CepterBeginsPlayerBooks,
       '공개 덱 자료','비긴즈 공개 덱 자료','https://www.culdceptcentral.com/culdcept-begins/culdcept-begins-player-decks/','begins-book-archive'),
       editionComboArchive('비긴즈','begins','https://culdceptcentral.com/culdcept-begins/culdcept-begins-card-combos/culdcept-begins-in-battle-combos'));
-    if(C.edition==='saga')references.append(editionComboArchive('사가','saga','https://www.culdceptcentral.com/culdcept-saga/culdcept-saga-card-combos/culdcept-saga-in-battle-combos'));
+    if(C.edition==='saga')references.append(editionBookArchive(CepterSagaPlayerBooks,
+      '공개 덱 자료','사가 공개 덱 자료','https://www.culdceptcentral.com/culdcept-saga/culdcept-saga-player-decks/','saga-book-archive'),
+      editionComboArchive('사가','saga','https://www.culdceptcentral.com/culdcept-saga/culdcept-saga-card-combos/culdcept-saga-in-battle-combos'));
     if(C.edition==='revolt')references.append(editionBookArchive(CepterRevoltBookArchive,
       '스토리 북 자료','리볼트 스토리 북 자료','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/','revolt-book-archive'),
       editionComboArchive('리볼트','revolt','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-combos/culdcept-revolt-in-battle-combos'));
@@ -143,14 +145,28 @@ function editionBookArchive(entries,title,selectLabel,sourceBase,archiveClass){
   const archive=el('details',null,archiveClass+' revolt-library-panel');
   archive.append(el('summary',title+' · '+entries.length+'개'));
   const pick=el('select');pick.setAttribute('aria-label',selectLabel);
-  const groups=new Map();
-  entries.forEach(([character,name],i)=>{
-    if(!groups.has(character)){
-      const group=el('optgroup');group.label=character;
-      groups.set(character,group);pick.append(group);
-    }
-    groups.get(character).append(new Option(name,i));
-  });
+  const filter=C.edition==='saga'?el('input'):null;
+  if(filter){
+    filter.type='search';filter.placeholder='덱 이름 또는 작성자';
+    filter.setAttribute('aria-label','사가 공개 덱 검색');
+    archive.append(filter);
+  }
+  function populate(){
+    const prior=pick.value,query=filter?.value.trim().toLowerCase()||'';
+    pick.replaceChildren();
+    const groups=new Map();
+    entries.forEach(([character,name],i)=>{
+      if(query&&!(character+' '+name).toLowerCase().includes(query))return;
+      if(!groups.has(character)){
+        const group=el('optgroup');group.label=character;
+        groups.set(character,group);pick.append(group);
+      }
+      groups.get(character).append(new Option(name,i));
+    });
+    if([...pick.options].some(option=>option.value===prior))pick.value=prior;
+    pick.disabled=!pick.options.length;
+  }
+  populate();
   const summary=el('p');summary.setAttribute('aria-live','polite');
   const link=el('p'),grid=el('div',null,'archive-cards');
   let selected=[];
@@ -159,6 +175,10 @@ function editionBookArchive(entries,title,selectLabel,sourceBase,archiveClass){
     $('bookChoice').focus({preventScroll:true});
   });
   const update=()=>{
+    if(pick.disabled){
+      selected=[];summary.textContent='검색 결과가 없습니다.';use.hidden=true;
+      link.replaceChildren();grid.replaceChildren();return;
+    }
     const [character,name,source,recipe]=entries[+pick.value];
     const counts=Object.entries(recipe).map(([slug,n])=>[paths.get(slug),n]);
     selected=counts.flatMap(([path,n])=>Array(n).fill(cardIndex.get(path)));
@@ -171,6 +191,7 @@ function editionBookArchive(entries,title,selectLabel,sourceBase,archiveClass){
     use.hidden=!valid;
   };
   pick.onchange=update;
+  if(filter)filter.oninput=()=>{populate();update();};
   archive.addEventListener('toggle',()=>{if(archive.open&&!summary.textContent)update();});
   archive.append(pick,summary,use,link,grid);
   return archive;

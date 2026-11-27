@@ -6,6 +6,7 @@ const CepterEditions=(()=>{
   const handheld=typeof module==='undefined'?(typeof CepterEdition2012==='undefined'?null:CepterEdition2012):require('./cept-edition-data-2012');
   if(handheld)data.cards['3ds']=handheld.cards;
   const handheldPlayerBooks=typeof module==='undefined'?(typeof Cepter2012PlayerBooks==='undefined'?[]:Cepter2012PlayerBooks):require('./cept-2012-player-books');
+  const sagaPlayerBooks=typeof module==='undefined'?(typeof CepterSagaPlayerBooks==='undefined'?[]:CepterSagaPlayerBooks):require('./cept-saga-player-books');
   const beginsPlayerBooks=typeof module==='undefined'?(typeof CepterBeginsPlayerBooks==='undefined'?[]:CepterBeginsPlayerBooks):require('./cept-begins-player-books');
   const handheldRefs={
     cards:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-card-lists/culdcept-3ds-complete-card-list',
@@ -142,7 +143,8 @@ const CepterEditions=(()=>{
       triumph:'triumph',upheaval:'upheaval',weathering:'weathering',wildgrowth:'wildgrowth',
       iksear:'sagaiksear',terrair:'sagaterrair',bistair:'sagabistair',selenear:'sagaselenear',
       comet:'comet',crusherstorm:'crusherstorm',desolation:'desolation',elevation:'elevation',erosion:'erosion',
-      fame:'fame',frostneedle:'frostneedle',venomousboil:'venomousboil',refuge:'refuge',gift:'sagagift',refresh:'refresh',holyblight:'holyblight'},
+      fame:'fame',frostneedle:'frostneedle',venomousboil:'venomousboil',refuge:'refuge',gift:'sagagift',refresh:'refresh',holyblight:'holyblight',
+      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
@@ -552,6 +554,10 @@ const CepterEditions=(()=>{
         ...gear,bistair:3,selenear:3,manna:3,holyword8:2,elevation:2,fame:3,revelation:2
       }
     };
+    for(const [,,source,recipe,variant] of sagaPlayerBooks){
+      if(Object.entries(recipe).every(([name,count])=>ids.has(name)&&count<=copyLimit(cards[ids.get(name)])))
+        books['saga-'+source+variant]=recipe;
+    }
     return addNamedBooks(books);
   }
   function handheldBooks(cards){
@@ -771,7 +777,7 @@ const CepterEditions=(()=>{
     deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
-    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},
+    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},necromancer:{scrollCritical:true},
     lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},spinyagama:{},seismodon:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);

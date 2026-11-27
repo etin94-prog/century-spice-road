@@ -612,6 +612,10 @@ function createCepter(edition="ps2"){
               const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(handheld||begins?100:80,st+10));
             }
           }
+          if(edition==='saga')for(const q of s.players)if(q!==p&&q.status==='trespass'){
+            const bonus=p.cash-cashBeforeLap;q.cash+=bonus;
+            note(s,q.name+' · 트레스패스 +'+bonus+'G');
+          }
           note(s,p.name+' · '+p.lap+'주 완주');
         }
         if(t.type==='성'&&p.status==='triumph')extraSpells.clearCepter(p);
@@ -1520,6 +1524,11 @@ function createCepter(edition="ps2"){
       if(begins&&a.hp>0&&opponent.hp>0){
         const source=creatureEnd&&a.n==='otohime'?a.c:itemEnd&&a.g==='doomneedle'?a.gear:null;
         if(source){combo.clear(opponent.u);opponent.u.enchant='senility';lines.push(source.name+' · 노쇠 부여');}
+      }
+      if(edition==='saga'&&opponent.hp<=0&&opponent.defeatedByOpponent&&s.players[a.seat].status==='hunterssong'){
+        s.players[a.seat].cash+=200;
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[a.defending?1:0]-=200;}
+        lines.push('헌터스 송 · 상대 크리처 격파 +200G');
       }
       if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent);
       if(revolt&&creatureEnd&&a.n==='duskdweller'&&a.hp>0&&opponent.hp<=0){

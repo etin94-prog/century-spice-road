@@ -168,7 +168,7 @@ function openTurnPicker(entries,title,preferred=-1){
     option.setAttribute('aria-pressed','false');
     if(card){
       const art=cardSeal(entry.id);art.alt='';option.prepend(art);
-      const kind=entry.action[0],noExtraCost=kind==='circleCast'||C.edition==='begins'&&['replaceCard','stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
+      const kind=entry.action[0],noExtraCost=['circleCast','replaceCard'].includes(kind)||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
       const cost=kind==='buyCard'?C.shopCost(entry.id):noExtraCost?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
       if(Number.isFinite(cost))option.append(el('small',cost+'G','card-cost'));
       if(card.kind==='creature')option.append(el('small','ST '+card.st+' · HP '+card.hp,'card-power'));
@@ -253,7 +253,7 @@ function commandGroup(group,p,controls){
   const [kind]=group[0],single=group.length===1;
   const box=el('div',null,'command');box.dataset.kind=kind;
   const pictured=group.some(a=>actionCard(a,p)!=null),territory=['level','element','exchange','transfer'].includes(kind);
-  const mustShowCard=C.edition==='begins'&&['replaceCard','stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
+  const mustShowCard=kind==='replaceCard'||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
   if(!mustShowCard&&(single||!pictured&&!territory&&group.length<=3)){
     if(!single)box.append(el('small',labels[kind],'command-title'));
     for(const action of group){

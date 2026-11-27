@@ -272,7 +272,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
+    const sagaTerritory={necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -320,8 +320,8 @@ const CepterCombos = (() => {
         if(n==='healer'||n==='sanguivore'||n==='amabie')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&
           (n==='sanguivore'||(n==='healer'?v.unit.hp<max(v.unit):max(v.unit)<100))?[['abilityLand',j]]:[]);
       }
+      if((s.edition==='3ds'||s.edition==='saga')&&n==='necromancer'&&s.lastDestroyed==null)return [];
       if(s.edition==='3ds'){
-        if(n==='necromancer'&&s.lastDestroyed==null)return [];
         if(n==='mystic')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&max(v.unit)<100?[['abilityLand',j]]:[]);
         if(n==='sleipnir')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&!cards[v.unit.id].stationary&&v.unit.enchant!=='thornfetter'&&territoryMoveExits(s,j).length?[['abilityLand',j]]:[]);
         if(n==='metalbug')return s.tiles.flatMap((v,j)=>j!==from&&targetable(s,v)&&v.unit.hp<max(v.unit)?[['abilityLand',j]]:[]);
@@ -365,6 +365,7 @@ const CepterCombos = (() => {
           src.unit.mhp=max(src.unit)+gain;src.unit.hp+=gain;return;
         }
       }
+      if(n==='necromancer'){p.hand.push(s.lastDestroyed);return;}
       if(s.edition==='3ds'){
         if(n==='metalbug'){destroy(s,v);destroy(s,src);return;}
         if(n==='sakuya'){v.type=2;return;}
@@ -372,7 +373,6 @@ const CepterCombos = (() => {
           const old=max(v.unit),gain=Math.min(10,100-old);
           v.unit.mhp=old+gain;v.unit.hp+=gain;return;
         }
-        if(n==='necromancer'){p.hand.push(s.lastDestroyed);return;}
         if(n==='sleipnir'){s.teleFrom=x;s.territoryMove=true;return 'teleMove';}
       }
       if(s.edition==='saga'){

@@ -17,7 +17,7 @@ const CepterExtraSpells=(()=>{
     blacksmith:'player',reform:'player',beginspoisonmind:'player',discord:'global',metalform:'land',temptation:'land',beginspolymorph:'land',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
-    bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
+    bravesong:'player',toughsong:'player',hunterssong:'player',trespass:'global',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
@@ -30,7 +30,7 @@ const CepterExtraSpells=(()=>{
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
   const stolenKind={capture:'item',theft:'spell'};
   const enemyOnly=new Set(['capture','theft','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind']);
-  const duration={bravesong:4,toughsong:4,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
+  const duration={bravesong:4,toughsong:4,hunterssong:4,trespass:2,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
   const soltis={
     goodluck:'행운 · 2라운드 통행료 면제',purify:'정화 · 모든 영지의 인챈트 해제',affection:'은총 · 순위 × 200G',
     hope:'희망 · 2장 드로우',depression:'불황 · 모든 호부 가격 20% 하락',suffocate:'질식 · 모든 크리처에 10 피해',lifeflow:'생명 · 한 지역의 내 크리처 전체 회복'
@@ -430,6 +430,7 @@ const CepterExtraSpells=(()=>{
           }
           case 'sagaiksear':if(affinity(s,1,3)>=5)for(let n=0;n<6;n++)draw(p,s);break;
           case 'sagaselenear':if(affinity(s,0,2)>=5)p.cash+=500;break;
+          case 'trespass':setStatus(s,p,e);break;
           case 'fame':p.cash+=100*Math.max(0,...owning(s,s.turn).map(t=>t.level));break;
           case 'desolation':for(const v of s.tiles)if(v.level===3&&!fx.blockedLevel(s,v))v.level--;break;
           case 'crusherstorm':for(const q of s.players)q.hand=q.hand.filter(id=>cards[id].kind!=='item');break;
@@ -591,6 +592,7 @@ const CepterExtraSpells=(()=>{
           case 'beginspoisonmind':return Math.min(8,(q.book?.length??q.bookCount)/3);
           case 'capture':case 'theft':return Math.max(0,...q.hand.filter(id=>cards[id].kind===stolenKind[e]).map(id=>cards[id].cost/5));
           case 'bravesong':case 'toughsong':return sign*(q.status===e?0:Math.min(24,6+3*owning(s,x).length));
+          case 'hunterssong':return sign*(q.status===e?0:4+q.hand.filter(id=>cards[id].kind==='creature'&&cards[id].st>=30).length*9);
           case 'sagagift':return sign*(10+(q.hand.length<5?8:0));
           case 'landdrain':return Math.min(owning(s,x).length*landDrainRate(s),Math.max(0,q.cash)+50)/9;
           case 'judgment':return -sign*q.cash/30-p.cash/58;
@@ -681,6 +683,11 @@ const CepterExtraSpells=(()=>{
       if(e==='castlerecall')return p.pos!==0&&p.flags.length===(board(s).checkpoints||board(s).forts).length?25:-20;
       if(e==='selenear')return mine.filter(t=>t.type===2).length*10;
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);
+      if(e==='trespass'){
+        if(p.status==='trespass')return -10;
+        const m=board(s),needed=(m.checkpoints||m.forts).length;
+        return s.players.reduce((score,q,i)=>score+(i!==s.turn&&q.flags.length===needed?14:0),0);
+      }
       if(e==='triumph')return p.status==='triumph'||s.edition==='begins'&&p.status?0:4+p.flags.length*4;
       if(e==='colorfrombeyond')return land.reduce((score,t)=>score+(enemy(s,t.owner)?1:-1)*Math.min(30,fx.strength(t.unit))/5,0);
       if(e==='rayoflaw')return s.players.reduce((v,q,i)=>v+(enemy(s,i)?1:-1)*q.hand.filter(id=>cards[id].cost>=100).length*6,0);

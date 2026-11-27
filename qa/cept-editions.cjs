@@ -76,12 +76,13 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets).filter(name=>edition!=='begins'||!name.startsWith('begins-')),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying','revoltSomniaScripture','revoltMoriCrazy','revoltHypnaBewitch','revoltTerrormireFireClaw','revoltGoliganSuppression','revoltTerrormireFireStorm','revoltMemenLame','revoltZenethInvasion','revoltKranissResurrection']:[])]);
-    assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
+    const standardPresets=Object.entries(C.presets).filter(([name])=>!name.startsWith(edition+'-'));
+    assert.deepEqual(standardPresets.map(([name])=>name),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove','revoltHypnaPetrify','revoltMoriAnnoying','revoltSomniaScripture','revoltMoriCrazy','revoltHypnaBewitch','revoltTerrormireFireClaw','revoltGoliganSuppression','revoltTerrormireFireStorm','revoltMemenLame','revoltZenethInvasion','revoltKranissResurrection']:[])]);
+    assert.equal(new Set(standardPresets.map(([,deck])=>[...deck].sort((a,b)=>a-b).join(','))).size,standardPresets.length);
     for(const [name,deck] of Object.entries(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
       const expectedKinds=name==='beginsVeramiSeaWind'?['creature','spell']:name==='beginsSteamdrillPierce'?['creature','item']:['creature','item','spell'];
-      if(edition!=='begins'||!name.startsWith('begins-')){
+      if(!name.startsWith(edition+'-')){
         assert.deepEqual(new Set(deck.map(id=>C.cards[id].kind)),new Set(expectedKinds));
       }
     }
@@ -589,6 +590,72 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.validBook(book),recipe.hint);
     assert.ok(C.combo.matches(recipe.groups,book.map(card=>C.combo.key(C.cards[card]))),recipe.hint);
   }
+  const sourceBooks=require('../dist/cept-saga-player-books');
+  assert.equal(new Set(sourceBooks.map(([, ,source])=>source)).size,169);
+  assert.equal(sourceBooks.length,186);
+  assert.equal(sourceBooks.filter(([, , ,counts])=>Object.values(counts).reduce((a,b)=>a+b,0)===50).length,184);
+  const allIds=new Map(C.cards.flatMap((c,i)=>c.unlisted?[]:[[C.combo.key(c),i]]));
+  for(const [,name,source,counts,variant] of sourceBooks){
+    const deck=Object.entries(counts).flatMap(([key,count])=>Array(count).fill(allIds.get(key)));
+    assert.ok(deck.every(Number.isInteger),name);
+    const preset=C.presets['saga-'+source+variant];
+    assert.equal(!!preset,C.validBook(deck),name);
+    if(preset)assert.deepEqual(preset,deck,name);
+  }
+  assert.deepEqual(sourceBooks.filter(([, ,source])=>source.startsWith('817-')).map(([, , ,book])=>book.paralyzer),[3,2]);
+  assert.deepEqual(sourceBooks.filter(([, ,source])=>source.startsWith('209-')).map(([, , ,book])=>[book.wordofrecall||0,book.windofhope||0]),[[4,0],[0,4]]);
+  assert.ok(Object.keys(C.presets).filter(key=>key.startsWith('saga-')).length>=13);
+  function sagaCast(spell,setup){
+    const s=C.start(2,2,8000,'saga-original-crosswind'),p=s.players[0];
+    p.cash=600;p.hand=[id(spell),id('fighter')];s.phase='spell';
+    if(setup)setup(s);
+    assert.ok(C.play(s,['cast',0]),spell);
+    return s;
+  }
+  const song=sagaCast('hunterssong');
+  assert.ok(C.play(song,['targetPlayer',1]));
+  assert.deepEqual([song.players[1].status,song.players[1].enchantDeadline],['hunterssong',8]);
+  const reward=fight('tyrannosaurus','goblin','무속성',null,s=>{s.players[0].status='hunterssong';});
+  assert.equal(reward.players[0].cash,700);
+  assert.match(reward.battle.lines.join(' '),/헌터스 송.*200G/);
+  const noReward=fight('fighter','wallofice','무속성',null,s=>{s.players[0].status='hunterssong';});
+  assert.equal(noReward.players[0].cash,500);
+  const trespass=sagaCast('trespass'),sagaMap=C.board(trespass);
+  assert.deepEqual([trespass.players[0].status,trespass.players[0].enchantDeadline],['trespass',4]);
+  const home=sagaMap.castles[0],from=sagaMap.links[home][0];
+  const walker=trespass.players[1],prior=trespass.players[0].cash;
+  Object.assign(walker,{cash:500,pos:from,previous:null,flags:[...sagaMap.checkpoints]});
+  Object.assign(trespass,{phase:'fork',turn:1,die:1,remaining:1});
+  const entering=C.choices(trespass).find(action=>action[0]==='route'&&action[1]===home);
+  assert.ok(entering&&C.play(trespass,entering));
+  assert.ok(walker.cash>500);
+  assert.equal(trespass.players[0].cash-prior,walker.cash-500);
+  const replace=sagaCast('replace',s=>{
+    unit(s,2,'goblin',1,2,3);
+    s.players[1].hand=[id('manna'),id('dwarf')];
+  });
+  assert.ok(C.play(replace,['targetLand',2]));
+  const room=require('../dist/cept-room-state');
+  assert.deepEqual(room.view(C,replace,0).choices,[['replaceCard',1,id('dwarf')]]);
+  assert.deepEqual(room.view(C,replace,1).choices,[]);
+  assert.deepEqual(room.view(C,replace,0).game.players[1].hand,[]);
+  assert.ok(C.play(replace,['replaceCard',1,id('dwarf')]));
+  assert.deepEqual([replace.tiles[2].owner,replace.tiles[2].level,replace.tiles[2].unit.id],[1,3,id('dwarf')]);
+  assert.deepEqual(replace.players[1].hand,[id('manna'),id('goblin')]);
+  const spartoi=sagaCast('spartoi');
+  assert.equal(spartoi.phase,'sacrifice');
+  const discard=C.choices(spartoi).find(action=>action[0]==='sacrifice');
+  assert.ok(discard&&C.play(spartoi,discard));
+  assert.ok(spartoi.tiles.some(t=>t.owner===0&&t.unit.id===id('skeleton')));
+  const necromancy=C.start(2,2,8000,'saga-original-crosswind'),necromancer=necromancy.players[0];
+  unit(necromancy,2,'necromancer',0,2);
+  Object.assign(necromancer,{cash:80,hand:[],pos:2});necromancy.phase='land';
+  assert.ok(!C.choices(necromancy).some(([action])=>action==='ability'));
+  necromancy.lastDestroyed=id('goblin');
+  assert.ok(C.play(necromancy,['ability',2]));
+  assert.deepEqual([necromancer.cash,necromancer.hand],[50,[id('goblin')]]);
+  assert.match(fight('necromancer','dwarf','무속성','firestone').battle.strikes[0].notes.join(' '),/45 피해/);
+  console.log('Saga 169 source articles, 184 complete recipes, private Replace, Spartoi sacrifice, Trespass, Hunter and Necromancer verified');
   const claw=fight('centaur','fighter','무속성','livingclaw',s=>{s.tiles[1].unit.hp=70;});
   assert.equal(claw.battle.strikes[0].side,0);
   assert.deepEqual([claw.battle.strikes.length,claw.tiles[1].unit.enchant],[1,'paralysis']);

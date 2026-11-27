@@ -335,7 +335,7 @@ const CepterCreatureText=(()=>{
     const art=C.secretArt?.(card);
     if(art)return '비술 '+art.cost+'G · '+art.label+'. 주사위를 굴리기 전에 사용합니다.';
     if(C.edition==='revolt')return;
-    const key=C.combo.key(card),saga={fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
+    const key=C.combo.key(card),saga={necromancer:'가장 최근에 파괴된 크리처 카드를 손패로 가져옵니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
       hypnosloth:'고른 셉터의 다음 주사위를 1로 고정합니다.',lichenoid:'고른 크리처의 최대 HP를 최대 100까지 10 올립니다.',
       spinyagama:'사이즈모돈으로 진화합니다.',seismodon:'브론타이즈로 진화합니다.',
       spudfolk:'지도에 배치된 지 크리처 한 마리당 20G를 얻습니다.',

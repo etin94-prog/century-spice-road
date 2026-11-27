@@ -125,7 +125,8 @@
 #stagePreview{margin:10px 0;display:grid;grid-template-columns:minmax(110px,36%) 1fr;gap:12px;align-items:center}#stagePreview[hidden]{display:none}
 #stagePreview img{display:block;width:100%;border:1px solid #806743;border-radius:6px}#ps2Library{margin:12px 0;padding:10px;background:#242731;border:1px solid #655b49;border-radius:8px}#ps2Library summary{cursor:pointer}#ps2Library label{display:inline-grid;margin:8px 6px 8px 0;gap:4px}#libraryResults{width:100%}.archive-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;max-height:36vh;overflow:auto;margin:8px 0}.archive-card{display:flex;align-items:center;gap:5px;text-align:left}.archive-card img{width:38px;height:48px}.archive-card:focus-visible{outline:2px solid gold}#musicPanel audio{max-width:100%;vertical-align:middle}
 .revolt-library-panel summary{padding:10px 0;line-height:24px}
-.revolt-library-panel select{width:min(100%,28rem)}
+.revolt-library-panel select,.saga-book-archive input{width:min(100%,28rem)}
+.saga-book-archive input{display:block;margin-bottom:8px}
 .revolt-library-panel .archive-cards{gap:8px}
 .revolt-library-panel .archive-card{min-width:0;overflow-wrap:anywhere}
 .revolt-library-panel .archive-card img{flex:none}
