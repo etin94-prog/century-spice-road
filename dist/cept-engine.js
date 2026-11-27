@@ -1081,7 +1081,7 @@ function createCepter(edition="ps2"){
           const amount=Math.min(s.players[d.seat].cash,attacker==='amazon'?(s.players[a.seat].lap+1)*(s.edition==='revolt'?30:20):Math.min(a.hp,a.u.hp)*2);
           s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
         }
-        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||(revolt||begins)&&a.g==='bindingwhip'){
+        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
         if((revolt||begins)&&a.g==='ringofthesuccubus'||revolt&&attacker==='shadowgeist'){
@@ -1319,9 +1319,12 @@ function createCepter(edition="ps2"){
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
       if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
       if(a.g==='goldengoose'){
-        const reward=(begins||revolt?7:firstEdition?5:10)*fx.max(a.u);
+        const reward=(begins||revolt||handheld?7:firstEdition?5:10)*fx.max(a.u);
         p.cash+=reward;
-        if(revolt)lines.push(a.gear.name+' · '+reward+'G 획득');
+        if(revolt||handheld)lines.push(a.gear.name+' · '+reward+'G 획득');
+        if(handheld&&s.predict){
+          b.magicLoss??=[0,0];b.magicLoss[a.defending?1:0]-=reward;
+        }
       }
       if(revolt&&a.g==='tombstone'&&!s.predict){
         for(let i=p.hand.length;i<6;i++)draw(p,s);
@@ -1331,9 +1334,13 @@ function createCepter(edition="ps2"){
       if((creatureEnd&&a.n==='phoenix'||amulet)&&(!revolt||hasHandSpace(p))){
         const returned=begins&&amulet?(a.original?.id??a.u.id):a.u.id;
         p.hand.push(returned);
-        if(begins&&amulet){
+        if((begins||handheld)&&amulet){
           const refund=cards[returned].cost;
           p.cash+=refund;lines.push(a.gear.name+' · 손패로 복귀 · '+refund+'G 획득');
+          if(handheld&&s.predict){
+            b.magicLoss??=[0,0];b.magicLoss[a.defending?1:0]-=refund;
+            b.handRecovery=a.defending?1:0;
+          }
         }
       }
       const victor=a===A?D:A;
@@ -2101,7 +2108,7 @@ function createCepter(edition="ps2"){
         const remaining=Math.min(out.finalHP[side],unit.hp);
         return (territory?220:0)+(out.finalHP[side]>0?35:0)+remaining*.35-Math.min(80,out.finalHP[1-side])*.2
           -(k==='equip'?6+price(p,c,s)*.16:0)+(k==='equip'&&plan.pair(key(unit),n)?15:0)
-          +(out.revengeValue||0)*(defending?-.3:.3)-(out.magicLoss?.[side]||0)*.3+(handheld&&!territory&&out.noToll&&!defending&&s.battle.from==null?toll(s,s.tiles[s.battle.at])*.6:0);
+          +(out.revengeValue||0)*(defending?-.3:.3)-(out.magicLoss?.[side]||0)*.3+(out.handRecovery===side?10:0)+(handheld&&!territory&&out.noToll&&!defending&&s.battle.from==null?toll(s,s.tiles[s.battle.at])*.6:0);
       }
       if(k==='summon'&&plan.ready(n))return (skill?development(k,x,y,c):70)+22;
       if(skill){

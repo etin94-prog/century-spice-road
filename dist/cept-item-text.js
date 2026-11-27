@@ -146,7 +146,7 @@ const describeCepterItem=(()=>{
     if(C.edition==='revolt'&&name==='stormshield')pieces.push('수·풍 크리처가 장착하면 일반 공격을 무효화합니다.');
     if(C.edition==='revolt'&&name==='moonscimitar')pieces.push('일반 공격으로 피해를 주면 상대의 영지 통행료를 무효화합니다.');
     if(C.edition==='revolt'&&name==='wondercharm')pieces.push('받는 일반 공격 피해의 80%를 무효화합니다.');
-    if(['revolt','begins'].includes(C.edition)&&name==='bindingwhip')pieces.push('일반 공격으로 피해를 주면 상대에게 마비를 부여합니다.');
+    if(['revolt','begins','3ds'].includes(C.edition)&&name==='bindingwhip')pieces.push('일반 공격으로 피해를 주면 상대에게 마비를 부여합니다.');
     if(card.pierceElements?.length)pieces.push(list(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(list(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(list(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');
@@ -158,12 +158,16 @@ const describeCepterItem=(()=>{
     if(name==='necroscarab'&&['saga','revolt'].includes(C.edition))pieces.push('장착한 크리처가 상대에게 격파되면 스켈레톤으로 변합니다.');
     if(name==='boomerang'&&!firstEdition)pieces.push(C.edition==='begins'?'장착한 크리처가 생존하면 전투 후 이 장비가 돌아옵니다.':
       C.edition==='saga'?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
-    if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(['begins','revolt'].includes(C.edition)?7:firstEdition?5:10)+'G를 얻습니다.');
+    if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(['begins','revolt','3ds'].includes(C.edition)?7:firstEdition?5:10)+'G를 얻습니다.');
     if(name==='towershield'&&card.halveScroll)pieces.push('일반 공격과 두루마리 피해를 절반으로 줄입니다.');
     else if(C.edition==='revolt'&&['magmaarmor','stormarmor'].includes(name))pieces.push('내 '+list(name==='magmaarmor'?[0,2]:[1,3])+' 영지 한 곳당 전투 HP가 20 오릅니다.');
     else if(C.edition==='revolt'&&name==='silverplow')pieces.push('장착한 크리처가 생존하면 교전 영지 레벨이 1 오릅니다.');
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
-    else if(C.edition==='begins'&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
+    else if(['begins','3ds'].includes(C.edition)&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
+    else if(C.edition==='3ds'&&name==='chameleonarmor')pieces.push('교전 영지 레벨에 1을 더해 10을 곱한 만큼 전투 HP가 오릅니다.');
+    else if(C.edition==='3ds'&&name==='heartfibula')pieces.push('적을 격파하면 최대 HP가 최대 100까지 20 오릅니다.');
+    else if(C.edition==='3ds'&&name==='wateramulet')pieces.push(ability[name]+' 적을 격파하면 기본 ST가 최대 100까지 10 오릅니다.');
+    else if(C.edition==='3ds'&&name==='windamulet')pieces.push('풍 속성 크리처가 장착하면 일반 공격이 강타합니다. 적을 격파하면 최대 HP가 최대 100까지 10 오릅니다.');
     else if(!(handheldBracelet||C.edition==='3ds'&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;

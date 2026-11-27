@@ -4955,6 +4955,47 @@ for(const edition of ['dc','ps1','saturn']){
 
   const armor=fight('goblin',null,'shadowarmor');
   assert.equal(armor.battle.startHP[1],100);
+  const ram=fight('goblin','batteringram',null,null,asDefender('wallofstone'));
+  assert.ok(ram.battle.won&&ram.battle.lines.some(line=>line.includes('즉사')));
+  const chameleon=fight('goblin',null,'chameleonarmor',null,s=>{s.tiles[3].level=3;});
+  assert.equal(chameleon.battle.startHP[1],80);
+  const dagger=fight('goblin','daggerofmite',null);
+  assert.equal(dagger.battle.attackST,60);
+  const firstEarth=fight('dwarf','earthamulet',null);
+  assert.equal(firstEarth.battle.strikes[0].side,0);
+  assert.match(firstEarth.battle.strikes[0].notes.join(' '),/60 피해/);
+
+  const goose=fight('goblin','goldengoose',null);
+  assert.equal(goose.players[0].cash,1210);
+  assert.ok(goose.battle.lines.some(line=>line.includes('210G')));
+  const gooseAI=C.start(2,2,5000,intro,undefined,undefined,3);
+  Object.assign(gooseAI,{phase:'attack',battle:{at:3,inv:id('goblin'),atkItem:null,defItem:null}});
+  Object.assign(gooseAI.tiles[3],{type:1,owner:1,unit:{id:id('minotaur'),hp:40}});
+  Object.assign(gooseAI.players[0],{pos:3,ai:true,hand:[id('goldengoose')]});
+  assert.deepEqual(C.ai(gooseAI),['equip',0]);
+  gooseAI.players[0].hand=[id('phoenixamulet')];
+  assert.deepEqual(C.ai(gooseAI),['equip',0]);
+  const phoenix=fight('goblin','phoenixamulet',null);
+  assert.equal(phoenix.players[0].cash,1000+C.cards[id('goblin')].cost);
+  assert.deepEqual(phoenix.players[0].hand,[id('goblin')]);
+  const heart=fight('minotaur','heartfibula',null,40,s=>{
+    Object.assign(s.tiles[8].unit,{mhp:90,hp:90});asDefender('goblin')(s);
+  });
+  assert.deepEqual([heart.tiles[3].owner,heart.tiles[3].unit.mhp],[0,100]);
+  const plow=fight('goblin','silverplow',null);
+  assert.deepEqual([plow.battle.won,plow.tiles[3].level],[false,2]);
+  const protectedLevel=fight('goblin','silverplow',null,null,asDefender('minotaur',{enchant:'drought'}));
+  assert.equal(protectedLevel.tiles[3].level,1);
+  const flowing=fight('merfolk','wateramulet',null,null,asDefender('goblin'));
+  assert.equal(flowing.tiles[3].unit.st,C.cards[id('merfolk')].st+10);
+  const breeze=fight('harpy','windamulet',null,null,asDefender('goblin'));
+  assert.equal(breeze.tiles[3].unit.mhp,C.cards[id('harpy')].hp+10);
+  const bindWhip=fight('goblin','bindingwhip',null,null,asDefender('minotaur',{hp:90,mhp:90}));
+  assert.equal(bindWhip.battle.strikes.length,1);
+  assert.equal(bindWhip.tiles[3].unit.enchant,'paralysis');
+  const strikes=fight('goblin','tonfa',null);
+  assert.deepEqual(strikes.battle.strikes.map(hit=>hit.side),[0,0]);
+  assert.ok(strikes.battle.won);
   const blade=fight('minotaur','aurablade',null);
   assert.equal(blade.battle.attackST,80);
   const fireScroll=fight('minotaur','hellblaze',null,null,asDefender('goblin'));

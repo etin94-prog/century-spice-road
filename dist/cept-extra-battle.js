@@ -183,8 +183,15 @@ const CepterExtraBattle=(()=>{
       if(['saga','revolt'].includes(s.edition)&&a.g==='forceanklet')a.hp+=s.players[a.seat].hand.length*10;
       switch(a.g){
         case 'aurablade':a.st+=fx.max(a.u);break;
-        case 'chameleonarmor':a.hp=t.level*20;break;
-        case 'daggerofmite':a.st+=20*(1+s.players.filter((_,j)=>total(s,j)>total(s,a.seat)).length);break;
+        case 'chameleonarmor':
+          if(s.edition==='3ds')a.hp+=(t.level+1)*10;else a.hp=t.level*20;
+          break;
+        case 'daggerofmite':{
+          const mine=total(s,a.seat),opponents=s.players.flatMap((_,j)=>total(s,j)>mine?[j]:[]);
+          const higher=s.edition==='3ds'&&s.teams?new Set(opponents.map(j=>s.teams[j])).size:opponents.length;
+          a.st+=20*(1+higher);
+          break;
+        }
         case 'iksear':a.hp+=20*lands.filter(v=>v.type===1).length;break;
         case 'prismaticwand':if(!combo.sameElements(a,d)){a.hp+=40;a.st+=40;}break;
         case 'shadowarmor':a.hp+=(7-t.level)*10;break;
@@ -294,7 +301,7 @@ const CepterExtraBattle=(()=>{
       if(a.g==='markerflag'&&!b.teleport&&!b.spellMove)b.markerFlag=true;
     }
     function grow(a,n){
-      const max=fx.max(a.u),gain=Math.max(0,Math.min(80,max+n)-max);
+      const cap=s.edition==='3ds'?100:80,max=fx.max(a.u),gain=Math.max(0,Math.min(cap,max+n)-max);
       a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
     }
     function victory(a,d){
@@ -316,6 +323,10 @@ const CepterExtraBattle=(()=>{
       }
       if(a.n==='taotieh'){const st=fx.strength(a.u);a.u.st=Math.max(st,Math.min(80,st+10));grow(a,10);}
       if(a.g==='heartfibula'||a.g==='windamulet')grow(a,a.g==='heartfibula'?20:10);
+      if(s.edition==='3ds'&&a.g==='wateramulet'){
+        const before=fx.strength(a.u);
+        a.u.st=Math.max(before,Math.min(100,before+10));
+      }
       if(s.edition!=='3ds'&&a.g==='offeringdoll'&&a.element>=0){
         const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
