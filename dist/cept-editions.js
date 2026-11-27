@@ -35,6 +35,24 @@ const CepterEditions=(()=>{
     }
     return transit;
   }
+  // The map import encodes the first gate as a castle to preserve existing tile IDs.
+  // Directions were checked against the tile data for the 34 imported Revolt maps.
+  const revoltStartGate=Object.fromEntries([
+    ['west','battle-wagon battle-wagon-tower'],
+    ['south','large-window large-window-flat large-window-tower switch-box switch-box-flat yin-yang yin-yang-flat'],
+    ['east','long-horn long-horn-flat long-horn-trap number-8 number-8-natural']
+  ].flatMap(([direction,slugs])=>slugs.split(' ').map(slug=>[slug,direction])));
+  function revoltGates(map){
+    const start=revoltStartGate[map.slug]||'north';
+    const ids=new Map(),gates={};
+    for(const [i,t] of map.types.entries()){
+      const gate=t==='castle'?start:t.startsWith('fort-')?t.slice(5):null;
+      if(!gate)continue;
+      if(!ids.has(gate))ids.set(gate,i);
+      gates[i]=ids.get(gate);
+    }
+    return {gates,gateNames:Object.fromEntries([...ids].map(([key,i])=>[i,tiles['fort-'+key].replace('요새','게이트')])),checkpoints:[...ids.values()]};
+  }
   function boards(edition,original){
     const result={};
     for(const [index,m] of data.maps[edition].entries()){
@@ -51,7 +69,8 @@ const CepterEditions=(()=>{
       result[id]={...m,types,links,transit,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
         areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||80,die:die||Number(m.die)||other?.die||6,storyGoal:goal||other?.storyGoal,
-        graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null};
+        graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
+        ...(edition==='revolt'?revoltGates(m):{})};
     }
     return result;
   }
@@ -61,7 +80,7 @@ const CepterEditions=(()=>{
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
-      freezecyclone:'freezecyclone',insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation'},
+      freezecyclone:'freezecyclone',insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation',alarm:'alarm',disaster:'fatigueddisaster'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',

@@ -144,6 +144,80 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const beginsFly=scenario(begins,'fly');cast(begins,beginsFly);
   roll(begins,beginsFly,[0,0],[1,1],2);
   console.log('Modern spell targets, AI, damage, redraw, economy and edition dice OK');
+
+  const C=revolt;
+  const battleWagon=C.maps['revolt-1'];
+  assert.deepEqual(battleWagon.checkpoints,[0,5,24]);
+  assert.equal(battleWagon.gates[12],battleWagon.gates[5]);
+  assert.equal(battleWagon.gateNames[0],'서쪽 게이트');
+  function moveOne(s,at){
+    s.phase='fork';s.remaining=1;
+    Object.assign(s.players[0],{pos:C.board(s).links[at][0],previous:null});
+    assert.ok(C.play(s,['route',at]));
+  }
+  const gates=C.start(2,2,5000,'revolt-1');
+  place(C,gates,1,0,0,15);place(C,gates,2,1,1,15);
+  gates.tiles[1].unit.mhp=60;
+  gates.tiles[1].unit.fatigued=true;gates.tiles[2].unit.fatigued=true;
+  assert.equal(gates.players[0].cash,220);
+  moveOne(gates,5);
+  assert.deepEqual(gates.players[0].flags,[5]);
+  assert.equal(gates.tiles[1].unit.fatigued,undefined);
+  assert.equal(gates.tiles[2].unit.fatigued,true);
+  const afterGate=gates.players[0].cash;
+  moveOne(gates,12);
+  assert.equal(gates.players[0].cash,afterGate);
+  moveOne(gates,0);
+  gates.tiles[1].unit.fatigued=true;
+  moveOne(gates,24);
+  assert.equal(gates.players[0].lap,1);
+  assert.deepEqual(gates.players[0].flags,[]);
+  assert.equal(gates.tiles[1].unit.hp,25);
+  assert.equal(gates.tiles[1].unit.fatigued,undefined);
+
+  const win=C.start(2,2,5000,'revolt-1');
+  win.players[0].cash=5000;
+  moveOne(win,5);
+  assert.equal(win.winner,0);
+
+  const commands=C.start(2,2,5000,'revolt-1');
+  commands.players[0].cash=5000;commands.phase='land';
+  place(C,commands,4,0,1,20);place(C,commands,6,0,2,20);commands.tiles[6].unit.fatigued=true;
+  assert.equal(commands.players[0].pos,0);
+  assert.ok(C.choices(commands).some(([k,at])=>k==='level'&&at===4));
+  assert.ok(!C.choices(commands).some(([k,at])=>k==='level'&&at===6));
+  assert.ok(C.play(commands,['level',4,2]));
+  assert.equal(commands.tiles[4].unit.fatigued,true);
+
+  const discards=scenario(C,'windofhope');
+  discards.players[0].hand.push(...Array(6).fill(card(C,'manna')));
+  cast(C,discards);
+  assert.equal(discards.phase,'roll');
+  assert.equal(discards.players[0].hand.length,8);
+  discards.phase='land';
+  assert.ok(C.play(discards,['pass']));
+  assert.equal(discards.turn,0);
+  for(let n=0;n<2;n++)assert.ok(C.play(discards,['discard',0]));
+  assert.equal(discards.turn,1);
+  assert.equal(discards.players[0].hand.length,6);
+  assert.equal(discards.players[1].cash,220);
+  assert.equal(discards.phase,'spell');
+
+  const alarm=scenario(C,'alarm');
+  place(C,alarm,1,0,1,25);alarm.tiles[1].unit.fatigued=true;
+  cast(C,alarm);
+  assert.equal(alarm.tiles[1].unit.fatigued,undefined);
+  const disaster=scenario(C,'disaster');
+  place(C,disaster,1,1,1,40);place(C,disaster,2,1,3,40);
+  for(const at of [1,2])disaster.tiles[at].unit.mhp=50;
+  disaster.tiles[1].unit.fatigued=true;
+  disaster.players[0].hand.push(card(C,'manna'));
+  cast(C,disaster);
+  assert.equal(disaster.phase,'sacrifice');
+  assert.ok(C.play(disaster,['sacrifice',1]));
+  assert.equal(disaster.tiles[1].unit.hp,10);
+  assert.equal(disaster.tiles[2].unit.hp,40);
+  console.log('Revolt gate directions, lap and victory, fatigue and recovery, and end-of-turn discards OK');
 }
 
 {

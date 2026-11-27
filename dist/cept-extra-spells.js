@@ -8,9 +8,9 @@ const CepterExtraSpells=(()=>{
   };
   const ps2Type=Object.fromEntries(Object.entries(groups).flatMap(([phase,names])=>names.split(' ').map(n=>[n,phase])));
   const shifts={fireshift:0,watershift:1,earthshift:2,airshift:3};
-  const type={...ps2Type,holyword8:'player',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',
+  const type={...ps2Type,holyword8:'player',alarm:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',
     ...Object.fromEntries(Object.keys(shifts).map(e=>[e,'land']))};
-  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm']);
+  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const enemyOnly=new Set(['babble','bind','blackout','corruption','haunt','mesmerize','ruin','rust','subsidence','torture']);
@@ -128,6 +128,7 @@ const CepterExtraSpells=(()=>{
         case 'burninghail':return element===1||element===3?20:0;
         case 'freezecyclone':return element===0||element===2?20:0;
         case 'globalinsectswarm':return t.unit.hp<fx.max(t.unit)?20:0;
+        case 'fatigueddisaster':return t.unit.fatigued&&fx.max(t.unit)>=50?30:0;
       }
     }
     function apply(s,e,x){
@@ -176,7 +177,7 @@ const CepterExtraSpells=(()=>{
             for(const other of s.players)if(other!==p){other.pos=p.pos;other.dir=0;other.previous=null;}
             return warp(s,p.pos);
           case 'acidrain':case 'avalanche':case 'energyflash':case 'elementalrage':
-          case 'burninghail':case 'freezecyclone':case 'globalinsectswarm':
+          case 'burninghail':case 'freezecyclone':case 'globalinsectswarm':case 'fatigueddisaster':
             for(const v of land){
               const amount=massDamage(e,v);
               if(e==='energyflash'&&v.level===1)fx.destroy(s,v);
@@ -188,6 +189,7 @@ const CepterExtraSpells=(()=>{
           case 'foresight':
             if(!p.book.length)resetBook(s,s.turn);return 'foresightCard';
           case 'prophecy':if(!p.book.length)resetBook(s,s.turn);return 'prophecyKind';
+          case 'alarm':for(const v of owning(s,s.turn))if(v.unit)delete v.unit.fatigued;break;
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
           case 'lifestream':for(const v of owning(s,s.turn))if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);break;
           case 'lightcraft':s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});break;
@@ -300,6 +302,7 @@ const CepterExtraSpells=(()=>{
         const amount=massDamage(e,v);
         return sum+(!amount||e!=='energyflash'&&fx.immuneHP(v)?0:(enemy(s,v.owner)?1:-1)*(amount/8+(amount>=v.unit.hp?4*v.level:0)));
       },0);
+      if(e==='alarm')return mine.reduce((sum,t)=>sum+(t.unit?.fatigued?5+t.level:0),0);
       if(e==='incineration')return (s.destroyedCount||0)*2;
       if(e==='selenear')return mine.filter(t=>t.type===2).length*10;
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);

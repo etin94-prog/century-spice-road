@@ -216,14 +216,15 @@ function seatSummary(seat){
   const p=s.players[seat],map=C.board(s),total=C.total(s,seat);
   const team=s.teams?' · '+String.fromCharCode(65+s.teams[seat])+'팀':'';
   $('seatName').textContent=p.name+team;
-  const missing=(map.checkpoints||map.forts).filter(id=>!p.flags.includes(id)).map(id=>map.types[id]);
+  const missing=(map.checkpoints||map.forts).filter(id=>!p.flags.includes(id)).map(id=>map.gateNames?.[id]||map.types[id]);
   const land=s.tiles.filter(t=>t.owner===seat);
   const rows=[
     ['보유 마력',p.cash+'G'],
     ['보유 영지',land.length+'곳 · '+land.reduce((sum,t)=>sum+C.value(s,t),0)+'G'],
     [s.teams?'동맹 총마력':'총마력',total+' / '+s.target+'G'],
-    ['승리까지',total>=s.target?'성에 도착하면 승리':(s.target-total)+'G 추가 후 성 귀환'],
-    ['이번 주회 남은 요새',missing.join(' · ')||'모두 경유 · 성으로 귀환']
+    ['승리까지',total>=s.target?(map.gates?'게이트를 지나면 승리':'성에 도착하면 승리'):
+      (s.target-total)+'G 추가 후 '+(map.gates?'게이트 경유':'성 귀환')],
+    [map.gates?'이번 주회 남은 게이트':'이번 주회 남은 요새',missing.join(' · ')||(map.gates?'모두 경유':'모두 경유 · 성으로 귀환')]
   ];
   const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'계시 · 모든 내 영지에 명령 가능'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
     p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':null;
