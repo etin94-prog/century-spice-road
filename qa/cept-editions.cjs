@@ -334,6 +334,32 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(raid.tiles[1].unit,null);
   assert.equal(raid.tiles[15].unit.fatigued,true);
 
+  const growth=passedItem=>{
+    const match=C.start(4,4,5000,'revolt-original-lantern-market',undefined,undefined,2,'teams');
+    const caster=match.players[0],ally=match.teams.findIndex((team,seat)=>seat>0&&team===match.teams[0]);
+    const foe=match.teams.findIndex(team=>team!==match.teams[0]);
+    const spell=card(C,'massgrowth'),sacrifice=card(C,passedItem?'mace':'manna'),other=card(C,passedItem?'manna':'mace');
+    caster.hand=[sacrifice,spell,other];caster.cash=300;caster.ai=true;
+    const fighter=card(C,'fighter');
+    for(const [at,owner,hp,mhp,enchant] of [[1,0,90,98],[2,ally,40,40],[5,foe,40,40],[6,0,30,50,'phantasm']]){
+      Object.assign(match.tiles[at],{owner,unit:{id:fighter,hp,mhp,enchant}});
+    }
+    assert.ok(C.play(match,['cast',1]));
+    assert.equal(match.phase,'sacrifice');
+    assert.equal(caster.cash,300);
+    assert.ok(!C.play(match,['sacrifice',1]));
+    const saved=JSON.parse(JSON.stringify(match));
+    assert.deepEqual(C.ai(saved),['sacrifice',passedItem?0:2]);
+    assert.ok(C.play(saved,['sacrifice',0]));
+    assert.equal(saved.phase,'roll');
+    assert.deepEqual(saved.players[0].hand,[other]);
+    assert.equal(saved.players[0].cash,270);
+    assert.deepEqual([1,2,5,6].map(at=>saved.tiles[at].unit.mhp),passedItem?[100,40,40,50]:[100,45,45,50]);
+    assert.equal(saved.tiles[1].unit.hp,92);
+    assert.equal(saved.mapEffect.label.includes('합성'),passedItem);
+  };
+  growth(false);growth(true);
+
   const ward=scenario(C,'magicbolt');
   Object.assign(ward.tiles[1],{owner:1,unit:{id:card(C,'halfling'),hp:30}});
   Object.assign(ward.tiles[2],{owner:1,unit:{id:card(C,'creepingcoin'),hp:20}});

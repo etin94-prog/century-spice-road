@@ -203,6 +203,7 @@ const describeCepterSpell=(()=>{
     if(C.edition==='revolt'&&card.effect==='exile')return '추가 소환 조건 없이 낼 수 있고 인챈트가 걸린 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     if(C.edition==='revolt'&&card.effect==='holybanishment')return '영지와 속성이 다른 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     const e=card.effect,edition=C.edition;
+    if(e==='massgrowth'&&card.synthesis==='item')return '모든 크리처의 최대 HP를 5 올립니다. 최대 100까지 적용됩니다. 제물로 아이템을 내면 내 크리처에게만 적용됩니다.';
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
     if(edition==='saga'){
       if(e==='shrink')return '고른 적 크리처의 기본 ST와 최대 HP를 10씩 낮춥니다.';

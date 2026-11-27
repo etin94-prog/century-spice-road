@@ -1270,7 +1270,7 @@ function createCepter(edition="ps2"){
     record.append(s,prior,a[0],seat,timedOut,total);
     return true;
   }
-  function applyAction(s,a){
+  function applyAction(s,a,sacrifice){
     if(!Array.isArray(a)||!choices(s).some(b=>a.length===b.length&&b.every((v,i)=>v===a[i])))return false;
     const [k,x,y]=a,i=actor(s),p=s.players[i],t=s.tiles[p.pos],immediate=s.immediateAt!=null;
     if(immediate)delete s.immediateAt;
@@ -1279,10 +1279,10 @@ function createCepter(edition="ps2"){
       s.pendingCard={phase:s.phase,action:a.slice(),index:cardIndex};s.phase='sacrifice';return true;
     }
     if(k==='sacrifice'){
-      const pending=s.pendingCard;p.hand.splice(x,1);
+      const pending=s.pendingCard,discarded=cards[p.hand.splice(x,1)[0]];
       if(x<pending.index)pending.action[pending.action[0]==='exchange'?2:1]--;
       delete s.pendingCard;s.phase=pending.phase;s.cardPaid=true;
-      const ok=applyAction(s,pending.action);delete s.cardPaid;return ok;
+      const ok=applyAction(s,pending.action,discarded);delete s.cardPaid;return ok;
     }
     const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','secretArt','secretLand','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
     const previousChains=trackChains||combo.activeWorld(s)==='jointworld'||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
@@ -1393,7 +1393,8 @@ function createCepter(edition="ps2"){
         const spellType=extraTypes?.[c.effect]||combo.type[c.effect];
         if(spellType){
           const global=spellType==='global',beforeHP=combo.damageSpells.has(c.effect)||extraSpells?.damageSpells.has(c.effect)?s.tiles.map(t=>t.unit?.hp):[];
-          s.spellEffect=c.effect;s.phase=global?(extraTypes?.[c.effect]?extra:fx).apply(s,c.effect):'spellTarget';
+          const synthesis=!!c.synthesis&&sacrifice?.kind===c.synthesis;
+          s.spellEffect=c.effect;s.phase=global?(extraTypes?.[c.effect]?extra:fx).apply(s,c.effect,undefined,synthesis):'spellTarget';
           const hits=beforeHP.flatMap((hp,at)=>{
             const damage=hp-(s.tiles[at].unit?.hp??0);
             return damage>0?[{at,damage,defeated:!s.tiles[at].unit}]:[];
@@ -1402,7 +1403,7 @@ function createCepter(edition="ps2"){
             const lost=hits.filter(h=>h.defeated).length;
             const label=hits.length+'곳 피해'+(lost?' · '+lost+'곳 격파':'');
             mapEffect('cast',label,hits[0].at,{hits,title:c.name});note(s,c.name+' · '+label);
-          }else{mapEffect('cast',c.name);note(s,p.name+' · '+c.name);}
+          }else{const label=c.name+(synthesis?' · 합성':'');mapEffect('cast',label);note(s,p.name+' · '+label);}
           break;
         }
         if(c.effect==='obliterate'){
@@ -1786,7 +1787,9 @@ function createCepter(edition="ps2"){
       if(k==='wormDiscard')return cards[s.players[s.spellTarget].hand[x]].cost;
       if(k==='sacrifice'||k==='discard'&&groups.length){
         const reserved=plan.ready(n)?25:groups.some(g=>g.some(part=>part.includes(n)))?8:0;
-        return -reserved+(p.hand.filter(id=>id===p.hand[x]).length-1)*3-c.cost/40;
+        const pending=k==='sacrifice'?cards[p.hand[s.pendingCard.index]]:null;
+        const synthesis=pending?.synthesis===c.kind&&s.tiles.some(t=>t.unit&&!allied(s,seat,t.owner)&&fx.max(t.unit)<100&&!fx.immuneHP(t))?8:0;
+        return synthesis-reserved+(p.hand.filter(id=>id===p.hand[x]).length-1)*3-c.cost/40;
       }
       if((skill>=2||groups.length)&&(k==='equip'||k==='bare')){
         const defending=s.phase==='defend',unit=cards[defending?s.tiles[s.battle.at].unit.id:s.battle.inv];

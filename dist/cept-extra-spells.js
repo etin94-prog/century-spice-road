@@ -177,7 +177,7 @@ const CepterExtraSpells=(()=>{
       }
       return kinds.size;
     }
-    function apply(s,e,x){
+    function apply(s,e,x,synthesis=false){
       const p=s.players[s.turn],q=s.players[x],t=s.tiles[x],u=t?.unit;
       if(type[e]==='land'){
         if(Object.hasOwn(terrain,e))t.type=terrain[e];
@@ -287,7 +287,16 @@ const CepterExtraSpells=(()=>{
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
           case 'lifestream':for(const v of owning(s,s.turn))if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);break;
           case 'lightcraft':s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});break;
-          case 'massgrowth':for(const v of land){if(fx.immuneHP(v))continue;const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,(['saga','begins'].includes(s.edition)?100:80)-max));v.unit.mhp=max+gain;v.unit.hp=s.edition==='begins'?Math.min(v.unit.mhp,v.unit.hp+5):v.unit.hp+gain;}break;
+          case 'massgrowth':{
+            const cap=['saga','revolt','begins'].includes(s.edition)?100:80;
+            for(const v of land){
+              if(synthesis&&v.owner!==s.turn||fx.immuneHP(v))continue;
+              const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,cap-max));
+              v.unit.mhp=max+gain;
+              v.unit.hp=s.edition==='begins'?Math.min(v.unit.mhp,v.unit.hp+5):v.unit.hp+gain;
+            }
+            break;
+          }
           case 'rayoflaw':for(const other of s.players)other.hand=other.hand.filter(id=>cards[id].cost<100);break;
           case 'reincarnation':{const n=p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
           case 'revelation':case 'telegnosis':setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);if(e==='telegnosis')p.book.unshift(ids.get(e));break;
@@ -433,7 +442,12 @@ const CepterExtraSpells=(()=>{
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);
       if(e==='triumph')return p.status==='triumph'?0:4+p.flags.length*4;
       if(e==='rayoflaw')return s.players.reduce((v,q,i)=>v+(enemy(s,i)?1:-1)*q.hand.filter(id=>cards[id].cost>=100).length*6,0);
-      if(e==='massgrowth')return land.reduce((v,t)=>v+(enemy(s,t.owner)?-1:1)*(fx.max(t.unit)<80&&!fx.immuneHP(t)?2:0),0);
+      if(e==='massgrowth'){
+        const cap=['saga','revolt','begins'].includes(s.edition)?100:80;
+        const growing=land.filter(v=>fx.max(v.unit)<cap&&!fx.immuneHP(v));
+        const broad=growing.reduce((score,v)=>score+(enemy(s,v.owner)?-2:2),0);
+        return s.edition==='revolt'&&p.hand.some(id=>cards[id].kind==='item')?Math.max(broad,growing.filter(v=>v.owner===s.turn).length*2):broad;
+      }
       if(e==='darkcraft'){const highest=Math.max(...s.players.map(symbolCount));return s.players.reduce((v,q,i)=>v+(symbolCount(q)===highest?(enemy(s,i)?1:-1)*Math.max(...q.symbols)*.5:0),0);}
       if(e==='lightcraft')return 7*(5-p.hand.length);
       if(e==='spartoi')return s.tiles.some(t=>territoryType(t.type)&&!t.unit)?12:0;
