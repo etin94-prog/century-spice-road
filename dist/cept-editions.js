@@ -8,7 +8,7 @@ const CepterEditions=(()=>{
   const handheldRefs={
     cards:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-card-lists/culdcept-3ds-complete-card-list',
     maps:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-map-list',
-    rules:'https://www.nintendo.co.jp/3ds/acbj/man_acbj2.pdf',
+    rules:'https://www.nintendo.co.jp/3ds/acbj/man_acbj.pdf',
     decks:'https://culdceptcentral.com/ii/culdcept-3ds/culdcept-3ds-player-decks'
   };
   const modernSets={'3ds':'culdcept-3ds',saga:'culdcept-saga',revolt:'culdcept-revolt',begins:'culdcept-begins'};
@@ -107,7 +107,7 @@ const CepterEditions=(()=>{
       chariot:'chariot',corruption:'corruption',drought:'drought',fairylight:'fairylight',fog:'fog',
       incineration:'incineration',locust:'locust',phantasm:'phantasm',revelation:'revelation',revival:'revival',
       selenear:'selenear',simulacrum:'simulacrum',spartoi:'spartoi',spiritwalk:'spiritwalk',telegnosis:'telegnosis',
-      torture:'torture',triumph:'triumph'
+      torture:'torture',triumph:'triumph',magicbooster:'magicbooster',theft:'theft'
     },
     saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
@@ -674,6 +674,7 @@ const CepterEditions=(()=>{
   const handheldSpecial={
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},
     madclown:{},hornet:{poison:true},medusa:{},vodyanoi:{first:true},gargoyle:{first:true},odradek:{support:true,immutableHP:true},dhampir:{neutralizes:[2]},soulcollector:{},
+    colossus:{},decoy:{},dryad:{support:true},nike:{first:true},sprite:{blocksLarge:true},humbaba:{},jackalope:{support:true},neutralcloak:{st:0,hp:40},
     aurablade:{st:0,hp:0},coinofpiety:{st:0,hp:0},hellblaze:{st:40,hp:0},iksear:{st:0,hp:0,protectItem:true},
     kris:{st:30,hp:0,protectItem:true},offeringdoll:{st:0,hp:0},rainbowpiece:{st:0,hp:40,neutralizeScroll:true},
     shadowarmor:{st:0,hp:0},sleep:{st:0,hp:0},stinkbottle:{st:0,hp:0},trapezon:{st:0,hp:0},wingedboots:{st:0,hp:0,first:true,protectItem:true},

@@ -4445,6 +4445,15 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,487);
   assert.equal(new Set(catalog.map(c=>C.combo.key(c))).size,487);
+  const playerBooks=require('../dist/cept-2012-player-books.js');
+  assert.equal(playerBooks.length,6);
+  const listed=new Set(catalog.map(C.combo.key));
+  for(const [,name,source,recipe] of playerBooks){
+    assert.match(source,/^\d+-c3ds-playerdecks-/);
+    assert.equal(Object.values(recipe).reduce((sum,n)=>sum+n,0),50,name);
+    assert.ok(Object.keys(recipe).every(slug=>listed.has(slug)),name);
+    assert.ok(Object.values(recipe).every(n=>n>=1&&n<=4),name);
+  }
   assert.equal(archives.maps.length,41);
   assert.deepEqual(archives.maps.find(m=>m.name==='Dunnan'),{name:'Dunnan',section:'story',goal:6000,die:6,areas:1,tiles:18,start:200,lap:200,forts:'S',fortBonus:100});
   assert.ok(catalog.every(c=>!c.editionArt));
@@ -4885,6 +4894,37 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     const memory=spell('revival');memory.players[1].book=[];
     cast(memory,'targetPlayer',1);
     assert.deepEqual([...memory.players[1].book].sort(),[...memory.players[1].template].sort());
+
+    const boost=spell('magicbooster');
+    place(boost,1,'minotaur',0);
+    boost.players[0].cash=250;
+    const single=boost.players[0];
+    const regular=C.levelCost(boost.tiles[1],3);
+    assert.ok(regular>single.cash-60&&regular/2<=single.cash-60);
+    cast(boost);
+    assert.equal(single.status,'magicbooster');
+    assert.equal(C.levelCost(boost.tiles[1],3,single),regular/2);
+    assert.equal(C.levelCost(boost.tiles[1],3,boost.players[2]),regular);
+    boost.phase='land';single.pos=1;
+    assert.ok(C.play(boost,['level',1,3]));
+    assert.equal(boost.tiles[1].level,3);
+    assert.equal(single.cash,190-regular/2);
+    assert.equal(single.status,undefined);
+
+    const jack=spell('magicbolt');
+    place(jack,1,'jackalope',1);jack.tiles[1].unit.hp=20;
+    assert.match(C.spellRevival(jack,jack.tiles[1],'bolt'),/baba/i);
+    cast(jack,'targetLand',1);
+    assert.deepEqual([jack.tiles[1].unit.id,jack.tiles[1].unit.hp,jack.tiles[1].owner],[id('humbaba'),40,1]);
+    assert.match(jack.mapEffect.label,/부활/);
+
+    const loot=spell('theft');
+    loot.players[1].hand=[id('manna'),id('fighter')];
+    cast(loot,'targetPlayer',1);
+    assert.equal(loot.phase,'stealCard');
+    assert.ok(C.play(loot,C.choices(loot)[0]));
+    assert.deepEqual(loot.players[0].hand,[id('manna')]);
+    assert.deepEqual(loot.players[1].hand,[id('fighter')]);
 
     const command=spell('telegnosis');
     place(command,2,'minotaur',0);

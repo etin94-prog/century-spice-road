@@ -404,7 +404,7 @@ const CepterCreatureText=(()=>{
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
     const special=(C.edition==='revolt'||C.edition==='3ds'&&key==='pyromancer')&&revoltBattle[key]?revoltBattle[key]:
-      C.edition==='begins'&&beginsBattle[key]?beginsBattle[key]:
+      (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba'].includes(key))&&beginsBattle[key]?beginsBattle[key]:
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':

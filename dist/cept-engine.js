@@ -258,7 +258,10 @@ function createCepter(edition="ps2"){
     }
     return s.turn;
   }
-  const levelCost=(t,level)=>(t.base||80)*2**(level-1)-worth(t);
+  const levelCost=(t,level,p)=>{
+    const cost=(t.base||80)*2**(level-1)-worth(t);
+    return p?.status==='magicbooster'?Math.floor(cost/2):cost;
+  };
   const elementCost=t=>{
     if(edition==='saga')return t.level*100+(typeof t.type==='number'?200:0);
     return begins&&t.type==='복합'?100:300;
@@ -372,7 +375,7 @@ function createCepter(edition="ps2"){
   }
   const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace,returnToBook});
   const landSpellDamage=e=>({bolt:20,evilblast:30}[e]??extraSpells?.landDamage[e]);
-  const hasLandDamage=e=>!!extraSpells?.landDamage[e]||begins&&['bolt','evilblast'].includes(e);
+  const hasLandDamage=e=>!!extraSpells?.landDamage[e]||(begins||handheld)&&['bolt','evilblast'].includes(e);
   function spellHP(s,t,e){
     const u=t.unit;
     const damage=landSpellDamage(e);
@@ -381,10 +384,10 @@ function createCepter(edition="ps2"){
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
   }
   function spellRevival(s,t,e){
-    if(begins&&landSpellDamage(e)&&fx.name(t.unit)==='jackalope'&&spellHP(s,t,e)===0)
+    if((begins||handheld)&&landSpellDamage(e)&&fx.name(t.unit)==='jackalope'&&spellHP(s,t,e)===0)
       return cards.find(c=>!c.unlisted&&key(c)==='humbaba')?.name;
   }
-  const revivalLabel=(before,after)=>begins&&fx.name(before)==='jackalope'&&fx.name(after)==='humbaba'?cards[after.id].name+' 부활':null;
+  const revivalLabel=(before,after)=>(begins||handheld)&&fx.name(before)==='jackalope'&&fx.name(after)==='humbaba'?cards[after.id].name+' 부활':null;
   const extra=extraSpells?.rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
@@ -403,6 +406,7 @@ function createCepter(edition="ps2"){
     if(settleDebts(s,'endTurn'))return;
     if(discardAtEnd&&s.players[s.turn].hand.length>6){s.discardReturn='endTurn';s.phase='discard';return;}
     if(s.shrineClemencyUsed){delete s.players[s.turn].sagaClemency;delete s.shrineClemencyUsed;}
+    if(s.players[s.turn].status==='magicbooster')fx.clearCepter(s.players[s.turn]);
     delete s.spellArrival;
     if(s.roundLimit&&s.round>=s.roundLimit&&s.turn===s.players.length-1){
       s.phase='over';s.endReason='roundLimit';return;
@@ -799,7 +803,7 @@ function createCepter(edition="ps2"){
           const leadIdol=edition==='saga'&&fx.idol(s,'leadidol');
           for(const n of territory(s)){
             const v=s.tiles[n];if(!revolt&&fx.territoryTargets(s,n).length)options.push(['ability',n]);if(!revolt&&fx.name(v.unit)==='goldentotem'&&fx.canUseAbility(s,v))options.push(['totem',n]);for(let level=v.level+1;level<=5;level++){
-              if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
+              if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level,p))options.push(['level',n,level]);
             }
             if(!leadIdol)for(const dest of territoryDestinations(s,n)){
               if(v.unit.enchant!=='thornfetter'&&canInvade(s,v.owner,s.tiles[dest].owner)&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!fx.isDefensive(v.unit)&&territoryType(s.tiles[dest].type)&&(handheld||revolt||begins?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
@@ -1751,7 +1755,7 @@ function createCepter(edition="ps2"){
         mapEffect('summon',cards[id].name,at);
         claimFromHand(tile,i,{id,hp:cards[id].hp});fatigue(tile.unit);note(s,p.name+' · '+cards[id].name+' 배치');if(!openImmediate(at))afterTerritory(s);break;
       }
-      case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=levelCost(s.tiles[x],y);s.tiles[x].level=y;commandHealth(s.tiles[x]);fatigue(s.tiles[x].unit);note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
+      case 'level':mapEffect('gain','Lv.'+y,x);p.cash-=levelCost(s.tiles[x],y,p);s.tiles[x].level=y;commandHealth(s.tiles[x]);fatigue(s.tiles[x].unit);note(s,p.name+' · '+(x+1)+'번 영지 Lv.'+y);afterTerritory(s);break;
       case 'transfer':{
         const from=s.tiles[x],dest=s.tiles[y],owner=from.owner;
         fatigue(from.unit);
@@ -1878,7 +1882,7 @@ function createCepter(edition="ps2"){
     }
     function development(k,x,y,c){
       const t=k==='summon'?s.tiles[p.pos]:s.tiles[x];
-      const next={...t,owner:seat},cost=k==='summon'?price(p,c,s):k==='element'?elementCost(t):levelCost(t,y);
+      const next={...t,owner:seat},cost=k==='summon'?price(p,c,s):k==='element'?elementCost(t):levelCost(t,y,p);
       if(k==='summon'){next.type=claimTerrain(t,c);next.unit={id:p.hand[x],hp:c.hp};}
       if(k==='level')next.level=y;
       if(k==='element')next.type=y;

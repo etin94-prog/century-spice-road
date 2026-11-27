@@ -33,7 +33,7 @@ else{
         m.start!=null?'시작 '+m.start+'G':null,m.lap!=null?'주회 '+m.lap+'G':null,
         m.forts?'요새 '+m.forts+' · '+m.fortBonus+'G':null].filter(Boolean).join(' · ');
     };
-    pick.onchange=show;show();archive.append(pick,values);references.append(list,archive);
+    pick.onchange=show;show();archive.append(pick,values);references.append(list,archive,handheldBookArchive());
   }else if(modernEdition){
     const source='https://culdcept.club/maps/'+C.edition+'/';
     list.append(sourceLink('https://culdceptcentral.com/culdcept-'+C.edition,'판본별 카드 목록'),' · ',sourceLink(source+'table?limit=all','지도 목록'));
@@ -66,7 +66,8 @@ else{
       selectMap.hidden=!supported;
     };
     pick.onchange=show;show();archive.append(pick,values,selectMap);references.append(list,archive);
-    if(C.edition==='revolt')references.append(revoltBookArchive(),revoltComboArchive());
+    if(C.edition==='revolt')references.append(editionBookArchive(CepterRevoltBookArchive,
+      '스토리 북 자료','리볼트 스토리 북 자료','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/','revolt-book-archive'),revoltComboArchive());
   }else{
     list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
     if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
@@ -120,12 +121,23 @@ function useArchiveBook(book){
   try{localStorage.setItem(bookKey,JSON.stringify(book));}catch{}
   bookEditor();refreshMatchup();lobby();$('config').scrollIntoView({block:'center'});
 }
-function revoltBookArchive(){
-  const entries=CepterRevoltBookArchive;
+function handheldBookArchive(){
+  const starters={handheldStarterFireEarth:'844-c3ds-playerdecks-starterrg',handheldStarterWaterAir:'845-c3ds-playerdecks-starterby',
+    handheldStarterFireAir:'846-c3ds-playerdecks-starterry',handheldStarterWaterEarth:'847-c3ds-playerdecks-starterbg'};
+  const opening=Object.entries(starters).map(([key,source])=>{
+    const counts={};
+    for(const id of C.presets[key]){
+      const slug=C.combo.key(C.cards[id]);counts[slug]=(counts[slug]||0)+1;
+    }
+    return ['초기 덱',modernBookNames[key],source,counts];
+  });
+  return editionBookArchive([...opening,...Cepter2012PlayerBooks],'공개 덱 자료','2012 공개 덱 자료',CepterEditions.handheldRefs.decks+'/','handheld-book-archive');
+}
+function editionBookArchive(entries,title,selectLabel,sourceBase,archiveClass){
   const paths=new Map(C.cards.flatMap(c=>c.catalog&&!c.unlisted?[[C.combo.key(c),c.catalog.path]]:[]));
-  const archive=el('details',null,'revolt-book-archive revolt-library-panel');
-  archive.append(el('summary','스토리 북 자료 · '+entries.length+'개'));
-  const pick=el('select');pick.setAttribute('aria-label','리볼트 스토리 북 자료');
+  const archive=el('details',null,archiveClass+' revolt-library-panel');
+  archive.append(el('summary',title+' · '+entries.length+'개'));
+  const pick=el('select');pick.setAttribute('aria-label',selectLabel);
   const groups=new Map();
   entries.forEach(([character,name],i)=>{
     if(!groups.has(character)){
@@ -149,7 +161,7 @@ function revoltBookArchive(){
     const valid=C.validBook(selected);
     const status=valid?'대전 가능':selected.length!==C.bookSize?'원문 수량 확인 필요':'미지원 카드 포함';
     summary.textContent=character+' · '+name+' · '+selected.length+'장 · 대전 지원 '+ready+'장 · '+status;
-    link.replaceChildren(sourceLink('https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/'+source,'북 구성 원문'));
+    link.replaceChildren(sourceLink(sourceBase+source,'북 구성 원문'));
     grid.replaceChildren(...counts.map(([path,n])=>archiveCard(path,n)));
     use.hidden=!valid;
   };

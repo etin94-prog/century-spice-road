@@ -331,7 +331,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'liquidate':case 'buySymbol':case 'sellSymbol':return symbolLabel(x)+' · '+y+'장 · '+s.prices[x]*y+'G';
     case 'direction':if(C.board(s).stage||C.board(s).graph){const exits=C.board(s).links[p.pos];return (1+(x===1?exits[0]:exits.at(-1)))+'번 칸 방향';}return x===1?'시계 방향':'반시계 방향';
     case 'cast':case 'equip':case 'discard':case 'summon':case 'invade':return c.name+' · '+C.price(p,c,s)+'G';
-    case 'level':return (x+1)+'번 → Lv.'+y+' · '+C.levelCost(s.tiles[x],y)+'G';
+    case 'level':return (x+1)+'번 → Lv.'+y+' · '+C.levelCost(s.tiles[x],y,p)+'G';
     case 'exchange':return (x+1)+'번 · '+C.cards[p.hand[y]].name;
     case 'transfer':return (x+1)+'번 → '+(y+1)+'번';
     case 'element':return (x+1)+'번 → '+C.elements[y]+' · '+C.elementCost(s.tiles[x])+'G';

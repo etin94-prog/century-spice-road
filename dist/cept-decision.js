@@ -72,7 +72,7 @@ function decisionText(action,p){
   if(['level','element','summon','exchange'].includes(kind)){
     const at=kind==='summon'?position:x,t=s.tiles[at],next={...t};
     let cost;
-    if(kind==='level'){next.level=y;cost=C.levelCost(t,y);}
+    if(kind==='level'){next.level=y;cost=C.levelCost(t,y,p);}
     else if(kind==='element'){next.type=y;cost=C.elementCost(t);}
     else{
       const id=p.hand[kind==='summon'?x:y];
