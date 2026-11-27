@@ -43,7 +43,9 @@ function seats(){
   if(count!==4&&alliance.value.startsWith('teams'))alliance.value='auto';
   updateSeatBooks();
 }
-const modernBookNames={intro:'균형 북',fire:'공격 북',stronghold:'방어 북'};
+const modernBookNames=C.edition==='3ds'?
+  {intro:'지속성 영지 확장 북',fire:'설욕·이동 침략 북',stronghold:'수속성 방어·견제 북'}:
+  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북'};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){
@@ -175,7 +177,8 @@ setInterval(tickInputClock,250);
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){
   if(C.presets.stronghold){
-    const key=['intro','fire','stronghold'][Number($('tierChoice').value)]||'intro';
+    const order=C.edition==='3ds'?['intro','stronghold','fire']:['intro','fire','stronghold'];
+    const key=order[Number($('tierChoice').value)]||'intro';
     return {name:modernBookNames[key],deck:C.presets[key],practice:true,
       player:{name:modernBookNames.intro,deck:C.presets.intro,practice:true}};
   }

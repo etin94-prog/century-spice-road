@@ -151,6 +151,27 @@ const CepterEditions=(()=>{
       stronghold:build(26,14,.25,'barrier lifestream heal windofhope manna')
     };
   }
+  function handheldBooks(cards){
+    const ids=new Map(cards.flatMap((card,id)=>card.unlisted||card.catalogOnly||card.generatedOnly?[]:[[card.catalog.path.split('/').pop(),id]]));
+    const books={
+      intro:{
+        goblin:3,wolf:2,woodfolk:4,dwarf:3,greenmold:2,troll:2,healer:2,goobaqueen:2,sakuya:2,pan:2,
+        earthshield:3,scalearmor:2,boomerang:2,countershield:1,vorpalsword:2,
+        manna:3,windofhope:3,holyword6:2,wildgrowth:2,barrier:2,relief:2,drainmagic:2
+      },
+      fire:{
+        minotaur:3,dragonfly:3,conjurer:2,gladiator:2,ixtol:2,shadefolk:3,sleipnir:3,nightmare:2,gremlin:2,goblin:2,
+        blackorb:2,lifestealer:2,vorpalsword:2,gremlinamulet:2,chainmail:2,countershield:1,powercrown:1,
+        manna:2,windofhope:2,holyword6:2,magicbolt:2,evilblast:2,upheaval:2,drainmagic:2
+      },
+      stronghold:{
+        giantamoeba:3,kingtortoise:3,lizardman:3,wallofice:3,gianteel:2,fate:2,bookworm:2,archbishop:2,hyde:2,
+        watershield:3,magicshield:2,magussmirror:1,spikedshield:2,countershield:2,powercrown:1,holygrail:1,
+        manna:3,windofhope:3,sink:2,relief:2,lifestream:2,peace:1,barrier:2,landdrain:1
+      }
+    };
+    return Object.fromEntries(Object.entries(books).map(([key,counts])=>[key,Object.entries(counts).flatMap(([name,count])=>Array(count).fill(ids.get(name)))]));
+  }
   // Element pairs are separate from the land requirements in the catalog.
   const sagaPairs={crimsonvine:[0,2],flammefleur:[0,2],fontaciel:[1,3],frostbeast:[1,3],gogma:[2,3],
     jackolantern:[0,2],magmaavatar:[0,2],stormavatar:[1,3],stymphalides:[1,3],warlock:[0,1]};
@@ -251,7 +272,7 @@ const CepterEditions=(()=>{
     }
     for(const c of cards)if(c.unlisted)c.catalogOnly=true;
     if(modernSets[edition]){
-      Object.assign(presets,modernBooks(cards));
+      Object.assign(presets,edition==='3ds'?handheldBooks(cards):modernBooks(cards));
       return;
     }
     function build(preferred){

@@ -1,4 +1,7 @@
 const assert=require('node:assert/strict');
+const {readFileSync}=require('node:fs');
+const {resolve}=require('node:path');
+const {createContext,runInContext}=require('node:vm');
 const ps2=require('../dist/cept-engine');
 const describeSpell=require('../dist/cept-spell-text');
 const describeItem=require('../dist/cept-item-text');
@@ -1119,6 +1122,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(names.length,3);
   assert.ok(Object.values(C.presets).every(C.validBook));
   assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,3);
+  assert.ok(['goobaqueen','sakuya','wildgrowth'].every(name=>C.presets.intro.includes(id(name))));
+  assert.ok(['ixtol','shadefolk','sleipnir','blackorb'].every(name=>C.presets.fire.includes(id(name))));
+  assert.ok(['wallofice','bookworm','watershield','holygrail'].every(name=>C.presets.stronghold.includes(id(name))));
   for(const mapId of names)for(const count of [2,3,4]){
     const map=C.maps[mapId];
     assert.ok(map.links.every((links,i)=>links.length&&links.every(j=>map.links[j].includes(i))));
@@ -1450,5 +1456,16 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(gremlin.battle.strikes[0].effect,'hit');
   const protectedOrb=fight('minotaur','blackorb',null,null,s=>{s.tiles[3].unit={id:id('thief'),hp:40};});
   assert.ok(protectedOrb.battle.won,'Thief cannot steal Black Orb');
-  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities and defense/scroll equipment timing OK');
+  const samples=[];
+  const worker=createContext({URLSearchParams,location:{search:'?edition=3ds'},postMessage:data=>samples.push(data)});
+  worker.self=worker;
+  worker.importScripts=(...paths)=>paths.forEach(file=>runInContext(readFileSync(resolve(__dirname,'../dist',file),'utf8'),worker,{filename:file}));
+  worker.importScripts('cept-simulate.js');
+  runInContext(`self.onmessage({data:{
+    count:2,humans:1,target:0,map:'3ds-original-bend',player:Cepter.presets.intro,opponent:Cepter.presets.fire,
+    aiLevel:3,alliance:'duel',roundLimit:20,suddenDeath:false
+  }})`,worker);
+  assert.equal(samples.at(-1).done,true);
+  assert.deepEqual([...samples.at(-1).finished],[160,160]);
+  console.log('2012 3DS catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities, defense/scroll equipment and 320 seat-rotation samples OK');
 }
