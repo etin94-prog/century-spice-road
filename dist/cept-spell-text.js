@@ -180,6 +180,8 @@ const describeCepterSpell=(()=>{
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
     if(C.edition==='revolt'&&C.combo.worlds[e])return '전장 저주 · 6라운드. '+C.combo.worlds[e].description;
     switch(e){
+      case 'dreamterrain':if(edition==='revolt')return '5라운드 동안 다른 셉터가 통행료를 받을 때마다 그 절반을 추가로 얻습니다.';break;
+      case 'quicksand':if(edition==='revolt')return '2라운드 안에 이 영지를 통과하려는 첫 셉터를 멈춰 세웁니다. 주사위 눈에 맞춰 도착하면 효과가 남습니다.';break;
       case 'greed':if(edition==='revolt'||edition==='3ds')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';break;
       case 'growthbody':if(edition==='revolt')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';break;
       case 'haste':if(edition==='3ds')return '고른 셉터의 주사위 눈을 2라운드 동안 5~7로 제한합니다.';if(edition==='revolt')return '고른 셉터가 다음 두 번 굴리는 주사위 합을 6~8로 제한합니다.';break;

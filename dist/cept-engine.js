@@ -483,9 +483,9 @@ function createCepter(edition="ps2"){
     while(s.remaining){
       fromTransit=false;path.push(next);
       p.previous=p.pos;p.pos=next;s.remaining--;
-      const t=s.tiles[next];if(t.unit?.enchant==='quicksand'){s.remaining=0;combo.clear(t.unit);}
+      const t=s.tiles[next];if(t.unit?.enchant==='quicksand'&&(!revolt||s.remaining)){s.remaining=0;combo.clear(t.unit);}
       if(!allied(s,t.owner,s.turn)&&((fx.name(t.unit)==='kelpie'&&t.type===1)||(fx.name(t.unit)==='oldwillow'&&t.type===0)))s.remaining=0;
-      if(t.type==='성'){delete p.dream;if(['fairylight','torture'].includes(p.status))extraSpells?.clearCepter(p);if(p.status==='waste')delete p.status;}
+      if(t.type==='성'){if(!revolt)delete p.dream;if(['fairylight','torture'].includes(p.status))extraSpells?.clearCepter(p);if(p.status==='waste')delete p.status;}
       if(t.owner===s.turn)s.visited.push(next);
       if(revolt){
         if(m.gates[next]!=null)passGate(s,m,next);

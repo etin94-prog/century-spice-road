@@ -104,7 +104,7 @@ const CepterCombos = (() => {
       if(type[e]==='land'){
         if(e==='telekinesis'){s.teleFrom=x;return 'teleMove';}
         if(e==='landtransfer'){p.cash+=value(s,t);vacate(t,true);p.book.unshift(ids.get(e));}
-        else if(e==='exile'){const owner=s.players[t.owner];if(owner.hand.length<6)owner.hand.push(u.id);vacate(t);}
+        else if(e==='exile'){const owner=s.players[t.owner];if(s.edition==='revolt'||owner.hand.length<6)owner.hand.push(u.id);vacate(t);}
         else if(e==='relief'){
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
           const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;p.book.unshift(ids.get(e));
@@ -176,7 +176,10 @@ const CepterCombos = (() => {
         if(e==='permission')p.flags=[...(board(s).checkpoints||board(s).forts)];
         if(e==='windofhope'){draw(p,s);draw(p,s);}
         if(e==='invisibility'){clearCepter(p);p.invisible=true;}
-        if(e==='dreamterrain'){clearCepter(p);p.dream=true;}
+        if(e==='dreamterrain'){
+          clearCepter(p);p.dream=true;
+          if(s.edition==='revolt')p.enchantDeadline=(s.round-1+5)*s.players.length+s.turn;
+        }
         if(e==='raisedead'){if(s.lastDestroyed!=null)p.hand.push(s.lastDestroyed);p.book.unshift(ids.get(e));}
         if(e==='aurora'||e==='pressure')s.prices=s.prices.map(n=>Math.max(1,Math.floor(n*(e==='aurora'?1.2:.7))));
         for(const a of s.players){

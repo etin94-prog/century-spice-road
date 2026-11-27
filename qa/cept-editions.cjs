@@ -1346,6 +1346,68 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(peace.tiles[5].unit.enchant,'peace');
   assert.equal(C.toll(peace,peace.tiles[5]),0);
 
+  for(const [book,effects] of [['fire',['brightworld']],['stronghold',['jointworld','darkworld']]]){
+    assert.ok(C.validBook(C.presets[book]));
+    for(const effect of effects)assert.ok(C.presets[book].some(id=>C.cards[id].effect===effect));
+  }
+  const reuse=fixtures();
+  reuse.players[0].cash=800;reuse.players[0].pos=5;
+  reuse.players[0].hand=['peace','senility','exile','squeeze','goblin'].map(card);
+  reuse.players[1].cash=200;
+  reuse.players[1].hand=Array(6).fill(card('goblin'));
+  place(reuse,5,1,'fate',40);
+  place(reuse,6,1,'healer',40,{enchant:'disease'});
+  place(reuse,7,1,'elvenarcher',40,{enchant:'disease'});
+  assert.ok(C.play(reuse,['cast',0])&&C.play(reuse,['targetLand',5]));
+  assert.equal(C.toll(reuse,reuse.tiles[5]),0);
+  reuse.phase='land';
+  assert.ok(!C.choices(reuse).some(([kind])=>kind==='invade'));
+  reuse.phase='spell';
+  assert.ok(C.play(reuse,['cast',0])&&C.play(reuse,['targetLand',5]));
+  assert.equal(reuse.tiles[5].unit.enchant,'senility');
+  reuse.phase='attack';reuse.battle={at:5,inv:card('goblin'),atkItem:null,defItem:null};
+  assert.ok(C.play(reuse,['bare'])&&C.play(reuse,['bare']));
+  assert.equal(reuse.battle.won,true);
+  reuse.phase='spell';
+  assert.ok(C.play(reuse,['cast',0]));
+  assert.deepEqual(C.choices(reuse),[['targetLand',6]]);
+  const held=reuse.players[1].hand.length;
+  assert.ok(C.play(reuse,['targetLand',6]));
+  assert.equal(reuse.players[1].hand.length,held+1);
+  assert.equal(reuse.players[1].hand.at(-1),card('healer'));
+  assert.equal(reuse.tiles[6].unit,null);
+  reuse.phase='spell';
+  assert.ok(C.play(reuse,['cast',0])&&C.play(reuse,['targetPlayer',1]));
+  assert.ok(C.play(reuse,['breakCard',0]));
+  assert.deepEqual([reuse.players[1].cash,reuse.players[1].hand.length],[350,held]);
+
+  const tollBonus=fixtures();tollBonus.teams=null;
+  tollBonus.players[0].hand=[card('dreamterrain')];
+  place(tollBonus,5,3,'fate',40);
+  assert.ok(C.play(tollBonus,['cast',0]));
+  assert.equal(tollBonus.players[0].enchantDeadline,20);
+  const baseCash=tollBonus.players[0].cash,toll=C.toll(tollBonus,tollBonus.tiles[5]);
+  tollBonus.turn=1;tollBonus.phase='land';tollBonus.players[1].pos=5;
+  assert.ok(C.play(tollBonus,['pay']));
+  assert.equal(tollBonus.players[0].cash,baseCash+Math.floor(toll/2));
+  tollBonus.round=5;tollBonus.turn=3;tollBonus.phase='land';
+  assert.ok(C.play(tollBonus,['pass']));
+  assert.equal(tollBonus.round,6);
+  assert.equal(tollBonus.players[0].dream,undefined);
+
+  const trap=fixtures();
+  const walker=trap.players[0];walker.hand=[card('quicksand')];
+  place(trap,3,1,'fate',40);
+  assert.ok(C.play(trap,['cast',0])&&C.play(trap,['targetLand',3]));
+  Object.assign(walker,{pos:2,previous:1,dir:1,word:1});
+  assert.ok(C.play(trap,['roll']));
+  assert.equal(walker.pos,3);
+  assert.equal(trap.tiles[3].unit.enchant,'quicksand');
+  Object.assign(walker,{pos:2,previous:1,dir:1,word:2});trap.phase='roll';
+  assert.ok(C.play(trap,['roll']));
+  assert.equal(walker.pos,3);
+  assert.equal(trap.tiles[3].unit.enchant,undefined);
+
   const trained=Array.from({length:6}).reduce(C.evo.won,C.evo.fresh());
   for(const [part,key,expectedCost,check] of [
     [32,'heal',10,g=>assert.equal(g.tiles[6].unit.hp,40)],

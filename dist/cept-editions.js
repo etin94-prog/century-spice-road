@@ -106,13 +106,14 @@ const CepterEditions=(()=>{
       magmashift:'magmashift',stormshift:'stormshift',quintessence:'quintessence',redivision:'redivision',remission:'remission',restore:'restore',remoteswitch:'remoteswitch',stealgem:'stealgem',obliteration:'obliterate',
       escape:'escape',gift:'gift',greed:'greed',growthbody:'growthbody',spiritwalk:'spiritwalk',vitality:'vitality',
       miraclecall:'miraclecall',purify:'purify',haste:'haste',massphantasm:'revoltphantasm',revival:'revival',stoneblast:'stoneblast',
-      turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform'},
+      turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform',
+      peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
       insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation',find:'find',evilblast:'evilblast',elementalwrath:'elementalwrath'}
   };
-  function modernBooks(cards){
+  function modernBooks(cards,edition){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
     function build(creatures,items,attackWeight,spells){
       const favored=spells.split(' ');
@@ -147,8 +148,8 @@ const CepterEditions=(()=>{
     }
     return {
       intro:build(28,10,.5,'manna windofhope relief word6 foresight fly'),
-      fire:build(30,12,.78,'bolt shatter drainmagic windofhope manna'),
-      stronghold:build(26,14,.25,'barrier lifestream heal windofhope manna')
+      fire:build(30,12,.78,edition==='revolt'?'bolt brightworld shatter drainmagic':'bolt shatter drainmagic windofhope manna'),
+      stronghold:build(26,14,.25,edition==='revolt'?'barrier jointworld darkworld lifestream manna':'barrier lifestream heal windofhope manna')
     };
   }
   function handheldBooks(cards){
@@ -285,7 +286,7 @@ const CepterEditions=(()=>{
     }
     for(const c of cards)if(c.unlisted)c.catalogOnly=true;
     if(modernSets[edition]){
-      Object.assign(presets,edition==='3ds'?handheldBooks(cards):modernBooks(cards));
+      Object.assign(presets,edition==='3ds'?handheldBooks(cards):modernBooks(cards,edition));
       return;
     }
     function build(preferred){
