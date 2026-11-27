@@ -210,7 +210,7 @@ const CepterCombos = (() => {
         if(e==='invisibility'){clearCepter(p);p.invisible=true;}
         if(e==='dreamterrain'){
           clearCepter(p);p.dream=true;
-          if(s.edition==='revolt')p.enchantDeadline=(s.round-1+5)*s.players.length+s.turn;
+          if(['revolt','begins'].includes(s.edition))p.enchantDeadline=(s.round-1+5)*s.players.length+s.turn;
         }
         if(e==='raisedead'){if(s.lastDestroyed!=null)p.hand.push(s.lastDestroyed);p.book.unshift(ids.get(e));}
         if(e==='aurora'||e==='pressure')s.prices=s.prices.map(n=>Math.max(1,Math.floor(n*(e==='aurora'?1.2:.7))));
@@ -595,6 +595,7 @@ const CepterCombos = (() => {
       if(type[e]==='player'){
         const q=s.players[x];
         if(e==='drainmagic')return q.antiMagic?-10:(Math.floor(q.cash*.3)-80)/6;
+        if(e==='antimagic'&&s.edition==='begins')return friend(x)&&!q.antiMagic&&!q.status?6:-12;
         if(e==='squeeze')return q.antiMagic?-20:friend(x)?12-Math.min(...q.hand.map(id=>cards[id].cost))/10:Math.max(...q.hand.map(id=>cards[id].cost))/10-12;
         if(e==='suppression')return friend(x)?-20:5;
         if(e==='holyword0'){const tile=s.tiles[q.pos];return !friend(x)&&friend(tile.owner)?25+tile.level*5:-5;}
@@ -659,7 +660,11 @@ const CepterCombos = (() => {
       }
       if(e==='invisibility')return !p.invisible&&friendly.length?6:-5;
       if(e==='windofhope')return p.hand.length<5?10:1;
-      if(e==='dreamterrain')return p.dream?-5:4;
+      if(e==='dreamterrain'){
+        if(p.dream)return -5;
+        if(s.edition==='begins')return Math.min(12,s.tiles.reduce((score,t)=>score+(t.unit&&t.owner!==seat?t.level/2:0),0));
+        return 4;
+      }
       return ready(e)?7:2;
     }
     function sequence(n){

@@ -130,7 +130,8 @@ const CepterEditions=(()=>{
       growthbody:'growthbody',landprotection:'landprotection',locust:'locust',massgrowth:'massgrowth',landtransfer:'revoltlandtransfer',
       antielement:'antielement',disease:'disease',drought:'drought',fog:'fog',greed:'greed',vitality:'vitality',weakness:'weakness',
       peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze',
-      massphantasm:'revoltphantasm',deathmiasma:'deathmiasma',dreadblast:'dreadblast'}
+      massphantasm:'revoltphantasm',deathmiasma:'deathmiasma',dreadblast:'dreadblast',
+      antimagic:'antimagic',dreamterrain:'dreamterrain',revelation:'revelation',telegnosis:'telegnosis'}
   };
   function modernBooks(cards,edition,bookSize,copyLimit){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);

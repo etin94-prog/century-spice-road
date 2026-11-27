@@ -209,6 +209,7 @@ const describeCepterSpell=(()=>{
     if(C.edition==='revolt'&&card.effect==='holybanishment')return '영지와 속성이 다른 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     const e=card.effect,edition=C.edition;
     if(edition==='begins'&&e==='revoltphantasm')return '모든 크리처에 HP 고정을 부여합니다. 주문의 효과로 현재 HP와 최대 HP가 변하지 않습니다.';
+    if(edition==='begins'&&e==='telegnosis')return '1라운드 동안 위치와 관계없이 내 모든 영지에 명령할 수 있습니다. 사용한 주문은 북으로 돌아갑니다.';
     if(e==='massgrowth'&&card.synthesis==='item')return '모든 크리처의 최대 HP를 5 올립니다. 최대 100까지 적용됩니다. 제물로 아이템을 내면 내 크리처에게만 적용됩니다.';
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
     if(edition==='saga'){
@@ -227,7 +228,7 @@ const describeCepterSpell=(()=>{
     }
     if(C.edition==='revolt'&&C.combo.worlds[e])return '전장 저주 · 6라운드. '+C.combo.worlds[e].description;
     switch(e){
-      case 'dreamterrain':if(edition==='revolt')return '5라운드 동안 다른 셉터가 통행료를 받을 때마다 그 절반을 추가로 얻습니다.';break;
+      case 'dreamterrain':if(edition==='revolt'||edition==='begins')return '5라운드 동안 다른 셉터가 통행료를 받을 때마다 그 절반을 얻습니다. 내가 낸 통행료에도 적용됩니다.';break;
       case 'quicksand':if(edition==='revolt')return '2라운드 안에 이 영지를 통과하려는 첫 셉터를 멈춰 세웁니다. 주사위 눈에 맞춰 도착하면 효과가 남습니다.';break;
       case 'greed':if(edition==='revolt'||edition==='3ds')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';break;
       case 'growthbody':if(edition==='revolt')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';break;

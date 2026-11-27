@@ -2842,6 +2842,62 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   wards.phase='spell';assert.ok(C.play(wards,['cast',0])&&C.play(wards,['targetLand',shielded]));
   assert.equal(wards.tiles[shielded].unit.hp,40);
 
+  const dream=C.start(2,2,5000,'begins-original-ford');
+  const dreamCaster=dream.players[0],collector=dream.players[1];
+  Object.assign(dreamCaster,{cash:500,hand:[id('dreamterrain')],pos:2});
+  Object.assign(dream.tiles[2],{owner:1,level:3,unit:{id:fighter,hp:40}});
+  assert.ok(C.play(dream,['cast',0]));
+  assert.equal(dreamCaster.enchantDeadline,10);
+  dream.phase='land';
+  const levy=C.owedToll(dream,dream.tiles[2]),beforeLevy=dreamCaster.cash,beforeCollection=collector.cash;
+  assert.ok(levy>0&&C.play(dream,['pay']));
+  assert.deepEqual([dreamCaster.cash,collector.cash],[beforeLevy-levy+Math.floor(levy/2),beforeCollection+levy]);
+  dream.turn=0;dream.phase='roll';
+  Object.assign(dreamCaster,{pos:1,previous:2,dir:1,word:1});
+  assert.ok(C.play(dream,['roll']));
+  assert.equal(dreamCaster.pos,0);
+  assert.equal(dreamCaster.dream,true,'Begins Dream Terrain survives passing through the castle');
+  dream.turn=1;dream.round=5;dream.phase='land';
+  assert.ok(C.play(dream,['pass']));
+  assert.deepEqual([dream.round,dream.turn,dreamCaster.dream,dreamCaster.enchantDeadline],[6,0,undefined,undefined]);
+
+  const ward=C.start(2,2,5000,'begins-original-ford');
+  const [protectedSeat,caster]=ward.players;
+  protectedSeat.cash=500;protectedSeat.hand=[id('antimagic')];
+  caster.cash=500;caster.hand=[id('drainmagic'),id('drainmagic')];
+  assert.ok(C.play(ward,['cast',0])&&C.play(ward,['targetPlayer',0]));
+  assert.equal(protectedSeat.antiMagic,true);
+  ward.phase='land';assert.ok(C.play(ward,['pass']));
+  const balance=protectedSeat.cash;
+  assert.ok(C.play(ward,['cast',0])&&C.play(ward,['targetPlayer',0]));
+  assert.deepEqual([protectedSeat.cash,protectedSeat.antiMagic,ward.mapEffect.label],[balance,undefined,'안티 매직']);
+  ward.phase='spell';assert.ok(C.play(ward,['cast',0])&&C.play(ward,['targetPlayer',0]));
+  assert.equal(protectedSeat.cash,balance-Math.floor(balance*.3));
+
+  for(const [effect,rounds] of [['telegnosis',1],['revelation',2]]){
+    const command=C.start(2,2,5000,'begins-original-ford');
+    const player=command.players[0],spell=id(effect),remote=10;
+    Object.assign(player,{cash:1000,pos:2,hand:[spell]});
+    Object.assign(command.tiles[remote],{owner:0,unit:{id:fighter,hp:40}});
+    const action=()=>C.choices(command).some(([k,at])=>k==='level'&&at===remote);
+    command.phase='land';assert.equal(action(),false);
+    command.phase='spell';
+    const oldBook=player.book.slice(),random=Math.random;
+    try{
+      Math.random=()=>.5;
+      assert.ok(C.play(command,['cast',0]));
+    }finally{Math.random=random;}
+    assert.equal(player.enchantDeadline,rounds*2);
+    if(effect==='telegnosis')oldBook.splice(Math.floor((oldBook.length+1)/2),0,spell);
+    assert.deepEqual(player.book,oldBook);
+    for(let i=0;i<rounds;i++){
+      command.phase='land';assert.ok(action()&&C.play(command,['pass']));
+      command.phase='land';assert.ok(C.play(command,['pass']));
+    }
+    assert.equal(command.round,rounds+1);
+    command.phase='land';assert.equal(action(),false);
+  }
+
   const monarchId=creature('abyssalmonarch'),gooba=creature('gooba'),aero=creature('aerogoetia');
   assert.equal(C.copyLimit(C.cards[monarchId]),1);
   assert.ok(C.validBook([monarchId,gooba,...current.slice(2)]),'distinct Extra cards are independent');

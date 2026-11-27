@@ -312,7 +312,14 @@ const CepterExtraSpells=(()=>{
           }
           case 'rayoflaw':for(const other of s.players)other.hand=other.hand.filter(id=>cards[id].cost<100);break;
           case 'reincarnation':{const n=p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
-          case 'revelation':case 'telegnosis':setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);if(e==='telegnosis')p.book.unshift(ids.get(e));break;
+          case 'revelation':case 'telegnosis':
+            setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);
+            if(e==='telegnosis'){
+              const at=s.edition==='begins'?Math.floor(Math.random()*(p.book.length+1)):0;
+              p.book.splice(at,0,ids.get(e));
+              if(s.edition==='begins')forgetPeek(s,s.turn);
+            }
+            break;
           case 'selenear':p.cash+=100*owning(s,s.turn).filter(t=>t.type===2).length;break;
           case 'soltis':return 'soltisPower';
           case 'spartoi':{const v=sample(s.tiles.filter(t=>territoryType(t.type)&&!t.unit));if(v){const id=ids.get('skeleton');claim(v,s.turn,{id,hp:cards[id].hp});delete v.enchant;}break;}
