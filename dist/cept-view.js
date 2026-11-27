@@ -182,9 +182,11 @@ setInterval(tickInputClock,250);
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){
   if(C.presets.stronghold){
-    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['intro','beginsArtAssault','beginsTidalGuard']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
+    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['intro','beginsArtAssault','beginsTidalGuard']:
+      C.edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaBonds']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
       ['intro','sagaImmediate','sagaAffinity']:['intro','fire','stronghold'];
-    const key=order[Number($('tierChoice').value)]||'intro';
+    const preferred=order[Number($('tierChoice').value)];
+    const key=C.presets[preferred]?preferred:'intro';
     return {name:modernBookNames[key],deck:C.presets[key],practice:true,
       player:{name:modernBookNames.intro,deck:C.presets.intro,practice:true}};
   }
