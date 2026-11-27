@@ -228,7 +228,7 @@ function createCepter(edition="ps2"){
     if(mapGoal)target=maps[mapId]?.storyGoal??maps[mapId]?.defaultGoal??5000;
     if(![2,3,4].includes(count)||!Number.isInteger(humans)||humans<0||humans>count||!(mapGoal&&target===(maps[mapId]?.storyGoal??maps[mapId]?.defaultGoal)||[3000,4000,5000,6000,7000,8000,9000,10000,12000].includes(target))||!Object.hasOwn(maps,mapId)||!validBook(template)||(!storyCast&&!validBook(aiBook))||![0,1,2,3].includes(aiLevel))throw Error('대국 설정 오류');
     if(!['auto','duel',...Object.keys(teamLayouts)].includes(alliance)||Object.hasOwn(teamLayouts,alliance)&&count!==4)throw Error('동맹전은 4인 대국입니다.');
-    if(![0,20,30,40,60].includes(roundLimit))throw Error('지원하지 않는 라운드 제한입니다.');
+    if(![0,20,30,40,60].includes(roundLimit)&&!(begins&&roundLimit===25))throw Error('지원하지 않는 라운드 제한입니다.');
     const layout=teamLayouts[alliance]||(count===4&&alliance==='auto'&&mapGoal&&storyNames?teamLayouts.teams:null);
     const teams=layout?.slice()||null;
     const players=Array.from({length:count},(_,i)=>{
@@ -385,6 +385,8 @@ function createCepter(edition="ps2"){
   const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
+  const beginsShrineModule=begins?(typeof module==='undefined'?CepterBeginsShrines:require('./cept-begins-shrines')):null;
+  const beginsShrine=beginsShrineModule?.rules(cards,{fx,combo,board,draw,note,total,refillBook,setStatus:extraSpells?.setStatus});
   const roundGain=s=>Math.min(50,19+s.round);
   function finish(s){
     if(settleDebts(s,'endTurn'))return;
@@ -487,6 +489,7 @@ function createCepter(edition="ps2"){
     }
     if(tile.type==='점술관'&&p.status!=='babble'&&p.book.length&&(!revolt||hasHandSpace(p))){s.phase='fortune';return;}
     if(tile.type!=='성소')return;
+    if(beginsShrine){beginsShrine.arrive(s);return;}
     if(shrine){shrine.arrive(s,board(s).shrineKinds[p.pos]||'elemental');return;}
     const area=s.tiles.filter(t=>t.area===tile.area&&t.unit);
     const event=Math.floor(Math.random()*3),element=Math.floor(Math.random()*4);

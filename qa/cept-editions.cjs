@@ -3333,6 +3333,68 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   try{Math.random=()=>.999;assert.ok(C.play(die,['roll']));}finally{Math.random=random;}
   assert.deepEqual([die.die,die.mapEffect.faces,die.mapEffect.sides],[8,[8],8]);
 
+  const shrineAt=20;
+  function atBeginsShrine(){
+    const state=C.start(4,4,8000,'begins-original-ford',undefined,undefined,0,'duel',25);
+    C.configureMatch(state,{suddenDeath:true,recordReplay:true});
+    Object.assign(state,{phase:'fork',remaining:1,die:1});
+    Object.assign(state.players[0],{pos:C.board(state).links[shrineAt][0],previous:null});
+    return state;
+  }
+  function stopAtShrine(state,index){
+    try{
+      Math.random=()=>(index+.5)/30;
+      assert.ok(C.play(state,['route',shrineAt]));
+    }finally{Math.random=random;}
+  }
+  const shrineNames=new Set();
+  for(let index=0;index<30;index++){
+    const state=atBeginsShrine();
+    stopAtShrine(state,index);
+    assert.match(state.shrineNotice,/^성소 · .+ · .+/);
+    shrineNames.add(state.shrineNotice.split(' · ')[1]);
+  }
+  assert.equal(shrineNames.size,30);
+  const passingShrine=atBeginsShrine();
+  passingShrine.remaining=2;
+  assert.equal(C.routePreview(passingShrine,['route',shrineAt]).cashGain,0);
+  stopAtShrine(passingShrine,3);
+  assert.equal(passingShrine.shrineNotice,undefined);
+  const reward=atBeginsShrine(),rewardCash=reward.players[0].cash;
+  stopAtShrine(reward,3);
+  assert.equal(reward.players[0].cash,rewardCash+200);
+  assert.deepEqual([reward.roundLimit,reward.suddenDeath],[25,true]);
+  const innerRevolt=atBeginsShrine();
+  for(const [tile,slug] of [[2,'minotaur'],[3,'phoenix'],[6,'merfolk'],[7,'fighter']]){
+    Object.assign(innerRevolt.tiles[tile],{owner:1,unit:{id:creature(slug),hp:20}});
+  }
+  stopAtShrine(innerRevolt,23);
+  assert.deepEqual([2,3,6,7].map(at=>innerRevolt.tiles[at].unit.hp),[10,10,20,20]);
+  assert.match(innerRevolt.shrineNotice,/내란.*화 크리처/);
+  const poison=atBeginsShrine(),victim=poison.players[1],priorCash=victim.cash;
+  for(const [tile,slug] of [[2,'jackalope'],[3,'cornfolk']]){
+    Object.assign(poison.tiles[tile],{owner:1,unit:{id:creature(slug),hp:10}});
+  }
+  stopAtShrine(poison,22);
+  assert.ok([2,3].every(at=>poison.tiles[at].unit===null));
+  assert.equal(victim.cash,priorCash);
+  const speed=atBeginsShrine();
+  stopAtShrine(speed,7);
+  assert.equal(speed.players[0].diceLimitRolls,1);
+  const groupSpeed=atBeginsShrine();
+  stopAtShrine(groupSpeed,8);
+  assert.ok(groupSpeed.players.every(p=>p.word===8));
+  const shield=atBeginsShrine();
+  stopAtShrine(shield,10);
+  assert.equal(shield.players[0].status,'barrier');
+  const hope=atBeginsShrine(),handSize=hope.players[0].hand.length;
+  stopAtShrine(hope,26);
+  assert.equal(hope.players[0].hand.length,handSize+2);
+  const signatures=atBeginsShrine();
+  stopAtShrine(signatures,29);
+  assert.deepEqual(signatures.players[0].flags,C.board(signatures).checkpoints);
+  console.log('Begins 25-round settings and 30 shrine events, stop only, elemental damage and private draw OK');
+
   for(const seats of [2,4]){
     const lap=C.start(seats,seats,6000,'begins-original-ford'),player=lap.players[0];
     Object.assign(player,{pos:1,previous:2,dir:1,cash:500,flags:C.board(lap).checkpoints.slice(),word:1});

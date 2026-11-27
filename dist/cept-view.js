@@ -127,7 +127,9 @@ function enter(){
 function matchOptions(){
   return {inputSeconds:+$('inputLimit').value,suddenDeath:$('suddenDeath').checked,recordReplay:true};
 }
-$('roundLimit').addEventListener('change',()=>{
+const roundLimit=$('roundLimit');
+if(C.edition==='begins')roundLimit.add(new Option('25','25'),[...roundLimit.options].find(option=>+option.value===30));
+roundLimit.addEventListener('change',()=>{
   $('suddenDeath').disabled=+$('roundLimit').value===0;
 });
 $('suddenDeath').disabled=true;
@@ -403,7 +405,8 @@ function placeMapRoll(root,x,y,zoom){
   const groupStart=Math.min(...bounds.map(([start])=>start)),groupEnd=Math.max(...bounds.map(([,end])=>end));
   const right=groupEnd+10,before=groupStart-stackWidth-10;
   // While another tile is inspected, or route arrows surround the cepter, the stack waits at the edge.
-  const away=cameraTile!==s.players[s.turn].pos||!rollShown&&['fork','direction'].includes(s.phase),wideView=width>height*1.1;
+  const routeOnMap=['fork','direction'].includes(s.phase);
+  const away=cameraTile!==s.players[s.turn].pos||routeOnMap,wideView=width>height*1.1;
   const side=away?0:right+stackWidth+4<=width?1:before>=4?-1:0;
   const tools=$('mapViews'),toolsHeight=tools.querySelector('summary').offsetHeight;
   const left=Math.max(4,Math.min(width-stackWidth-4,away?(wideView?tools.offsetLeft-stackWidth-6:(width-stackWidth)/2):side>0?right:side<0?before:(groupStart+groupEnd-stackWidth)/2));
@@ -413,7 +416,7 @@ function placeMapRoll(root,x,y,zoom){
   const bubble=$('detail'),underBubble=bubble.classList.contains('card-popup')&&bubble.offsetHeight&&left<bubble.offsetLeft+bubble.offsetWidth&&left+stackWidth>bubble.offsetLeft;
   const maxTop=Math.max(minTop,(underBubble?Math.min(floor,bubble.offsetTop-6):floor)-stackHeight);
   const body=feetY-Math.min(45,pawnHeight*.55);
-  let top=away?(wideView?minTop:maxTop):side?body-(menuShown?stackHeight:rollHeight)/2:feetY+10;
+  let top=away?(wideView||routeOnMap?minTop:maxTop):side?body-(menuShown?stackHeight:rollHeight)/2:feetY+10;
   // Under the feet is full: use the space over the heads when the stack fits there.
   if(!away&&!side&&top>maxTop&&feetY-pawnHeight-8-stackHeight>=minTop)top=feetY-pawnHeight-8-stackHeight;
   top=Math.max(minTop,Math.min(maxTop,top));
@@ -650,6 +653,8 @@ function map(){
       center.append(el('span',(current.to+1)+'번 진행 · 전환 시 '+(alternate.to+1)+'번 · 자동 전환까지 '+current.rounds+'라운드'));
     }else if(t.type==='사령탑'){
       center.append(el('span','멈추면 빈 영지에 소환하거나 적 영지를 원격으로 침략할 수 있습니다.'));
+    }else if(t.type==='성소'&&C.edition==='begins'){
+      center.append(el('span','멈추면 성소 효과 하나가 무작위로 발동합니다.'));
     }else if(t.type==='마력 트랩'){
       center.append(el('span','적립 '+(t.trapMagic??0)+'G · 통과하거나 멈출 때 주사위 합 0–3이면 전액 획득, 4–5면 유지, 6 이상이면 보유 마력 20% 적립'));
     }else if(t.type==='분수'){
@@ -875,7 +880,9 @@ function render(){
     const spellOnMap=C.hasLandDamage(s.spellEffect)&&landTarget||beginsMove;
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
     const secretOnMap=s.phase==='secretTarget'&&choices.some(([kind])=>kind==='secretLand');
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!spellOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
+    const routeOnMap=choices.some(([kind])=>kind==='route'||kind==='direction');
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!spellOnMap&&!towerOnMap&&!secretOnMap&&!routeOnMap&&!selectingTerritoryMove()};
+    if(routeOnMap)handPanel.open=false;
     if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
     if(spellOnMap)handPanel.open=false;
     // A card bubble left open from reading the hand must not cover a new decision.

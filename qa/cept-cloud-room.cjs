@@ -109,7 +109,7 @@ async function main(){
         await host.waitForFunction(()=>!room.busy&&!document.getElementById('game').inert&&s.phase!=='spell'||s.turn!==0);
         if(await host.evaluate(()=>s.turn!==0))break;
         const before=await host.evaluate(()=>room.revision);
-        await host.locator('.route-option,[data-action=pass],[data-action=leaveTemple],button[data-action=fortuneDraw]').first().tap();
+        await host.locator('.route-arrow,[data-action=pass],[data-action=leaveTemple],button[data-action=fortuneDraw]').filter({visible:true}).first().tap();
         await host.waitForFunction(rev=>room.revision>rev,before);
       }
       let guest=bySeat[1];await guest.locator('[data-action=roll]').waitFor();

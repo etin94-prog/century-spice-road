@@ -63,7 +63,7 @@ const CepterCombos = (() => {
       const u=t.unit;
       if(u.enchant==='soulhunt')s.players[u.caster].cash+=max(u)*5;
       if(activeWorld(s)!=='naturalworld'){
-        if(name(u)==='cornfolk')s.players[t.owner].cash+=200;
+        if(name(u)==='cornfolk'&&(s.edition!=='begins'||fromSpell))s.players[t.owner].cash+=200;
         if(s.edition==='revolt'&&name(u)==='creepingcoin')s.players[t.owner].cash+=100;
         if(name(u)==='boggart')s.players[t.owner].hand.push(u.id);
         if(name(u)==='mephistopheles'&&caster!=null)s.players[caster].cash-=200;

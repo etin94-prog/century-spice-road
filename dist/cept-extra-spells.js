@@ -501,6 +501,6 @@ const CepterExtraSpells=(()=>{
     }
     return {apply,targets,choices,choose,chariotExits,scoreTarget,scoreCast,scoreChoice};
   }
-  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,startTurn,damageSpells,landDamage};
+  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,setStatus,startTurn,damageSpells,landDamage};
 })();
 if(typeof module!=='undefined')module.exports=CepterExtraSpells;
