@@ -127,6 +127,19 @@ const CepterEditions=(()=>{
       stronghold:build(26,14,.25,'barrier lifestream heal windofhope manna')
     };
   }
+  const battleElements=['fire','water','earth','air'];
+  const elementalTraits={'Critical Hit':'criticalElements',Penetrates:'pierceElements',Reflects:'reflectElements',Neutralizes:'neutralizes'};
+  function elementalTrait(clause){
+    const parts=clause.match(/^(Critical Hit|Penetrates|Reflects|Neutralizes): (Normal Attacks|(?:\[(?:fire|water|earth|air|neutral)\] ?)+)\.?$/);
+    if(!parts)return null;
+    if(parts[2]==='Normal Attacks'){
+      if(parts[1]==='Reflects')return {reflectNormal:true};
+      if(parts[1]==='Neutralizes')return {neutralizeNormal:true};
+      return null;
+    }
+    const elements=[...parts[2].matchAll(/\[(\w+)\]/g)].map(([,name])=>battleElements.indexOf(name));
+    return {[elementalTraits[parts[1]]]:elements};
+  }
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
@@ -136,15 +149,16 @@ const CepterEditions=(()=>{
       const path=base?.catalog.path||((kind==='creature'?category:kind+'s')+'/'+slug);
       const traits={'援護':'support','再生':'regenerate','先制':'first','後手':'last','防御型':'stationary',...(edition==='revolt'?{Vigorous:'vigorous'}:{})};
       const clauses=r.ability.split(' ; ');
-      const basicCreature=kind==='creature'&&clauses.every(v=>v==='-'||traits[v]);
+      const effects=modernSets[edition]&&category!=='scroll'&&kind!=='spell'?new Map(clauses.map(v=>[v,elementalTrait(v)])):new Map();
+      const basicCreature=kind==='creature'&&clauses.every(v=>v==='-'||traits[v]||effects.get(v));
       const gearClauses=modernSets[edition]?clauses.map(v=>v.replace(/^AT(?=[+-]\d+$)/,'ST')):clauses;
-      const basicGear=kind==='item'&&gearClauses.every(v=>/^(ST|HP)[+-]\d+$/.test(v)||v==='先制'||!!modernSets[edition]&&v==='後手');
+      const basicGear=kind==='item'&&gearClauses.every(v=>/^(ST|HP)[+-]\d+$/.test(v)||v==='先制'||!!modernSets[edition]&&v==='後手'||effects.get(v));
       const simple=basicCreature||basicGear;
       const first=edition==='saturn'||edition==='ps1';
       const variant=first&&['dragon','pan','hornet','holyword1','holyword6','magicbolt','steamgear','golem','sorcerer','manticore','armadillo','coati','darkelf','elf','knight','samurai','deathgaze','goldengoose','wallofice','giantspider','giantsnake','stonehail','cure'].includes(slug);
       const compatible=!!base&&!base.catalogOnly&&(r.shared||variant);
       const name=base?.name||r.name.replace(/([a-z])([A-Z])/g,'$1 $2');
-      const element=['fire','water','earth','air'].indexOf(category);
+      const element=battleElements.indexOf(category);
       const format=(arr,lookup)=>arr.map(k=>lookup[k]).filter(Boolean).join(',');
       const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
         ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
@@ -154,6 +168,7 @@ const CepterEditions=(()=>{
         if(effect){c.effect=effect;c.catalogOnly=false;}
         if(edition==='begins'&&slug==='manna')c.magicPerLap=100;
       }
+      if(simple)for(const effect of effects.values())if(effect)Object.assign(c,effect);
       if(kind==='creature'){c.st=r.st;c.hp=r.hp;delete c.landBan;}
       if(kind==='creature')for(const clause of clauses)if(traits[clause])c[traits[clause]]=true;
       if(basicGear){

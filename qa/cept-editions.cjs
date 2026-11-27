@@ -262,6 +262,38 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(restore.tiles[1].unit.hp,50);
   assert.equal(restore.tiles[1].unit.fatigued,undefined);
   console.log('Revolt gate spells, land transfer, Vigorous and Restore, and Begins debt settlement OK');
+
+  function battle(engine,attacker,defender,level,gear){
+    const s=engine.start(2,2,5000,engine.edition+'-1');
+    const attackId=card(engine,attacker),guardId=card(engine,defender),guard=engine.cards[guardId];
+    s.players[0].pos=1;
+    Object.assign(s.tiles[1],{owner:1,type:guard.element>=0?guard.element:'무속성',level,unit:{id:guardId,hp:guard.hp}});
+    s.phase='attack';s.battle={at:1,inv:attackId,atkItem:null,defItem:null};
+    assert.ok(engine.play(s,['bare']));
+    if(gear){
+      s.players[1].hand=[card(engine,gear)];s.players[1].cash=500;
+      assert.ok(engine.play(s,['equip',0]));
+    }else assert.ok(engine.play(s,['bare']));
+    return s.battle;
+  }
+  const beak=battle(C,'firebeak','giantnautilus',3);
+  assert.equal(beak.landHP,30);
+  assert.equal(beak.strikes[0].side,0);
+  assert.match(beak.strikes[0].notes.join(' '),/관통.*75 피해/);
+  assert.equal(beak.won,true);
+  const eel=battle(C,'greenogre','gianteel',1);
+  assert.equal(eel.strikes[0].effect,'block');
+  const decoy=battle(C,'fighter','decoy',1);
+  assert.equal(decoy.strikes[0].effect,'reflect');
+  assert.equal(decoy.finalHP[0],0);
+
+  const saga=ps2.createEdition('saga');
+  const counter=battle(saga,'minotaur','fighter',1,'magmacounter');
+  assert.equal(counter.startHP[1],saga.cards[card(saga,'fighter')].hp+20);
+  assert.equal(counter.strikes[0].effect,'block');
+  const nonMatching=battle(saga,'goblin','fighter',1,'magmacounter');
+  assert.equal(nonMatching.strikes[0].effect,'hit');
+  console.log('Modern elemental critical hits, penetration, reflection and neutralization OK');
 }
 
 {

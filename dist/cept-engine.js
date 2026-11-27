@@ -513,7 +513,8 @@ function createCepter(edition="ps2"){
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
-        a.n=null;a.c={...a.c,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,battleHP:0};
+        a.n=null;a.c={...a.c,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,battleHP:0,
+          criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -593,11 +594,14 @@ function createCepter(edition="ps2"){
     b.guard=D.u.id;b.guardHP=D.u.hp;b.attackST=A.st;b.defendST=D.st;b.landHP=D.land;b.startHP=health();b.strikes=[];b.forms=sides.map(a=>a.u.id);
     function hit(a,d){
       const scroll=a.gear?.category==='scroll'||!firstEdition&&a.n==='sorcerer'&&!a.gear,orb=a.gear?.effect==='orb';
-      const penetrates=['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
+      const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
+      const pierce=!scroll&&!muted&&(a.c.pierceElements?.includes(d.element)||weapon?.pierceElements?.includes(d.element));
+      const elementalCritical=!scroll&&!muted&&(a.c.criticalElements?.includes(d.element)||weapon?.criticalElements?.includes(d.element));
+      const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
       if(scroll&&['deathgaze','pegasus'].includes(d.n))return 'block';
-      if(extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
+      if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
         a.n==='paladin'&&d.element===-1||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
@@ -613,8 +617,10 @@ function createCepter(edition="ps2"){
       if(reflected){if(ward!=='reflect')a.hp-=damage;lines.push('스크롤 반사 '+damage);return 'reflect';}
       if(!scroll&&!muted){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
-        if(!orb&&(d.gear?.effect==='reflect'||d.n==='decoy')){a.hp-=damage;lines.push('반사 '+damage);return 'reflect';}
-        if(!orb&&(d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
+        const reflects=d.c.reflectNormal||d.c.reflectElements?.includes(a.element)||guard?.reflectNormal||guard?.reflectElements?.includes(a.element);
+        const blocks=d.c.neutralizeNormal||guard?.neutralizeNormal||guard?.neutralizes?.includes(a.element);
+        if(!orb&&(reflects||d.gear?.effect==='reflect'||d.n==='decoy')){a.hp-=damage;lines.push('반사 '+damage);return 'reflect';}
+        if(!orb&&(blocks||d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
            d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||d.c.neutralizes?.includes(a.element)||d.c.blocksLarge&&fx.max(a.u)>=40||
            d.n==='caitsith'&&fx.strength(a.u)>=40||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element))){lines.push('공격 무효');return 'block';}
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
