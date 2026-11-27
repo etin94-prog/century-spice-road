@@ -40,7 +40,7 @@ const CepterExtraBattle=(()=>{
     // Another copy elsewhere can still provide the same non-stacking bonus.
     const sources=s.tiles.filter((v,j)=>v.unit&&j!==b.at&&j!==b.from);
     function boost(n,a,ownOnly=false){
-      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(s.edition!=='revolt'||v.unit.enchant!=='paralysis'));
+      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(!['revolt','begins'].includes(s.edition)||v.unit.enchant!=='paralysis'));
     }
     function transform(a,id,temporary=false){
       if(id==null)return;
@@ -132,7 +132,6 @@ const CepterExtraBattle=(()=>{
           if(s.predict)a.hp=Math.floor((a.hp+30)/2);
           else if(chance(.5)){a.hp=30;lines.push('팽골린 · 전투 HP 30');}
         }
-        if(a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
         if(a.n==='coaloid'){
           const increase=10*lands.filter(v=>v.type===0).length;
           a.st+=increase;a.hp+=increase;
@@ -142,6 +141,7 @@ const CepterExtraBattle=(()=>{
           if(sources.some(v=>fx.name(v.unit)==='brontides'&&v.unit.enchant!=='paralysis'))a.hp+=10;
         }
       }
+      if(['saga','begins'].includes(s.edition)&&a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
       if(s.edition==='saga'&&a.elements){
         const owned=lands.filter(v=>a.elements.includes(v.type)).length;
         if(a.n==='flammefleur')a.st=owned*10;
@@ -166,7 +166,10 @@ const CepterExtraBattle=(()=>{
         case 'aspidochelone':a.st+=s.round;a.hp+=s.round;break;
         case 'weretiger':if(s.round>=25){a.st-=20;a.hp-=20;}break;
       }
-      if(a.element>=0&&boost(lord[a.element],a))a.hp+=10;
+      if(a.element>=0&&boost(lord[a.element],a)){
+        if(s.edition==='begins'&&a.element>=2)a.st+=10;
+        else a.hp+=10;
+      }
       if(boost('madclown',a,true))a.hp+=10;
       if(!a.defending&&boost('ares',a))a.st+=20;
       if(!a.defending&&boost('nue',a))a.st-=10;
@@ -238,7 +241,7 @@ const CepterExtraBattle=(()=>{
     }
     function onHit(a,d,damage){
       a.hit=true;
-      const n=d.c.blocksAttackAbilities?null:a.n;
+      const n=d.c.blocksAttackAbilities||d.gear?.blocksCreatureHits?null:a.n;
       if(n==='vampire'||s.edition==='saga'&&n==='crimsonvine'){a.hp+=damage;a.absorbed=true;}
       if(s.edition==='saga'&&n==='jackolantern'){
         const amount=Math.min(Math.max(0,s.players[d.seat].cash),Math.max(0,Math.min(a.u.hp,a.hp))*2);
@@ -277,7 +280,13 @@ const CepterExtraBattle=(()=>{
     function end(a,d,creatureEnd){
       if(creatureEnd&&a.hp>0){
         if(s.edition==='saga'&&a.n==='flammefleur'&&!a.dealtDamage&&d.hp>0){d.hp=0;lines.push('전투 종료 · 피해를 주지 못해 상대 격파');}
-        if(lord.includes(a.n))s.players[a.seat].cash-=100;
+        if(lord.includes(a.n)){
+          s.players[a.seat].cash-=100;
+          if(s.edition==='begins'){
+            if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]+=100;}
+            lines.push(a.c.name+' · 100G 지불');
+          }
+        }
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(a.n==='fungonoid')grow(a,10);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);

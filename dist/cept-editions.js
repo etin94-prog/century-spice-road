@@ -172,7 +172,8 @@ const CepterEditions=(()=>{
       escape:'escape',mountainleap:'mountainleap',lakeleap:'lakeleap',forestleap:'forestleap',plainleap:'plainleap',
       mutation:'mutation',removecurse:'removecurse',turntowall:'turntothewall',
       corruption:'corruption',fairylight:'fairylight',goblinslair:'goblinslair',grace:'grace',
-      meteor:'meteor',quicksand:'quicksand',quintessence:'quintessence',shrink:'shrink',spartoi:'spartoi',wordofrecall:'castlerecall',exchange:'replace',gift:'gift'}
+      meteor:'meteor',quicksand:'quicksand',quintessence:'quintessence',shrink:'shrink',spartoi:'spartoi',wordofrecall:'castlerecall',exchange:'replace',gift:'gift',theft:'theft',
+      bistair:'beginsbistair',iksear:'beginsiksear',selenear:'beginsselenear',terrair:'beginsterrair'}
   };
   // These three original books are the baseline used to calibrate Revolt difficulty.
   const revoltBaselineBooks={
@@ -682,6 +683,10 @@ const CepterEditions=(()=>{
     triton:{scrollCritical:true},undine:{},valkyrie:{first:true,support:true,supportElements:[-1,0]},
     baal:{first:true},conjurer:{scrollCritical:true},fay:{scrollCritical:true,landBan:1},gelatinouswall:{stationary:true},
     kelpie:{},oldwillow:{stationary:true},willothewisp:{last:true},
+    ares:{landBan:1},flamelord:{scrollCritical:true,landBan:1},dagon:{scrollCritical:true,landBan:0},
+    darkmaster:{scrollCritical:true,landBan:3},beelzebub:{scrollCritical:true,landBan:2},mastermonk:{first:true},
+    quetzalcoatl:{},yeti:{neutralizes:[0]},deathquito:{first:true},leviathan:{},garuda:{landBan:2},
+    fate:{},bloodypudding:{support:true},healer:{regenerate:true},algasphere:{stationary:true},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},
@@ -689,7 +694,8 @@ const CepterEditions=(()=>{
     terragoetia:{innateScroll:40,support:true,supportElements:[-1,2],blocksAttackAbilities:true},
     aquagoetia:{innateScroll:40,half:true},flamegoetia:{innateScroll:40},aerogoetia:{innateScroll:40,first:true},abyssalmonarch:{innateScroll:50}
   };
-  const beginsSummonCosts={flamegoetia:'R,R',aerogoetia:'Y,Y',carbunfly:'R,R',basilisk:'G,G',oldwillow:'R,R',baal:'R,+[]'};
+  const beginsSummonCosts={flamegoetia:'R,R',aerogoetia:'Y,Y',carbunfly:'R,R',basilisk:'G,G',oldwillow:'R,R',baal:'R,+[]',
+    ares:'R,R',flamelord:'R,R,+[]',dagon:'B,B,+[]',darkmaster:'G,G,+[]',beelzebub:'Y,Y,+[]',leviathan:'B,B',garuda:'Y,Y'};
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},battleaxe:{st:40},
@@ -704,7 +710,7 @@ const CepterEditions=(()=>{
     stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40},
     gemoflife:{},holygrail:{},kris:{st:30,protectItem:true},offeringdoll:{},powerbracelet:{},prismaticwand:{},
     silverplow:{hp:10},smoketorch:{hp:20},stinkbottle:{},tearinghalo:{st:30,protectItem:true},vorpalsword:{st:30},
-    angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30}
+    angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30},voidorb:{hp:20,protectItem:true,blocksCreatureHits:true}
   };
   const handheldSpecial={
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},

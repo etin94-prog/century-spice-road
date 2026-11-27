@@ -328,7 +328,8 @@ const CepterCreatureText=(()=>{
       burnacle:'고른 영지에 안개를 걸어 통행료를 절반으로 줄입니다.',
       creepingflame:'이 크리처를 인접한 영지 한 곳으로 이동합니다. 상대 영지라면 침략합니다.',
       rockshell:'이 영지의 침략을 막고 통행료를 0G로 바꿉니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
-    const begins={goldentotem:'400G를 얻고 이 크리처는 파괴됩니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.'};
+    const begins={goldentotem:'400G를 얻고 이 크리처는 파괴됩니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',
+      algasphere:'자신의 HP와 최대 HP를 20 올립니다. 최대 HP는 100까지 오릅니다.'};
     const effect=(C.edition==='begins'?begins[key]:C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
@@ -409,6 +410,10 @@ const CepterCreatureText=(()=>{
     const special=C.edition==='3ds'&&key==='powdereater'?'영지 이동 명령으로 이동할 때 원래 영지에도 분신을 남깁니다. 주문으로 이동하면 분신이 생기지 않습니다.':
       (C.edition==='revolt'||C.edition==='3ds'&&['chimera','pyromancer','sulfurousballoon'].includes(key))&&revoltBattle[key]?revoltBattle[key]:
       (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba','golem','leveller'].includes(key))&&beginsBattle[key]?beginsBattle[key]:
+      C.edition==='begins'&&key==='fate'?'전투에서 격파되면 카드 한 장을 뽑습니다.':
+      C.edition==='begins'&&key==='darkmaster'?'지도에 배치되어 전투에 참여하지 않으면 지 크리처의 전투 ST를 10 올립니다. 자신이 전투에 생존하면 100G를 지불합니다.':
+      C.edition==='begins'&&key==='beelzebub'?'지도에 배치되어 전투에 참여하지 않으면 풍 크리처의 전투 ST를 10 올립니다. 자신이 전투에 생존하면 100G를 지불합니다.':
+      C.edition==='begins'&&key==='bloodypudding'?'지원 크리처를 쓰면 그 카드의 HP만큼 자신의 최대 HP가 오릅니다. 최대 HP는 100까지 오릅니다.':
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':

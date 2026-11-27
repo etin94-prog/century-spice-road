@@ -3689,7 +3689,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }
   assert.deepEqual(playable,['1339-infernal-vacation','1344-kelpez','1345-budget-raging-river','1347-power-surge','1348-esupports#main',
     '1349-willowisp#main','1349-willowisp#alternate','1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead',
-    '1356-support-deck-for-chapter-15']);
+    '1356-support-deck-for-chapter-15','1366-selenear']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -4063,6 +4063,110 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   Object.assign(gift.players[0],{hand:[creature('gift')],book:[goblin,fighter,goblin,fighter,goblin]});
   assert.ok(C.play(gift,['cast',0]));
   assert.deepEqual([gift.players[0].cash,gift.players[0].hand,gift.players[0].book],[320,[goblin,fighter,goblin,fighter],[goblin]]);
+
+
+  {
+    const lords=['flamelord','dagon','darkmaster','beelzebub'].map(creature);
+    const mercenary=creature('mastermonk'),ares=creature('ares'),quetz=creature('quetzalcoatl');
+    const sealed=creature('voidorb'),deathquito=creature('deathquito'),yeti=creature('yeti');
+    assert.equal(duel(mercenary,goblin).attackST,50);
+    assert.equal(duel(mercenary,goblin,axe).startHP[0],50);
+    assert.equal(duel(creature('minotaur'),yeti).strikes[0].effect,'block');
+    assert.equal(duel(creature('nike'),fighter,null,sealed).strikes[0].side,0);
+    assert.notEqual(land.unit?.enchant,'paralysis');
+    const spare=creatures.tiles[4],beforeSpare={...spare};
+    const supporting=creatures.tiles[5],beforeSupporting={...supporting};
+    const species=['minotaur','merfolk','dwarf','harpy'];
+    for(const [element,lord] of lords.entries()){
+      const card=creature(species[element]);
+      const cost=C.cards[lord].catalog.additionalCost.split(',');
+      assert.deepEqual(cost,[...'RBGY'[element].repeat(2),'+[]']);
+      Object.assign(spare,{owner:1,unit:{id:lord,hp:C.cards[lord].hp}});
+      const blessed=duel(card,goblin);
+      assert.deepEqual([blessed.attackST,blessed.startHP[0]],[C.cards[card].st+(element>=2?10:0),C.cards[card].hp+(element<2?10:0)]);
+      spare.unit.enchant='paralysis';
+      const unblessed=duel(card,goblin);
+      assert.deepEqual([unblessed.attackST,unblessed.startHP[0]],[C.cards[card].st,C.cards[card].hp]);
+      Object.assign(spare,beforeSpare);
+      duel(lord,goblin);
+      assert.equal(creatures.players[0].cash,100);
+    }
+    Object.assign(spare,{owner:1,unit:{id:ares,hp:60}});
+    Object.assign(supporting,{owner:0,unit:{id:quetz,hp:50}});
+    assert.equal(duel(mercenary,mercenary).attackST,80);
+    Object.assign(spare,beforeSpare);
+    assert.equal(duel(creature('garuda'),goblin).attackST,10);
+    Object.assign(supporting,beforeSupporting);
+    const reshaped=duel(creature('leviathan'),goblin,null,null,30,2);
+    assert.ok(reshaped.won&&land.type===1);
+    duel(fighter,creature('bloodypudding'),null,creature('colossus'),70);
+    assert.equal(land.unit.mhp,100);
+
+    function incoming(who,guardGear,extraCards){
+      Object.assign(creatures,{phase:'attack',battle:{at:2,inv:who,atkItem:null,defItem:null}});
+      Object.assign(land,{type:2,owner:1,unit:{id:fighter,hp:40}});
+      enemy.cash=200;enemy.hand=extraCards.concat(guardGear==null?[]:[guardGear]);
+      assert.ok(C.play(creatures,['bare'])&&C.play(creatures,guardGear==null?['bare']:['equip',extraCards.length]));
+    }
+    const oldFateBook=enemy.book;
+    const randomDeathquito=Math.random;
+    Math.random=()=>0;
+    try{
+      incoming(deathquito,null,[goblin,fighter]);
+      assert.deepEqual(enemy.hand,[fighter]);
+      incoming(deathquito,sealed,[goblin,fighter]);
+      assert.deepEqual(enemy.hand,[goblin,fighter]);
+    }finally{Math.random=randomDeathquito;}
+    Object.assign(creatures,{phase:'attack',battle:{at:2,inv:mercenary,atkItem:null,defItem:null}});
+    Object.assign(land,{type:2,owner:1,unit:{id:creature('fate'),hp:40}});
+    enemy.hand=Array(6).fill(goblin);enemy.book=[fighter];
+    assert.ok(C.play(creatures,['bare'])&&C.play(creatures,['bare']));
+    assert.deepEqual(enemy.hand,[...Array(6).fill(goblin),fighter]);
+    enemy.book=oldFateBook;
+
+    const classes=[
+      ['bistair','minotaur','battleaxe'],['iksear','merfolk','chainmail'],
+      ['selenear','dwarf','armet'],['terrair','harpy','freeze']
+    ];
+    for(const [spell,beast,gear] of classes){
+      const god=creature(spell),ally=creature(beast),equipment=creature(gear);
+      const bless=C.start(4,4,6000,'begins-original-ford');
+      const worshipper=bless.players[0];
+      assert.equal(C.copyLimit(C.cards[god]),1);
+      Object.assign(worshipper,{hand:[god],book:[ally,goblin,equipment,fighter],cash:100});
+      bless.players[1].peek={seat:0,ids:[fighter,equipment,goblin,ally]};
+      assert.ok(C.play(bless,['cast',0]));
+      assert.deepEqual([worshipper.cash,worshipper.hand,worshipper.book,bless.players[1].peek],[40,[equipment,ally],[goblin,fighter],undefined]);
+      Object.assign(bless,{phase:'spell'});
+      Object.assign(worshipper,{hand:[god],book:[goblin,equipment],cash:100});
+      assert.ok(C.play(bless,['cast',0]));
+      assert.deepEqual([worshipper.hand,worshipper.book],[[equipment],[goblin]]);
+    }
+
+    const aid=C.start(2,2,6000,'begins-original-ford');
+    const alga=creature('algasphere'),healer=creature('healer');
+    aid.phase='land';Object.assign(aid.players[0],{pos:2,cash:150});
+    Object.assign(aid.tiles[2],{owner:0,unit:{id:alga,hp:30,mhp:90}});
+    assert.ok(C.play(aid,['ability',2]));
+    assert.deepEqual([aid.tiles[2].unit.hp,aid.tiles[2].unit.mhp,aid.players[0].cash],[40,100,90]);
+    Object.assign(aid,{phase:'land',turn:0});aid.tiles[2].unit={id:healer,hp:20};
+    Object.assign(aid.tiles[3],{owner:0,unit:{id:fighter,hp:10}});
+    assert.ok(C.play(aid,['ability',2])&&C.play(aid,['abilityLand',3]));
+    assert.deepEqual([aid.tiles[3].unit.hp,aid.players[0].cash],[40,80]);
+
+    const theft=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+    const giftId=creature('gift');
+    Object.assign(theft.players[0],{hand:[creature('theft')],cash:100});
+    theft.players[1].hand=[goblin,giftId];theft.players[2].hand=[giftId];theft.players[3].hand=[fighter];
+    assert.ok(C.play(theft,['cast',0]));
+    assert.deepEqual(C.choices(theft),[['targetPlayer',1]]);
+    assert.ok(C.play(theft,['targetPlayer',1]));
+    assert.deepEqual(C.choices(theft),[['stealCard',1,giftId]]);
+    const visible=require('../dist/cept-room-state').view(C,theft,0);
+    assert.deepEqual([visible.game.players[1].hand,visible.choices],[[],[['stealCard',1,giftId]]]);
+    assert.ok(C.play(theft,['stealCard',1,giftId]));
+    assert.deepEqual([theft.players[0].hand,theft.players[1].hand],[[giftId],[goblin]]);
+  }
 
   const curse=C.start(2,2,6000,'begins-original-ford');
   const warded=curse.tiles[3],growing={id:fighter,hp:28,mhp:90};

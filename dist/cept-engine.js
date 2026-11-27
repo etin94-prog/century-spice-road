@@ -903,7 +903,10 @@ function createCepter(edition="ps2"){
       if(muted){useGear(a);a.n=null;}
       if(a.n==='sonascetic'&&a.gear?.kind==='creature')a.n=a.g;
       const count=(e)=>s.tiles.filter(v=>v.owner===a.seat&&v.type===e).length;
-      if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){const gain=Math.max(0,Math.min(80,fx.max(a.u)+a.gear.hp)-fx.max(a.u));a.u.mhp=fx.max(a.u)+gain;a.u.hp+=gain;}
+      if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){
+        const max=fx.max(a.u),gain=Math.max(0,Math.min(begins?100:80,max+a.gear.hp)-max);
+        a.u.mhp=max+gain;a.u.hp+=gain;
+      }
       if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
       if((handheld||begins)&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
       if(handheld&&a.n==='camazotz')a.st+=baseStrength[a===A?1:0];
@@ -1066,7 +1069,7 @@ function createCepter(edition="ps2"){
       if(a.u.confused&&!muted)a.hp-=Math.floor(damage*.3);
       const blocksAttackBonus=revolt&&(d.n==='scylla'||d.g==='squidmantle');
       if(damage>0&&!scroll&&!muted&&!blocksAttackBonus&&(edition!=='ps2'||a.hp>0)){
-        const creatureEffects=!d.c.blocksAttackAbilities,attacker=creatureEffects?a.n:null;
+        const creatureEffects=!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits,attacker=creatureEffects?a.n:null;
         if(revolt&&d.hp>0&&(attacker==='saint'&&d.element===-1||attacker==='samurai'&&fx.strength(d.u)>=40&&!s.predict&&Math.random()<.7)){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
@@ -1337,7 +1340,7 @@ function createCepter(edition="ps2"){
       if(edition==='saga'&&creatureEnd&&a.n==='seismodon'&&a.defeatedByOpponent&&t.level>1){
         t.level--;lines.push('사이즈모돈 · 교전 영지 Lv.'+t.level);
       }
-      if(creatureEnd&&(a.n==='fate'&&(revolt||p.hand.length<6)||a.c.evoLegacy==='draw'))draw(p,s);
+      if(creatureEnd&&(a.n==='fate'&&(revolt||begins||p.hand.length<6)||a.c.evoLegacy==='draw'))draw(p,s);
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
       if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
       if(a.g==='goldengoose'){
@@ -2043,7 +2046,7 @@ function createCepter(edition="ps2"){
       if(n==='quakebeast')return board(s).links[from].reduce((a,j)=>{
         const t=s.tiles[j];return a-(t.owner>=0&&t.level>1&&!fx.blockedLevel(s,t)?sign(t)*value(s,t)*.4:0);
       },-value(s,src)*.6);
-      if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld?100:80)?handheld?40:20:0;
+      if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld||begins?100:80)?handheld||begins?40:20:0;
       if(n==='fate')return p.hand.length<5?30:0;
       if(n==='necromancer')return p.hand.length<6?Math.max(24,cards[s.lastDestroyed].cost*.65):0;
       if(n==='barometz')return (p.lap+1)*30;

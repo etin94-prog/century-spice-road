@@ -14,6 +14,7 @@ const CepterExtraSpells=(()=>{
     remission:'land',magicalleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',sigilofshrink:'land',debility:'land',debilitystrong:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
+    beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
@@ -24,6 +25,7 @@ const CepterExtraSpells=(()=>{
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
+  const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
   const stolenKind={capture:'item',theft:'spell'};
   const enemyOnly=new Set(['capture','theft','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture']);
   const duration={bravesong:4,toughsong:4,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
@@ -88,6 +90,10 @@ const CepterExtraSpells=(()=>{
       const wealth=personalTotal(s,s.turn);
       return 1+s.players.filter((_,seat)=>personalTotal(s,seat)>wealth).length;
     }
+    const divineMatch=(card,e)=>{
+      const [element,category]=divineDraw[e];
+      return card.kind==='creature'?combo.hasElement(card,element):card.kind==='item'&&card.category===category;
+    };
     const landDrainRate=s=>s.edition==='saga'?20:30;
     const sharedCash=s=>Math.floor(s.players.reduce((sum,q)=>sum+q.cash,0)/s.players.length);
     const symbolCount=p=>p.symbols.reduce((a,b)=>a+b,0);
@@ -336,6 +342,15 @@ const CepterExtraSpells=(()=>{
           case 'foresight':
             if(!p.book.length)resetBook(s,s.turn);return 'foresightCard';
           case 'prophecy':if(!p.book.length)resetBook(s,s.turn);return 'prophecyKind';
+          case 'beginsbistair':case 'beginsiksear':case 'beginsselenear':case 'beginsterrair':{
+            for(let drawCount=0;drawCount<2;drawCount++){
+              const slot=p.book.findLastIndex(id=>divineMatch(cards[id],e));
+              if(slot<0)break;
+              p.hand.push(...p.book.splice(slot,1));
+              forgetPeek(s,s.turn);
+            }
+            break;
+          }
           case 'sagaiksear':if(affinity(s,1,3)>=5)for(let n=0;n<6;n++)draw(p,s);break;
           case 'sagaselenear':if(affinity(s,0,2)>=5)p.cash+=500;break;
           case 'fame':p.cash+=100*Math.max(0,...owning(s,s.turn).map(t=>t.level));break;
@@ -580,6 +595,7 @@ const CepterExtraSpells=(()=>{
       if(e==='soltis')return 19;
       if(e==='soulsteal'||e==='mistletoe')return p.status===e?0:7;
       if(e==='foresight'||e==='prophecy'||e==='find')return 6;
+      if(divineDraw[e])return Math.min(2,p.book.filter(id=>divineMatch(cards[id],e)).length)*7-Math.max(0,p.hand.length-6)*5;
       if(e==='gift')return s.edition==='begins'?Math.max(-5,personalRank(s)*8-p.cash/100-p.hand.length):10;
       if(e==='charity')return 4*Math.min(allianceRank(s),Math.max(0,7-p.hand.length));
       if(e==='turnover')return land.reduce((score,t)=>score+(enemy(s,t.owner)?-1:1)*turnoverChange(fx.strength(t.unit))/5,0);

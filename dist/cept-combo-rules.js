@@ -267,7 +267,7 @@ const CepterCombos = (() => {
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
       fate:40,mystic:30,necromancer:30,conjurer:80,goobaqueen:20,sleipnir:60
     };
-    const beginsTerritory={sakuya:120,fay:50};
+    const beginsTerritory={sakuya:120,fay:50,algasphere:60,healer:10};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','necromancer','barometz','quakebeast']);
     const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
@@ -302,6 +302,8 @@ const CepterCombos = (() => {
         if(n==='sakuya')return idol(s,'jadeidol')?[]:s.tiles.flatMap((v,j)=>
           v.owner===s.turn&&v.type!==2&&targetable(s,v)?[['abilityLand',j]]:[]);
         if(n==='fay')return s.tiles.flatMap((v,j)=>targetable(s,v)&&strength(v.unit)<100?[['abilityLand',j]]:[]);
+        if(n==='algasphere'&&(immuneHP(tile)||max(tile.unit)>=100))return [];
+        if(n==='healer')return s.tiles.flatMap((v,j)=>targetable(s,v)&&!immuneHP(v)&&v.unit.hp<max(v.unit)?[['abilityLand',j]]:[]);
       }
       if(s.edition==='3ds'){
         if(n==='necromancer'&&s.lastDestroyed==null)return [];
@@ -330,6 +332,10 @@ const CepterCombos = (() => {
       if(s.edition==='begins'){
         if(n==='sakuya'){v.type=2;return;}
         if(n==='fay'){v.unit.st=Math.min(100,strength(v.unit)+20);return;}
+        if(n==='algasphere'){
+          const gain=Math.min(20,100-max(src.unit));
+          src.unit.mhp=max(src.unit)+gain;src.unit.hp+=gain;return;
+        }
       }
       if(s.edition==='3ds'){
         if(n==='metalbug'){destroy(s,v);destroy(s,src);return;}

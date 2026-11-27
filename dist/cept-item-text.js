@@ -16,6 +16,7 @@ const describeCepterItem=(()=>{
     changingsalve:'전투가 시작되면 장착한 크리처의 ST와 HP를 서로 바꿉니다.',
     clawoftheghoul:'일반 공격으로 피해를 주면 상대를 마비시킵니다.',
     coinofpiety:'상대를 격파하고 생존하면 교전 영지와 같은 속성의 호부를 10개 얻습니다.',
+    voidorb:'상대 크리처의 공격 명중 시 발동하는 능력을 막습니다.',
     corrosiverobe:'전투가 시작되면 상대가 장착한 무기 또는 두루마리를 파괴합니다.',
     corrosivespear:'전투가 시작되면 상대가 장착한 방어구 또는 도구를 파괴합니다.',
     corrosiveknife:'장착한 크리처가 생존한 전투에서 상대가 재생했으면 상대를 격파합니다.',
