@@ -186,13 +186,15 @@ setInterval(tickInputClock,250);
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){
   if(C.presets.stronghold){
-    // Begins defaults follow two sets of 4,608 seeded four-seat matches across six maps.
+    // Begins defaults use 9,216 seeded four-seat matches. Revolt uses 27,648 across both deck roles.
     const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['beginsStarterFireEarth','beginsGanzBeast','beginsGanzGiantBeasts']:
-      C.edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaBonds']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
+      C.edition==='revolt'?['revoltZenethPower','revoltYumaFellowship','revoltAliciaFreedom']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
       ['intro','sagaImmediate','sagaAffinity']:['intro','fire','stronghold'];
     const level=Number($('tierChoice').value),preferred=order[level];
     const key=C.presets[preferred]?preferred:'intro';
-    const playerKey=C.edition==='begins'?(['beginsStarterWaterAir','beginsIsharaFirst','intro'][level]||'intro'):'intro';
+    const playerOrder=C.edition==='begins'?['beginsStarterWaterAir','beginsIsharaFirst','intro']:
+      C.edition==='revolt'?['stronghold','fire','intro']:[];
+    const playerKey=playerOrder[level]||'intro';
     return {name:modernBookNames[key],deck:C.presets[key],practice:true,
       player:{name:modernBookNames[playerKey],deck:C.presets[playerKey],practice:true}};
   }

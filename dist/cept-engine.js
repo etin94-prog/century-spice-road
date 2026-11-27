@@ -1921,7 +1921,7 @@ function createCepter(edition="ps2"){
       const [k,x,y]=action;
       const c=cards[p.hand[x]];
       const n=key(c);
-      if(k==='invade'&&allied(s,seat,s.tiles[p.pos].owner)||k==='transfer'&&allied(s,seat,s.tiles[y].owner))return -10000;
+      if(k==='invade'&&allied(s,seat,s.tiles[s.towerAt??p.pos].owner)||k==='transfer'&&allied(s,seat,s.tiles[y].owner))return -10000;
       const targetWord=(modern?{word1:1,holyword2:2,holyword3:3,word6:6,holyword8:8}:{word6:6,holyword3:3,holywordx:10})[k==='cast'?c?.effect:s.spellEffect];
       if((s.teams||modern)&&targetWord&&(k==='cast'||k==='targetPlayer')){
         if(k==='targetPlayer')return alliedWordTarget(x,targetWord);
@@ -1999,10 +1999,10 @@ function createCepter(edition="ps2"){
         if(k==='cast'&&c.effect==='manna')return 20+p.lap;
         if(k==='cast'&&c.effect==='bolt'&&!s.tiles.some(t=>t.unit&&!allied(s,t.owner,seat)))return -10;
         if(skill>=2&&k==='invade'){
-          const battle={at:p.pos,inv:p.hand[x]};
+          const at=s.towerAt??p.pos,tile=s.tiles[at],battle={at,inv:p.hand[x],tower:s.phase==='towerDeploy'};
           const gear=[null,...p.hand.filter((id,j)=>j!==x&&(!sacrificeRequired(s,c)||p.hand.length>=3)&&price(p,cards[id],s)+price(p,c,s)<=p.cash&&canEquip(c,cards[id]))];
-          return Math.max(...gear.map(id=>{const out=forecast(battle,id,false);
-            return (out.won?value(s,s.tiles[p.pos])+100:out.noToll?toll(s,s.tiles[p.pos]):-60)-c.cost*.5-(cards[id]?.cost||0)*.5;}));
+          return Math.max(...gear.map(id=>{const out=forecast(battle,id,false,true);
+            return (out.won?value(s,tile)+100:out.noToll&&!battle.tower?toll(s,tile):-60)-c.cost*.5-(cards[id]?.cost||0)*.5;}));
         }
         if(revolt&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);
         if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia'||revolt&&fx.name(s.tiles[x].unit)==='thunderspawn')){

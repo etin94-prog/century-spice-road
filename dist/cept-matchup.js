@@ -13,7 +13,8 @@ for(const select of [$('bookChoice'),$('aiChoice')]){
 }
 if(C.edition!=='ps2'){
   const player=$('bookChoice'),ai=$('aiChoice'),recommended=player.querySelector('[value="recommend"]');
-  if(C.edition==='begins')recommended.textContent='난이도별 추천 북';
+  const tierRecommendation=['begins','revolt'].includes(C.edition);
+  if(tierRecommendation)recommended.textContent='난이도별 추천 북';
   else recommended.remove();
   if(modernSeries){
     for(const [key,name] of Object.entries(modernBookNames)){
@@ -23,7 +24,7 @@ if(C.edition!=='ps2'){
       else player.insertBefore(new Option(name,key),player.lastElementChild);
       ai.add(new Option(name,key));
     }
-    player.value=C.edition==='begins'?'recommend':'intro';
+    player.value=tierRecommendation?'recommend':'intro';
   }else{
     player.querySelector('[value="fire"]').textContent='화·지 기반 북';
     player.querySelector('[value="intro"]').textContent='수·풍 기반 북';

@@ -1768,6 +1768,16 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.play(s,['route',18]));
     return s;
   }
+  const assault=approach(1,0);
+  const enemySeat=assault.players.findIndex((_,i)=>!C.allied(assault,i,0));
+  Object.assign(assault.tiles[3],{type:0,owner:enemySeat,unit:{id:goblin,hp:15}});
+  assault.players[0].hand=[card('fighter'),gear];
+  assert.ok(C.play(assault,['towerAim']));
+  assert.ok(C.play(assault,['towerTo',3]));
+  assert.deepEqual(C.ai(assault),['invade',0]);
+  assert.ok(C.play(assault,C.ai(assault)));
+  assert.deepEqual([assault.battle.at,assault.battle.tower],[3,true]);
+
   const passing=approach(2);
   assert.equal(passing.players[0].pos,19);
   assert.ok(!C.choices(passing).some(([kind])=>kind==='towerAim'));

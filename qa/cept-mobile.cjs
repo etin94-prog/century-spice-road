@@ -1,6 +1,8 @@
 const assert=require('node:assert/strict');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
+const fs=require('node:fs');
+const os=require('node:os');
 const {chromium}=require('playwright');
 
 (async()=>{
@@ -387,6 +389,28 @@ const {chromium}=require('playwright');
       assert.deepEqual(errors,[]);
       console.log('begins',width+'x'+height,'Korean armor, scroll damage and 80 percent land liquidation by touch OK');
       await page.close();
+    }
+    {
+      const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'cept-mobile-odds-'));
+      const server=require('../cept-server.cjs').createServer(tmp);
+      await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+      const page=await browser.newPage({viewport:{width:320,height:568},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+      try{
+        await page.route('https://**',r=>r.abort());
+        await page.goto('http://127.0.0.1:'+server.address().port+'/cept.html?edition=begins');
+        await page.selectOption('#mapChoice','begins-original-moontrade');
+        await page.selectOption('#count','2');
+        await page.selectOption('#humans','1');
+        await page.selectOption('#roundLimit','25');
+        await page.locator('#estimateDeck').tap();
+        await page.getByRole('status').filter({hasText:/완주 320\/320판/}).waitFor({timeout:90000});
+        assert.ok(await page.locator('#estimateDeck').isEnabled());
+        console.log('Begins mobile matchup estimator completed all 320 shrine-map matches');
+      }finally{
+        await page.close();
+        await new Promise(resolve=>server.close(resolve));
+        fs.rmdirSync(tmp);
+      }
     }
     for(const [width,height] of [[320,568],[844,390]]){
       const page=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,reducedMotion:'reduce'});

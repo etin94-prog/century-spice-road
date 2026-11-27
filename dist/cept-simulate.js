@@ -1,5 +1,6 @@
 if(new URLSearchParams(location.search).get('edition')==='revolt')importScripts('cept-evo.js');
 if(new URLSearchParams(location.search).get('edition')==='3ds')importScripts('cept-edition-data-2012.js');
+if(new URLSearchParams(location.search).get('edition')==='begins')importScripts('cept-begins-shrines.js');
 importScripts('cept-archive-data.js','cept-books.js','cept-cards.js','cept-stage-data.js','cept-layouts.js','cept-maps.js','cept-catalog-data.js','cept-combo-rules.js','cept-edition-data.js','cept-edition-data-modern.js','cept-editions.js','cept-shops.js','cept-extra-spells.js','cept-saga-shrines.js','cept-extra-battle.js','cept-match-record.js','cept-engine.js');
 self.onmessage=({data})=>{
   const {count,humans,target,map,player,opponent,aiLevel,alliance,roundLimit,suddenDeath}=data;
