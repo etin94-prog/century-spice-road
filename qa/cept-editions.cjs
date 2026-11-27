@@ -900,6 +900,29 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(description.includes('선제'),first);
     assert.equal(description.includes('돌아옵니다'),!first);
   }
+  const revolt=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('revolt',attacker,defender,w,a,prepare);
+  const revoltedRam=revolt('batteringram',null,'goblin','wallofstone').s.battle;
+  assert.equal(revoltedRam.attackST,50);
+  assert.equal(revoltedRam.won,true);
+  const cloud=revolt(null,null,'fighter','gascloud').s.battle;
+  assert.equal(cloud.startHP[1]-cloud.strikes[0].hp[1],20);
+  const vapor=revolt('tearinghalo',null,'fighter','gascloud').s.battle;
+  assert.equal(vapor.startHP[1]-vapor.strikes[0].hp[1],30);
+  const mirror=revolt('tearinghalo','magussmirror','fighter','fighter').s.battle;
+  assert.equal(mirror.strikes[0].effect,'reflect');
+  assert.equal(mirror.strikes[0].hp[0],10);
+  assert.equal(revolt('tearinghalo','magicshield').s.battle.strikes[0].effect,'block');
+  assert.match(revolt('tearinghalo',null,'ninja','fighter').s.battle.strikes[0].notes.join(' '),/45 피해/);
+  const stone=revolt(null,'petrifystone','fighter','fighter').s.battle;
+  assert.deepEqual([stone.startHP[1],stone.defendST],[80,0]);
+  const prism=revolt('prismaticwand',null,'fighter','woodfolk').s.battle;
+  assert.deepEqual([prism.attackST,prism.startHP[0]],[80,80]);
+  const trojan=revolt('fighter',null,'trojanhorse','woodfolk',state=>{state.tiles[1].level=3;state.tiles[1].type=2;}).s.battle;
+  assert.equal(trojan.landHP,30);assert.equal(trojan.won,true);
+  const patron=revolt(null,null,'fighter','goblin',(state,card)=>{
+    Object.assign(state.tiles[8],{owner:1,type:2,unit:{id:card('borgess'),hp:30}});
+  }).s.battle;
+  assert.deepEqual(patron.startHP,[60,50]);
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   for(const [attacker,elementalGuard] of [['flameacolyte','pillarofflame'],['aquaacolyte','kingtortoise'],['terraacolyte','dwarf'],['aeroacolyte','griffon']]){
     const matched=begins(null,null,attacker,elementalGuard);

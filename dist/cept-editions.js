@@ -335,6 +335,12 @@ const CepterEditions=(()=>{
     return {[elementalTraits[parts[1]]]:elements};
   }
   // Only enable Begins items whose printed effects the battle engine handles.
+  const revoltBattleCards={
+    gascloud:{half:true},woodfolk:{support:true},bandit:{support:true},borgess:{},ninja:{first:true,scrollCritical:true},
+    statue:{stationary:true},trojanhorse:{support:true},
+    batteringram:{st:30},buckler:{},magicshield:{hp:30},magussmirror:{hp:20},
+    petrifystone:{},prismaticwand:{},tearinghalo:{st:30,protectItem:true}
+  };
   const beginsCreatures={
     gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
@@ -445,6 +451,10 @@ const CepterEditions=(()=>{
         Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
       }
       if(edition==='revolt'){
+        if(Object.hasOwn(revoltBattleCards,slug)){
+          if(kind==='item')Object.assign(c,{st:0,hp:0});
+          Object.assign(c,{catalogOnly:false},revoltBattleCards[slug]);
+        }
         const art={
           archbishop:'dispel',goldentotem:'offering',fate:'draw',healer:'heal',elvenarcher:'arrow',
           dwarvenminer:'lapGain',holyllama:'dice6',armoreddragon:'neutralBlast',
