@@ -148,7 +148,8 @@ const CepterExtraBattle=(()=>{
         if(d.c.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n)){lines.push('두루마리 무효');return 'block';}
         return;
       }
-      if(d.n==='salamander'&&a.element===0){
+      const fire=side=>s.edition==='saga'?combo.hasElement(side,0):side.element===0;
+      if(d.n==='salamander'&&fire(a)){
         d.hp+=damage;d.absorbed=true;lines.push('화속성 피해 흡수');return 'heal';
       }
       if(orb)return;
@@ -159,7 +160,6 @@ const CepterExtraBattle=(()=>{
         if(s.predict&&s.edition==='3ds'){b.magicLoss??=[0,0];b.magicLoss[d.defending?1:0]+=cost;}
         lines.push('피해 무효 · 마력 −'+cost+'G');return 'block';
       }
-      const fire=side=>s.edition==='saga'?combo.hasElement(side,0):side.element===0;
       if(d.g==='talisman'||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(fire(a)||fire(d))||
         ['knightshield','knightsshield'].includes(d.g)&&fx.strength(a.u)>=40||d.n==='grindylow'&&fx.strength(a.u)<=30||
         ['nymph','yeti'].includes(d.n)&&a.element===0||d.n==='dhampir'&&a.element===2||d.n==='kraken'&&a.element===-1){

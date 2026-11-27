@@ -14,6 +14,7 @@ const CepterExtraSpells=(()=>{
     remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
+    bravesong:'player',toughsong:'player',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
@@ -21,7 +22,7 @@ const CepterExtraSpells=(()=>{
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const enemyOnly=new Set(['babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture']);
-  const duration={babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
+  const duration={bravesong:4,toughsong:4,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
   const soltis={
     goodluck:'행운 · 2라운드 통행료 면제',purify:'정화 · 모든 영지의 인챈트 해제',affection:'은총 · 순위 × 200G',
     hope:'희망 · 2장 드로우',depression:'불황 · 모든 호부 가격 20% 하락',suffocate:'질식 · 모든 크리처에 10 피해',lifeflow:'생명 · 한 지역의 내 크리처 전체 회복'
@@ -66,7 +67,12 @@ const CepterExtraSpells=(()=>{
     const replacement=(s,t)=>s.players[t.owner].hand.flatMap((id,j)=>cards[id].kind==='creature'&&canOccupy(cards[id],t)&&deployable(s,id)?[['replaceCard',j,id]]:[]);
     function chariotExits(s,from){
       const tile=s.tiles[from],links=board(s).links;
-      return [...new Set(links[from].flatMap(i=>links[i]))].filter(i=>i!==from&&territoryType(s.tiles[i].type)&&!combo.allied(s,tile.owner,s.tiles[i].owner)&&canInvade(s,tile.owner,s.tiles[i].owner)&&s.tiles[i].unit?.enchant!=='peace');
+      return [...new Set(links[from].flatMap(i=>links[i]))].filter(i=>{
+        const dest=s.tiles[i];
+        return i!==from&&territoryType(dest.type)&&!combo.allied(s,tile.owner,dest.owner)&&
+          canInvade(s,tile.owner,dest.owner)&&dest.unit?.enchant!=='peace'&&
+          (s.edition!=='saga'||canOccupy(cards[tile.unit.id],dest));
+      });
     }
     function targets(s,e){
       if(e==='remission'){
@@ -341,6 +347,7 @@ const CepterExtraSpells=(()=>{
           case 'ruin':return -sign*count('spell')*7-p.hand.filter(id=>cards[id].kind==='spell'&&combo.key(cards[id])!==e).length*5;
           case 'mesmerize':return -sign*Math.max(0,...q.hand.filter(id=>cards[id].kind==='spell').map(id=>cards[id].cost/9));
           case 'corruption':return -sign*symbolCount(q)/2;
+          case 'bravesong':case 'toughsong':return sign*(q.status===e?0:Math.min(24,6+3*owning(s,x).length));
           case 'sagagift':return sign*(10+(q.hand.length<5?8:0));
           case 'landdrain':return Math.min(owning(s,x).length*landDrainRate(s),Math.max(0,q.cash)+50)/9;
           case 'judgment':return -sign*q.cash/30-p.cash/58;

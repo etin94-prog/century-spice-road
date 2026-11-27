@@ -830,6 +830,8 @@ function createCepter(edition="ps2"){
       a.st+=supportST(s,b.at,b.from,a.seat)+(a.gear?.st||0)+(muted?0:a.c.battleST||0);
       if(!muted){
         if(!a.defending)a.st+=a.c.invadeST||0;
+        if(owner.status==='bravesong')a.st+=20;
+        if(owner.status==='toughsong')a.hp+=20;
         if(a.n==='manes'&&combo.enchanted(t.unit))a.hp+=20;
         if(a.g==='terrair')a.st+=count(3)*20;
         if(a.g==='mujinamask')a.hp+=other.hand.length*10;

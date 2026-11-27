@@ -97,7 +97,7 @@ const CepterEditions=(()=>{
       reincarnation:'reincarnation',shatter:'shatter',sink:'sink',upheaval:'upheaval',vitality:'vitality',
       weathering:'weathering',wildgrowth:'wildgrowth',windofhope:'windofhope'
     },
-    saga:{magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
+    saga:{chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
       illness:'disease',mimicry:'camouflage',paralyzer:'bindingmist',zap:'zap',
       bulimia:'bulimia',fatbody:'fatbody',hustle:'hustle',poisonmind:'mindseeker',
@@ -198,6 +198,28 @@ const CepterEditions=(()=>{
         squirrine:2,blitzraven:2,yellowogre:4,leatherarmor:2,mace:2,sling:2,haste:2,magicbolt:2,
         manna:2,slow:2
       },
+      // Xbox 360 Gottlieb deck records: 111-cs360-aidecks-gottlieb.
+      sagaGottliebKill:{
+        thief:2,bia:3,fay:3,hellhound:2,peri:2,sharazad:3,cerberus:2,dryad:3,
+        grimalkin:2,healer:3,sakuya:2,chainmail:2,bravesong:2,cleanse:1,crusherstorm:2,find:1,
+        holyword0:1,holyword3:1,holyword6:1,illness:2,manna:2,shrink:2,silence:2,toughsong:2,upheaval:1,wildgrowth:1
+      },
+      sagaGottliebSlaves:{
+        thief:2,bia:2,fay:3,hellhound:2,peri:2,sharazad:3,cerberus:2,dryad:3,
+        grimalkin:3,healer:2,sakuya:2,chainmail:2,magmahammer:2,bravesong:2,cramp:1,crusherstorm:2,
+        fog:2,holyword0:1,holyword3:2,holyword6:2,illness:2,manna:2,telegnosis:2,windofhope:2
+      },
+      // Xbox 360 Borival and Zeneth deck records: 103-cs360-aidecks-borival and 120-cs360-aidecks-zeneth.
+      sagaBorivalFire:{
+        barbarian:2,bia:2,creepingflame:2,fay:2,firegiant:2,gascloud:2,lavawurm:2,minotaur:2,
+        peri:2,phlogiston:2,phoenix:2,salamander:2,sorcerer:2,aurablade:2,chainmail:2,firestone:2,
+        morningstar:2,stormcounter:2,chariot:2,haste:2,holyword1:2,hustle:2,influence:2,manna:2,mutation:2
+      },
+      sagaZenethDragon:{
+        hornedchameleon:2,gascloud:2,golem:2,hellhound:2,salamander:2,charon:2,giantamoeba:2,lilith:2,
+        stormgiant:2,griffon:2,soulcollector:2,spectre:2,catapult:2,claymore:3,counteramulet:2,platemail:3,
+        antielement:2,antimagic:2,banishingray:2,insectswarm:2,magicbolt:3,manna:2,phantasm:2,tempest:1
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
@@ -285,7 +307,7 @@ const CepterEditions=(()=>{
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
     beastgear:{spellWard:true,neutralizeScroll:true},
-    deathquito:{first:true},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
+    deathquito:{first:true},salamander:{},charon:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
     archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},

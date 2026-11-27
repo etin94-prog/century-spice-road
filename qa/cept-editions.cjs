@@ -73,7 +73,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaImmediate','sagaAffinity']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaImmediate','sagaAffinity']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -522,6 +522,48 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const defensiveBelt=fight('fighter','goblin','무속성',null,null,'metamorphosebelt');
   assert.equal(defensiveBelt.battle.strikes[0].side,1);
   assert.equal(defensiveBelt.tiles[1].unit.id,id('goblin'));
+  for(const spell of ['bravesong','toughsong']){
+    const buff=newMatch();
+    const target=buff.players[1];
+    buff.players[0].cash=500;buff.players[0].hand=[id(spell)];
+    assert.ok(C.play(buff,['cast',0])&&C.play(buff,['targetPlayer',1]));
+    assert.equal(target.status,spell);
+    assert.equal(target.enchantDeadline,8);
+    assert.equal(buff.players[0].status,undefined);
+    const probe=()=>{
+      return fight('goblin','dwarf','무속성',null,s=>{s.players[1].status=target.status;}).battle;
+    };
+    assert.equal(probe().defendST,spell==='bravesong'?50:30);
+    assert.equal(probe().startHP[1],spell==='toughsong'?70:50);
+    for(let step=1;step<=8;step++){
+      buff.phase='land';buff.players[buff.turn].pos=0;
+      assert.ok(C.play(buff,['pass']));
+      assert.equal(target.status,step<8?spell:undefined);
+    }
+    assert.equal(probe().defendST,30);assert.equal(probe().startHP[1],50);
+  }
+  const ferryman=fight('fighter','charon','무속성',null,s=>{s.players[1].cash=200;});
+  assert.equal(ferryman.battle.strikes[0].effect,'block');
+  assert.equal(ferryman.players[1].cash,120);
+  assert.equal(fight('fighter','charon','무속성','freezingwind').battle.won,true);
+  assert.equal(fight('minotaur','salamander').battle.strikes[0].effect,'heal');
+  assert.equal(fight('crimsonvine','salamander').battle.strikes[0].effect,'heal');
+  assert.equal(fight('minotaur','salamander','무속성','firestone').battle.strikes[0].effect,'hit');
+  for(const occupied of [false,true]){
+    const s=C.start(2,2,5000,'saga-original-crosswind'),p=s.players[0];
+    unit(s,3,'minotaur',0,0);
+    if(occupied)unit(s,1,'goblin',1,0);
+    p.cash=500;p.hand=[id('chariot')];
+    assert.ok(C.play(s,['cast',0])&&C.play(s,['targetLand',3]));
+    assert.deepEqual(C.choices(s),[['teleTo',1]]);
+    assert.equal(p.book[0],id('chariot'));
+    assert.ok(C.play(s,['teleTo',1]));
+    if(occupied)assert.ok(C.play(s,['bare'])&&C.play(s,['bare'])&&C.play(s,['continue']));
+    assert.equal(s.phase,'roll');
+    assert.equal(s.tiles[1].owner,0);
+    assert.equal(s.tiles[1].unit.id,id('minotaur'));
+    assert.equal(s.tiles[3].owner,-1);
+  }
   const opal=s=>unit(s,8,'opalidol',1,0);
   const regenerated=fight('fighter','dwarf','무속성',null,opal);
   assert.equal(regenerated.tiles[1].unit.hp,50);
@@ -1768,11 +1810,15 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(actual,expected);
     assert.deepEqual(counts,{creature:28,item:9,spell:13});
   }
-  const reportedRilaraBooks={
+  const reportedSagaBooks={
     sagaRilaraPlunder:'bandit:4 fighter:2 goblin:4 thief:4 gascloud:2 redogre:2 blueogre:2 giantamoeba:2 dwarf:2 greenogre:2 harpy:2 yellowogre:2 chainmail:2 leatherarmor:2 longsword:3 mace:2 ringofthesuccubus:2 drainmagic:1 holyword1:2 holyword6:2 manna:2 slow:2',
-    sagaRilaraRobbery:'fighter:4 giantrat:4 goblin:4 phlogiston:2 redogre:4 aqualing:2 blueogre:4 greenogre:4 squirrine:2 blitzraven:2 yellowogre:4 leatherarmor:2 mace:2 sling:2 haste:2 magicbolt:2 manna:2 slow:2'
+    sagaRilaraRobbery:'fighter:4 giantrat:4 goblin:4 phlogiston:2 redogre:4 aqualing:2 blueogre:4 greenogre:4 squirrine:2 blitzraven:2 yellowogre:4 leatherarmor:2 mace:2 sling:2 haste:2 magicbolt:2 manna:2 slow:2',
+    sagaGottliebKill:'thief:2 bia:3 fay:3 hellhound:2 peri:2 sharazad:3 cerberus:2 dryad:3 grimalkin:2 healer:3 sakuya:2 chainmail:2 bravesong:2 cleanse:1 crusherstorm:2 find:1 holyword0:1 holyword3:1 holyword6:1 illness:2 manna:2 shrink:2 silence:2 toughsong:2 upheaval:1 wildgrowth:1',
+    sagaGottliebSlaves:'thief:2 bia:2 fay:3 hellhound:2 peri:2 sharazad:3 cerberus:2 dryad:3 grimalkin:3 healer:2 sakuya:2 chainmail:2 magmahammer:2 bravesong:2 cramp:1 crusherstorm:2 fog:2 holyword0:1 holyword3:2 holyword6:2 illness:2 manna:2 telegnosis:2 windofhope:2',
+    sagaBorivalFire:'barbarian:2 bia:2 creepingflame:2 fay:2 firegiant:2 gascloud:2 lavawurm:2 minotaur:2 peri:2 phlogiston:2 phoenix:2 salamander:2 sorcerer:2 aurablade:2 chainmail:2 firestone:2 morningstar:2 stormcounter:2 chariot:2 haste:2 holyword1:2 hustle:2 influence:2 manna:2 mutation:2',
+    sagaZenethDragon:'hornedchameleon:2 gascloud:2 golem:2 hellhound:2 salamander:2 charon:2 giantamoeba:2 lilith:2 stormgiant:2 griffon:2 soulcollector:2 spectre:2 catapult:2 claymore:3 counteramulet:2 platemail:3 antielement:2 antimagic:2 banishingray:2 insectswarm:2 magicbolt:3 manna:2 phantasm:2 tempest:1'
   };
-  for(const [name,cards] of Object.entries(reportedRilaraBooks)){
+  for(const [name,cards] of Object.entries(reportedSagaBooks)){
     assert.ok(C.validBook(C.presets[name]));
     const expected=Object.fromEntries(cards.split(' ').map(entry=>{const [slug,count]=entry.split(':');return [id(slug),Number(count)];}));
     const actual={};

@@ -310,7 +310,7 @@ function seatSummary(seat){
     [map.gates?'이번 주회 남은 게이트':'이번 주회 남은 요새',missing.join(' · ')||(map.gates?'모두 경유':'모두 경유 · 성으로 귀환')]
   ];
   if(map.gemStore)rows.push(['속성석',s.prices.map((price,e)=>C.elements[e]+' '+p.symbols[e]+'개 × '+price+'G').join(' · ')]);
-  const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'모든 내 영지에 명령 가능',sagaTollUp:'통행료 30% 증가',
+  const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'모든 내 영지에 명령 가능',bravesong:'브레이브 송 · 전투 ST +20',toughsong:'터프 송 · 전투 HP +20',sagaTollUp:'통행료 30% 증가',
     sagaTollDown:'통행료 30% 감소',sagaDeduction:'크리처·장비 비용 감면',sagaInflation:'크리처·장비 비용 증가',
     sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
     p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':p.sagaClemency?'다음 이동 통행료 면제':p.sagaService?'다음 요새 보너스 +50%':p.sagaFeast?'다음 주회 보너스 +50%':null;
