@@ -15,6 +15,10 @@ const describeCepterItem=(()=>{
     changingsalve:'전투가 시작되면 장착한 크리처의 ST와 HP를 서로 바꿉니다.',
     clawoftheghoul:'일반 공격으로 피해를 주면 상대를 마비시킵니다.',
     coinofpiety:'상대를 격파하고 생존하면 교전 영지와 같은 속성의 호부를 10개 얻습니다.',
+    corrosiveknife:'장착한 크리처가 생존한 전투에서 상대가 재생했으면 상대를 격파합니다.',
+    deathchoker:'일반 공격은 지형 HP 보너스를 관통합니다. 전투가 끝나면 장착한 크리처가 파괴됩니다.',
+    doomneedle:'양쪽이 생존하면 상대에게 노쇠를 부여해 다음 전투 종료 시 파괴되게 합니다.',
+    neutralcloak:'장착한 크리처는 전투 중 무속성이 됩니다.',
     daggerofmite:'현재 순위에 20을 곱한 만큼 전투 ST를 올립니다.',
     death:'두루마리. 공격 시 상대 크리처를 60% 확률로 즉사시킵니다. 전투 종료 시 장착한 크리처는 40% 확률로 파괴됩니다.',
     dragonhelm:'화·풍 속성 상대에게 강타하며, 수·지 속성 상대의 일반 공격을 무효화합니다.',
@@ -113,7 +117,7 @@ const describeCepterItem=(()=>{
       const el=list([shields[name]]);
       pieces.push(el+' 상대의 일반 공격을 무효화합니다. 장착한 크리처가 '+el+'이면 모든 일반 공격을 무효화합니다.');
     }
-    if(name==='boomerang'&&!firstEdition)pieces.push('전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
+    if(name==='boomerang'&&!firstEdition)pieces.push(C.edition==='saga'?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
     if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(firstEdition?5:10)+'G를 얻습니다.');
     if(name==='towershield'&&card.halveScroll)pieces.push('일반 공격과 두루마리 피해를 절반으로 줄입니다.');
     else if(!(C.edition==='3ds'&&key==='holygrail')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);

@@ -276,13 +276,14 @@ const CepterEditions=(()=>{
     beastgear:{spellWard:true,neutralizeScroll:true},
     bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
-  const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol']);
+  const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={
     aurablade:{},batteringram:{st:20},coinofpiety:{},fireshield:{},kris:{st:30,protectItem:true},
     ringofthesuccubus:{first:true},shadowarmor:{},sleep:{},smoketorch:{},tearinghalo:{st:30,protectItem:true},
     vorpalsword:{st:30},forceanklet:{},forcebracelet:{},knightsshield:{},spikedshield:{},
     magmaarmor:{},magmahammer:{st:20,criticalOwnElements:[0,2]},stormarmor:{},stormspear:{st:20,criticalOwnElements:[1,3]},
-    soulray:{st:30},tonfa:{doubleAttack:true},gremlinclaw:{},gremlintooth:{}
+    soulray:{st:30},tonfa:{doubleAttack:true},gremlinclaw:{},gremlintooth:{},
+    corrosiveknife:{},deathchoker:{st:30,pierceAll:true},doomneedle:{st:20},neutralcloak:{hp:20}
   };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));

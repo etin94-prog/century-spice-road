@@ -488,6 +488,23 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(fight('weretiger','dwarf','무속성',null,s=>{s.round=25;}).battle.attackST,40);
   assert.deepEqual(fight('tetrarm','dwarf','무속성','tonfa').battle.strikes.map(v=>v.side),[0,0,1]);
   assert.equal(id('gearion'),-1,'fusion-only creature is not a collectible card');
+  const opal=s=>unit(s,8,'opalidol',1,0);
+  const regenerated=fight('fighter','dwarf','무속성',null,opal);
+  assert.equal(regenerated.tiles[1].unit.hp,50);
+  assert.equal(fight('fighter','dwarf','무속성','corrosiveknife').battle.won,false);
+  assert.equal(fight('fighter','dwarf','무속성','corrosiveknife',opal).battle.won,true);
+  assert.equal(fight('fighter','dwarf','무속성','corrosiveknife',s=>{
+    opal(s);s.tiles[8].unit.enchant='paralysis';
+  }).battle.won,false);
+  const curse=fight('fighter','wallofice','무속성','doomneedle');
+  assert.equal(curse.battle.won,false);
+  assert.equal(curse.tiles[1].unit.enchant,'senility');
+  assert.equal(fight('goblin','wallofice','무속성',null,s=>{s.tiles[1].unit={...curse.tiles[1].unit};}).battle.won,true);
+  const choker=fight('goblin','dwarf',2,'deathchoker',s=>{s.tiles[1].level=2;});
+  assert.deepEqual(choker.battle.finalHP,[0,0]);
+  assert.equal(choker.tiles[1].owner,-1);
+  assert.equal(fight('fighter','redogre',0,null,null,'neutralcloak').battle.startHP[1],60);
+  assert.ok(!fight('goblin','tornado','무속성','boomerang').players[0].hand.includes(id('boomerang')));
   assert.equal(fight('flammefleur','goblin').battle.won,true);
   const overlap=fight('warlock','frostbeast',1,'prismaticwand');
   const equal=fight('stymphalides','frostbeast',1,'prismaticwand');
@@ -561,7 +578,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(warlock,['targetPlayer',0]));
   assert.equal(warlock.players[0].antiMagic,undefined);
   assert.equal(warlock.players[0].cash,540);
-  console.log('Saga dual elements, starter card battles, Creeping Flame movement, 23 additional items and 18 additional creatures OK');
+  console.log('Saga dual elements, starter card battles, Creeping Flame movement, 27 additional items and 18 additional creatures OK');
 
   const economy=territory();
   unit(economy,1,'goblin',0,2,4);
@@ -1791,7 +1808,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.ok(word?dice.die===word:[4,5,6].includes(dice.die));
     }
   }
-  console.log('Saga seven active map Idols: paralysis, summon costs, dice, territory commands and damage protection OK');
+  console.log('Saga eight active map Idols: paralysis, summon costs, dice, territory commands, damage and regeneration OK');
   assert.equal(C.presets.sagaImmediate.filter(id=>C.cards[id].doublecast).length,10);
   assert.equal(C.presets.sagaAffinity.filter(id=>['sagabistair','sagaselenear'].includes(C.cards[id].effect)).length,6);
   const special=['reincarnation','cleanse','crusher','debility','fistfight','illness','mimicry','paralyzer','zap','bulimia','fatbody','hustle','poisonmind'];

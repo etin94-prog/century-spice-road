@@ -814,7 +814,7 @@ function createCepter(edition="ps2"){
       if(a.n==='nightfiend')a.st+=t.level*20;
       if(a.n==='peri'&&other.book.length-owner.book.length>=3){a.st+=20;a.hp+=20;}
       if(a.g==='changingsalve')[a.st,a.hp]=[a.hp,a.st];
-      if(a.g==='neutralamulet'){a.element=-1;a.elements=null;}
+      if(a.g==='neutralamulet'||a.g==='neutralcloak'){a.element=-1;a.elements=null;}
       if(!muted){
         extra.baseStats(a,d);
         if(a.c.evoBattle){
@@ -858,7 +858,7 @@ function createCepter(edition="ps2"){
       const scroll=a.gear?.category==='scroll'||!a.gear&&(a.c.innateScroll>0||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb';
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
-      const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||matches(weapon?.pierceElements,d));
+      const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||weapon?.pierceAll||matches(weapon?.pierceElements,d));
       const elementalCritical=!scroll&&!muted&&(matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||matches(weapon?.criticalOwnElements,a));
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
@@ -979,17 +979,22 @@ function createCepter(edition="ps2"){
         b.strikes.push({effect,side:a===A?0:1,hp:health(),notes:lines.slice(start)});
       }
     }
-    const creatureEnd=!muted&&!active('basaltidol')&&combo.activeWorld(s)!=='naturalworld';
+    const basalt=active('basaltidol');
+    const creatureEnd=!muted&&!basalt&&combo.activeWorld(s)!=='naturalworld';
+    const itemEnd=!muted&&(edition!=='saga'||!basalt);
+    const opal=edition==='saga'&&active('opalidol');
     for(const a of sides){
       const d=a===A?D:A,originalName=a.n;
       if(!creatureEnd)a.n=null;
       if(!muted)extra.end(a,d,creatureEnd);
       if(!muted&&a.hp>0&&a.u.poisoned){const loss=Math.floor(fx.max(a.u)*(edition==='saga'?.3:.5));a.hp=Math.min(a.hp,a.u.hp)-loss;lines.push('독 · '+loss+' 피해');}
-      if(!muted&&a.hp>0&&(creatureEnd&&(a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||a.u.enchant==='regeneration'||a.g==='fireamulet')){a.heal=true;a.hp=fx.max(a.u);lines.push('재생 · HP 회복');}
+      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||a.u.enchant==='regeneration'||a.g==='fireamulet')){
+        a.regenerated=a.heal=true;a.hp=fx.max(a.u);lines.push('재생 · HP 회복');
+      }
       if(a.hp>0&&(a.n==='lunatichare'||a.g==='lunastone')&&d.hp>0){const st=Math.max(0,d.st);d.u.st=Math.max(0,Math.min(d.hp,fx.max(d.u)));d.hp=st;}
       if(a.hp>0&&a.hp<=20&&(a.n==='mandrake'||a.g==='gemoflife'))a.hp=d.hp=0;
       if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition)a.hp=Math.min(a.hp,a.u.hp)-10;}
-      if(a.g==='boomerang'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
+      if(a.g==='boomerang'&&edition!=='saga'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0)a.hp-=20;
       if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
       if(!muted&&a.u.enchant==='bulimia'&&a.hp>0){
@@ -1001,6 +1006,15 @@ function createCepter(edition="ps2"){
       if(!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed'&&(a.hp>0||d.hp>0)&&(a.n==='leshy'||a.g==='silverplow'))t.level=Math.min(5,t.level+(a.n==='leshy')+(a.g==='silverplow'));
       if(a.item!=null&&(a.n==='centaur'||['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
       a.n=originalName;
+    }
+    if(itemEnd){
+      const defeated=new Set();
+      for(const [a,d] of [[A,D],[D,A]]){
+        if(a.hp<=0)continue;
+        if(a.g==='corrosiveknife'&&d.hp>0&&d.regenerated){defeated.add(d);lines.push('부식 나이프 · 재생한 상대 격파');}
+        if(a.g==='deathchoker'){defeated.add(a);lines.push('데스 초커 · 장착 크리처 격파');}
+      }
+      for(const a of defeated)a.hp=0;
     }
     function revive(a){
       const form=a.g==='necroscarab'?'zombie':creatureEnd?({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld?{greatfossil:'tyrannosaurus'}:{})})[a.n]:null;
@@ -1039,7 +1053,10 @@ function createCepter(edition="ps2"){
     for(const a of sides){
       const opponent=a===A?D:A;
       if(a.g==='eternalmail'&&a.hp>0)s.players[a.seat].book.unshift(a.item);
-      if(a.g==='soulray'&&a.hp>0&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
+      if(edition==='saga'&&itemEnd&&a.hp>0){
+        if(['boomerang','soulray'].includes(a.g)&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
+        if(a.g==='doomneedle'&&opponent.hp>0){combo.clear(opponent.u);opponent.u.enchant='senility';lines.push('둠 니들 · 노쇠');}
+      }
       if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent);
       if((a.n==='valkyria'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0){
         const st=fx.strength(a.u);
