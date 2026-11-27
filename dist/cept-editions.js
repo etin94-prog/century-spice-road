@@ -110,7 +110,9 @@ const CepterEditions=(()=>{
       selenear:'selenear',simulacrum:'simulacrum',spartoi:'spartoi',spiritwalk:'spiritwalk',telegnosis:'telegnosis',
       torture:'torture',triumph:'triumph',magicbooster:'magicbooster',theft:'theft',
       antielement:'antielement',permission:'permission',wordofrecall:'castlerecall',dreamterrain:'dreamterrain',earthshaker:'earthshaker',
-      charity:'charity',landtransfer:'landtransfer',mutation:'mutation',turnover:'turnover'
+      charity:'charity',landtransfer:'landtransfer',mutation:'mutation',turnover:'turnover',
+      camouflage:'camouflage',cure:'heal',dispelmagic:'dispelmagic',exile:'exile',
+      massgrowth:'massgrowth',punisher:'punisher',quintessence:'quintessence',removecurse:'removecurse',weakness:'weakness'
     },
     saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',

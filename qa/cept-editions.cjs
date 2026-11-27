@@ -4457,7 +4457,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(archives.maps.length,41);
   assert.deepEqual(archives.maps.find(m=>m.name==='Dunnan'),{name:'Dunnan',section:'story',goal:6000,die:6,areas:1,tiles:18,start:200,lap:200,forts:'S',fortBonus:100});
   assert.ok(catalog.every(c=>!c.editionArt));
-  assert.equal(names.length,3);
+  assert.equal(names.length,5);
   assert.ok(Object.values(C.presets).every(C.validBook));
   assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,Object.keys(C.presets).length);
   const online=playerBooks.find(([, ,source])=>source==='956-c3ds-playerdecks-osf20130125');
@@ -4490,6 +4490,25 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     for(let n=0;n<limit&&s.phase!=='over';n++)assert.ok(C.play(s,C.ai(s)),mapId+' '+s.phase);
     assert.equal(s.phase,'over',mapId+' '+count+' seats');
   }
+  for(const key of ['3ds-original-alder-pass','3ds-original-palm-canals']){
+    const map=C.maps[key],connected=new Set([0]);
+    assert.equal(new Set(map.position.map(String)).size,map.types.length);
+    assert.equal(map.types.length,map.areas.length);
+    for(const at of connected)for(const next of map.links[at]){
+      const [r,c]=map.position[at],[nr,nc]=map.position[next];
+      assert.equal(Math.abs(r-nr)+Math.abs(c-nc),1);
+      connected.add(next);
+    }
+    assert.equal(connected.size,map.types.length);
+  }
+  const crossing=C.start(4,4,0,'3ds-original-palm-canals',undefined,undefined,3,'teams');
+  assert.deepEqual([crossing.target,crossing.prices.length,C.board(crossing).forts],[8000,8,[9,15]]);
+  Object.assign(crossing,{phase:'fork',die:2,remaining:2});
+  Object.assign(crossing.players[0],{pos:3,previous:2});
+  assert.deepEqual(new Set(C.choices(crossing).map(([,at])=>at)),new Set([4,24]));
+  assert.ok(C.play(crossing,['route',24]));
+  assert.deepEqual([crossing.phase,crossing.players[0].pos,crossing.tiles[12].area,crossing.lastMove.path],['land',12,1,[3,24,12]]);
+
   const base=C.start(4,4,0,intro);
   assert.deepEqual([base.edition,base.target,base.players[0].cash,base.prices.length],['3ds',6000,200,4]);
   base.phase='roll';assert.ok(C.play(base,['roll']));
@@ -4940,6 +4959,53 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.play(dustCommand,['transfer',1,2]));
     assert.deepEqual([dustCommand.tiles[1].unit.id,dustCommand.tiles[2].unit.id],[id('powdereater'),id('powdereater')]);
 
+    const healing=spell('cure');place(healing,1,'goblin',2);
+    healing.tiles[1].unit.hp=12;
+    cast(healing,'targetLand',1);
+    assert.deepEqual([healing.players[0].cash,healing.tiles[1].unit.hp,healing.players[0].hand],[990,30,[id('fly')]]);
+
+    for(const [name,extra,check] of [
+      ['camouflage',{},u=>assert.equal(u.enchant,'camouflage')],
+      ['removecurse',{enchant:'landprotection'},u=>assert.equal(u.enchant,undefined)]
+    ]){
+      const s=spell(name);place(s,1,'goblin',0);Object.assign(s.tiles[1].unit,extra);
+      cast(s,'targetLand',1);check(s.tiles[1].unit);
+      assert.ok(s.players[0].book.includes(id(name)));
+    }
+    const dispel=spell('dispelmagic');dispel.players[1].status='barrier';
+    cast(dispel,'targetPlayer',1);
+    assert.equal(dispel.players[1].status,undefined);
+    assert.ok(dispel.players[0].book.includes(id('dispelmagic')));
+    const weakness=spell('weakness');place(weakness,1,'minotaur',1);
+    cast(weakness,'targetLand',1);
+    assert.deepEqual([weakness.tiles[1].unit.st,weakness.players[0].hand],[0,[id('fly')]]);
+
+    const exiled=spell('exile');place(exiled,1,'goblin',1);place(exiled,2,'dragon',1);
+    for(const at of [1,2])exiled.tiles[at].unit.enchant='greed';
+    assert.ok(C.play(exiled,['cast',0]));
+    assert.deepEqual(C.choices(exiled),[['targetLand',1]]);
+    assert.ok(C.play(exiled,['targetLand',1]));
+    assert.deepEqual([exiled.tiles[1].owner,exiled.tiles[2].owner,exiled.players[1].hand],[-1,1,[id('goblin')]]);
+
+    const grown=spell('massgrowth');place(grown,1,'goblin',0);place(grown,2,'minotaur',1);
+    Object.assign(grown.tiles[1].unit,{hp:90,mhp:98});
+    cast(grown);
+    assert.deepEqual([grown.tiles[1].unit.hp,grown.tiles[1].unit.mhp,grown.tiles[2].unit.mhp],[92,100,45]);
+    grown.phase='spell';grown.players[0].hand=[id('growthbody')];
+    cast(grown,'targetLand',1);
+    assert.equal(grown.tiles[1].unit.mhp,100);
+
+    const shift=spell('quintessence');place(shift,1,'goblin',0,4);place(shift,2,'goblin',0,5);
+    assert.ok(C.play(shift,['cast',0]));
+    assert.deepEqual(C.choices(shift),[['targetLand',1]]);
+    assert.ok(C.play(shift,['targetLand',1]));
+    assert.deepEqual([shift.tiles[1].type,shift.tiles[2].type],['복합',0]);
+
+    const punishment=spell('punisher');place(punishment,1,'goblin',0);place(punishment,2,'goblin',1);
+    punishment.tiles[2].unit.enchant='disease';
+    cast(punishment);
+    assert.deepEqual([punishment.tiles[1].unit.hp,punishment.tiles[2].unit.hp],[30,10]);
+
     const acid=spell('acidrain');
     place(acid,1,'wallofice',1);place(acid,2,'goblin',3);
     cast(acid);
@@ -5063,5 +5129,5 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }})`,worker);
   assert.equal(samples.at(-1).done,true);
   assert.deepEqual([...samples.at(-1).finished],[160,160]);
-  console.log('2012 3DS four exact starters, 22 more spells, catalog and map archive, nine AI finishes, dice, alliance lap/talisman income and territory commands, all nine Revenge cards, all 27 territory abilities, defense/scroll equipment and 320 seat-rotation samples OK');
+  console.log('2012 3DS five native-rule arenas, exact starter and archive decks, 15 AI finishes, alliance economy, spell thresholds, all nine Revenge cards, all 27 territory abilities and 320 seat-rotation samples OK');
 }

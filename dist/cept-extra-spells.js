@@ -134,7 +134,7 @@ const CepterExtraSpells=(()=>{
         const empty=!t.unit,hasTerrain=Object.hasOwn(terrain,e)||Object.hasOwn(hybridShifts,e);
         if(empty||(Object.hasOwn(shifts,e)||e==='revoltlandtransfer')&&t.owner!==s.turn)return [];
         if(hybridShifts[e]&&(t.level>3||!Object.hasOwn(hybridShifts[e],t.type)))return [];
-        if(e==='quintessence'&&s.edition==='revolt'&&t.level>=5)return [];
+        if(e==='quintessence'&&['3ds','revolt'].includes(s.edition)&&t.level>=5)return [];
         if(s.edition==='3ds'&&['sink','upheaval','weathering','wildgrowth'].includes(e)&&t.level>3)return [];
         if(!fx.targetable(s,t,category,e==='removecurse'))return [];
         if(secretSigils.has(e)&&(t.owner!==s.turn||fx.secretArt(cards[t.unit.id])||t.unit.enchant===e))return [];
@@ -272,7 +272,7 @@ const CepterExtraSpells=(()=>{
           case 'removecurse':
             if(u)combo.clear(u);
             delete t.enchant;
-            if(s.edition==='begins')returnToBook(s,s.turn,ids.get(e));
+            if(['begins','3ds'].includes(s.edition))returnToBook(s,s.turn,ids.get(e));
             break;
           case 'replace':s.replaceAt=x;return 'replaceCard';
           case 'magicfountain':combo.clear(u);u.enchant=e;break;
@@ -288,6 +288,7 @@ const CepterExtraSpells=(()=>{
           case 'dispelmagic':
             clearCepter(q);
             if(s.edition==='saga')p.book.unshift(ids.get(e));
+            if(s.edition==='3ds')returnToBook(s,s.turn,ids.get(e));
             break;
           case 'revival':resetBook(s,x,true);break;
           case 'ruin':p.hand=p.hand.filter(id=>cards[id].kind!=='spell');q.hand=q.hand.filter(id=>cards[id].kind!=='spell');break;
@@ -378,7 +379,7 @@ const CepterExtraSpells=(()=>{
           case 'lifestream':for(const v of owning(s,s.turn))if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);break;
           case 'lightcraft':s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});break;
           case 'massgrowth':{
-            const cap=['saga','revolt','begins'].includes(s.edition)?100:80;
+            const cap=['saga','revolt','begins','3ds'].includes(s.edition)?100:80;
             for(const v of land){
               if(synthesis&&v.owner!==s.turn||fx.immuneHP(v))continue;
               const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,cap-max));
@@ -560,7 +561,7 @@ const CepterExtraSpells=(()=>{
       if(e==='colorfrombeyond')return land.reduce((score,t)=>score+(enemy(s,t.owner)?1:-1)*Math.min(30,fx.strength(t.unit))/5,0);
       if(e==='rayoflaw')return s.players.reduce((v,q,i)=>v+(enemy(s,i)?1:-1)*q.hand.filter(id=>cards[id].cost>=100).length*6,0);
       if(e==='massgrowth'){
-        const cap=['saga','revolt','begins'].includes(s.edition)?100:80;
+        const cap=['saga','revolt','begins','3ds'].includes(s.edition)?100:80;
         const growing=land.filter(v=>fx.max(v.unit)<cap&&!fx.immuneHP(v));
         const broad=growing.reduce((score,v)=>score+(enemy(s,v.owner)?-2:2),0);
         return s.edition==='revolt'&&p.hand.some(id=>cards[id].kind==='item')?Math.max(broad,growing.filter(v=>v.owner===s.turn).length*2):broad;

@@ -143,7 +143,7 @@ const CepterCombos = (() => {
           shrinkHealth(s,t,10);
         }
         else if(e==='growthbody'){
-          const gain=['revolt','begins'].includes(s.edition)?Math.max(0,Math.min(10,100-max(u))):10;
+          const gain=['revolt','begins','3ds'].includes(s.edition)?Math.max(0,Math.min(10,100-max(u))):10;
           u.mhp=max(u)+gain;u.hp=s.edition==='begins'?Math.min(u.mhp,u.hp+10):u.hp+gain;
         }
         else if(e==='weakness')u.st=0;
@@ -162,9 +162,9 @@ const CepterCombos = (() => {
           }
           u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
-        if(s.edition==='begins'&&e==='camouflage')returnToBook(s,i,ids.get(e));
+        if(['begins','3ds'].includes(s.edition)&&e==='camouflage')returnToBook(s,i,ids.get(e));
         if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||
-          s.edition==='3ds'&&['antielement','drought','fog'].includes(e)||s.edition==='revolt'&&e==='vortex'||
+          s.edition==='3ds'&&['antielement','drought','fog','weakness'].includes(e)||s.edition==='revolt'&&e==='vortex'||
           s.edition==='begins'&&['antielement','disease','drought','fog','greed','vitality','weakness'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){

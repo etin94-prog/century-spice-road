@@ -1715,8 +1715,10 @@ function createCepter(edition="ps2"){
           s.phase=fx.apply(s,s.spellEffect,x);
           mapEffect('cast',(k==='targetLand'&&revivalLabel(unit,tile.unit))||s.spellEffect,k==='comboArea'?p.pos:x);break;
         }
-        if(s.spellEffect==='heal')unit.hp=spellHP(s,tile,'heal');
-        else fx.spellHarm(s,tile,20);
+        if(s.spellEffect==='heal'){
+          unit.hp=spellHP(s,tile,'heal');
+          if(handheld)draw(p,s);
+        }else fx.spellHarm(s,tile,20);
         s.phase='roll';
         const change=(tile.unit?.hp||0)-prior;
         mapEffect(s.spellEffect,revivalLabel(unit,tile.unit)??((change>=0?'+':'−')+Math.abs(change)+' HP'),x,{title:cards[unit.id].name});

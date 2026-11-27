@@ -222,7 +222,11 @@ const describeCepterSpell=(()=>{
       if(e==='reinforce')return '고른 지역의 모든 크리처의 기본 ST를 최대 100까지 10 올립니다.';
       if(e==='dispelmagic')return '고른 셉터의 저주를 해제합니다. 사용한 주문은 북으로 돌아갑니다.';
     }
-    if(edition==='3ds'&&['antielement','drought','fog'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
+    if(edition==='3ds'&&['antielement','drought','fog','heal','weakness'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
+    if(edition==='3ds'&&['camouflage','dispelmagic','removecurse'].includes(e))return text[e]+' 사용한 주문은 북으로 돌아갑니다.';
+    if(edition==='3ds'&&e==='growthbody')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';
+    if(edition==='3ds'&&e==='massgrowth')return '모든 크리처의 최대 HP를 최대 100까지 5 올립니다.';
+    if(edition==='3ds'&&e==='quintessence')return '레벨 4 이하인 고른 영지를 복합 속성 영지로 바꿉니다.';
     if(edition==='3ds'&&e==='charity')return '현재 순위와 같은 수의 카드를 뽑습니다.';
     if(edition==='3ds'&&e==='landtransfer')return '내 영지 한 곳을 포기하고 현재 영지 가치만큼 마력을 얻습니다.';
     if(edition==='3ds'&&e==='mutation')return '크리처의 최대 HP를 최대 100까지 20 올리고 독을 부여합니다. 전투 종료 시 독이 최대 HP의 절반만큼 피해를 줍니다.';
