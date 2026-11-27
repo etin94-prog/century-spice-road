@@ -121,7 +121,7 @@ const CepterEditions=(()=>{
       escape:'escape',gift:'gift',greed:'greed',growthbody:'growthbody',spiritwalk:'spiritwalk',vitality:'vitality',
       miraclecall:'miraclecall',purify:'purify',haste:'haste',massphantasm:'revoltphantasm',revival:'revival',stoneblast:'stoneblast',
       turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform',
-      peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth'},
+      peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth',shininggeyser:'shininggeyser'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -484,6 +484,9 @@ const CepterEditions=(()=>{
           c.effect=effect;c.catalogOnly=false;
           if(edition==='saga'&&clauses.includes('Doublecast'))c.doublecast=true;
           if(edition==='revolt'&&slug==='massgrowth')c.synthesis='item';
+          if(edition==='revolt'&&slug==='shininggeyser'){
+            c.synthesis='sflash';c.synthesizedEffect='shininggeyserstrong';
+          }
         }
         if(edition==='revolt'&&['brightworld','darkworld','jointworld','mercifulworld','mirrorworld','mistyworld','naturalworld','solidworld','wasteworld'].includes(slug)){c.effect=slug;c.catalogOnly=false;}
         if(edition==='begins'&&slug==='manna')c.magicPerLap=100;

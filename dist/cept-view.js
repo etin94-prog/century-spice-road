@@ -658,7 +658,14 @@ function map(){
       const when=t.type==='강제 전송진'?'통과하거나 멈추면 ':'정지 시 ';
       center.append(el('span',destination==null?'목적지 미설정 · 이동 효과 없음':when+(destination+1)+'번으로 이동'));
     }else center.append(el('span',m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':'점유 크리처 없음'));
-    if(targets.has(inspect)){const action=targets.get(inspect);center.append(btn((inspect+1)+'번 · '+labels[action[0]]+' 확정',()=>act(action),'primary'));}
+    if(targets.has(inspect)){
+      const action=targets.get(inspect);
+      if(action[0]==='targetLand'&&['shininggeyser','shininggeyserstrong'].includes(s.spellEffect)){
+        const next=C.spellHP(s,t,s.spellEffect);
+        center.append(el('span','예상 HP '+u.hp+' → '+next+(next===0?' · 격파':'')));
+      }
+      center.append(btn((inspect+1)+'번 · '+labels[action[0]]+' 확정',()=>act(action),'primary'));
+    }
     return;
   }
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.phase==='over'?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.phase==='over'?winLabel():s.die?'주사위 '+s.die:m.name),el('span',(m.gates?'게이트 ':'요새 ')+p.flags.length+'/'+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
@@ -853,11 +860,14 @@ function render(){
   actionMenu.classList.toggle('action-menu',anchored);
   const menuKey=[s.round,s.turn,s.phase,s.logSequence||0,room?.revision||0,optional].join(':');
   if(menuState.game!==s||menuState.key!==menuKey){
-    const gateOnMap=selectingGate()&&choices.some(([kind])=>kind==='targetLand');
+    const landTarget=choices.some(([kind])=>kind==='targetLand');
+    const gateOnMap=selectingGate()&&landTarget;
+    const geyserOnMap=['shininggeyser','shininggeyserstrong'].includes(s.spellEffect)&&landTarget;
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
     const secretOnMap=s.phase==='secretTarget'&&choices.some(([kind])=>kind==='secretLand');
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!geyserOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
     if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
+    if(geyserOnMap)handPanel.open=false;
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;
   }

@@ -736,6 +736,31 @@ const {chromium}=require('playwright');
       assert.deepEqual(await circlePage.evaluate(()=>[s.phase,s.players[0].pos,s.players[0].cash]),['land',19,650]);
       assert.equal(await circlePage.locator('#mapRoll').isHidden(),true);
       console.log('revolt '+width+'x'+height+': Spell Circle illustrated free choice and post-movement resume by touch OK');
+      await circlePage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;inspect=-1;
+        s=C.start(2,2,5000,'revolt-original-circle-court');
+        const id=name=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===name);
+        Object.assign(s.players[0],{pos:2,hand:['goblin','shininggeyser','magicbolt'].map(id),cash:180});
+        Object.assign(s.tiles[2],{owner:0,unit:{id:id('fighter'),hp:40}});
+        Object.assign(s.tiles[3],{owner:1,unit:{id:id('fighter'),hp:40}});
+        render();
+      });
+      await circlePage.locator('#matchActionsToggle[aria-expanded=false]').tap();
+      await circlePage.locator('[data-open=cast]').tap();
+      await picker.locator('.turn-picker-card').first().tap();
+      await picker.locator('.primary').tap();
+      await circlePage.locator('[data-open=sacrifice]').tap();
+      await picker.locator('.turn-picker-card').nth(1).tap();
+      await picker.locator('.primary').tap();
+      const target=circlePage.getByRole('button',{name:/^4번 .* 대상 영지$/});
+      await target.waitFor();
+      assert.equal(await circlePage.locator('#matchActionsToggle').getAttribute('aria-expanded'),'false');
+      await target.tap();
+      assert.match(await circlePage.locator('#center').innerText(),/예상 HP 40 → 0 · 격파/);
+      await circlePage.locator('#center button.primary').tap();
+      await circlePage.waitForFunction(()=>s.mapEffect?.label==='−40 HP · 격파');
+      assert.deepEqual(await circlePage.evaluate(()=>[s.tiles[2].unit.hp,s.tiles[3].owner,s.players[0].cash]),[40,-1,80]);
+      console.log('revolt '+width+'x'+height+': Shining Geyser synthesis, visible tile and damage preview by touch OK');
       await circlePage.close();
     }
     for(const [width,height] of [[320,568],[844,390]]){

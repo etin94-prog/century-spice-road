@@ -16,8 +16,9 @@ const CepterExtraSpells=(()=>{
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
-    frostneedle:'land',venomousboil:'land',
+    frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
+  const geyserDamage={shininggeyser:30,shininggeyserstrong:40};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
@@ -106,6 +107,7 @@ const CepterExtraSpells=(()=>{
         if(e==='venomousboil'&&![1,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='chariot'&&(t.owner!==s.turn||!chariotExits(s,i).length))return [];
         if((e==='bistair'||e==='parasite')&&!enemy(s,t.owner)||e==='banishingray'&&cards[t.unit.id].element!==-1)return [];
+        if(geyserDamage[e]&&!enemy(s,t.owner))return [];
         if(e==='stoneblast'&&![2,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='holybanishment'&&matchesLand(cards[t.unit.id],t.type))return [];
         if(e==='replace'&&!replacement(s,t).length)return [];
@@ -199,6 +201,7 @@ const CepterExtraSpells=(()=>{
           case 'meteor':t.level=1;break;
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
           case 'stoneblast':fx.harm(s,t,30);break;
+          case 'shininggeyser':case 'shininggeyserstrong':fx.harm(s,t,geyserDamage[e]);break;
           case 'zap':fx.harm(s,t,10);break;
           case 'holybanishment':
             if(s.edition==='revolt')fx.returnToHand(s,t);
@@ -398,6 +401,10 @@ const CepterExtraSpells=(()=>{
       switch(e){
         case 'zap':return -sign*(fx.damageAmount(s,t,10)+(t.unit.hp<=10?weight*4:0));
         case 'stoneblast':case 'frostneedle':case 'venomousboil':return -sign*fx.damageAmount(s,t,30)/4;
+        case 'shininggeyser':case 'shininggeyserstrong':{
+          const damage=fx.damageAmount(s,t,geyserDamage[e]);
+          return damage/4+(damage===t.unit.hp?weight*5:0);
+        }
         case 'sagabistair':return affinity(s,0,2)>=5?-sign*fx.damageAmount(s,t,40)/3:-30;
         case 'sagaterrair':return affinity(s,1,3)>=5?-sign*(t.level-1)*12:-30;
         case 'comet':return -sign*Math.min(2,t.level-1)*10;
@@ -478,6 +485,6 @@ const CepterExtraSpells=(()=>{
     }
     return {apply,targets,choices,choose,chariotExits,scoreTarget,scoreCast,scoreChoice};
   }
-  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,startTurn,damageSpells};
+  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,startTurn,damageSpells,geyserDamage};
 })();
 if(typeof module!=='undefined')module.exports=CepterExtraSpells;

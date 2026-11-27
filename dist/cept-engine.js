@@ -354,7 +354,8 @@ function createCepter(edition="ps2"){
   const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace});
   function spellHP(s,t,e){
     const u=t.unit;
-    if(e==='bolt')return u.hp-fx.damageAmount(s,t,20);
+    const damage=e==='bolt'?20:extraSpells?.geyserDamage[e];
+    if(damage)return u.hp-fx.damageAmount(s,t,damage);
     if(fx.immuneHP(t))return u.hp;
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
   }
@@ -1270,6 +1271,9 @@ function createCepter(edition="ps2"){
     record.append(s,prior,a[0],seat,timedOut,total);
     return true;
   }
+  function matchesSynthesis(card,sacrifice){
+    return !!card?.synthesis&&!!sacrifice&&(card.synthesis===sacrifice.kind||card.synthesis===sacrifice.category);
+  }
   function applyAction(s,a,sacrifice){
     if(!Array.isArray(a)||!choices(s).some(b=>a.length===b.length&&b.every((v,i)=>v===a[i])))return false;
     const [k,x,y]=a,i=actor(s),p=s.players[i],t=s.tiles[p.pos],immediate=s.immediateAt!=null;
@@ -1390,11 +1394,12 @@ function createCepter(edition="ps2"){
         if(c.doublecast)s.doublecast='pending';else delete s.doublecast;
         p.lastCast={name:key(c),round:s.round};
         delete p.invisible;
-        const spellType=extraTypes?.[c.effect]||combo.type[c.effect];
+        const synthesis=matchesSynthesis(c,sacrifice);
+        const effect=synthesis&&c.synthesizedEffect||c.effect;
+        const spellType=extraTypes?.[effect]||combo.type[effect];
         if(spellType){
-          const global=spellType==='global',beforeHP=combo.damageSpells.has(c.effect)||extraSpells?.damageSpells.has(c.effect)?s.tiles.map(t=>t.unit?.hp):[];
-          const synthesis=!!c.synthesis&&sacrifice?.kind===c.synthesis;
-          s.spellEffect=c.effect;s.phase=global?(extraTypes?.[c.effect]?extra:fx).apply(s,c.effect,undefined,synthesis):'spellTarget';
+          const global=spellType==='global',beforeHP=combo.damageSpells.has(effect)||extraSpells?.damageSpells.has(effect)?s.tiles.map(t=>t.unit?.hp):[];
+          s.spellEffect=effect;s.phase=global?(extraTypes?.[effect]?extra:fx).apply(s,effect,undefined,synthesis):'spellTarget';
           const hits=beforeHP.flatMap((hp,at)=>{
             const damage=hp-(s.tiles[at].unit?.hp??0);
             return damage>0?[{at,damage,defeated:!s.tiles[at].unit}]:[];
@@ -1447,7 +1452,13 @@ function createCepter(edition="ps2"){
         mapEffect('cast',(x+1)+'지역 · 독');s.phase='roll';break;
       }
       case 'comboArea':case 'targetLand':{
-        if(extraTypes?.[s.spellEffect]){const prior=s.tiles[x].unit?.hp;s.phase=extra.apply(s,s.spellEffect,x);const damage=prior-(s.tiles[x].unit?.hp??0);mapEffect('cast',damage>0?'−'+damage+' HP':s.spellEffect,x);break;}
+        if(extraTypes?.[s.spellEffect]){
+          const tile=s.tiles[x],prior=tile.unit?.hp,effect=s.spellEffect;
+          s.phase=extra.apply(s,effect,x);
+          const damage=prior-(tile.unit?.hp??0),geyser=extraSpells.geyserDamage[effect];
+          const label=damage>0?'−'+damage+' HP'+(geyser&&!tile.unit?' · 격파':''):geyser?'피해 없음':effect;
+          mapEffect('cast',label,x);break;
+        }
         if(combo.type[s.spellEffect]){s.phase=fx.apply(s,s.spellEffect,x);mapEffect('cast',s.spellEffect,k==='comboArea'?p.pos:x);break;}
         const unit=s.tiles[x].unit,prior=unit.hp;
         if(s.spellEffect==='heal')unit.hp=spellHP(s,s.tiles[x],'heal');
@@ -1765,7 +1776,10 @@ function createCepter(edition="ps2"){
         if(effect==='manna')return Math.max(1,p.lap)*6;
         return effect==='bolt'&&s.tiles.some(t=>t.unit&&!allied(s,t.owner,seat))?5:effect==='shatter'?2:-2;
       }
-      if(k==='cast'&&extraTypes?.[c.effect])return extra.scoreCast(s,c.effect)-price(p,c,s)/35;
+      if(k==='cast'&&extraTypes?.[c.effect]){
+        const effect=c.synthesizedEffect&&p.hand.some((id,j)=>j!==x&&matchesSynthesis(c,cards[id]))?c.synthesizedEffect:c.effect;
+        return extra.scoreCast(s,effect)-price(p,c,s)/35;
+      }
       if(['targetLand','targetPlayer'].includes(k)&&extraTypes?.[s.spellEffect])return extra.scoreTarget(s,s.spellEffect,x);
       if(extraSpells?.actions[k])return extra.scoreChoice(s,k,x,y);
       if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-(revolt?price(p,c,s):c.cost)/35;
@@ -1788,7 +1802,11 @@ function createCepter(edition="ps2"){
       if(k==='sacrifice'||k==='discard'&&groups.length){
         const reserved=plan.ready(n)?25:groups.some(g=>g.some(part=>part.includes(n)))?8:0;
         const pending=k==='sacrifice'?cards[p.hand[s.pendingCard.index]]:null;
-        const synthesis=pending?.synthesis===c.kind&&s.tiles.some(t=>t.unit&&!allied(s,seat,t.owner)&&fx.max(t.unit)<100&&!fx.immuneHP(t))?8:0;
+        let synthesis=0;
+        if(matchesSynthesis(pending,c)){
+          if(pending.synthesizedEffect)synthesis=2*Math.max(0,extra.scoreCast(s,pending.synthesizedEffect)-extra.scoreCast(s,pending.effect));
+          else if(s.tiles.some(t=>t.unit&&!allied(s,seat,t.owner)&&fx.max(t.unit)<100&&!fx.immuneHP(t)))synthesis=8;
+        }
         return synthesis-reserved+(p.hand.filter(id=>id===p.hand[x]).length-1)*3-c.cost/40;
       }
       if((skill>=2||groups.length)&&(k==='equip'||k==='bare')){

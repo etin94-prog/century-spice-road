@@ -359,6 +359,39 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(saved.mapEffect.label.includes('합성'),passedItem);
   };
   growth(false);growth(true);
+  const geyser=(tribute,damage)=>{
+    const match=C.start(4,4,5000,'revolt-original-lantern-market',undefined,undefined,2,'teams');
+    const caster=match.players[0],ally=match.teams.findIndex((team,seat)=>seat>0&&team===match.teams[0]);
+    const foe=match.teams.findIndex(team=>team!==match.teams[0]);
+    const spell=card(C,'shininggeyser'),item=card(C,'mace'),instant=card(C,tribute);
+    caster.cash=300;caster.hand=[item,spell,instant];caster.ai=true;
+    const fighter=card(C,'fighter');
+    for(const [at,owner,hp,enchant] of [[1,0,40],[2,ally,40],[5,foe,40],[6,foe,40,'landprotection'],[8,foe,40,'phantasm']]){
+      Object.assign(match.tiles[at],{owner,unit:{id:fighter,hp,enchant}});
+    }
+    assert.deepEqual(C.ai(match),['cast',1]);
+    assert.ok(C.play(match,['cast',1]));
+    assert.ok(!C.play(match,['sacrifice',1]));
+    if(damage===40)assert.deepEqual(C.ai(match),['sacrifice',2]);
+    assert.ok(C.play(match,['sacrifice',2]));
+    assert.equal(match.phase,'spellTarget');
+    assert.equal(caster.cash,200);
+    assert.deepEqual(caster.hand,[item]);
+    assert.equal(match.mapEffect.label.includes('합성'),damage===40);
+    const saved=JSON.parse(JSON.stringify(match));
+    assert.deepEqual(C.choices(saved),[['targetLand',5],['targetLand',8]]);
+    assert.equal(C.spellHP(saved,saved.tiles[5],saved.spellEffect),40-damage);
+    assert.equal(C.spellHP(saved,saved.tiles[8],saved.spellEffect),40);
+    assert.deepEqual(C.ai(saved),['targetLand',5]);
+    assert.ok(C.play(saved,['targetLand',5]));
+    assert.equal(saved.tiles[5].unit?.hp??0,40-damage);
+    assert.equal(saved.tiles[5].owner,damage===40?-1:foe);
+    assert.equal(saved.mapEffect.label,'−'+damage+' HP'+(damage===40?' · 격파':''));
+    assert.ok(C.play(match,['targetLand',8]));
+    assert.equal(match.tiles[8].unit.hp,40);
+    assert.equal(match.mapEffect.label,'피해 없음');
+  };
+  geyser('mace',30);geyser('magicbolt',40);geyser('shininggeyser',40);
 
   const ward=scenario(C,'magicbolt');
   Object.assign(ward.tiles[1],{owner:1,unit:{id:card(C,'halfling'),hp:30}});
