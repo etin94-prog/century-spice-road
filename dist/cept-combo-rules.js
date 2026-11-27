@@ -568,7 +568,10 @@ const CepterCombos = (() => {
         if(e==='mercifulworld')return s.players.some((q,i)=>!friend(i)&&q.cash>p.cash)?9:0;
         if(e==='mirrorworld')return tiles.reduce((score,t)=>score+(tiles.some(v=>v!==t&&v.unit.id===t.unit.id)?-advantage(t)*6:0),0);
         if(e==='solidworld')return friendly.reduce((score,t)=>score+Math.max(0,t.level-2)*5,0);
-        if(e==='brightworld')return p.hand.filter(id=>cards[id].kind==='creature'&&cards[id].catalog?.additionalCost).length*8-4;
+        if(e==='brightworld'){
+          const reserved=p.hand.map(id=>cards[id]).filter(c=>c.kind==='creature'&&c.catalog?.additionalCost&&c.cost+70<=p.cash);
+          return reserved.length*16-4;
+        }
         if(e==='jointworld')return tiles.reduce((score,t)=>score+(typeof t.type==='number'&&tiles.some(v=>t!==v&&t.area===v.area&&allied(s,v.owner,t.owner)&&typeof v.type==='number'&&Math.abs(v.type-t.type)===2)?advantage(t)*9:0),0);
         return s.players.reduce((score,q,i)=>score+(friend(i)?-1:1)*q.hand.reduce((tax,id)=>tax+(cards[id].catalog?.rarity==='S'?1:['R','E'].includes(cards[id].catalog?.rarity)?2:0),0),0);
       }

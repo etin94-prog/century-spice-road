@@ -1350,6 +1350,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.validBook(C.presets[book]));
     for(const effect of effects)assert.ok(C.presets[book].some(id=>C.cards[id].effect===effect));
   }
+  assert.ok(C.presets.fire.filter(id=>C.cards[id].kind==='creature'&&C.cards[id].catalog?.additionalCost).length>=6);
   const reuse=fixtures();
   reuse.players[0].cash=800;reuse.players[0].pos=5;
   reuse.players[0].hand=['peace','senility','exile','squeeze','goblin'].map(card);

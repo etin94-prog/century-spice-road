@@ -129,7 +129,8 @@ const CepterEditions=(()=>{
           const index=favored.indexOf(c.effect);
           return index<0?-c.cost:100-index;
         }
-        return (c.st||0)*attackWeight+(c.hp||0)*(1-attackWeight)+(c.first?8:0)-c.cost*.4-requirements*18;
+        const summons=favored.includes('brightworld')&&['dwarvenminer','elvenarcher','hardrockdragon','lightningdragon'].includes(c.catalog?.path.split('/').pop());
+        return (c.st||0)*attackWeight+(c.hp||0)*(1-attackWeight)+(c.first?8:0)-c.cost*.4-requirements*18+(summons?40:0);
       };
       for(const group of Object.values(groups))group.sort((a,b)=>score(b)-score(a)||a-b);
       const deck=[];
