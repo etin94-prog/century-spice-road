@@ -73,7 +73,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaImmediate','sagaAffinity']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaImmediate','sagaAffinity']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -415,6 +415,17 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.equal(saved.tiles[source].owner,-1);
     }
   }
+  const coalFight=fight('coaloid','fighter','무속성',null,s=>{
+    unit(s,8,'hellpyron',1,0);unit(s,9,'hellpyron',1,0);
+    unit(s,10,'minotaur',0,0);unit(s,11,'minotaur',0,0);
+  });
+  assert.equal(coalFight.battle.attackST,60,'boost does not stack and fire land bonus is personal');
+  assert.equal(coalFight.battle.startHP[0],50);
+  assert.equal(fight('hellpyron','minotaur','무속성').battle.attackST,70,'active fighter cannot provide its own boost');
+  assert.equal(fight('crimsonvine','fighter','무속성',null,s=>unit(s,8,'hellpyron',1,0)).battle.attackST,40);
+  assert.equal(fight('minotaur','fighter','무속성',null,s=>{
+    unit(s,8,'hellpyron',1,0);s.tiles[8].unit.enchant='paralysis';
+  }).battle.attackST,40);
   const gearStats=gear=>fight('fighter','dwarf','무속성',gear,s=>{
     s.players[0].hand=[id('goblin'),id('minotaur')];
     unit(s,8,'crimsonvine',1,0);unit(s,10,'frostbeast',0,1);
@@ -742,6 +753,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(ordinary.tiles[2].unit.hp,20);
   assert.equal(ordinary.tiles[4].unit,null);
   assert.equal(ordinary.tiles[5].unit.hp,25);
+  assert.equal(ordinary.destroyedCount??0,0,'title update excludes shrine defeats');
   assert.match(ordinary.shrineNotice,/HP −5 · 2체/);
 
   const dark=atShrine('saga-5',52);
@@ -1876,6 +1888,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     sagaZenethDragon:'hornedchameleon:2 gascloud:2 golem:2 hellhound:2 salamander:2 charon:2 giantamoeba:2 lilith:2 stormgiant:2 griffon:2 soulcollector:2 spectre:2 catapult:2 claymore:3 counteramulet:2 platemail:3 antielement:2 antimagic:2 banishingray:2 insectswarm:2 magicbolt:3 manna:2 phantasm:2 tempest:1',
     sagaTicomunKill:'fighter:2 giantrat:2 goblin:2 deathquito:2 gelatinouswall:2 lilith:2 lizardman:2 seahag:2 centaur:3 harpy:3 pegasus:2 tornado:2 battleaxe:1 buckler:2 chainmail:2 leatherarmor:2 longsword:2 mace:1 sling:2 blackout:2 holyword6:2 holyword1:2 magicbolt:2 manna:2 pain:2',
     sagaTicomunChallenge:'deathquito:3 gelatinouswall:2 grendel:1 seahag:2 lizardman:2 stormgiant:2 centaur:2 harpy:2 knight:2 nightmare:2 pegasus:2 tornado:2 amethystring:1 berylring:1 buckler:2 chainmail:2 longsword:2 sling:2 stormspear:2 blackout:2 crusher:2 holyword6:2 holyword1:2 manna:2 pain:2 waste:2',
+    sagaBorivalHellFire:'barbarian:2 burnacle:2 burningtitan:2 coaloid:4 creepingflame:2 firegiant:2 gascloud:2 hellpyron:1 helltic:2 kasha:2 peri:2 phlogiston:2 salamander:2 fireshield:2 firestone:2 gremlintooth:2 magmahammer:4 bravesong:2 burninghail:2 influence:1 magicbolt:2 mountainleap:2 upheaval:2 venomousboil:2',
     sagaRilaraExploit:'bandit:4 fighter:2 thief:2 boggart:2 hellhound:2 amazon:3 gelatinouswall:2 dwarf:2 squirrine:2 gremlin:1 succubus:1 witch:3 gremlintooth:1 kris:2 morningstar:2 ringofthesuccubus:3 scalearmor:2 vestment:2 capture:1 drainmagic:2 haste:2 landdrain:2 manna:2 slow:2 theft:1'
   };
   for(const [name,cards] of Object.entries(reportedSagaBooks)){
@@ -1978,6 +1991,26 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     for(const [field,value] of Object.entries(expected))assert.equal(s.tiles[3].unit[field],value,name);
     if(name==='burnacle')assert.equal(C.toll(s,s.tiles[3]),Math.floor(toll/2));
   }
+  const harvest=idolMatch(),pyron=harvest.players[0];
+  place(harvest,2,'hellpyron',0,0);
+  Object.assign(pyron,{cash:500,pos:2});
+  harvest.phase='land';harvest.destroyedCount=3;harvest.lastDestroyed=id('goblin');
+  assert.ok(C.play(harvest,['ability',2]));
+  assert.equal(pyron.cash,620);assert.equal(harvest.destroyedCount,0);assert.equal(harvest.lastDestroyed,id('goblin'));
+
+  const burn=idolMatch();
+  place(burn,2,'helltic',0,0);place(burn,3,'coaloid',1,0);place(burn,4,'minotaur',1,0);place(burn,5,'minotaur',0,0);
+  Object.assign(burn.players[0],{cash:500,pos:2});burn.tiles[3].unit.hp=20;burn.phase='land';
+  const fireVictimCash=burn.players[1].cash;
+  assert.ok(C.play(burn,['ability',2])&&C.play(burn,['abilityLand',3]));
+  assert.equal(burn.players[1].cash,fireVictimCash+100);assert.equal(burn.tiles[3].unit,null);
+  assert.equal(burn.destroyedCount,1);
+  const bolt=idolMatch();
+  place(bolt,3,'coaloid',1,0);bolt.tiles[3].unit.hp=20;bolt.phase='spell';
+  Object.assign(bolt.players[0],{cash:500,hand:[id('magicbolt')]});
+  const boltVictim=bolt.players[1].cash;
+  assert.ok(C.play(bolt,['cast',0])&&C.play(bolt,['targetLand',3]));
+  assert.equal(bolt.players[1].cash,boltVictim+50);
   const bookworm=idolMatch();
   place(bookworm,2,'bookworm',0,1);
   Object.assign(bookworm.players[0],{cash:500,pos:2});

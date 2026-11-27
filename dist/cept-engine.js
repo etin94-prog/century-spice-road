@@ -1580,6 +1580,7 @@ function createCepter(edition="ps2"){
     function territoryValue(from,kind,x){
       const src=s.tiles[from],n=fx.name(src.unit),cost=fx.territoryCost(s,n);
       if(edition==='saga'){
+        if(n==='hellpyron')return 50*(s.destroyedCount||0)-cost;
         if(n==='gogma')return (allied(s,seat,s.tiles[x].owner)?1:-1)*value(s,s.tiles[x])*1.5;
         if(n==='warlock')return allied(s,seat,x)&&!s.players[x].antiMagic?20:0;
         if(n==='creepingflame')return Math.max(...fx.territoryMoveExits(s,from,true).map(dst=>sleipnirValue(from,dst)));
@@ -1588,7 +1589,9 @@ function createCepter(edition="ps2"){
       const sign=t=>allied(s,t.owner,seat)?1:-1;
       const damageValue=(t,damage)=>{
         const amount=fx.damageAmount(s,t,damage);
-        return -sign(t)*(amount+(amount===t.unit.hp?value(s,t)*.45:0));
+        const reward=edition==='saga'&&fx.name(t.unit)==='coaloid'&&t.unit.enchant!=='paralysis'
+          ?50*s.tiles.filter(v=>v.type===0&&v.owner===t.owner).length:0;
+        return -sign(t)*(amount+(amount===t.unit.hp?value(s,t)*.45-reward:0));
       };
       if(kind==='abilityPlayer'){
         const q=s.players[x],friend=allied(s,x,seat);

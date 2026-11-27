@@ -32,7 +32,7 @@ const CepterSagaShrines=(()=>{
         if(!t.unit||!types.some(type=>combo.hasElement(cards[t.unit.id],type)))continue;
         if(action==='damage'||action==='disaster'){
           const amount=fx.damageAmount(s,t,-stats[action]);
-          if(amount){fx.harm(s,t,-stats[action]);affected++;}
+          if(amount){fx.harm(s,t,-stats[action],null);affected++;}
         }else if(action==='heal'||action==='compassion'){
           const hp=t.unit.hp;
           if(!fx.immuneHP(t))t.unit.hp=Math.min(fx.max(t.unit),hp+stats[action]);
@@ -91,7 +91,7 @@ const CepterSagaShrines=(()=>{
           for(const t of s.tiles){
             if(!t.unit)continue;
             const c=cards[t.unit.id];
-            if(!combo.matchesTerrain(c,t.type)&&!(t.type==='무속성'&&combo.hasElement(c,-1)))fx.harm(s,t,Math.ceil(t.unit.hp/2));
+            if(!combo.matchesTerrain(c,t.type)&&!(t.type==='무속성'&&combo.hasElement(c,-1)))fx.harm(s,t,Math.ceil(t.unit.hp/2),null);
           }
           break;
         case 'service':fx.clearCepter(p);p.sagaService=true;break;

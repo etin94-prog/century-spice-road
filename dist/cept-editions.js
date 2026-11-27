@@ -236,6 +236,11 @@ const CepterEditions=(()=>{
         squirrine:2,gremlin:1,succubus:1,witch:3,gremlintooth:1,kris:2,morningstar:2,ringofthesuccubus:3,
         scalearmor:2,vestment:2,capture:1,drainmagic:2,haste:2,landdrain:2,manna:2,slow:2,theft:1
       },
+      sagaBorivalHellFire:{
+        barbarian:2,burnacle:2,burningtitan:2,coaloid:4,creepingflame:2,firegiant:2,gascloud:2,hellpyron:1,
+        helltic:2,kasha:2,peri:2,phlogiston:2,salamander:2,fireshield:2,firestone:2,gremlintooth:2,magmahammer:4,
+        bravesong:2,burninghail:2,influence:1,magicbolt:2,mountainleap:2,upheaval:2,venomousboil:2
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
@@ -323,11 +328,11 @@ const CepterEditions=(()=>{
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
     beastgear:{spellWard:true,neutralizeScroll:true},
-    deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
+    deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
     archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},
-    fortress:{stationary:true},helltic:{},burnacle:{stationary:true}
+    fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={

@@ -54,8 +54,9 @@ const CepterCombos = (() => {
         !(activeWorld(s)==='darkworld'&&enchanted(t.unit)))&&
         !(s.edition==='saga'&&n==='warlock')&&!cards[t.unit.id].spellWard&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&category==='senchant');
     }
-    function death(s,id){
-      s.destroyedCount=(s.destroyedCount||0)+1;s.lastDestroyed=id;
+    function death(s,id,count=true){
+      if(count)s.destroyedCount=(s.destroyedCount||0)+1;
+      s.lastDestroyed=id;
       for(const p of s.players)if(p.status==='soulsteal')p.cash+=50;
     }
     function destroy(s,t,caster=s.turn){
@@ -66,7 +67,13 @@ const CepterCombos = (() => {
         if(name(u)==='boggart')s.players[t.owner].hand.push(u.id);
         if(name(u)==='mephistopheles'&&caster!=null)s.players[caster].cash-=200;
       }
-      death(s,u.id);vacate(t);
+      if(s.edition==='saga'&&caster!=null&&name(u)==='coaloid'&&u.enchant!=='paralysis'){
+        const reward=50*s.tiles.filter(v=>v.owner===t.owner&&v.type===0).length;
+        s.players[t.owner].cash+=reward;
+        if(reward)note(s,cards[u.id].name+' · +'+reward+'G');
+      }
+      death(s,u.id,s.edition!=='saga'||caster!=null);
+      vacate(t);
     }
     function damageAmount(s,t,n){
       return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,s.edition==='saga'?'clayidol':'crayidol')?10:0)));
@@ -219,7 +226,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,burnacle:50};
+    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -244,7 +251,7 @@ const CepterCombos = (() => {
       if(cost==null||s.players[s.turn].cash<cost||!canUseAbility(s,tile))return [];
       if(s.edition==='saga'){
         if(n==='creepingflame')return territoryMoveExits(s,from,true).length?[['abilitySelf',from]]:[];
-        if(n==='fontaciel'||n==='rockshell')return [['abilitySelf',from]];
+        if(n==='fontaciel'||n==='rockshell'||n==='hellpyron')return [['abilitySelf',from]];
         if(n==='hypnosloth')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
         if(n==='tokebi'||n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&
           (n==='tokebi'||v.type!==2&&!idol(s,'jadeidol'))?[['abilityLand',j]]:[]);
@@ -294,6 +301,12 @@ const CepterCombos = (() => {
             const prior=max(t.unit),gain=Math.max(0,Math.min(5,100-prior));
             t.unit.mhp=prior+gain;t.unit.hp+=gain;
           }
+          return;
+        }
+        if(n==='hellpyron'){
+          const reward=50*(s.destroyedCount||0);
+          p.cash+=reward;s.destroyedCount=0;
+          note(s,cards[src.unit.id].name+' · +'+reward+'G');
           return;
         }
         if(n==='fortress'||n==='helltic'){damage(s,v,n==='fortress'?10:20);return;}

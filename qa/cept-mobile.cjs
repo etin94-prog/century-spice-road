@@ -590,6 +590,17 @@ const {chromium}=require('playwright');
     await sagaPage.locator('#turnPicker .turn-picker-card').first().tap();
     await sagaPage.locator('#turnPicker .primary').tap();
     assert.deepEqual(await sagaPage.evaluate(()=>s.players[0].hand.map(id=>C.combo.key(C.cards[id]))),['mace']);
+    await sagaPage.evaluate(()=>{
+      cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;inspect=-1;
+      const unit=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='hellpyron');
+      Object.assign(s.tiles[3],{type:0,owner:0,unit:{id:unit,hp:60}});
+      Object.assign(s,{turn:0,phase:'land',visited:[3],destroyedCount:3});
+      Object.assign(s.players[0],{cash:500,pos:3,hand:[]});render();
+    });
+    if(!await sagaPage.locator('#buttons [data-action=ability]').isVisible())await sagaPage.locator('#matchActionsToggle').tap();
+    await sagaPage.locator('#buttons [data-action=ability]').tap();
+    assert.deepEqual(await sagaPage.evaluate(()=>[s.players[0].cash,s.destroyedCount]),[620,0]);
+    console.log('saga 844x390: Hell Pyron territory command pays 150G for 30G and resets defeats');
     console.log('saga 844x390: Doublecast, book redraw, Gift hand privacy, Immediate and occupied target touch OK');
     console.log('saga 844x390: two-area board, mandatory portal, morph summon and Fountain redraw by touch OK');
     await sagaPage.close();
