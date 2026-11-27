@@ -156,7 +156,7 @@ const CepterCombos = (() => {
           u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
         if(s.edition==='begins'&&e==='camouflage')returnToBook(s,i,ids.get(e));
-        if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||
+        if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||s.edition==='revolt'&&e==='vortex'||
           s.edition==='begins'&&['antielement','disease','drought','fog','greed','vitality','weakness'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){
@@ -419,7 +419,10 @@ const CepterCombos = (() => {
       conjureBaal:{cost:80,label:'빈 영지에 바알 소환 후 자신 파괴',summon:'baal',consume:true},
       conjureGooba:{cost:20,label:'빈 영지에 구바 소환',summon:'gooba'},
       giveHiveWorker:{cost:20,label:'하이브 워커를 손패에 추가',grant:'hiveworker',self:true},
-      buildStatues:{cost:80,label:'인접한 빈 영지에 스태추 소환',adjacent:'statue',self:true}
+      buildStatues:{cost:80,label:'인접한 빈 영지에 스태추 소환',adjacent:'statue',self:true},
+      stepMove:{cost:30,label:'한 칸 이동 또는 이동 침략',move:true},
+      growMHP:{cost:30,label:'최대 HP +10 · 최대 100',grow:10},
+      chooseDirection:{cost:40,label:'다음 이동 방향을 선택',player:true,chooseDirection:true}
     };
     const grantedArts={sigiloffloat:'floatSigil',sigilofdrain:'drainSigil'};
     const secretKey=(card,unit)=>card?.secretArt||grantedArts[unit?.enchant];
@@ -431,8 +434,9 @@ const CepterCombos = (() => {
       const key=secretKey(cards[src?.unit?.id],src?.unit),p=s.players[s.turn],art=arts[key];
       if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
       if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
-        (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'?[['secretPlayer',i]]:[]);
+        (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'&&(!art.chooseDirection||!q.chooseDirection)?[['secretPlayer',i]]:[]);
       if(key==='drawItem')return p.book.some(id=>cards[id].kind==='item')?[['secretSelf',from]]:[];
+      if(art.move)return territoryMoveExits(s,from,true).map(at=>['secretLand',at]);
       if(art.summon)return s.tiles.flatMap((t,at)=>vacantLand(t)?[['secretLand',at]]:[]);
       if(art.adjacent)return vacantNeighbors(s,from).length?[['secretSelf',from]]:[];
       if(art.form||art.grant)return [['secretSelf',from]];
@@ -445,6 +449,7 @@ const CepterCombos = (() => {
         if(!targetable(s,t))return [];
         if(key==='heal'&&t.owner===s.turn&&!immuneHP(t)&&t.unit.hp<max(t.unit))return [['secretLand',at]];
         if(key==='strength'&&strength(t.unit)<100)return [['secretLand',at]];
+        if(art.grow&&!immuneHP(t)&&max(t.unit)<100)return [['secretLand',at]];
         if(art.enemy&&allied(s,t.owner,s.turn)||art.own&&t.owner!==s.turn)return [];
         if(key==='poison'&&!t.unit.poisoned)return [['secretLand',at]];
         if(key==='earthShift'&&t.type!==2&&activeWorld(s)!=='solidworld')return [['secretLand',at]];
@@ -467,9 +472,10 @@ const CepterCombos = (() => {
           note(s,q.name+' · 안티 매직으로 비술 방어');
           return '안티 매직';
         }
-        if(art.word){
-          clearCepter(q);q.word=art.word;
-          note(s,q.name+' · 다음 주사위 '+art.word);
+        if(art.word||art.chooseDirection){
+          clearCepter(q);
+          if(art.word)q.word=art.word;else q.chooseDirection=true;
+          note(s,q.name+' · '+art.label);
           return art.label;
         }
         const amount=key==='drainSigil'?Math.floor(Math.max(0,q.cash)*.1):
@@ -503,6 +509,10 @@ const CepterCombos = (() => {
       if(key==='worldDispel')delete s.world;
       if(key==='poison'){clear(target.unit);target.unit.poisoned=true;}
       if(key==='earthShift')target.type=2;
+      if(art.grow){
+        const prior=max(target.unit),gain=Math.min(art.grow,100-prior);
+        target.unit.mhp=prior+gain;target.unit.hp+=gain;
+      }
       if(key==='strength')target.unit.st=Math.min(100,strength(target.unit)+20);
       if(art.setFatigue===true)target.unit.fatigued=true;
       if(art.setFatigue===false)delete target.unit.fatigued;
@@ -518,7 +528,7 @@ const CepterCombos = (() => {
       if(spec.player){
         const q=s.players[at];
         if(q.antiMagic)return -20;
-        if(spec.word)return allied(s,at,s.turn)&&q.word==null?5:-20;
+        if(spec.word||spec.chooseDirection)return allied(s,at,s.turn)&&q.word==null?5:-20;
         const value=art==='drainSigil'?Math.floor(Math.max(0,q.cash)*.1)/5:
           q.hand.filter(id=>cards[id]?.kind==='spell').length*9;
         return value-spec.cost*.25-(card.vigorous?0:4);
@@ -533,6 +543,7 @@ const CepterCombos = (() => {
         utility=20+(matchesTerrain(creature,t.type)?12:0)+creature.hp*.3-(spec.consume?value(s,s.tiles[from])/6:0);
       }
       if(spec.grant)utility=p.hand.length<6?14:0;
+      if(spec.grow)utility=(friendly?1:-1)*(12+t.level*4);
       if(spec.adjacent)utility=vacantNeighbors(s,from).length*22;
       if(spec.form){
         const enemyColors=s.tiles.filter(v=>v.unit&&!allied(s,v.owner,s.turn)).map(v=>cards[v.unit.id].element);

@@ -10,7 +10,7 @@ const CepterExtraSpells=(()=>{
   const shifts={fireshift:0,watershift:1,earthshift:2,airshift:3};
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
   const type={...ps2Type,holyword8:'player',landdrain:'player',
-    alarm:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
+    alarm:'global',chaospanic:'global',revoltPlague:'global',philosophy:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
     remission:'land',magicalleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
@@ -39,6 +39,9 @@ const CepterExtraSpells=(()=>{
     magicfountain:'크리처가 있는 영지를 선택한다. 이곳에 처음 멈춘 셉터가 400G를 받는다.',
     mesmerize:'적 손패의 주문 하나를 골라 사용한다. 메스머라이즈는 고를 수 없다.',
     teleport:'가장 가까운 특수 칸으로 이동한다. 이번 차례의 주사위는 생략한다.',
+    chaospanic:'모든 셉터의 다음 이동 방향을 한 번 뒤집습니다.',
+    revoltPlague:'지도에 배치된 모든 크리처에 독을 겁니다. 전투가 끝날 때 최대 HP의 절반만큼 피해를 받습니다.',
+    philosophy:'손패에 합성 능력이 있는 카드가 있으면 북에서 3장, 없으면 2장 뽑습니다.',
     blasttrap:'크리처에 폭발 함정을 겁니다. 누구든 그 영지에 멈추면 보유 마력의 40%를 잃고 크리처는 HP 20 피해를 받습니다. 한 번 발동합니다.',
     sigiloffloat:'기존 비술이 없는 내 크리처에게 50G로 셉터의 주사위를 5로 고정하는 비술을 부여합니다.',
     sigilofdrain:'기존 비술이 없는 내 크리처에게 20G로 적의 보유 마력 10%를 빼앗는 비술을 부여합니다.',
@@ -324,6 +327,13 @@ const CepterExtraSpells=(()=>{
           }
           case 'purify':p.cash+=purify(s)*50;break;
           case 'pacifism':for(const q of s.players)setStatus(s,q,e,2);break;
+          case 'chaospanic':for(const q of s.players){clearCepter(q);q.reverse=true;}break;
+          case 'revoltPlague':for(const v of land){combo.clear(v.unit);v.unit.poisoned=true;}break;
+          case 'philosophy':{
+            const count=p.hand.some(id=>cards[id].synthesis)?3:2;
+            for(let i=0;i<count;i++)draw(p,s);
+            break;
+          }
           case 'colorfrombeyond':for(const v of land)v.unit.st=Math.max(0,fx.strength(v.unit)-30);break;
           case 'revoltphantasm':case 'penalize':
             for(const v of land){
@@ -501,6 +511,9 @@ const CepterExtraSpells=(()=>{
         return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*(average-q.cash),0)/15;
       }
       if(e==='speedpenalty')return speedPenalty(s).amount/10;
+      if(e==='revoltPlague')return land.reduce((sum,t)=>sum+(t.unit.poisoned?0:enemy(s,t.owner)?5:-6),0);
+      if(e==='chaospanic')return s.players.reduce((score,q,i)=>score+((enemy(s,i)?1:-1)*(q.word!=null?5:0)),0);
+      if(e==='philosophy')return Math.min(3,10-p.hand.length)*5;
       if(e==='alarm')return mine.reduce((sum,t)=>sum+(t.unit?.fatigued?5+t.level:0),0);
       if(e==='refuge'){
         if(p.cash<120)return 22;

@@ -129,7 +129,8 @@ const CepterEditions=(()=>{
       turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform',
       peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth',shininggeyser:'shininggeyser',blazesplash:'blazesplash',penalize:'penalize',
       spartoi:'spartoi',speedpenalty:'speedpenalty',magicalleap:'magicalleap',chariot:'chariot',
-      sigiloffloat:'sigiloffloat',sigilofdrain:'sigilofdrain',poisonmind:'mindseeker',blasttrap:'blasttrap'},
+      sigiloffloat:'sigiloffloat',sigilofdrain:'sigilofdrain',poisonmind:'mindseeker',blasttrap:'blasttrap',
+      chaospanic:'chaospanic',plague:'revoltPlague',philosophy:'philosophy',vortex:'vortex'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -313,6 +314,17 @@ const CepterEditions=(()=>{
         mudman:4,rocktroll:1,woodfolk:1,bindingwhip:4,gelatinousarmor:1,magmashield:3,petrifystone:2,
         shadowblaze:1,sparkball:2,bindingmist:1,earthshift:2,exile:1,magicalleap:4,manna:2,
         poisonmind:3,senility:1
+      },
+      revoltTerrormireFireClaw:{
+        shadowgeist:2,chimera:2,conjurer:3,creepingflame:2,fay:2,firebeak:2,firedrake:4,
+        kingvaran:2,minotaur:4,shieldmaiden:4,armet:2,burningrod:2,claymore:3,gremlinseye:2,
+        magmashield:2,blazesplash:1,drainmagic:2,fireshift:3,gift:2,holyword8:2,magicbolt:2
+      },
+      revoltGoliganSuppression:{
+        ironmonger:2,burnacle:2,caitsith:2,domovikha:1,lonebeast:2,shieldmaiden:2,amphibianwarrior:2,
+        aquahorn:2,odontotyrannus:2,triton:2,breezespirit:2,centaur:2,knight:2,rokh:2,
+        angelcape:2,diamondarmor:2,sparkball:2,trident:2,wondercharm:2,chaospanic:2,fly:2,
+        manna:2,mistyworld:3,relief:2,windofhope:2
       }
     });
     if(edition!=='saga'&&edition!=='begins')return presets;
@@ -531,6 +543,7 @@ const CepterEditions=(()=>{
     pixie:{support:true,supportElements:[0,2],vigorous:true},duskdweller:{first:true},rocktitan:{},devastator:{},
     greatfossil:{stationary:true,freeToll:true,reviveForm:'tyrannosaurus'},gigantherium:{},
     conjurer:{scrollCritical:true},gooba:{generatedOnly:true},hiveworker:{},legendarypharos:{stationary:true,noLapHeal:true},
+    chimera:{first:true,lapStrength:true},creepingflame:{stationary:true},lonebeast:{},earthspirit:{commandMHP:10},dunetitan:{commandMHP:-10},
     glowhorn:{synergy:{element:0,st:20,hp:20}},rokh:{synergy:{element:1,st:30}},mudman:{},madharlequin:{vigorous:true},witch:{scrollCritical:true},
     grimalkin:{support:true,supportElements:[0,2],spellWard:true},
     phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},phoenix:{},
@@ -708,7 +721,8 @@ const CepterEditions=(()=>{
           screamer:'disableTerrain',hidebehind:'camouflage',kawahime:'loseStrength',
           spittingcobra:'poison',sakuya:'earthShift',witch:'stealSpellMagic',ironmonger:'drawItem',
           aquahorn:'toMistwing',mistwing:'toAquahorn',deathscythe:'toMummy',
-          conjurer:'conjureBaal',goobaqueen:'conjureGooba',hivequeen:'giveHiveWorker',legendarypharos:'buildStatues'
+          conjurer:'conjureBaal',goobaqueen:'conjureGooba',hivequeen:'giveHiveWorker',legendarypharos:'buildStatues',
+          creepingflame:'stepMove',lichenoid:'growMHP',clockworkowl:'chooseDirection'
         }[slug];
         if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
         if(slug==='dwarvenminer')c.tollFactor=1.5;

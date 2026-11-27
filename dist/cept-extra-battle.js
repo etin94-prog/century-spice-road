@@ -105,6 +105,7 @@ const CepterExtraBattle=(()=>{
         if(a.n==='firedrake')a.st+=5*s.tiles.filter((v,j)=>j!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
         if(a.n==='amphibianwarrior'&&[1,3].includes(t.type))a.st+=20;
         if(a.n==='nessie'&&t.type===1)a.hp+=t.level*10;
+        if(a.n==='lonebeast')a.hp+=fx.strength(a.u);
         if(a.n==='hiveworker'){
           const amount=10*s.tiles.filter((v,j)=>j!==b.from&&fx.name(v.unit)==='hiveworker').length;
           a.st+=amount;a.hp+=amount;
