@@ -315,6 +315,7 @@ const CepterCreatureText=(()=>{
     if(card.doubleAttack)pieces.push('일반 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
     if(!card.evo&&card.spellWard&&key!=='pegasus')pieces.push('지정 주문과 영지 능력의 대상이 되지 않습니다.');
     if(!card.evo&&card.neutralizeScroll&&key!=='pegasus')pieces.push('두루마리 공격을 무효화합니다.');
+    if(card.blocksFirst)pieces.push('선제 능력이 있는 크리처의 일반 공격을 무효화합니다.');
     if(card.blocksSmall)pieces.push('최대 HP 30 이하인 상대의 일반 공격을 무효화합니다.');
     if(card.criticalMHP)pieces.push('최대 HP '+card.criticalMHP+' 이하인 상대를 일반 공격하면 강타합니다.');
     if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);
@@ -351,10 +352,12 @@ const CepterCreatureText=(()=>{
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
     const special=C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
+      C.edition==='revolt'&&key==='scylla'?'생존하면 전투가 끝날 때 상대 크리처의 영지 통행료를 무효화합니다.':
       C.edition==='revolt'&&key==='phoenix'?'전투에서 격파되면 손패에 돌아옵니다. 이미 10장이면 파괴됩니다.':
       C.edition==='revolt'&&key==='amazon'?'장비 없이 일반 공격으로 피해를 주면 이번 주회 번호 × 30G를 상대에게서 빼앗습니다.':
       firstEdition?(firstRules[key]||battle[key]):battle[key];
-    if(!card.basicBattle&&!card.revenge&&special)pieces.push(special);
+    if(card.remoteVacantElements?.length)pieces.push('어느 지역이든 빈 '+targets(card.remoteVacantElements)+' 영지로 이동할 수 있습니다.');
+    if(!card.basicBattle&&!card.revenge&&special&&!card.remoteVacantElements)pieces.push(special);
     if(!firstEdition&&key==='samurai')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
     const landAbility=territorySummary(C,card);
     if(landAbility)pieces.push(landAbility);
