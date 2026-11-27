@@ -352,7 +352,7 @@ function createCepter(edition="ps2"){
   }
   function nextTurn(s){
     s.turn=(s.turn+1)%s.players.length;
-    if(s.turn===0){s.round++;for(const t of s.tiles)if(t.unit?.expires<=s.round)combo.clear(t.unit);for(const q of s.players)if(q.statusUntil<=s.round&&q.status!=='waste')delete q.status;if(s.shineUntil<=s.round){s.prices=s.prices.map(v=>Math.max(1,Math.round(v/1.5)));delete s.shineUntil;}}
+    if(s.turn===0){s.round++;if(s.world?.until<=s.round)delete s.world;for(const t of s.tiles)if(t.unit?.expires<=s.round)combo.clear(t.unit);for(const q of s.players)if(q.statusUntil<=s.round&&q.status!=='waste')delete q.status;if(s.shineUntil<=s.round){s.prices=s.prices.map(v=>Math.max(1,Math.round(v/1.5)));delete s.shineUntil;}}
     if(s.turn===0&&board(s).pathSwitches&&s.round>=(s.switchRound??5))flipPaths(s,'자동 전환');
     const p=s.players[s.turn];
     if(revolt)p.cash+=roundGain(s);
@@ -362,7 +362,7 @@ function createCepter(edition="ps2"){
   }
   function price(p,c,s){
     const status=c.kind==='spell'?1:({waste:2,lifeforce:.5,sagaDeduction:.3,sagaInflation:1.3}[p.status]??1);
-    const rarity=s&&fx.idol(s,'ivoryidol')?({S:1.5,R:2,E:2}[c.catalog?.rarity]||1):1;
+    const rarity=(combo.activeWorld(s)==='wasteworld'||s&&fx.idol(s,'ivoryidol'))?({S:1.5,R:2,E:2}[c.catalog?.rarity]||1):1;
     return Math.floor(c.cost*rarity*status);
   }
   const isComputer=(s,seat)=>s.players[seat].ai||s.players[seat].status==='haunt';
@@ -639,13 +639,13 @@ function createCepter(edition="ps2"){
         }
         options.push(['roll']);break;
       case 'spellTarget':{
-        const effect=s.spellEffect;
+        const effect=s.spellEffect,canTargetPlayer=q=>combo.activeWorld(s)!=='mistyworld'&&q.status!=='barrier';
         if(effect==='stealgem'){
-          const targets=s.players.flatMap((q,j)=>!allied(s,i,j)&&q.status!=='barrier'&&
+          const targets=s.players.flatMap((q,j)=>!allied(s,i,j)&&canTargetPlayer(q)&&
             (!board(s).gemStore||stealableGems(p,q).length)?[['targetPlayer',j]]:[]);
           return targets.length?targets:[['fizzle']];
         }
-        if(extraTypes?.[effect]||combo.type[effect]){const targets=(extraTypes?.[effect]?extra:fx).targets(s,effect).filter(([k,j])=>k!=='targetPlayer'||effect==='dispelmagic'||s.players[j].status!=='barrier');return targets.length?targets:[['fizzle']];}
+        if(extraTypes?.[effect]||combo.type[effect]){const targets=(extraTypes?.[effect]?extra:fx).targets(s,effect).filter(([k,j])=>k!=='targetPlayer'||effect==='dispelmagic'||canTargetPlayer(s.players[j]));return targets.length?targets:[['fizzle']];}
         if(effect==='shatter'&&s.tiles.some(t=>fx.name(t.unit)==='graniteidol'))return [['fizzle']];
         if(effect==='plague')return [...new Set(s.tiles.map(t=>t.area))].map(area=>['plagueArea',area]);
         if(effect==='heal'||effect==='bolt'){
@@ -654,7 +654,7 @@ function createCepter(edition="ps2"){
             if(fx.targetable(s,v))options.push(['targetLand',n]);
           }
         }else s.players.forEach((q,j)=>{
-          if(q.status!=='barrier'&&(effect!=='shatter'||!allied(s,i,j)&&q.hand.some(id=>cards[id].kind!=='creature')))options.push(['targetPlayer',j]);
+          if(canTargetPlayer(q)&&(effect!=='shatter'||!allied(s,i,j)&&q.hand.some(id=>cards[id].kind!=='creature')))options.push(['targetPlayer',j]);
         });
         if(!options.length)options.push(['fizzle']);break;
       }
@@ -854,7 +854,7 @@ function createCepter(edition="ps2"){
       if(elementalCritical||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
-        a.n==='paladin'&&d.element===-1||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
+        a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
       const ward=muted?null:extra.protect(a,d,damage,scroll,penetrates,orb);
       if(ward==='block'||ward==='heal')return ward;
       const reflected=ward==='reflect'||scroll&&d.n==='carbuncle';
@@ -1548,7 +1548,7 @@ function createCepter(edition="ps2"){
       if(k==='cast'&&extraTypes?.[c.effect])return extra.scoreCast(s,c.effect)-price(p,c,s)/35;
       if(['targetLand','targetPlayer'].includes(k)&&extraTypes?.[s.spellEffect])return extra.scoreTarget(s,s.spellEffect,x);
       if(extraSpells?.actions[k])return extra.scoreChoice(s,k,x,y);
-      if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-c.cost/35;
+      if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-(revolt?price(p,c,s):c.cost)/35;
       if(['targetLand','comboArea','targetPlayer'].includes(k)&&combo.type[s.spellEffect])return plan.scoreTarget(s.spellEffect,x);
       if(k==='secretArt')return Math.max(...fx.secretTargets(s,x).map(([,at])=>fx.secretValue(s,x,at)));
       if(k==='secretLand')return fx.secretValue(s,s.secretFrom,x);

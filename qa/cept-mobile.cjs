@@ -652,6 +652,19 @@ const {chromium}=require('playwright');
         await evoPage.getByRole('button',{name:'6번 · 대상 영지 확정'}).tap();
       }
       assert.deepEqual(await evoPage.evaluate(()=>[s.phase,s.tiles[5].unit.hp,s.players[2].cash,s.tiles[3].unit.fatigued]),['roll',15,80,true]);
+      await evoPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;inspect=-1;
+        s.phase='spell';s.players[2].cash=100;
+        s.players[2].hand=[C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='darkworld')];
+        render();
+      });
+      await evoPage.locator('#matchActionsToggle').tap();
+      await evoPage.locator('#buttons button[data-action=cast]').tap();
+      const worldChip=evoPage.locator('#center .chain-notice').filter({hasText:'다크 월드 · 6라운드'});
+      await worldChip.waitFor();
+      assert.match(await worldChip.getAttribute('aria-label'),/크리처는 주문·비술의 대상/);
+      assert.equal(await evoPage.evaluate(()=>C.combo.activeWorld(s)),'darkworld');
+      console.log('revolt '+width+'x'+height+': world curse with turn counter on map OK');
       console.log('revolt '+width+'x'+height+': Secret Art selected before roll with mobile map target OK');
       console.log('revolt '+width+'x'+height+': Evo training, 50-card book, summon, save one-time victory reward, alliance limit and allied land upgrade by touch OK');
       await evoPage.close();

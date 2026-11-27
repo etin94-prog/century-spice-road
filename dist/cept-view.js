@@ -601,6 +601,11 @@ function map(){
   center.replaceChildren();
   if(s.chainNotice)center.append(el('span',s.chainNotice,'chain-notice'));
   if(s.shrineNotice)center.append(el('span',s.shrineNotice,'chain-notice'));
+  const world=C.combo.worlds[C.combo.activeWorld(s)];
+  if(world){
+    const chip=el('span',world.name+' · '+(s.world.until-s.round)+'라운드','chain-notice');
+    chip.setAttribute('aria-label',chip.textContent+' · '+world.description);chip.title=world.description;center.append(chip);
+  }
   if(inspect>=0){
     const t=s.tiles[inspect],u=t.unit;
     const closeInspect=btn('✕',()=>{inspect=-1;render();},'inspect-close');closeInspect.setAttribute('aria-label','칸 정보 닫기');

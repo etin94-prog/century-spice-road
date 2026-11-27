@@ -1190,6 +1190,39 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(fay,['secretArt',1])&&C.play(fay,['secretLand',3]));
   assert.equal(fay.tiles[3].unit.st,100);
 
+  const world=fixtures();
+  world.players[0].hand=['darkworld','mistyworld','wasteworld'].map(card);
+  world.players[0].cash=1000;
+  place(world,1,0,'elvenarcher',40);
+  place(world,2,1,'fate',40,{enchant:'vitality'});
+  place(world,3,1,'fate',40);
+  assert.ok(C.play(world,['cast',0]));
+  assert.deepEqual(world.world,{effect:'darkworld',until:7});
+  world.phase='spell';
+  assert.ok(C.play(world,['secretArt',1]));
+  assert.deepEqual(C.choices(world),[['secretLand',3],['secretCancel']]);
+  assert.ok(C.play(world,['secretCancel']));
+  assert.ok(C.play(world,['cast',0]));
+  assert.equal(C.combo.activeWorld(world),'mistyworld');
+  world.phase='spellTarget';world.spellEffect='word6';
+  assert.deepEqual(C.choices(world),[['fizzle']]);
+  world.phase='spell';
+  assert.ok(C.play(world,['cast',0]));
+  assert.equal(C.combo.activeWorld(world),'wasteworld');
+  assert.equal(C.price(world.players[0],C.cards[card('fate')],world),90);
+  assert.equal(C.price(world.players[0],C.cards[card('darkworld')],world),140);
+  const snapshot=JSON.parse(JSON.stringify(world));
+  place(world,4,0,'uriel',50);
+  world.phase='spell';
+  assert.ok(C.play(world,['secretArt',4]));
+  assert.equal(C.combo.activeWorld(world),null);
+  assert.equal(world.tiles[4].unit.fatigued,true);
+  snapshot.round=6;snapshot.turn=3;snapshot.phase='land';
+  assert.ok(C.play(snapshot,['pass']));
+  assert.equal(snapshot.round,7);
+  assert.equal(snapshot.world,undefined);
+  assert.equal(C.price(snapshot.players[0],C.cards[card('fate')],snapshot),60);
+
   const trained=Array.from({length:6}).reduce(C.evo.won,C.evo.fresh());
   for(const [part,key,expectedCost,check] of [
     [32,'heal',10,g=>assert.equal(g.tiles[6].unit.hp,40)],
@@ -1198,7 +1231,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     [35,'dispel',30,g=>assert.equal(g.tiles[6].unit.enchant,undefined)],
     [36,'blind',50,g=>assert.equal(g.tiles[6].unit.enchant,'fog')],
     [37,'boost',40,g=>assert.equal(g.tiles[6].unit.enchant,'vitality')],
-    [38,'weaken',40,g=>assert.equal(g.tiles[6].unit.enchant,'disease')]
+    [38,'weaken',40,g=>assert.equal(g.tiles[6].unit.enchant,'disease')],
+    [39,'worldDispel',50,g=>assert.equal(g.world,undefined)]
   ]){
     const recipe=C.evo.apply(trained,'ability',part),id=C.evo.encode(recipe,0);
     assert.deepEqual(C.evo.decode(id).abilities,[part]);
@@ -1211,8 +1245,12 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     match.players[0].lap=2;
     Object.assign(match.tiles[5],{owner:0,unit:{id,hp:30}});
     place(match,6,part===32?0:1,'healer',20,part===35?{enchant:'landprotection'}:{});
+    if(key==='worldDispel'){
+      assert.ok(!C.choices(match).some(([kind])=>kind==='secretArt'));
+      match.world={effect:'darkworld',until:7};
+    }
     assert.ok(C.play(match,['secretArt',5]));
-    if(key!=='lapGain')assert.ok(C.play(match,['secretLand',6]));
+    if(!['lapGain','worldDispel'].includes(key))assert.ok(C.play(match,['secretLand',6]));
     assert.equal(match.phase,'roll');
     assert.equal(match.tiles[5].unit.fatigued,true);
     assert.equal(match.players[0].cash,key==='lapGain'?160:100-expectedCost);

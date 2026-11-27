@@ -239,6 +239,7 @@ const CepterEditions=(()=>{
       if(kind==='spell'&&modernSets[edition]){
         const effect=modernSpellEffects[edition][slug]||(edition!=='3ds'&&sharedModernSpells.includes(slug)?slug:null);
         if(effect){c.effect=effect;c.catalogOnly=false;}
+        if(edition==='revolt'&&['darkworld','mistyworld','wasteworld'].includes(slug)){c.effect=slug;c.catalogOnly=false;}
         if(edition==='begins'&&slug==='manna')c.magicPerLap=100;
       }
       if(pair){c.elements=pair;c.catalogOnly=false;}
@@ -258,7 +259,7 @@ const CepterEditions=(()=>{
         const art={
           archbishop:'dispel',goldentotem:'offering',fate:'draw',healer:'heal',elvenarcher:'arrow',
           dwarvenminer:'lapGain',holyllama:'dice6',armoreddragon:'neutralBlast',
-          hardrockdragon:'fireAirBlast',lightningdragon:'waterEarthBlast',fay:'strength',burnacle:'blind',caladrius:'boost'
+          hardrockdragon:'fireAirBlast',lightningdragon:'waterEarthBlast',fay:'strength',burnacle:'blind',caladrius:'boost',uriel:'worldDispel'
         }[slug];
         if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
         if(slug==='dwarvenminer')c.tollFactor=1.5;

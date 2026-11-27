@@ -1,10 +1,16 @@
 /* Original card effects shared by human turns, CPU turns and match simulations. */
 const CepterCombos = (() => {
+  const worlds={
+    darkworld:{name:'다크 월드',description:'저주가 걸린 크리처는 주문·비술의 대상으로 지정할 수 없습니다.'},
+    mistyworld:{name:'미스티 월드',description:'셉터는 주문의 대상으로 지정할 수 없습니다.'},
+    wasteworld:{name:'웨이스트 월드',description:'카드 비용이 S는 1.5배, R·E는 2배가 됩니다.'}
+  };
+  const activeWorld=s=>s?.edition==='revolt'&&s.world?.until>s.round?s.world.effect:null;
   const groups = {
     land: 'barricade greed regeneration vitality disease peace landprotection mine vortex soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
     area: 'cramp reinforce insectswarm exorcism massphantasm sculpture desertstorm',
     player: 'holyword0 grace pain silence haste despair antimagic changeling wizardeye mindseeker waste wordofrecall suppression drainmagic slow holyword3 holywordx echo dimensiondoor squeeze',
-    global: 'catastrophe tempest punisher icestorm fireexplosion thunderstorm deathcloud sonicwave demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker feast'
+    global: 'catastrophe tempest punisher icestorm fireexplosion thunderstorm deathcloud sonicwave demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker feast '+Object.keys(worlds).join(' ')
   };
   const stormElement={icestorm:0,fireexplosion:1,thunderstorm:2,deathcloud:3};
   const damageSpells=new Set(['catastrophe','tempest','punisher','sonicwave',...Object.keys(stormElement)]);
@@ -38,7 +44,8 @@ const CepterCombos = (() => {
     function targetable(s,t,category='sflash',dispel=false){
       if(!t.unit)return false;
       const n=name(t.unit);
-      return (dispel||t.unit.enchant!=='landprotection'&&!s.players[t.owner].invisible)&&
+      return (dispel||t.unit.enchant!=='landprotection'&&!s.players[t.owner].invisible&&
+        !(activeWorld(s)==='darkworld'&&enchanted(t.unit)))&&
         !(s.edition==='saga'&&n==='warlock')&&!cards[t.unit.id].spellWard&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&category==='senchant');
     }
     function death(s,id){
@@ -80,6 +87,10 @@ const CepterCombos = (() => {
       });
     }
     function apply(s,e,x){
+      if(s.edition==='revolt'&&worlds[e]){
+        s.world={effect:e,until:s.round+6};
+        return 'roll';
+      }
       const i=s.turn,p=s.players[i],t=s.tiles[x],u=t?.unit,q=s.players[x];
       const tiles=s.tiles.filter(v=>v.unit&&(type[e]!=='area'||v.area===x));
       if(type[e]==='land'){
@@ -295,13 +306,15 @@ const CepterCombos = (() => {
       strength:{cost:50,label:'기본 ST +20 · 최대 100'},
       blind:{cost:50,label:'적 영지 통행료 절반',enchant:'fog',enemy:true},
       boost:{cost:40,label:'전투 ST·HP +20',enchant:'vitality',beneficial:true},
-      weaken:{cost:40,label:'전투 ST·HP −20',enchant:'disease'}
+      weaken:{cost:40,label:'전투 ST·HP −20',enchant:'disease'},
+      worldDispel:{cost:50,label:'전장 전체 저주 제거'}
     };
     const secretArt=card=>arts[card?.secretArt];
     function secretTargets(s,from){
       const src=s.tiles[from];
       const key=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn],art=arts[key];
       if(s.edition!=='revolt'||!art||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
+      if(key==='worldDispel')return activeWorld(s)?[['secretSelf',from]]:[];
       if(['offering','draw','lapGain','dice6'].includes(key))return [['secretSelf',from]];
       return s.tiles.flatMap((t,at)=>{
         if(!t.unit)return [];
@@ -326,6 +339,7 @@ const CepterCombos = (() => {
       if(card.secretArt==='heal')target.unit.hp=Math.min(max(target.unit),target.unit.hp+30);
       if(card.secretArt==='lapGain')p.cash+=30*p.lap;
       if(card.secretArt==='dice6'){clearCepter(p);p.word=6;}
+      if(card.secretArt==='worldDispel')delete s.world;
       if(card.secretArt==='strength')target.unit.st=Math.min(100,strength(target.unit)+20);
       if(art.enchant){clear(target.unit);target.unit.enchant=art.enchant;target.unit.caster=s.turn;}
       if(art.damage)damage(s,target,art.damage);
@@ -343,6 +357,7 @@ const CepterCombos = (() => {
       if(art==='heal')utility=Math.min(30,max(t.unit)-t.unit.hp)+(t.level-1)*4;
       if(art==='lapGain')utility=p.lap*30;
       if(art==='dice6')utility=p.word==null?13:-10;
+      if(art==='worldDispel')utility=Object.hasOwn(worlds,activeWorld(s))?(s.world.until-s.round)*4:0;
       if(art==='strength')utility=(friendly?1:-1)*Math.min(20,100-strength(t.unit));
       if(spec.enchant)utility=(friendly===!!spec.beneficial?1:-1)*(15+(t.level-1)*8);
       if(spec.damage)utility=(friendly?-1:1)*(t.unit.hp<=spec.damage?50+(t.level-1)*10:spec.damage);
@@ -513,6 +528,12 @@ const CepterCombos = (() => {
       return sign*(6+Math.min(t.level,4)+tactical)+(e==='temperance'&&fx.max(t.unit)<=30?-12:0);
     }
     function cast(e){
+      if(worlds[e]){
+        if(activeWorld(s)===e&&s.world.until-s.round>2)return -10;
+        if(e==='darkworld')return tiles.reduce((score,t)=>score+(enchanted(t.unit)?advantage(t)*(2+t.level):0),0);
+        if(e==='mistyworld')return s.players.reduce((score,q,i)=>score+(friend(i)?1:-1)*(q.cash>=1000?12:0),0);
+        return s.players.reduce((score,q,i)=>score+(friend(i)?-1:1)*q.hand.reduce((tax,id)=>tax+(cards[id].catalog?.rarity==='S'?1:['R','E'].includes(cards[id].catalog?.rarity)?2:0),0),0);
+      }
       if(type[e]!=='global'){
         const opts=fx.targets(s,e);return opts.length?Math.max(...opts.map(a=>scoreTarget(e,a[1]))):-30;
       }
@@ -561,6 +582,6 @@ const CepterCombos = (() => {
     }
     return {pair,ready,scoreTarget,cast,sequence};
   }
-  return {rules,type,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,matches,planner};
+  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;

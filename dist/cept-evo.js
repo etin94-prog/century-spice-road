@@ -37,7 +37,8 @@ const CepterEvo=(()=>{
     ['비술 · 저주 해제','secret',5,10,{secretArt:'dispel'}],
     ['비술 · 연막','secret',5,20,{secretArt:'blind'}],
     ['비술 · 강화','secret',5,20,{secretArt:'boost'}],
-    ['비술 · 약화','secret',5,20,{secretArt:'weaken'}]
+    ['비술 · 약화','secret',5,20,{secretArt:'weaken'}],
+    ['비술 · 전장 저주 해제','secret',5,10,{secretArt:'worldDispel'}]
   ];
   const areas=['neutral','fire','water','earth','air'],colors='RBGY';
   const original={base:1_000_000_000,radices:[2,11,5,17,16,3,2,17,17]};

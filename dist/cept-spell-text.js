@@ -178,6 +178,7 @@ const describeCepterSpell=(()=>{
     if(card.kind!=='spell'||card.catalogOnly)return;
     const e=card.effect,edition=C.edition;
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
+    if(C.edition==='revolt'&&C.combo.worlds[e])return '전장 저주 · 6라운드. '+C.combo.worlds[e].description;
     switch(e){
       case 'greed':if(edition==='revolt'||edition==='3ds')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';break;
       case 'growthbody':if(edition==='revolt')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';break;

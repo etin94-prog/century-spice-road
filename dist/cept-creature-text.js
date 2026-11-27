@@ -266,6 +266,7 @@ const CepterCreatureText=(()=>{
     if(C.edition==='3ds'&&key==='kodama')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(C.edition==='3ds'&&key==='mystic')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 60 이상이면 70% 확률로 즉사시킵니다.');
     if(card.scrollCritical&&!battle[key]?.includes('두루마리'))pieces.push('두루마리 공격이 강타합니다.');
+    if(C.edition==='revolt'&&key==='uriel')pieces.push('저주가 걸린 상대에게 강타합니다.');
     if(C.edition==='revolt'&&key==='dwarvenminer')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령이나 비술 사용 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
