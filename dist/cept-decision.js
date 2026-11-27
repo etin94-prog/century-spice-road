@@ -90,26 +90,36 @@ function cardSummary(card){
   return !ability||ability===base?base:base+' · '+ability;
 }
 
-// Entries are {action,id,label} plus optional blocked (why it cannot be chosen), confirm (button text) and note.
-function openTurnPicker(entries,title,preferred=-1){
+function turnPicker(title){
   document.querySelector('#turnPicker')?.remove();
   const openedState=s,openedRevision=room?.revision,openedPhase=s.phase,openedTurn=s.turn;
   const dialog=el('dialog',null,'turn-picker');dialog.id='turnPicker';
   const heading=el('h2',title);heading.id='turnPickerTitle';
   dialog.setAttribute('aria-labelledby',heading.id);
-  const close=btn('닫기',()=>dialog.close());
+  dialog.append(heading,btn('닫기',()=>dialog.close()));
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  const commit=action=>{
+    if(!action||s!==openedState||s.phase!==openedPhase||s.turn!==openedTurn||room?.revision!==openedRevision||
+        pending||C.isComputer(s,C.actor(s))||room&&(room.busy||room.seat!==C.actor(s))){dialog.close();return;}
+    const choices=room?room.choices:C.choices(s);
+    dialog.close();
+    if(choices.some(a=>a.length===action.length&&a.every((v,i)=>v===action[i])))act(action);
+  };
+  const show=()=>{
+    document.querySelector('main').append(dialog);dialog.showModal();
+  };
+  return {dialog,commit,show};
+}
+
+// Entries are {action,id,label} plus optional blocked (why it cannot be chosen), confirm (button text) and note.
+function openTurnPicker(entries,title,preferred=-1){
+  const {dialog,commit,show}=turnPicker(title);
   const list=el('div',null,'turn-picker-cards');
   if(!entries.some(entry=>C.cards[entry.id]))list.classList.add('turn-picker-options');
   const detail=el('p',null,'turn-picker-detail');
   let selected;
   const actorSeat=s.players[C.actor(s)];
-  const confirm=btn('확정',()=>{
-    const choices=room?room.choices:C.choices(s),action=selected?.action;
-    if(!action||selected.blocked||s!==openedState||s.phase!==openedPhase||s.turn!==openedTurn||room?.revision!==openedRevision||
-        pending||C.isComputer(s,C.actor(s))||room&&(room.busy||room.seat!==C.actor(s))||
-        !choices.some(a=>a.length===action.length&&a.every((v,i)=>v===action[i]))){dialog.close();return;}
-    dialog.close();act(action);
-  },'primary');
+  const confirm=btn('확정',()=>commit(selected?.blocked?null:selected?.action),'primary');
   confirm.hidden=true;
   const options=entries.map(entry=>{
     const card=C.cards[entry.id];
@@ -141,9 +151,62 @@ function openTurnPicker(entries,title,preferred=-1){
     list.append(option);
     return choose;
   });
-  dialog.append(heading,close,list,detail,confirm);dialog.addEventListener('close',()=>dialog.remove(),{once:true});
-  document.querySelector('main').append(dialog);dialog.showModal();
+  dialog.append(list,detail,confirm);show();
   options[entries.length===1?0:preferred]?.();
+}
+
+function symbolLabel(id){
+  const area=Math.floor(id/4),legacy=['classic','market'].includes(s.mapId);
+  return (legacy?(area===0?'서부':'동부'):(area+1)+'지역')+' '+C.elements[id%4];
+}
+function symbolTrade(group,p,controls){
+  const kind=group[0][0],assets=new Map();
+  for(const action of group){
+    const [,id,count]=action;
+    if(!assets.has(id))assets.set(id,new Map());
+    assets.get(id).set(count,action);
+  }
+  const box=el('div',null,'command');box.dataset.kind=kind;
+  box.append(openerButton(kind,labels[kind],assets.size,()=>{
+    const {dialog,commit,show}=turnPicker(labels[kind]);
+    dialog.classList.add('symbol-picker');
+    const buy=kind==='buySymbol',options=el('div',null,'symbol-options');
+    options.setAttribute('role','group');options.setAttribute('aria-label','호부 종류');
+    const quantity=el('div',null,'symbol-quantity');
+    quantity.setAttribute('role','group');quantity.setAttribute('aria-label','거래 수량');
+    const number=el('output',null,'symbol-count');
+    number.setAttribute('aria-live','off');
+    const amount=el('p',null,'symbol-amount'),result=el('p',null,'symbol-result');
+    let id,counts=[],index=0;
+    const change=delta=>{index=Math.min(counts.length-1,Math.max(0,index+delta));update();};
+    const fewer=btn('−',()=>change(-1)),more=btn('+',()=>change(1)),max=btn('최대',()=>change(counts.length));
+    fewer.setAttribute('aria-label','수량 1장 줄이기');more.setAttribute('aria-label','수량 1장 늘리기');
+    max.setAttribute('aria-label','최대 수량 선택');
+    quantity.append(fewer,number,more,max);
+    const confirm=btn(labels[kind]+' 확정',()=>commit(assets.get(id).get(counts[index])),'primary');
+    function update(){
+      const count=counts[index],value=count*s.prices[id],delta=buy?count:-count;
+      number.value=count+'장';fewer.disabled=index===0;more.disabled=index===counts.length-1;
+      amount.textContent=(buy?'지불 ':'수령 ')+value+'G';
+      result.textContent='거래 후 마력 '+(p.cash-delta*s.prices[id])+'G · 보유 '+(p.symbols[id]+delta)+'장';
+    }
+    const buttons=new Map();
+    function choose(key){
+      id=key;counts=[...assets.get(id).keys()].sort((a,b)=>a-b);index=0;
+      for(const [candidate,button] of buttons)button.setAttribute('aria-pressed',String(candidate===id));
+      update();
+    }
+    for(const key of assets.keys()){
+      const button=btn(symbolLabel(key),()=>choose(key));
+      button.append(el('small','장당 '+s.prices[key]+'G'));
+      options.append(button);buttons.set(key,button);
+    }
+    choose(assets.keys().next().value);
+    const details=el('div',null,'symbol-details');
+    details.setAttribute('role','status');details.append(amount,result);
+    dialog.append(options,quantity,details,confirm);show();
+  }));
+  controls.append(box);
 }
 
 // The character opens and closes its own action menu; a lone roll happens at once.

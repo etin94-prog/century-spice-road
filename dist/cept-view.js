@@ -287,7 +287,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'sacrifice':return c.name;
     case 'abilityPlayer':case 'targetPlayer':return s.players[x].name;
     case 'wormDiscard':case 'suppressCard':case 'breakCard':return C.cards[s.players[s.spellTarget].hand[x]].name;
-    case 'liquidate':case 'buySymbol':case 'sellSymbol':return (C.board(s).stage?(1+Math.floor(x/4))+'지역':x<4?'서부':'동부')+' '+C.elements[x%4]+' · '+y+'장 · '+s.prices[x]*y+'G';
+    case 'liquidate':case 'buySymbol':case 'sellSymbol':return symbolLabel(x)+' · '+y+'장 · '+s.prices[x]*y+'G';
     case 'direction':if(C.board(s).stage||C.board(s).graph){const exits=C.board(s).links[p.pos];return (1+(x===1?exits[0]:exits.at(-1)))+'번 칸 방향';}return x===1?'시계 방향':'반시계 방향';
     case 'cast':case 'equip':case 'discard':case 'summon':case 'invade':return c.name+' · '+C.price(p,c,s)+'G';
     case 'level':return (x+1)+'번 → Lv.'+y+' · '+C.levelCost(s.tiles[x],y)+'G';
@@ -781,13 +781,7 @@ function render(){
     if(k==='buyCard'||k==='roll')continue;
     const group=choices.filter(a=>a[0]===k);
     if(k==='direction'||k==='route'){drawRouteArrows(group);const routes=el('div',null,'route-options');routes.append(...group.map(routeOption));controls.append(routes);continue;}
-    if(k==='buySymbol'||k==='sellSymbol'){
-      const field=el('label',labels[k]),asset=el('select'),quantity=el('select');
-      for(const n of new Set(group.map(a=>a[1])))asset.add(new Option((C.board(s).stage?(1+Math.floor(n/4))+'지역':n<4?'서부':'동부')+' '+C.elements[n%4]+' · 장당 '+s.prices[n]+'G',n));
-      const refresh=()=>{quantity.replaceChildren();for(const a of group.filter(a=>a[1]===+asset.value))quantity.add(new Option(a[2]+'장 · '+a[2]*s.prices[a[1]]+'G',a[2]));};
-      asset.setAttribute('aria-label','호부 종류');quantity.setAttribute('aria-label','거래 수량');asset.onchange=refresh;refresh();
-      field.append(asset,quantity,btn(labels[k]+' 확정',()=>act([k,+asset.value,+quantity.value])));controls.append(field);continue;
-    }
+    if(['buySymbol','sellSymbol','liquidate'].includes(k)){symbolTrade(group,p,controls);continue;}
     commandGroup(group,p,controls);
   }
   const owner=handSeat==null?null:s.players[handSeat];

@@ -29,9 +29,15 @@ const {chromium}=require('playwright');
           const group=C.choices(s).filter(a=>a[0]===kind);
           const index=group.findIndex(a=>a.length===action.length&&a.every((v,j)=>v===action[j]));
           if(kind==='direction'||kind==='route')document.querySelectorAll('.route-option')[index].click();
-          else if(kind==='buySymbol'||kind==='sellSymbol'){
-            const label=[...document.querySelectorAll('#buttons label')].find(l=>l.textContent.startsWith(labels[kind]));
-            const [asset,quantity]=label.querySelectorAll('select');asset.value=x;asset.onchange();quantity.value=y;label.querySelector('button').click();
+          else if(['buySymbol','sellSymbol','liquidate'].includes(kind)){
+            document.querySelector('#buttons [data-open="'+kind+'"]').click();
+            const picker=document.querySelector('#turnPicker');
+            const asset=[...new Set(group.map(a=>a[1]))].indexOf(x);
+            picker.querySelectorAll('.symbol-options button')[asset].click();
+            const quantities=group.filter(a=>a[1]===x).map(a=>a[2]);
+            const step=picker.querySelector('[aria-label="수량 1장 늘리기"]');
+            for(let n=0;n<quantities.indexOf(y);n++)step.click();
+            picker.querySelector('.primary').click();
           }else{
             // One button per option acts at once; cards and long lists open the choice sheet.
             const direct=document.querySelectorAll('button[data-action="'+kind+'"]');

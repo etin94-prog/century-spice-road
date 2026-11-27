@@ -270,6 +270,21 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
   .turn-picker > .primary{min-height:44px;bottom:max(6px,env(safe-area-inset-bottom));margin:5px 0 max(6px,env(safe-area-inset-bottom))}
 }
 
+/* Symbol trades share the action sheet; only the list of assets scrolls. */
+.symbol-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(7.5rem,100%),1fr));gap:8px;
+  max-height:30dvh;overflow:auto;padding:4px 3px;margin:8px 0;overscroll-behavior:contain}
+.symbol-options button,.symbol-quantity button{min-width:44px;min-height:44px}
+.symbol-options button{padding:5px 8px;line-height:1.25}
+.symbol-options small{display:block;margin-top:2px;letter-spacing:0;color:inherit}
+.symbol-options button[aria-pressed=true]{outline:2px solid #ffd78c;outline-offset:-2px;background:#51422d}
+.symbol-quantity{display:grid;grid-template-columns:44px minmax(44px,64px) 44px minmax(56px,auto);gap:8px;align-items:center;justify-content:center}
+.symbol-count{text-align:center;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.symbol-details{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin:8px 0 0}
+.symbol-details p{margin:0}
+.symbol-amount{color:#ffe1a0;font-weight:700}
+.symbol-result{font-size:.825rem}
+.symbol-picker button:focus-visible{outline:2px solid #fff0ce;outline-offset:2px}
+
 /* Battle: the stage fills the screen under the top bar; the choices float at the bottom. */
 #game .atlas.in-battle #center{inset:var(--hud-height) 0 0;padding:0;border:0;border-radius:0;background:#0d1016}
 #game .battle-stage{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;
