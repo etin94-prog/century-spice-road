@@ -13,6 +13,7 @@ self.onmessage=({data})=>{
         s.players[0].book.push(s.players[0].hand.pop());
         s.players.unshift(...s.players.splice(count-seat));
         s.players[0].hand.push(s.players[0].book.pop());
+        Cepter.limitAllianceEvos(s);
       }
       for(let step=0;s.phase!=='over'&&step<9000;step++)Cepter.play(s,Cepter.ai(s));
       // A tied round limit is a finished match that nobody won.

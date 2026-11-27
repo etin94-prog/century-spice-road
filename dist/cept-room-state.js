@@ -8,8 +8,9 @@ const CepterRoomState = (() => {
       player.bookCount=player.book.length;
       if(engine.evo&&game.phase==='over'&&i===seat)player.evoRewardBook=(player.template||[]).filter(id=>engine.cards[id]?.evo);
       delete player.book;delete player.template;delete player.recycleTemplate;
+      delete player.evoOpeningBook;delete player.explicitOpening;
       if(i===seat)continue;
-      delete player.peek;
+      delete player.peek;delete player.evoOpeningLimited;
       const choosingCard=state.turn===seat&&state.spellTarget===i&&['shatter','suppression','squeeze','bookWorm'].includes(state.phase);
       if(!choosingCard)player.hand=[];
     }

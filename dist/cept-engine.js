@@ -137,11 +137,45 @@ function createCepter(edition="ps2"){
   function refillBook(p){
     return shuffledBook((p.recycleTemplate||p.template)?.filter(id=>!p.bannedCards?.includes(id)));
   }
+  function dealOpeningBook(p,seat,template){
+    p.template=template.slice();p.book=shuffledBook(template);p.hand=[];
+    for(let j=0;j<(seat===0?5:4);j++)draw(p);
+  }
+  function limitAllianceEvos(s){
+    if(!evo||!s.teams||s.round!==1||s.turn!==0||s.phase!=='spell')return;
+    const used=[0,0];
+    const order=s.players.map((_,i)=>i).sort((a,b)=>
+      Number(!!s.players[b].explicitOpening)-Number(!!s.players[a].explicitOpening)||a-b);
+    for(const seat of order){
+      const p=s.players[seat],requested=p.evoOpeningBook||p.template,team=s.teams[seat];
+      if(!requested.some(id=>cards[id]?.evo))continue;
+      const next=[],ordinary=new Map();
+      for(const id of requested)if(!cards[id].evo)ordinary.set(id,(ordinary.get(id)||0)+1);
+      let limited=0;
+      for(const id of requested){
+        if(!cards[id].evo||used[team]<2){
+          next.push(id);if(cards[id].evo)used[team]++;
+          continue;
+        }
+        const replacement=presets.intro.find(id=>cards[id].kind==='creature'&&(ordinary.get(id)||0)<4)??
+          cards.findIndex((c,id)=>c.kind==='creature'&&!c.unlisted&&!c.catalogOnly&&!c.generatedOnly&&(ordinary.get(id)||0)<4);
+        next.push(replacement);ordinary.set(replacement,(ordinary.get(replacement)||0)+1);limited++;
+      }
+      if(limited){
+        p.evoOpeningBook=requested.slice();p.evoOpeningLimited=limited;
+      }else{delete p.evoOpeningBook;delete p.evoOpeningLimited;}
+      if(next.some((id,i)=>id!==p.template[i]))dealOpeningBook(p,seat,next);
+    }
+  }
   function setOpeningBook(s,seat,template){
     const p=s.players[seat];
     if(!p||p.ai||s.round!==1||s.turn!==0||s.phase!=='spell'||!validBook(template))return false;
-    p.template=template.slice();p.book=shuffledBook(template);p.hand=[];
-    for(let j=0;j<(seat===0?5:4);j++)draw(p);
+    dealOpeningBook(p,seat,template);
+    if(evo&&s.teams){
+      p.explicitOpening=true;
+      delete p.evoOpeningLimited;delete p.evoOpeningBook;
+      limitAllianceEvos(s);
+    }
     return true;
   }
   const storyAlliances={
@@ -184,7 +218,9 @@ function createCepter(edition="ps2"){
       players[0].cash+=roundGain(s);
       s.evoMatch=Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
     }
-    draw(players[0]);return s;
+    draw(players[0]);
+    if(evo&&teams){players[0].explicitOpening=true;limitAllianceEvos(s);}
+    return s;
   }
   function note(s,t){s.log.unshift(t);if(s.log.length>16)s.log.pop();s.logSequence=(s.logSequence||0)+1;}
   function actor(s){
@@ -556,7 +592,7 @@ function createCepter(edition="ps2"){
   }
   function territory(s){
     const p=s.players[s.turn];
-    if(revolt)return s.tiles.flatMap((t,n)=>t.owner===s.turn&&t.unit&&!t.unit.fatigued?[n]:[]);
+    if(revolt)return s.tiles.flatMap((t,n)=>allied(s,s.turn,t.owner)&&t.unit&&!t.unit.fatigued?[n]:[]);
     const type=s.tiles[p.pos].type;
     const commandable=t=>handheld?allied(s,s.turn,t.owner):t.owner===s.turn;
     if(p.status==='enlightenment'||type==='성'||edition==='saga'&&type==='신전'||board(s).forts.includes(p.pos))return s.tiles.flatMap((v,n)=>commandable(v)?[n]:[]);
@@ -646,7 +682,7 @@ function createCepter(edition="ps2"){
       case 'towerTarget':return [...towerTargets(s),['towerCancel']];
       case 'towerDeploy':return [...towerCards(s,s.towerAt),['towerCancel']];
       case 'land':
-        if(t.owner>=0&&(handheld?!allied(s,t.owner,i):t.owner!==i)&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
+        if(t.owner>=0&&(handheld||revolt?!allied(s,t.owner,i):t.owner!==i)&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
         if(t.owner>=0&&!allied(s,t.owner,i))options.push(['pay']);
         {
           if(t.owner<0&&territoryType(t.type))hand('creature','summon');
@@ -656,7 +692,7 @@ function createCepter(edition="ps2"){
               if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
             for(const dest of new Set([...(fx.name(v.unit)==='roadrunner'?board(s).links[n].flatMap(j=>board(s).links[j]).filter(j=>j!==n):board(s).links[n]),...s.tiles.flatMap((t,j)=>((v.unit.enchant==='spiritwalk'||fx.name(v.unit)==='blynx'||fx.name(v.unit)==='holyllama'&&t.type===3)||(fx.name(v.unit)==='dryad'&&t.type===2)||(fx.name(v.unit)==='wyvern'&&t.type===3))&&territoryType(t.type)&&t.area===v.area&&t.owner<0?[j]:[])])){
-              if(v.unit.enchant!=='thornfetter'&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
+              if(v.unit.enchant!=='thornfetter'&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld||revolt?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
             }
             if(p.cash>=elementCost(v))elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
             p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!sacrificeRequired(s,cards[id])||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id],s)<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
@@ -1053,6 +1089,7 @@ function createCepter(edition="ps2"){
   function recordAction(s,a,now,timedOut){
     const prior=record.before(s),seat=actor(s);
     if(!applyAction(s,a))return false;
+    if(evo&&s.teams)for(const p of s.players){delete p.evoOpeningBook;delete p.explicitOpening;}
     armClock(s,now,true);
     record.append(s,prior,a[0],seat,timedOut,total);
     return true;
@@ -1071,7 +1108,7 @@ function createCepter(edition="ps2"){
       const ok=applyAction(s,pending.action);delete s.cardPaid;return ok;
     }
     const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
-    const previousChains=trackChains||handheld&&k==='exchange'?chainCounts(s):null;
+    const previousChains=trackChains||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
     if(k==='roll'){delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
     const before=!gemTerrain&&(handheld||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
@@ -1623,7 +1660,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,evo,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,evo,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

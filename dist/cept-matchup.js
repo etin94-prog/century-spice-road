@@ -51,7 +51,7 @@ function refreshMatchup(){
   $('aiChoice').disabled=!usingAI||same;
   const player=$('bookChoice').value==='recommend'?describe(tier.player):$('bookChoice').selectedOptions[0].text;
   $('deckMatchNames').textContent='Player · '+player+' / AI · '+(!usingAI?'없음':same?'플레이어와 같은 북':story?castNames:describe(sourceBook($('aiChoice'))||tier));
-  $('deckOdds').textContent='';
+  $('deckOdds').textContent=C.evo&&count===4&&$('alliance').value.startsWith('teams')?'팀당 에보 2장 · 초과분은 기본 크리처로 교체됩니다.':'';
   $('estimateDeck').disabled=false;
 }
 for(const id of ['mapChoice','count','humans','target','alliance','storyAlly','tierChoice','bookChoice','aiChoice']){

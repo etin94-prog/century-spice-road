@@ -616,7 +616,20 @@ const {chromium}=require('playwright');
       assert.deepEqual(await evoPage.evaluate(()=>[evoProfile.recipes[0].age,evoProfile.recipes[0].sp,evoProfile.rewarded.length]),[1,6,1]);
       assert.equal(await evoPage.evaluate(()=>C.cards[customBook.find(id=>C.cards[id]?.evo)].evoAge),1);
       assert.ok(await evoPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-      console.log('revolt '+width+'x'+height+': Evo training, 50-card book, summon, save and one-time victory reward by touch OK');
+      await evoPage.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;
+        const book=C.presets.intro.slice();
+        book.splice(-2,2,C.evo.encode(C.evo.fresh(),0),C.evo.encode(C.evo.fresh(),1));
+        s=C.start(4,4,5000,'revolt-original-gem-route',book,book,0,'teams');
+        C.setOpeningBook(s,2,book);
+        s.phase='land';s.turn=2;s.players[2].cash=s.tiles[3].base;
+        Object.assign(s.tiles[3],{owner:0,unit:{id:book.at(-1),hp:30}});
+        render();
+      });
+      assert.match(await evoPage.locator('#hint').innerText(),/동맹 한도로 에보 2장/);
+      await evoPage.locator('#buttons [data-action=level]').tap();
+      assert.deepEqual(await evoPage.evaluate(()=>[s.tiles[3].owner,s.tiles[3].level,s.tiles[3].unit.fatigued]),[0,2,true]);
+      console.log('revolt '+width+'x'+height+': Evo training, 50-card book, summon, save one-time victory reward, alliance limit and allied land upgrade by touch OK');
       await evoPage.close();
     }
     for(const [width,height] of [[320,568],[844,390]]){

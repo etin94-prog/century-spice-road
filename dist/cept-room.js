@@ -111,7 +111,9 @@ function chooseGuestBook(joinRoom=joinLocalRoom){
     try{await joinRoom(template);}catch(e){error.textContent=e.message;join.disabled=false;}
   },'primary');
   error.setAttribute('role','status');
-  waiting.hidden=false;waiting.replaceChildren(el('h2','친구 대전 참가'),label,join,error);
+  waiting.hidden=false;waiting.replaceChildren(el('h2','친구 대전 참가'),label);
+  if(C.evo)waiting.append(el('p','동맹전은 팀당 에보 2장까지 출전합니다. 초과분은 기본 크리처로 교체됩니다.','muted'));
+  waiting.append(join,error);
 }
 async function pollRoom(){
   clearTimeout(pollTimer);if(!room)return;

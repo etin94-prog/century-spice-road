@@ -1142,6 +1142,45 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(!C.validBook([...deck.slice(0,-1),1_999_999_999]));
   assert.ok(!ps2.validBook(deck));
 
+  const evoCount=book=>book.filter(id=>C.cards[id]?.evo).length;
+  for(const layout of ['teams','teams-12','teams-14']){
+    const match=C.start(4,4,5000,map,deck,deck,2,layout);
+    const ally=match.teams.findIndex((team,seat)=>seat&&team===0);
+    assert.ok(C.setOpeningBook(match,ally,deck));
+    assert.deepEqual([evoCount(match.players[0].template),evoCount(match.players[ally].template),match.players[ally].evoOpeningLimited],[2,0,2]);
+    assert.ok(match.players.every(p=>C.validBook(p.template)));
+    for(const team of [0,1])assert.equal(match.players.reduce((n,p,i)=>n+(match.teams[i]===team?evoCount(p.template):0),0),2);
+    const State=require('../dist/cept-room-state');
+    assert.equal(State.view(C,match,ally).game.players[ally].evoOpeningLimited,2);
+    assert.equal(State.view(C,match,0).game.players[ally].evoOpeningLimited,undefined);
+    assert.equal(State.view(C,match,ally).game.players[ally].evoOpeningBook,undefined);
+    assert.ok(C.setOpeningBook(match,0,C.presets.intro));
+    assert.equal(evoCount(match.players[ally].template),2);
+    assert.equal(match.players[ally].evoOpeningLimited,undefined);
+  }
+  const allies=C.start(4,4,5000,map,deck,deck,2,'teams');
+  const weak=C.presets.intro.find(id=>C.cards[id].kind==='creature'&&!C.cards[id].stationary);
+  const allyEvo=E.encode({age:10,st:70,hp:30,element:-1,land:0,discard:0,abilities:[]},1);
+  allies.phase='land';allies.players[0].pos=2;allies.players[0].cash=600;allies.players[0].hand=[base];
+  Object.assign(allies.tiles[1],{type:1,owner:2,unit:{id:allyEvo,hp:30}});
+  Object.assign(allies.tiles[2],{type:1,owner:2,unit:{id:weak,hp:10}});
+  Object.assign(allies.tiles[3],{type:3,owner:1,unit:{id:weak,hp:10,fatigued:true}});
+  Object.assign(allies.tiles[15],{type:0,owner:2,unit:{id:base,hp:30,fatigued:true}});
+  assert.ok(C.choices(allies).some(([k,x,y])=>k==='level'&&x===1&&y===2));
+  assert.ok(!C.choices(allies).some(([k,x])=>['level','exchange','transfer'].includes(k)&&x===15));
+  assert.ok(!C.choices(allies).some(([k])=>['pay','invade'].includes(k)));
+  const upgrade=structuredClone(allies);
+  assert.ok(C.play(upgrade,['level',1,2]));
+  assert.deepEqual([upgrade.tiles[1].owner,upgrade.tiles[1].level,upgrade.tiles[1].unit.fatigued],[2,2,true]);
+  assert.ok(!C.choices(allies).some(([k,x,y])=>k==='transfer'&&x===1&&y===2));
+  allies.tiles[2].unit={id:allyEvo,hp:30};
+  assert.ok(C.play(allies,['transfer',2,3]));
+  assert.deepEqual([C.actor(allies),allies.turn],[2,0]);
+  assert.ok(C.play(allies,['bare']));assert.equal(C.actor(allies),1);
+  assert.ok(C.play(allies,['bare']));assert.ok(allies.battle.won);
+  assert.equal(allies.tiles[3].owner,2);
+  assert.ok(C.play(allies,['continue']));assert.equal(allies.turn,1);
+
   const s=C.start(4,4,5000,map,deck,deck,2,'teams');
   C.configureMatch(s,{recordReplay:true});
   assert.ok(C.setOpeningBook(s,1,[...deck.slice(0,-2),other,base]));
@@ -1209,7 +1248,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(p.hand,hasDragon?[base]:[normal,normal]);
     assert.equal(p.cash,430);
   }
-  console.log('Revolt Breed training budget, part groups, legal book slots, summon costs, serialization, replay, privacy, packed version compatibility, battle parts and Miracle Call OK');
+  console.log('Revolt alliance fatigue, team Evo cap, Breed training budget, part groups, legal book slots, summon costs, serialization, replay, privacy, packed version compatibility, battle parts and Miracle Call OK');
 }
 
 {

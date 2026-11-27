@@ -6,6 +6,7 @@ if(C.edition==='revolt'){
   const rules=document.querySelectorAll('#matchRules p');
   rules[0].textContent='턴 시작에 마력을 받고 카드 한 장을 뽑습니다. 주문을 한 장까지 쓴 뒤 주사위를 굴립니다. 손패가 6장을 넘으면 턴이 끝날 때 버립니다.';
   rules[1].textContent='지나가지 않은 내 영지에도 명령할 수 있습니다. 소환하거나 명령한 크리처는 피로해집니다. 게이트에 멈추거나 한 주를 완주하면 내 크리처의 피로가 풀립니다.';
+  document.querySelector('#matchRules').append(Object.assign(document.createElement('p'),{textContent:'동맹에서는 피로하지 않은 아군 영지에 명령할 수 있습니다. 팀당 에보 카드 2장까지 출전하며, 초과분은 기본 크리처로 교체됩니다.'}));
   rules[2].textContent='방향이 다른 게이트를 모두 지나면 한 주를 완주합니다. 총마력이 목표에 도달한 뒤 어느 게이트든 지나면 승리합니다.';
 }
 if(C.edition==='3ds'){
@@ -756,6 +757,8 @@ function render(){
   map();$('who').textContent=over?winLabel():p.name+' 차례';
   $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingSleipnir()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
+  const limited=s.players[reader??i]?.evoOpeningLimited;
+  if(limited)$('hint').textContent+=' · 동맹 한도로 에보 '+limited+'장을 기본 크리처로 교체했습니다.';
   const controls=$('buttons');controls.replaceChildren();
   if(pending){
     const handover=btn('내 차례 확인',()=>{pending=false;if(C.armClock(s,Date.now(),true))save();render();},'primary');
