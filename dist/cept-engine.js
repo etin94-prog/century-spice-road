@@ -354,7 +354,7 @@ function createCepter(edition="ps2"){
   const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace});
   function spellHP(s,t,e){
     const u=t.unit;
-    const damage=e==='bolt'?20:extraSpells?.geyserDamage[e];
+    const damage=e==='bolt'?20:extraSpells?.landDamage[e];
     if(damage)return u.hp-fx.damageAmount(s,t,damage);
     if(fx.immuneHP(t))return u.hp;
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
@@ -1455,8 +1455,8 @@ function createCepter(edition="ps2"){
         if(extraTypes?.[s.spellEffect]){
           const tile=s.tiles[x],prior=tile.unit?.hp,effect=s.spellEffect;
           s.phase=extra.apply(s,effect,x);
-          const damage=prior-(tile.unit?.hp??0),geyser=extraSpells.geyserDamage[effect];
-          const label=damage>0?'−'+damage+' HP'+(geyser&&!tile.unit?' · 격파':''):geyser?'피해 없음':effect;
+          const damage=prior-(tile.unit?.hp??0),showDamage=extraSpells.landDamage[effect];
+          const label=damage>0?'−'+damage+' HP'+(showDamage&&!tile.unit?' · 격파':''):showDamage?'피해 없음':effect;
           mapEffect('cast',label,x);break;
         }
         if(combo.type[s.spellEffect]){s.phase=fx.apply(s,s.spellEffect,x);mapEffect('cast',s.spellEffect,k==='comboArea'?p.pos:x);break;}
@@ -1924,7 +1924,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,bookSize,copyLimit,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
+  return {edition,bookSize,copyLimit,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,hasLandDamage:e=>!!extraSpells?.landDamage[e],shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

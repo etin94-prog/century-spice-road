@@ -184,6 +184,10 @@ const describeCepterSpell=(()=>{
     revoltphantasm:'지도 위 모든 크리처에 판타즘을 부여해 주문과 영지 능력으로 HP가 변하지 않게 합니다.',
     stoneblast:'땅 또는 바람 속성 크리처 한 마리에게 30 피해를 줍니다.',
     shininggeyser:'고른 적 크리처에게 30 피해를 줍니다. 제물로 즉발 주문을 내면 피해가 40으로 늘어납니다.',
+    blazesplash:'화 또는 수 속성 크리처 한 마리에게 30 피해를 줍니다.',
+    dreadblast:'점유한 영지와 속성이 맞지 않는 크리처 한 마리에게 30 피해를 줍니다.',
+    deathmiasma:'선제 또는 원호를 가진 모든 크리처에게 20 피해를 줍니다.',
+    penalize:'지도에 배치된 모든 에보 드래곤에 마비를 부여합니다.',
     holybanishment:'영지와 속성이 다른 크리처를 소유자의 손패로 돌려보냅니다.',
     liquidform:'고른 크리처의 전투 ST와 HP를 각각 10~70으로 정하는 인챈트를 걸고 카드 한 장을 뽑습니다.',
     pacifism:'모든 셉터의 침략을 2라운드 동안 제한합니다.',
@@ -204,6 +208,7 @@ const describeCepterSpell=(()=>{
     if(C.edition==='revolt'&&card.effect==='exile')return '추가 소환 조건 없이 낼 수 있고 인챈트가 걸린 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     if(C.edition==='revolt'&&card.effect==='holybanishment')return '영지와 속성이 다른 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     const e=card.effect,edition=C.edition;
+    if(edition==='begins'&&e==='revoltphantasm')return '모든 크리처에 HP 고정을 부여합니다. 주문의 효과로 현재 HP와 최대 HP가 변하지 않습니다.';
     if(e==='massgrowth'&&card.synthesis==='item')return '모든 크리처의 최대 HP를 5 올립니다. 최대 100까지 적용됩니다. 제물로 아이템을 내면 내 크리처에게만 적용됩니다.';
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
     if(edition==='saga'){

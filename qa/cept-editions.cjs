@@ -393,6 +393,23 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   };
   geyser('mace',30);geyser('magicbolt',40);geyser('shininggeyser',40);
 
+  const blaze=scenario(C,'blazesplash');
+  place(C,blaze,1,0,1,50);place(C,blaze,2,1,0,30);place(C,blaze,5,1,2,50);
+  blaze.players[0].ai=true;blaze.aiLevel=2;
+  cast(C,blaze);
+  assert.deepEqual(C.choices(blaze),[['targetLand',1],['targetLand',2]]);
+  assert.deepEqual(C.ai(blaze),['targetLand',2]);
+  assert.ok(C.play(blaze,['targetLand',2]));
+  assert.equal(blaze.tiles[2].owner,-1);
+  assert.deepEqual([blaze.tiles[1].unit.hp,blaze.tiles[5].unit.hp],[50,50]);
+
+  const penalize=scenario(C,'penalize');
+  const dragon=C.evo.encode(C.evo.fresh(),0),fighter=card(C,'fighter');
+  for(const [at,owner,id,enchant] of [[1,0,dragon,'vitality'],[2,1,dragon,'landprotection'],[5,1,fighter,'disease']])
+    Object.assign(penalize.tiles[at],{owner,unit:{id,hp:30,enchant}});
+  cast(C,penalize);
+  assert.deepEqual([1,2,5].map(at=>penalize.tiles[at].unit.enchant),['paralysis','paralysis','disease']);
+
   const ward=scenario(C,'magicbolt');
   Object.assign(ward.tiles[1],{owner:1,unit:{id:card(C,'halfling'),hp:30}});
   Object.assign(ward.tiles[2],{owner:1,unit:{id:card(C,'creepingcoin'),hp:20}});
@@ -2797,6 +2814,34 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual(C.choices(supportArt).filter(([k])=>k==='equip').map(([,index])=>index),[0,1,3]);
   const current=C.presets.intro;
   const creature=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  const wards=C.start(2,2,5000,'begins-original-ford');
+  const [mismatched,matched,shielded,first,support,both]=wards.tiles.flatMap((t,i)=>C.territoryType(t.type)?[i]:[]).slice(0,6);
+  const spellUser=wards.players[0],goblin=creature('goblin'),fighter=creature('fighter');
+  const earthUnit=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.kind==='creature'&&c.element===2&&!c.spellWard&&!c.first&&!c.support);
+  const firstUnit=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.first&&!c.support&&!c.spellWard);
+  const supportUnit=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.support&&!c.first&&!c.spellWard);
+  const bothUnit=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.first&&c.support);
+  assert.ok([earthUnit,firstUnit,supportUnit].every(i=>i>=0));
+  for(const [at,owner,type,id,hp,enchant] of [
+    [mismatched,1,0,goblin,30],[matched,1,2,earthUnit,40],[shielded,1,0,fighter,40,'landprotection'],
+    [first,0,0,firstUnit,40],[support,1,0,supportUnit,20],[both,1,0,bothUnit>=0?bothUnit:firstUnit,40,'phantasm']
+  ])Object.assign(wards.tiles[at],{owner,type,unit:{id,hp,enchant}});
+  spellUser.cash=500;spellUser.hand=['dreadblast','deathmiasma','revoltphantasm','bolt'].map(id);
+  assert.ok(C.play(wards,['cast',0]));
+  assert.ok(C.choices(wards).some(a=>a[1]===mismatched));
+  assert.ok(!C.choices(wards).some(a=>a[1]===matched||a[1]===shielded));
+  assert.ok(C.play(wards,['targetLand',mismatched]));
+  assert.equal(wards.tiles[mismatched].owner,-1);
+  wards.phase='spell';assert.ok(C.play(wards,['cast',0]));
+  assert.equal(wards.tiles[first].unit.hp,20);
+  assert.equal(wards.tiles[support].unit,null);
+  assert.equal(wards.tiles[both].unit.hp,40);
+  assert.deepEqual(wards.mapEffect.hits.map(({at,damage,defeated})=>[at,damage,defeated]),[[first,20,false],[support,20,true]]);
+  wards.phase='spell';assert.ok(C.play(wards,['cast',0]));
+  assert.ok(wards.tiles.filter(t=>t.unit).every(t=>t.unit.enchant==='phantasm'));
+  wards.phase='spell';assert.ok(C.play(wards,['cast',0])&&C.play(wards,['targetLand',shielded]));
+  assert.equal(wards.tiles[shielded].unit.hp,40);
+
   const monarchId=creature('abyssalmonarch'),gooba=creature('gooba'),aero=creature('aerogoetia');
   assert.equal(C.copyLimit(C.cards[monarchId]),1);
   assert.ok(C.validBook([monarchId,gooba,...current.slice(2)]),'distinct Extra cards are independent');

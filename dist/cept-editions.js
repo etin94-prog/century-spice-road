@@ -121,7 +121,7 @@ const CepterEditions=(()=>{
       escape:'escape',gift:'gift',greed:'greed',growthbody:'growthbody',spiritwalk:'spiritwalk',vitality:'vitality',
       miraclecall:'miraclecall',purify:'purify',haste:'haste',massphantasm:'revoltphantasm',revival:'revival',stoneblast:'stoneblast',
       turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform',
-      peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth',shininggeyser:'shininggeyser'},
+      peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth',shininggeyser:'shininggeyser',blazesplash:'blazesplash',penalize:'penalize'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -129,7 +129,8 @@ const CepterEditions=(()=>{
       acidrain:'acidrain',avalanche:'avalanche',banishingray:'banishingray',changeling:'changeling',erasure:'erasure',
       growthbody:'growthbody',landprotection:'landprotection',locust:'locust',massgrowth:'massgrowth',landtransfer:'revoltlandtransfer',
       antielement:'antielement',disease:'disease',drought:'drought',fog:'fog',greed:'greed',vitality:'vitality',weakness:'weakness',
-      peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze'}
+      peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze',
+      massphantasm:'revoltphantasm',deathmiasma:'deathmiasma',dreadblast:'dreadblast'}
   };
   function modernBooks(cards,edition,bookSize,copyLimit){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);

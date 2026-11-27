@@ -660,7 +660,7 @@ function map(){
     }else center.append(el('span',m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':'점유 크리처 없음'));
     if(targets.has(inspect)){
       const action=targets.get(inspect);
-      if(action[0]==='targetLand'&&['shininggeyser','shininggeyserstrong'].includes(s.spellEffect)){
+      if(action[0]==='targetLand'&&C.hasLandDamage(s.spellEffect)){
         const next=C.spellHP(s,t,s.spellEffect);
         center.append(el('span','예상 HP '+u.hp+' → '+next+(next===0?' · 격파':'')));
       }
@@ -862,12 +862,12 @@ function render(){
   if(menuState.game!==s||menuState.key!==menuKey){
     const landTarget=choices.some(([kind])=>kind==='targetLand');
     const gateOnMap=selectingGate()&&landTarget;
-    const geyserOnMap=['shininggeyser','shininggeyserstrong'].includes(s.spellEffect)&&landTarget;
+    const damageOnMap=C.hasLandDamage(s.spellEffect)&&landTarget;
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
     const secretOnMap=s.phase==='secretTarget'&&choices.some(([kind])=>kind==='secretLand');
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!geyserOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!damageOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
     if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
-    if(geyserOnMap)handPanel.open=false;
+    if(damageOnMap)handPanel.open=false;
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;
   }

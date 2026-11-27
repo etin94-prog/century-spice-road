@@ -16,10 +16,11 @@ const CepterExtraSpells=(()=>{
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
-    frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',
+    frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
+    deathmiasma:'global',penalize:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
-  const geyserDamage={shininggeyser:30,shininggeyserstrong:40};
-  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast']);
+  const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30};
+  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const stolenKind={capture:'item',theft:'spell'};
@@ -107,7 +108,10 @@ const CepterExtraSpells=(()=>{
         if(e==='venomousboil'&&![1,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='chariot'&&(t.owner!==s.turn||!chariotExits(s,i).length))return [];
         if((e==='bistair'||e==='parasite')&&!enemy(s,t.owner)||e==='banishingray'&&cards[t.unit.id].element!==-1)return [];
-        if(geyserDamage[e]&&!enemy(s,t.owner))return [];
+        const creature=cards[t.unit.id];
+        if((e==='shininggeyser'||e==='shininggeyserstrong')&&!enemy(s,t.owner))return [];
+        if(e==='blazesplash'&&![0,1].some(element=>combo.hasElement(creature,element)))return [];
+        if(e==='dreadblast'&&matchesLand(creature,t.type))return [];
         if(e==='stoneblast'&&![2,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='holybanishment'&&matchesLand(cards[t.unit.id],t.type))return [];
         if(e==='replace'&&!replacement(s,t).length)return [];
@@ -154,6 +158,7 @@ const CepterExtraSpells=(()=>{
     function massDamage(e,t){
       const card=cards[t.unit.id];
       switch(e){
+        case 'deathmiasma':return card.first||card.support?20:0;
         case 'energyflash':return t.level===1?t.unit.hp:0;
         case 'acidrain':return cards[t.unit.id].stationary?30:0;
         case 'avalanche':return t.level===5?30:0;
@@ -184,6 +189,7 @@ const CepterExtraSpells=(()=>{
       if(type[e]==='land'){
         if(Object.hasOwn(terrain,e))t.type=terrain[e];
         else if(hybridShifts[e])t.type=hybridShifts[e][t.type];
+        else if(landDamage[e])fx.harm(s,t,landDamage[e]);
         else switch(e){
           case 'remission':p.flags.push(board(s).gates[x]);break;
           case 'restore':delete u.fatigued;if(!fx.immuneHP(t))u.hp=fx.max(u);break;
@@ -201,7 +207,6 @@ const CepterExtraSpells=(()=>{
           case 'meteor':t.level=1;break;
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
           case 'stoneblast':fx.harm(s,t,30);break;
-          case 'shininggeyser':case 'shininggeyserstrong':fx.harm(s,t,geyserDamage[e]);break;
           case 'zap':fx.harm(s,t,10);break;
           case 'holybanishment':
             if(s.edition==='revolt')fx.returnToHand(s,t);
@@ -253,7 +258,7 @@ const CepterExtraSpells=(()=>{
             for(const other of s.players)if(other!==p){other.pos=p.pos;other.dir=0;other.previous=null;}
             return warp(s,p.pos);
           case 'acidrain':case 'avalanche':case 'energyflash':case 'elementalrage':
-          case 'burninghail':case 'freezecyclone':case 'globalinsectswarm':case 'fatigueddisaster':case 'elementalwrath':
+          case 'burninghail':case 'freezecyclone':case 'globalinsectswarm':case 'fatigueddisaster':case 'elementalwrath':case 'deathmiasma':
             for(const v of land){
               const amount=massDamage(e,v);
               if(e==='energyflash'&&v.level===1)fx.destroy(s,v);
@@ -284,7 +289,12 @@ const CepterExtraSpells=(()=>{
           }
           case 'purify':p.cash+=purify(s)*50;break;
           case 'pacifism':for(const q of s.players)setStatus(s,q,e,2);break;
-          case 'revoltphantasm':for(const v of land){combo.clear(v.unit);v.unit.enchant='phantasm';}break;
+          case 'revoltphantasm':case 'penalize':
+            for(const v of land){
+              if(e==='penalize'&&!cards[v.unit.id].evo)continue;
+              combo.clear(v.unit);v.unit.enchant=e==='penalize'?'paralysis':'phantasm';
+            }
+            break;
           case 'alarm':for(const v of owning(s,s.turn))if(v.unit)delete v.unit.fatigued;break;
           case 'redivision':{const cash=sharedCash(s);for(const q of s.players)q.cash=cash;break;}
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
@@ -398,13 +408,13 @@ const CepterExtraSpells=(()=>{
         const change=own.filter(v=>v!==t&&v.type===dest&&typeof dest==='number').length-own.filter(v=>v!==t&&v.type===t.type).length;
         return sign*(2*(Number(after)-Number(before))*weight+2*change);
       }
+      if(landDamage[e]){
+        const damage=fx.damageAmount(s,t,landDamage[e]);
+        return -sign*(damage/4+(damage===t.unit.hp?weight*5:0));
+      }
       switch(e){
         case 'zap':return -sign*(fx.damageAmount(s,t,10)+(t.unit.hp<=10?weight*4:0));
         case 'stoneblast':case 'frostneedle':case 'venomousboil':return -sign*fx.damageAmount(s,t,30)/4;
-        case 'shininggeyser':case 'shininggeyserstrong':{
-          const damage=fx.damageAmount(s,t,geyserDamage[e]);
-          return damage/4+(damage===t.unit.hp?weight*5:0);
-        }
         case 'sagabistair':return affinity(s,0,2)>=5?-sign*fx.damageAmount(s,t,40)/3:-30;
         case 'sagaterrair':return affinity(s,1,3)>=5?-sign*(t.level-1)*12:-30;
         case 'comet':return -sign*Math.min(2,t.level-1)*10;
@@ -465,6 +475,7 @@ const CepterExtraSpells=(()=>{
       if(e==='purify')return s.tiles.some(t=>t.unit&&combo.enchanted(t.unit))||s.players.some(q=>q.status)?5:-10;
       if(e==='pacifism')return s.tiles.filter(t=>t.owner===s.turn&&t.level>2).length*2-3;
       if(e==='revoltphantasm')return s.tiles.filter(t=>t.owner===s.turn&&t.unit?.hp).length-3;
+      if(e==='penalize')return land.reduce((score,t)=>score+(cards[t.unit.id].evo&&t.unit.enchant!=='paralysis'?(enemy(s,t.owner)?1:-1)*(3+2*t.level):0),0);
       if(e==='sagaiksear')return affinity(s,1,3)>=5?25-(p.hand.length-1)*3:-30;
       if(e==='sagaselenear')return affinity(s,0,2)>=5?30:-30;
       if(e==='fame')return Math.max(0,...mine.map(t=>t.level))*5;
@@ -485,6 +496,6 @@ const CepterExtraSpells=(()=>{
     }
     return {apply,targets,choices,choose,chariotExits,scoreTarget,scoreCast,scoreChoice};
   }
-  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,startTurn,damageSpells,geyserDamage};
+  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,startTurn,damageSpells,landDamage};
 })();
 if(typeof module!=='undefined')module.exports=CepterExtraSpells;

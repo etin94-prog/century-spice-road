@@ -57,7 +57,7 @@ function decisionText(action,p){
     const relation=tile.owner===s.turn?'내 영지':C.allied(s,tile.owner,s.turn)?'동맹 영지':'적 영지';
     const hp=unit.hp,max=unit.mhp??C.cards[unit.id].hp;
     let outcome='';
-    if(kind==='targetLand'&&['bolt','heal','shininggeyser','shininggeyserstrong'].includes(s.spellEffect)){
+    if(kind==='targetLand'&&(['bolt','heal'].includes(s.spellEffect)||C.hasLandDamage(s.spellEffect))){
       const next=C.spellHP(s,tile,s.spellEffect);
       outcome=' → '+next+(next===0?' · 격파':'');
     }
