@@ -67,9 +67,11 @@ else{
     };
     pick.onchange=show;show();archive.append(pick,values,selectMap);references.append(list,archive);
     if(C.edition==='begins')references.append(editionBookArchive(CepterBeginsPlayerBooks,
-      '공개 덱 자료','비긴즈 공개 덱 자료','https://www.culdceptcentral.com/culdcept-begins/culdcept-begins-player-decks/','begins-book-archive'));
+      '공개 덱 자료','비긴즈 공개 덱 자료','https://www.culdceptcentral.com/culdcept-begins/culdcept-begins-player-decks/','begins-book-archive'),
+      editionComboArchive('비긴즈','begins','https://culdceptcentral.com/culdcept-begins/culdcept-begins-card-combos/culdcept-begins-in-battle-combos'));
     if(C.edition==='revolt')references.append(editionBookArchive(CepterRevoltBookArchive,
-      '스토리 북 자료','리볼트 스토리 북 자료','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/','revolt-book-archive'),revoltComboArchive());
+      '스토리 북 자료','리볼트 스토리 북 자료','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-ai-decks/','revolt-book-archive'),
+      editionComboArchive('리볼트','revolt','https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-combos/culdcept-revolt-in-battle-combos'));
   }else{
     list.append(sourceLink('https://card.culdcept.net/'+profile+'/','판본별 카드 목록'),' · ',sourceLink('https://culdcept.club/maps/'+profile+'/table','지도 목록'));
     if(C.edition!=='dc')list.append(' · ',sourceLink('https://drgs.app/culdceptex/scenario.html','초기 북·시나리오 공략'));
@@ -172,10 +174,10 @@ function editionBookArchive(entries,title,selectLabel,sourceBase,archiveClass){
   archive.append(pick,summary,use,link,grid);
   return archive;
 }
-function revoltComboArchive(){
-  const recipes=C.combo.revoltCombos,archive=el('details',null,'revolt-combo-archive revolt-library-panel');
+function editionComboArchive(label,edition,source){
+  const recipes=C.battleCombos,archive=el('details',null,edition+'-combo-archive revolt-library-panel');
   archive.append(el('summary','전투 콤보 · '+recipes.length+'개'));
-  const picker=el('select');picker.setAttribute('aria-label','리볼트 전투 콤보');
+  const picker=el('select');picker.setAttribute('aria-label',label+' 전투 콤보');
   const hint=el('p'),grid=el('div',null,'archive-cards');
   hint.setAttribute('aria-live','polite');
   const choose=btn('콤보 연습 북으로 선택',()=>{
@@ -185,17 +187,17 @@ function revoltComboArchive(){
     select.focus({preventScroll:true});
   });
   const update=()=>{
-    const {cards,hint:text}=recipes[Number(picker.value)];
+    const {groups,hint:text}=recipes[Number(picker.value)];
     hint.textContent=text;
-    grid.replaceChildren(...cards.map(n=>archiveCard(pathByName.get(n))));
+    grid.replaceChildren(...groups.flatMap(group=>group.slice(0,4)).map(n=>archiveCard(pathByName.get(n))));
   };
   picker.onchange=update;
   archive.addEventListener('toggle',()=>{
     if(!archive.open||picker.options.length)return;
-    picker.append(...recipes.map(({cards},i)=>new Option(comboLabel(i,cards.map(n=>[n])),i)));
+    picker.append(...recipes.map(({groups},i)=>new Option(comboLabel(i,groups),i)));
     update();
   });
-  archive.append(picker,hint,choose,grid,sourceLink('https://www.culdceptcentral.com/culdcept-revolt/culdcept-revolt-combos/culdcept-revolt-in-battle-combos','전투 콤보 참고 자료'));
+  archive.append(picker,hint,choose,grid,sourceLink(source,'전투 콤보 참고 자료'));
   return archive;
 }
 function showEntry(){
@@ -241,12 +243,12 @@ function showEntry(){
   else detail.append(sourceLink(row[1],row[0]));
 }
 function showHandCombos(container,hand){
-  if(C.edition==='revolt'){
+  if(C.battleCombos){
     const held=new Set(hand.map(id=>C.combo.key(C.cards[id])));
-    const combos=C.combo.revoltCombos.filter(({cards})=>cards.every(n=>held.has(n)));
+    const combos=C.battleCombos.filter(({groups})=>groups.every(group=>group.some(n=>held.has(n))));
     if(!combos.length)return;
     const details=el('details');details.append(el('summary','손패에 모인 콤보 '+combos.length+'개'));
-    for(const {cards,hint} of combos)details.append(el('p',comboCards(cards.map(n=>pathByName.get(n))).join(' + ')+' · '+hint));
+    for(const {groups,hint} of combos)details.append(el('p',comboLabel(0,groups.map(group=>group.filter(n=>held.has(n))))+' · '+hint));
     container.append(details);return;
   }
   if(C.presets.stronghold||C.edition==="saturn"||C.edition==="ps1")return;

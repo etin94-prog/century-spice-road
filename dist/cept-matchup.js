@@ -6,8 +6,8 @@ for(const [group,select] of [['Player',$('bookChoice')],['AI',$('aiChoice')]]){
   adaptedBooks.forEach((b,i)=>{if(b.group===group)list.append(new Option(b.name+' · 유지 '+b.kept+'장','source-'+i));});
   select.insertBefore(list,select.querySelector('[value="custom"]'));
 }
-const practiceBooks=C.edition==='revolt'?C.combo.revoltCombos.map((recipe,i)=>({
-  name:comboLabel(i,recipe.cards.map(n=>[n])),deck:C.practiceBook(i),practice:true
+const practiceBooks=C.battleCombos?C.battleCombos.map(({groups},i)=>({
+  name:comboLabel(i,groups),deck:C.practiceBook(i),practice:true
 })):(firstSeries||modernSeries?[]:C.combo.recipes).map((_,i)=>({name:'콤보 '+(i+1)+' · '+comboLabel(i),deck:C.practiceBook(i),practice:true}));
 for(const select of [$('bookChoice'),$('aiChoice')]){
   const list=document.createElement('optgroup');list.label='콤보 연습 북';

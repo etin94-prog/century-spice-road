@@ -1108,7 +1108,14 @@ function createCepter(edition="ps2"){
           d.u.st=0;lines.push((attacker==='shadowgeist'?a.c.name:'서큐버스 링')+' · 상대 기본 ST 0');
         }else if(attacker==='succubus'||!revolt&&!begins&&a.g==='ringofthesuccubus'||creatureEffects&&a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
         if(a.g==='ringofthevampire')a.hp+=damage;
-        if(attacker==='bandit'||a.g==='banditsglove'){const n=Math.min(s.players[d.seat].cash,damage*2);s.players[d.seat].cash-=n;s.players[a.seat].cash+=n;}
+        if(attacker==='bandit'||a.g==='banditsglove'){
+          const amount=begins&&attacker==='bandit'?damage*2:Math.min(s.players[d.seat].cash,damage*2);
+          s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
+          if(begins&&attacker==='bandit'){
+            if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+d.defending]+=amount;b.magicLoss[+a.defending]-=amount;}
+            lines.push(a.c.name+' · '+amount+'G 탈취');
+          }
+        }
         if(a.g==='rathunter'&&d.hp>0)extra.convert(d,'giantrat');
         if(attacker==='wraith'&&!s.predict&&Math.random()<.5)d.hp=0;
       }
@@ -1881,7 +1888,8 @@ function createCepter(edition="ps2"){
     return true;
   }
   const deckPlans=new WeakMap();
-  const deckRecipes=revolt?[...combo.recipes,...combo.revoltCombos.map(({cards})=>cards.map(n=>[n]))]:combo.recipes;
+  const battleCombos=begins?combo.beginsCombos(cards,canEquip):revolt?combo.revoltCombos.map(({cards,hint})=>({groups:cards.map(n=>[n]),hint})):null;
+  const deckRecipes=battleCombos?[...combo.recipes,...battleCombos.map(({groups})=>groups)]:combo.recipes;
   function ai(s){
     const seat=actor(s),p=s.players[seat],skill=isComputer(s,seat)?(s.aiLevel||0):0;
     const visibleBook=p.template||p.hand;
@@ -2251,16 +2259,16 @@ function createCepter(edition="ps2"){
   }
   const byKey=new Map(cards.flatMap((c,id)=>c.catalog&&!c.catalogOnly?[[key(c),id]]:[]));
   function practiceBook(index){
-    const groups=revolt?combo.revoltCombos[index]?.cards.map(n=>[n]):combo.recipes[index];
+    const groups=battleCombos?battleCombos[index]?.groups:combo.recipes[index];
     if(!groups)return null;
     const selected=groups.map(group=>group.find(n=>byKey.has(n))).map(n=>byKey.get(n));
     if(selected.includes(undefined))return null;
-    const book=[...new Set(selected)].flatMap(id=>Array(4).fill(id));
-    for(const id of presets.fire)if(book.length<bookSize&&book.filter(v=>v===id).length<4)book.push(id);
+    const book=[...new Set(selected)].flatMap(id=>Array(copyLimit(cards[id])).fill(id));
+    for(const id of presets.fire)if(book.length<bookSize&&book.filter(v=>v===id).length<copyLimit(cards[id]))book.push(id);
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,bookSize,copyLimit,evo,synthesizedCreature,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,hasLandDamage,spellRevival,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
+  return {edition,bookSize,copyLimit,evo,synthesizedCreature,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,hasLandDamage,spellRevival,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,battleCombos,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

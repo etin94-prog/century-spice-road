@@ -681,12 +681,12 @@ const CepterEditions=(()=>{
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     dryad:{support:true,supportElements:[-1,2],remoteVacantElements:[2]},sakuya:{support:true},
     triton:{scrollCritical:true},undine:{},valkyrie:{first:true,support:true,supportElements:[-1,0]},
-    baal:{first:true},conjurer:{scrollCritical:true},fay:{scrollCritical:true,landBan:1},gelatinouswall:{stationary:true},
+    baal:{first:true},conjurer:{scrollCritical:true},fay:{scrollCritical:true},gelatinouswall:{stationary:true},
     kelpie:{},oldwillow:{stationary:true},willothewisp:{last:true},
-    ares:{landBan:1},flamelord:{scrollCritical:true,landBan:1},dagon:{scrollCritical:true,landBan:0},
-    darkmaster:{scrollCritical:true,landBan:3},beelzebub:{scrollCritical:true,landBan:2},mastermonk:{first:true},
-    quetzalcoatl:{},yeti:{neutralizes:[0]},deathquito:{first:true},leviathan:{},garuda:{landBan:2},
-    fate:{},bloodypudding:{support:true},healer:{regenerate:true},algasphere:{stationary:true},
+    ares:{},flamelord:{scrollCritical:true},dagon:{scrollCritical:true},
+    darkmaster:{scrollCritical:true},beelzebub:{scrollCritical:true},mastermonk:{first:true},
+    quetzalcoatl:{},yeti:{neutralizes:[0]},deathquito:{first:true},leviathan:{},garuda:{},
+    fate:{},bloodypudding:{support:true},healer:{regenerate:true},algasphere:{stationary:true},medusa:{},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},
@@ -694,8 +694,6 @@ const CepterEditions=(()=>{
     terragoetia:{innateScroll:40,support:true,supportElements:[-1,2],blocksAttackAbilities:true},
     aquagoetia:{innateScroll:40,half:true},flamegoetia:{innateScroll:40},aerogoetia:{innateScroll:40,first:true},abyssalmonarch:{innateScroll:50}
   };
-  const beginsSummonCosts={flamegoetia:'R,R',aerogoetia:'Y,Y',carbunfly:'R,R',basilisk:'G,G',oldwillow:'R,R',baal:'R,+[]',
-    ares:'R,R',flamelord:'R,R,+[]',dagon:'B,B,+[]',darkmaster:'G,G,+[]',beelzebub:'Y,Y,+[]',leviathan:'B,B',garuda:'Y,Y'};
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},battleaxe:{st:40},
@@ -710,7 +708,7 @@ const CepterEditions=(()=>{
     stonehail:{st:30,critical:3},hellblaze:{st:40},nuclearfusion:{st:50},sparkball:{st:40},
     gemoflife:{},holygrail:{},kris:{st:30,protectItem:true},offeringdoll:{},powerbracelet:{},prismaticwand:{},
     silverplow:{hp:10},smoketorch:{hp:20},stinkbottle:{},tearinghalo:{st:30,protectItem:true},vorpalsword:{st:30},
-    angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30},voidorb:{hp:20,protectItem:true,blocksCreatureHits:true}
+    angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30},voidorb:{hp:20,protectItem:true,blocksCreatureHits:true},stormcauser:{st:60,hp:-30},tonfa:{doubleAttack:true}
   };
   const handheldSpecial={
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},
@@ -789,7 +787,7 @@ const CepterEditions=(()=>{
       const element=pair?-2:battleElements.indexOf(category);
       const format=(arr,lookup)=>arr.map(k=>lookup[k]).filter(Boolean).join(',');
       const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:edition==='3ds'?handheldRefs.cards:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
-        ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:(edition==='begins'&&beginsSummonCosts[slug])||format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
+        ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
       const c={...(compatible?base:{}),name,catalog,element,kind,category,cost:r.cost,ban:r.ban.map(k=>equipment[k].toLowerCase()),catalogOnly:!(compatible||variant||simple),unlisted:false,hasArt:!!base,...(modernSets[edition]?{editionArt:r.image}:{firstArt:r.image})};
       if(kind==='spell'){
         const effect=legacySpellEffects[edition]?.[slug]||modernSpellEffects[edition]?.[slug]||

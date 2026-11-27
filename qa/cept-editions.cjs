@@ -4168,6 +4168,82 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual([theft.players[0].hand,theft.players[1].hand],[[giftId],[goblin]]);
   }
 
+
+  {
+    assert.equal(C.battleCombos.length,10);
+    for(const [i,{groups}] of C.battleCombos.entries()){
+      const book=C.practiceBook(i);
+      assert.ok(C.validBook(book));
+      const names=book.map(id=>C.combo.key(C.cards[id]));
+      assert.ok(C.combo.matches(groups,names));
+    }
+    const whip=creature('bindingwhip'),monk=creature('mastermonk');
+    assert.equal(duel(monk,fighter,whip,null,100,2).strikes.length,1);
+    assert.equal(land.unit?.enchant,'paralysis');
+    const skeleton=creature('skeleton'),shield=creature('spikedshield');
+    const reflection=duel(goblin,skeleton,null,shield,40,2);
+    assert.match(reflection.lines.join(' '),/재생/);
+    assert.deepEqual([reflection.strikes[0].hp[0],reflection.strikes[0].hp[1],land.unit.hp],[20,30,40]);
+    const pegasus=creature('pegasus'),gas=creature('gaseousform'),scroll=creature('freeze');
+    assert.equal(duel(fighter,pegasus,null,gas).strikes.find(hit=>hit.side===0).effect,'block');
+    assert.equal(duel(fighter,pegasus,scroll,gas).strikes.find(hit=>hit.side===0).effect,'block');
+
+    const bandit=creature('bandit'),executor=creature('executor'),tonfa=creature('tonfa');
+    const hireling=duel(bandit,fighter,executor);
+    assert.equal(hireling.attackST,90);
+    assert.deepEqual([creatures.players[0].cash,enemy.cash],[340,20]);
+    const repeat=duel(bandit,fighter,tonfa,null,100,2);
+    assert.deepEqual(repeat.strikes.slice(0,2).map(hit=>hit.side),[0,0]);
+    assert.equal(enemy.cash,120);
+    Object.assign(creatures,{phase:'attack',battle:{at:2,inv:bandit,atkItem:null,defItem:null}});
+    Object.assign(land,{type:2,owner:1,unit:{id:fighter,hp:40}});
+    Object.assign(creatures.players[0],{hand:[executor],cash:100});
+    enemy.cash=10;
+    assert.ok(C.play(creatures,['equip',0])&&C.play(creatures,['bare']));
+    assert.deepEqual([creatures.players[0].cash,enemy.cash],[240,-170]);
+
+    const cait=creature('caitsith'),buckler=creature('buckler');
+    for(const foe of [fighter,goblin])assert.equal(duel(foe,cait,null,buckler).strikes[0].effect,'block');
+    const priorStormBook=enemy.book;
+    enemy.book=[fighter];
+    const storm=creature('stormcauser'),recycleStorm=duel(goblin,creature('centaur'),null,storm);
+    assert.deepEqual([recycleStorm.strikes[0].side,recycleStorm.defendST,recycleStorm.startHP[1]],[1,90,10]);
+    assert.ok(enemy.book.includes(storm));
+    enemy.book=priorStormBook;
+    const ram=creature('batteringram');
+    for(const transformer of ['medusa','cockatrice']){
+      const hit=duel(creature(transformer),fighter,ram,null,100,2);
+      assert.ok(hit.won);
+      assert.match(hit.lines.join(' '),/변신.*즉사/);
+    }
+    const decoy=creature('decoy'),torch=creature('smoketorch'),grail=creature('holygrail');
+    assert.equal(duel(fighter,decoy,null,torch,C.cards[decoy].hp,2).strikes[0].effect,'reflect');
+    for(const guard of [torch,grail])assert.equal(duel(fighter,decoy,scroll,guard).strikes[0].effect,'block');
+    const bigWall=duel(fighter,creature('gelatinouswall'),null,creature('diamondarmor'),50,2);
+    assert.deepEqual([bigWall.startHP[1],enemy.cash],[110,340]);
+
+    const printed=C.start(2,2,6000,'begins-original-ford');
+    const player=printed.players[0],sprite=creature('sprite'),willow=creature('oldwillow');
+    const dream=creature('dreamterrain');
+    assert.equal(C.cards[dream].cost,70);
+    assert.equal(C.cards[sprite].catalog.placement,'G');
+    assert.equal(C.cards[willow].catalog.additionalCost,'R,R');
+    Object.assign(player,{pos:3,cash:500,hand:[sprite,willow]});
+    Object.assign(printed,{phase:'land'});
+    printed.tiles[3].type=2;
+    assert.ok(!C.choices(printed).some(([action])=>action==='summon'));
+    printed.tiles[3].type=3;
+    Object.assign(printed.tiles[6],{type:0,owner:0,unit:{id:goblin,hp:30}});
+    assert.deepEqual(C.choices(printed).filter(([action])=>action==='summon'),[['summon',0]]);
+    Object.assign(printed.tiles[7],{type:0,owner:0,unit:{id:goblin,hp:30}});
+    assert.deepEqual(C.choices(printed).filter(([action])=>action==='summon'),[['summon',0],['summon',1]]);
+    printed.phase='spell';player.hand=[dream];player.cash=69;
+    assert.ok(!C.choices(printed).some(([action])=>action==='cast'));
+    player.cash=70;
+    assert.ok(C.play(printed,['cast',0]));
+    assert.equal(player.cash,0);
+  }
+
   const curse=C.start(2,2,6000,'begins-original-ford');
   const warded=curse.tiles[3],growing={id:fighter,hp:28,mhp:90};
   Object.assign(warded,{owner:0,unit:growing});
@@ -4313,7 +4389,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   Object.assign(dreamCaster,{cash:500,hand:[id('dreamterrain')],pos:2});
   Object.assign(dream.tiles[2],{owner:1,level:3,unit:{id:fighter,hp:40}});
   assert.ok(C.play(dream,['cast',0]));
-  assert.equal(dreamCaster.cash,460);
+  assert.equal(dreamCaster.cash,430);
   assert.equal(dreamCaster.enchantDeadline,10);
   dream.phase='land';
   const levy=C.owedToll(dream,dream.tiles[2]),beforeLevy=dreamCaster.cash,beforeCollection=collector.cash;

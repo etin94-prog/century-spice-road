@@ -419,6 +419,7 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='thunderspawn'?'내 수 영지 한 곳당 전투 ST가 10 오릅니다. 영지와 크리처의 속성이 다른 적 영지로 원거리 침략할 수 있습니다.':
       C.edition==='revolt'&&key==='kaiserpenguin'?'전투 시작 시 상대가 사용한 도구, 두루마리 또는 지원 크리처를 파괴합니다.':
+      C.edition==='begins'&&key==='bandit'?'공격이 명중하면 준 피해의 두 배만큼 상대 마력을 빼앗습니다. 상대 마력이 부족하면 부채가 생깁니다.':
       C.edition==='begins'&&key==='baal'?'전투에서 살아남으면 내 손패 한 장을 무작위로 파괴합니다.':
       C.edition==='begins'&&key==='gelatinouswall'?'전투에서 살아남으면 받은 피해 1당 5G를 얻습니다.':
       C.edition==='begins'&&key==='willothewisp'?'공격이 명중하면 남은 전투 HP의 두 배만큼 상대 마력을 빼앗습니다. 상대 마력이 부족하면 부채가 생깁니다.':

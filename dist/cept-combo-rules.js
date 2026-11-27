@@ -872,6 +872,22 @@ const CepterCombos = (() => {
     }
     return {pair,ready,scoreTarget,cast,sequence};
   }
+  function beginsCombos(cards,canEquip){
+    const usable=cards.filter(c=>!c.unlisted&&!c.catalogOnly&&!c.generatedOnly),byName=new Map(usable.map(card=>[key(card),card]));
+    const compatible=(check,item)=>usable.filter(c=>c.kind==='creature'&&check(c)&&canEquip(c,byName.get(item))).map(key);
+    return [
+      {groups:[compatible(c=>c.first&&key(c)!=='nike','bindingwhip'),['bindingwhip']],hint:'선제 공격이 통하면 상대가 마비되어 반격할 수 없습니다.'},
+      {groups:[compatible(c=>c.regenerate||key(c)==='hydra','spikedshield'),['spikedshield']],hint:'일반 공격 피해의 절반을 돌려주고, 재생이 발동하는 전투에서 생존하면 HP를 회복합니다.'},
+      {groups:[compatible(c=>c.neutralizeScroll,'gaseousform'),['gaseousform','countershield']],hint:'크리처가 두루마리를 막고 장비가 일반 공격을 막습니다. 카운터 실드는 방어구를 쓸 수 있는 크리처에만 장착합니다.'},
+      {groups:[['bandit'],['executor']],hint:'지원으로 공격력을 90까지 올립니다. 명중하면 피해량의 두 배를 빼앗고 상대 마력이 모자라면 부채가 생깁니다.'},
+      {groups:[['bandit'],['tonfa']],hint:'상대가 첫 타를 버티면 두 번째 타격으로도 마력을 빼앗을 수 있습니다.'},
+      {groups:[['caitsith'],['buckler']],hint:'기본 ST 40 이상인 일반 공격은 캣 시스가, ST 30 이하인 일반 공격은 버클러가 막습니다.'},
+      {groups:[['centaur'],['stormcauser']],hint:'선제로 강하게 공격합니다. 켄타우로스가 생존하면 사용한 장비가 북으로 돌아갑니다.'},
+      {groups:[['cockatrice','medusa'],['batteringram']],hint:'일반 공격으로 상대를 방어형으로 바꾸고, 같은 타격의 공성추 효과로 즉사시킵니다.'},
+      {groups:[['decoy'],['holygrail','smoketorch']],hint:'디코이는 일반 공격을 반사합니다. 홀리 그레일 또는 스모크 토치로 두루마리에도 대비할 수 있습니다.'},
+      {groups:[['gelatinouswall'],['diamondarmor']],hint:'HP를 60 올려 큰 타격을 버팁니다. 전투에서 생존하면 받은 피해 1당 5G를 얻습니다.'}
+    ];
+  }
   const revoltCombos=[
     {cards:['cockatrice','batteringram'],hint:'일반 공격이 명중하면 상대를 스톤 월로 바꾸고, 방어형 즉사 효과가 이어집니다.'},
     {cards:['tetrarm','chillingblast'],hint:'보유한 수·풍 영지로 두루마리 ST를 만들고 연속 두 번 공격합니다.'},
@@ -883,6 +899,6 @@ const CepterCombos = (() => {
     {cards:['sulfurousballoon','stormcauser'],hint:'전투 ST를 크게 높입니다. 약해진 벌룬이 격파되면 상대에게 HP 40 피해를 줍니다.'},
     {cards:['caitsith','buckler'],hint:'기본 ST가 40 이상인 상대는 캣 시스가, 30 이하인 상대는 버클러가 일반 공격을 막습니다.'}
   ];
-  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,revoltCombos,matches,planner};
+  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,revoltCombos,beginsCombos,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;
