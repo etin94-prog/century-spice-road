@@ -15,6 +15,8 @@ const describeCepterItem=(()=>{
     chameleonarmor:'지형 보너스 적용 전 전투 HP를 교전 영지 레벨 × 20으로 맞춥니다.',
     changingsalve:'전투가 시작되면 장착한 크리처의 ST와 HP를 서로 바꿉니다.',
     clawoftheghoul:'일반 공격으로 피해를 주면 상대를 마비시킵니다.',
+    abyssaltome:'일반 공격이 적중하면 살아남은 상대를 스태추로 바꿉니다. 전투 후 장착한 크리처도 살아남으면 스태추로 바뀝니다.',
+    mindshock:'두루마리 공격이 적중하면 상대에게 수면을 부여해 통행료를 받지 못하게 합니다.',
     coinofpiety:'상대를 격파하고 생존하면 교전 영지와 같은 속성의 호부를 10개 얻습니다.',
     voidorb:'상대 크리처의 공격 명중 시 발동하는 능력을 막습니다.',
     corrosiverobe:'전투가 시작되면 상대가 장착한 무기 또는 두루마리를 파괴합니다.',
@@ -173,6 +175,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='3ds'&&name==='heartfibula')pieces.push('적을 격파하면 최대 HP가 최대 100까지 20 오릅니다.');
     else if(C.edition==='3ds'&&name==='wateramulet')pieces.push(ability[name]+' 적을 격파하면 기본 ST가 최대 100까지 10 오릅니다.');
     else if(C.edition==='3ds'&&name==='windamulet')pieces.push('풍 속성 크리처가 장착하면 일반 공격이 강타합니다. 적을 격파하면 최대 HP가 최대 100까지 10 오릅니다.');
+    else if(C.edition==='begins'&&name==='coinofpiety')pieces.push('장착한 크리처가 생존하면 내가 가장 많이 가진 호부 수량이 10% 증가합니다.');
     else if(C.edition==='begins'&&name==='offeringdoll')pieces.push('생존하면 장착 크리처와 같은 속성의 호부 가치가 30% 오릅니다.');
     else if(!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');

@@ -3690,8 +3690,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual(playable,['1339-infernal-vacation','1342-mothman-and-friends','1343-aggroaf','1344-kelpez','1345-budget-raging-river',
     '1347-power-surge','1348-esupports#main','1348-esupports#alternate','1349-willowisp#main','1349-willowisp#alternate','1350-meme-book',
     '1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead','1356-support-deck-for-chapter-15',
-    '1359-brynhildr','1362-iksear','1363-bistair','1366-selenear','1367-resident-evil','1369-spell-damage',
-    '1372-bonzey-buddy','1374-mosquito-water','1376-lets-water-the-plants','1378-little-wonders']);
+    '1359-brynhildr','1362-iksear','1363-bistair','1365-terrair','1366-selenear','1367-resident-evil','1369-spell-damage',
+    '1372-bonzey-buddy','1374-mosquito-water','1376-lets-water-the-plants','1377-assassin-red','1378-little-wonders']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -3733,6 +3733,26 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.play(creatures,defItem==null?['bare']:['equip',0]));
     return creatures.battle;
   }
+  const mindShock=creature('mindshock'),tome=creature('abyssaltome'),doomNeedle=creature('doomneedle'),coin=creature('coinofpiety');
+  const asleep=duel(fighter,goblin,mindShock,null,80,1);
+  assert.deepEqual([asleep.attackST,land.unit.enchant,C.toll(creatures,land)],[30,'sleep',0]);
+  assert.equal(duel(fighter,goblin,mindShock,creature('magicshield'),80,1).strikes[0].effect,'block');
+  assert.equal(land.unit.enchant,undefined);
+  const statue=creature('statue');
+  assert.deepEqual(duel(fighter,goblin,tome,null,90,1).finalForms,[statue,statue]);
+  assert.deepEqual([land.unit.id,land.unit.hp],[statue,50]);
+  assert.deepEqual(duel(fighter,goblin,tome,creature('gaseousform'),90,1).finalForms,[statue,goblin]);
+  const doomed=duel(fighter,goblin,doomNeedle,null,90,1);
+  assert.ok(!doomed.won&&land.unit.hp>0&&land.unit.enchant==='senility');
+  Object.assign(creatures,{phase:'attack',battle:{at:2,inv:fighter,atkItem:null,defItem:null}});
+  assert.ok(C.play(creatures,['bare'])&&C.play(creatures,['bare']));
+  assert.ok(creatures.battle.won);
+  creatures.players[0].symbols=[10,29,2,0];
+  assert.ok(!duel(fighter,goblin,coin,null,90,1).won);
+  assert.deepEqual(creatures.players[0].symbols,[10,31,2,0]);
+  creatures.players[0].symbols=[0,0,0,0];
+  assert.ok(duel(fighter,goblin,coin,null,30,1).won);
+  assert.deepEqual(creatures.players[0].symbols,[0,0,0,0]);
   const frost=duel(fighter,ice,null,null);
   assert.deepEqual([frost.startHP[1],frost.won],[60,false]);
   const valkyrie=creature('valkyrie');
@@ -4431,6 +4451,39 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
         assert.ok(C.play(s,['sacrifice',1]));
       }
     }
+
+    const race=casting('footrace');
+    [470,400,300,200].forEach((cash,seat)=>{race.players[seat].cash=cash;});
+    race.players[1].antiMagic=true;
+    castSpell(race);
+    assert.deepEqual(race.players.map(p=>[p.status,p.diceLimitRolls,p.antiMagic]),Array(4).fill(['footrace',2,undefined]));
+    assert.ok(C.play(race,['roll']));
+    assert.deepEqual([race.die,race.players[0].diceLimitRolls],[2,1]);
+    race.phase='roll';race.turn=0;race.players[0].cash=100;race.fly=true;
+    assert.ok(C.play(race,['roll']));
+    assert.deepEqual([race.die,race.mapEffect.faces,race.players[0].status],[16,[8,8],undefined]);
+    assert.deepEqual(race.players.slice(1).map(p=>p.diceLimitRolls),[2,2,2]);
+
+    const grasp=casting('unholygrasp');
+    grasp.prices=[15,24,59,7];
+    grasp.players[0].symbols=[0,0,0,1];
+    grasp.players[1].symbols=[8,2,9,0];grasp.players[1].cash=200;
+    grasp.players[3].symbols=[18,0,0,0];
+    castSpell(grasp);
+    assert.deepEqual(C.choices(grasp),[['targetPlayer',0],['targetPlayer',1],['targetPlayer',3]]);
+    assert.ok(C.play(grasp,['targetPlayer',1]));
+    assert.deepEqual([grasp.players[0].cash,grasp.players[1].symbols,grasp.players[1].cash],[901,[8,2,0,0],200]);
+
+    const forced=casting('telekinesis',true);
+    const shark=creature('megalodon');
+    Object.assign(forced.tiles[2],{owner:1,type:1,unit:{id:shark,hp:50,enchant:'immobilize'}});
+    for(const at of C.board(forced).links[2])if(at!==3)forced.tiles[at].type=0;
+    Object.assign(forced.tiles[3],{type:1});
+    castSpell(forced,true);
+    assert.ok(C.play(forced,['targetLand',2]));
+    assert.deepEqual(C.choices(forced),[['teleTo',3]]);
+    assert.ok(C.play(forced,['teleTo',3]));
+    assert.deepEqual([forced.tiles[2].unit,forced.tiles[3].owner,forced.tiles[3].unit,forced.phase],[null,1,{id:shark,hp:50},'roll']);
 
     const havoc=casting('armageddon',true);
     [

@@ -13,7 +13,7 @@ const CepterExtraSpells=(()=>{
     alarm:'global',chaospanic:'global',revoltPlague:'global',philosophy:'global',magicbooster:'global',castlerecall:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
     remission:'land',magicalleap:'land',shadowleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',sigilofshrink:'land',debility:'land',debilitystrong:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
-    armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',beginsculdra:'global',immobilize:'global',
+    armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',beginsculdra:'global',immobilize:'global',footrace:'global',unholygrasp:'player',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
@@ -87,8 +87,8 @@ const CepterExtraSpells=(()=>{
       return {amount:(max-lap)*100,leaders:foes.filter(q=>q.lap===max)};
     }
     const affinity=(s,first,second)=>owning(s,s.turn).filter(t=>t.type===first||t.type===second).length;
-    function personalRank(s){
-      const wealth=personalTotal(s,s.turn);
+    function personalRank(s,seat=s.turn){
+      const wealth=personalTotal(s,seat);
       return 1+s.players.filter((_,seat)=>personalTotal(s,seat)>wealth).length;
     }
     const divineMatch=(card,e)=>{
@@ -98,6 +98,11 @@ const CepterExtraSpells=(()=>{
     const landDrainRate=s=>s.edition==='saga'?20:30;
     const sharedCash=s=>Math.floor(s.players.reduce((sum,q)=>sum+q.cash,0)/s.players.length);
     const symbolCount=p=>p.symbols.reduce((a,b)=>a+b,0);
+    function unholyGraspQuote(s,q){
+      const index=q.symbols.indexOf(Math.max(...q.symbols));
+      const count=Math.min(10,q.symbols[index]||0);
+      return {index,count,magic:count*(s.prices[index]||0)};
+    }
     const replacement=(s,t)=>s.players[t.owner].hand.flatMap((id,j)=>cards[id].kind==='creature'&&canOccupy(cards[id],t)&&deployable(s,id)?[['replaceCard',j,id]]:[]);
     function chariotExits(s,from){
       const tile=s.tiles[from],links=board(s).links;
@@ -139,6 +144,7 @@ const CepterExtraSpells=(()=>{
         if(e!=='dispelmagic'&&category==='sflash'&&fx.idol(s,'graniteidol'))return [];
         return s.players.flatMap((q,i)=>{
           if(e!=='dispelmagic'&&q.status==='barrier'||enemyOnly.has(e)&&!enemy(s,i))return [];
+          if(e==='unholygrasp'&&!symbolCount(q))return [];
           if(stolenKind[e]&&!q.hand.some(id=>cards[id].kind===stolenKind[e]))return [];
           if(e==='mesmerize'&&!q.hand.some(id=>cards[id].kind==='spell'&&combo.key(cards[id])!=='mesmerize'))return [];
           return [['targetPlayer',i]];
@@ -305,6 +311,12 @@ const CepterExtraSpells=(()=>{
           case 'landdrain':{const amount=owning(s,x).length*landDrainRate(s);p.cash+=amount;q.cash-=amount;break;}
           case 'judgment':{const victim=Math.random()<2/3?q:p;victim.cash-=Math.floor(Math.max(0,victim.cash)*.8);break;}
           case 'eclipse':q.cash+=10*mostSymbols(q,20);break;
+          case 'unholygrasp':{
+            const {index,count,magic}=unholyGraspQuote(s,q);
+            q.symbols[index]-=count;p.cash+=magic;
+            note(s,p.name+' · 호부 '+count+'개 소멸 · +'+magic+'G');
+            break;
+          }
           case 'dispelmagic':
             clearCepter(q);
             if(s.edition==='saga')p.book.unshift(ids.get(e));
@@ -340,6 +352,9 @@ const CepterExtraSpells=(()=>{
             break;
           case 'disbelief':
             for(const q of s.players)q.cash-=symbolCount(q)*5;
+            break;
+          case 'footrace':
+            for(const q of s.players){setStatus(s,q,e);q.diceLimitRolls=2;}
             break;
           case 'beginsculdra':{
             const average=sharedCash(s);
@@ -515,6 +530,7 @@ const CepterExtraSpells=(()=>{
           case 'ruin':return -sign*count('spell')*7-p.hand.filter(id=>cards[id].kind==='spell'&&combo.key(cards[id])!==e).length*5;
           case 'mesmerize':return -sign*Math.max(0,...q.hand.filter(id=>cards[id].kind==='spell').map(id=>cards[id].cost/9));
           case 'corruption':return -sign*symbolCount(q)/2;
+          case 'unholygrasp':return enemy(s,x)?unholyGraspQuote(s,q).magic/6:0;
           case 'capture':case 'theft':return Math.max(0,...q.hand.filter(id=>cards[id].kind===stolenKind[e]).map(id=>cards[id].cost/5));
           case 'bravesong':case 'toughsong':return sign*(q.status===e?0:Math.min(24,6+3*owning(s,x).length));
           case 'sagagift':return sign*(10+(q.hand.length<5?8:0));
@@ -624,6 +640,10 @@ const CepterExtraSpells=(()=>{
       if(e==='foresight'||e==='prophecy'||e==='find')return 6;
       if(divineDraw[e])return Math.min(2,p.book.filter(id=>divineMatch(cards[id],e)).length)*7-Math.max(0,p.hand.length-6)*5;
       if(e==='scarestorm')return land.reduce((utility,t)=>utility+(fx.strength(t.unit)<=30&&t.unit.enchant!=='paralysis'?(enemy(s,t.owner)?1:-1)*(8+t.level*4):0),0);
+      if(e==='footrace'){
+        const average=(board(s).die+1)/2;
+        return s.players.reduce((utility,q,seat)=>utility+(enemy(s,seat)?-1:1)*(2*personalRank(s,seat)-(q.word??average))*4,0);
+      }
       if(e==='disbelief')return s.players.reduce((utility,q,seat)=>utility+(enemy(s,seat)?1:-1)*symbolCount(q)/2,0)-12;
       if(e==='gift')return s.edition==='begins'?Math.max(-5,personalRank(s)*8-p.cash/100-p.hand.length):10;
       if(e==='charity')return 4*Math.min(allianceRank(s),Math.max(0,7-p.hand.length));
@@ -650,7 +670,7 @@ const CepterExtraSpells=(()=>{
       if(k==='mesmerCard'&&type[card.effect])return scoreCast(s,card.effect);
       return card.cost/20+(card.kind==='creature'&&s.players[s.turn].hand.every(n=>cards[n].kind!=='creature')?4:0);
     }
-    return {apply,targets,choices,choose,chariotExits,scoreTarget,scoreCast,scoreChoice,nearest,warp};
+    return {apply,targets,choices,choose,chariotExits,personalRank,scoreTarget,scoreCast,scoreChoice,nearest,warp};
   }
   return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,setStatus,startTurn,damageSpells,landDamage};
 })();

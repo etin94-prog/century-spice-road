@@ -334,7 +334,7 @@ const CepterExtraBattle=(()=>{
       const p=s.players[a.seat],other=s.players[d.seat],symbol=t.area*4+t.type;
       if(typeof t.type==='number'&&s.prices[symbol]!=null){
         if(a.n==='sanctumguard')p.symbols[symbol]+=5;
-        if(a.g==='coinofpiety')p.symbols[symbol]+=10;
+        if(s.edition!=='begins'&&a.g==='coinofpiety')p.symbols[symbol]+=10;
       }
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
       if(a.n==='leviathan'&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld')t.type=1;

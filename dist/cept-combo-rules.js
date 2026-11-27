@@ -102,6 +102,14 @@ const CepterCombos = (() => {
       if(!u.hp)spellDestroy(s,t);
     }
     function morph(u,n){return {id:ids.get(n),hp:cards[ids.get(n)].hp};}
+    function telekinesisExits(s,from){
+      const source=s.tiles[from];
+      return board(s).links[from].filter(at=>{
+        const dest=s.tiles[at];
+        return territoryType(dest.type)&&!allied(s,dest.owner,source.owner)&&canInvade(s,source.owner,dest.owner)&&
+          dest.unit?.enchant!=='peace'&&(s.edition!=='begins'||canOccupy(cards[source.unit.id],dest));
+      });
+    }
     function targets(s,e){
       const i=s.turn;
       if(type[e]==='area')return [...new Set(s.tiles.map(t=>t.area))].map(a=>['comboArea',a]);
@@ -114,7 +122,7 @@ const CepterCombos = (() => {
         if(!targetable(s,t,cards[ids.get(e)]?.catalog?.category))return [];
         if(['evilblast','shrink'].includes(e)&&allied(s,i,t.owner))return [];
         if(e==='growthbody'&&['ps1','saturn'].includes(s.edition)&&t.owner!==i)return [];
-        if(e==='telekinesis'&&!board(s).links[n].some(j=>{const d=s.tiles[j];return territoryType(d.type)&&!allied(s,d.owner,t.owner)&&canInvade(s,t.owner,d.owner)&&d.unit?.enchant!=='peace';}))return [];
+        if(e==='telekinesis'&&!telekinesisExits(s,n).length)return [];
         if(e==='exile'&&(!enchanted(t.unit)||cards[t.unit.id].catalog?.additionalCost))return [];
         if(['landtransfer','relief'].includes(e)&&t.owner!==i)return [];
         if(e==='relief'&&(s.reliefFrom===n||!s.tiles.some((v,j)=>j!==n&&v.owner===i&&targetable(s,v))))return [];
@@ -641,7 +649,7 @@ const CepterCombos = (() => {
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,shrinkHealth,isDefensive,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,terrainLocked,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
+      blockedLevel,terrainLocked,clearCepter,telekinesisExits,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],

@@ -176,7 +176,7 @@ const CepterEditions=(()=>{
       bistair:'beginsbistair',iksear:'beginsiksear',selenear:'beginsselenear',terrair:'beginsterrair',
       shadowleap:'shadowleap',spiritwalk:'spiritwalk',liquidform:'liquidform',armageddon:'armageddon',
       tempest:'beginstempest',scarestorm:'scarestorm',disbelief:'disbelief',blasttrap:'blasttrap',
-      culdra:'beginsculdra',immobilize:'immobilize'}
+      culdra:'beginsculdra',immobilize:'immobilize',footrace:'footrace',unholygrasp:'unholygrasp',telekinesis:'telekinesis'}
   };
   // These three original books are the baseline used to calibrate Revolt difficulty.
   const revoltBaselineBooks={
@@ -723,6 +723,7 @@ const CepterEditions=(()=>{
     gemoflife:{},holygrail:{},kris:{st:30,protectItem:true},offeringdoll:{},powerbracelet:{},prismaticwand:{},
     silverplow:{hp:10},smoketorch:{hp:20},stinkbottle:{},tearinghalo:{st:30,protectItem:true},vorpalsword:{st:30},
     angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30},voidorb:{hp:20,protectItem:true,blocksCreatureHits:true},stormcauser:{st:60,hp:-30},tonfa:{doubleAttack:true},
+    abyssaltome:{st:20},coinofpiety:{st:20},doomneedle:{st:20},mindshock:{st:30},
     necroscarab:{},neutralcloak:{hp:40},migoalblessing:{st:20,hp:20,criticalElements:[1,2],neutralizes:[0,3]}
   };
   const handheldSpecial={

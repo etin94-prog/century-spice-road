@@ -740,7 +740,7 @@ function createCepter(edition="ps2"){
     if(s.phase==='mindseeker')return Array.from({length:Math.min(6,(s.players[s.spellTarget].book?.length??s.players[s.spellTarget].bookCount??0))},(_,j)=>['eraseDraw',j]);
     if(s.phase==='secretTarget')return [...fx.secretTargets(s,s.secretFrom),['secretCancel']];
     if(s.phase==='territoryTarget')return fx.territoryTargets(s,s.abilityFrom);
-    if(s.phase==='teleMove')return board(s).links[s.teleFrom].filter(n=>territoryType(s.tiles[n].type)&&!allied(s,s.tiles[n].owner,s.tiles[s.teleFrom].owner)&&canInvade(s,s.tiles[s.teleFrom].owner,s.tiles[n].owner)&&s.tiles[n].unit?.enchant!=='peace').map(n=>['teleTo',n]);
+    if(s.phase==='teleMove')return fx.telekinesisExits(s,s.teleFrom).map(n=>['teleTo',n]);
     const i=actor(s),p=s.players[i],t=s.tiles[p.pos],options=[];
     const hand=(kind,k)=>p.hand.forEach((id,j)=>{
       const c=cards[id],usable=kind==='creature'?usableCreature(s,i,id,t,k):
@@ -1079,6 +1079,9 @@ function createCepter(edition="ps2"){
         if(!scroll)d.hitByOpponent=true;
       }
       trackDamage(d,damage,!scroll);
+      if(begins&&!muted&&a.g==='mindshock'&&damage>0&&d.hp>0){
+        combo.clear(d.u);d.u.enchant='sleep';lines.push(a.gear.name+' · 상대에게 수면 부여');
+      }
       if(a.u.confused&&!muted)a.hp-=Math.floor(damage*.3);
       const blocksAttackBonus=revolt&&(d.n==='scylla'||d.g==='squidmantle');
       if(damage>0&&!scroll&&!muted&&!blocksAttackBonus&&(edition!=='ps2'||a.hp>0)){
@@ -1087,6 +1090,7 @@ function createCepter(edition="ps2"){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
         extra.onHit(a,d,damage);
+        if(begins&&a.g==='abyssaltome'&&d.hp>0)extra.transform(d,extra.ids.get('statue'));
         if(!s.predict&&a.g==='bladeofculdra'){
           const victim=s.players[d.seat];victim.hand.length=0;
           for(let j=0;j<6;j++)draw(victim,s);
@@ -1480,8 +1484,9 @@ function createCepter(edition="ps2"){
         if(['boomerang','soulray'].includes(a.g)&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
         if(a.g==='doomneedle'&&opponent.hp>0){combo.clear(opponent.u);opponent.u.enchant='senility';lines.push('둠 니들 · 노쇠');}
       }
-      if(begins&&creatureEnd&&a.n==='otohime'&&a.hp>0&&opponent.hp>0){
-        combo.clear(opponent.u);opponent.u.enchant='senility';lines.push(a.c.name+' · 노쇠 부여');
+      if(begins&&a.hp>0&&opponent.hp>0){
+        const source=creatureEnd&&a.n==='otohime'?a.c:itemEnd&&a.g==='doomneedle'?a.gear:null;
+        if(source){combo.clear(opponent.u);opponent.u.enchant='senility';lines.push(source.name+' · 노쇠 부여');}
       }
       if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent);
       if(revolt&&creatureEnd&&a.n==='duskdweller'&&a.hp>0&&opponent.hp<=0){
@@ -1494,6 +1499,14 @@ function createCepter(edition="ps2"){
         const st=fx.strength(a.u);
         a.u.st=Math.max(st,Math.min(begins||a.n==='ixtol'?100:80,st+10));
         lines.push(a.c.name+' · 승리 후 ST '+a.u.st);
+      }
+    }
+    if(begins&&itemEnd)for(const a of sides){
+      if(a.hp<=0)continue;
+      if(a.g==='abyssaltome')extra.transform(a,extra.ids.get('statue'));
+      if(a.g==='coinofpiety'){
+        const symbols=s.players[a.seat].symbols,most=Math.max(...symbols),gain=Math.floor(most*.1);
+        if(gain>0){symbols[symbols.indexOf(most)]+=gain;lines.push(a.gear.name+' · 호부 '+gain+'개 증가');}
       }
     }
     const onLand=a=>a.hp>0&&a.away==null&&!a.stolen&&!a.returned;
@@ -1560,7 +1573,11 @@ function createCepter(edition="ps2"){
     }
     const sides=board(s).die;
     const die=()=>fx.idol(s,'ironidol')?4+Math.floor(Math.random()*3):1+Math.floor(Math.random()*sides);
-    const limited=begins&&fixed==null&&p.diceLimitRolls>0&&['haste','slow'].includes(p.status);
+    const limited=begins&&fixed==null&&p.diceLimitRolls>0&&['haste','slow','footrace'].includes(p.status);
+    if(limited&&p.status==='footrace'){
+      const face=2*extra.personalRank(s,s.turn);
+      return {faces:s.fly?[face,face]:[face],total:face*(s.fly?2:1),sides,limited};
+    }
     const roll=()=>p.status==='haste'?(handheld||begins?5:6)+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
     const faces=fixed!=null?(begins&&s.fly&&p.word!=null&&p.status!=='bind'?[fixed,fixed]:[fixed]):s.fly?[roll(),roll()]:[roll()];
     return {faces,total:faces.reduce((a,b)=>a+b,0),sides,limited};
@@ -1685,7 +1702,7 @@ function createCepter(edition="ps2"){
         const from=s.teleFrom,territoryMove=s.territoryMove;
         delete s.teleFrom;delete s.territoryMove;
         const chariotMove=!territoryMove&&edition!=='ps2'&&s.spellEffect==='chariot';
-        const label=chariotMove?'채리엇':territoryMove==='adjacent'?'크리핑 플레임':territoryMove?'슬레이프니르':null;
+        const label=chariotMove?'채리엇':territoryMove==='adjacent'?'크리핑 플레임':territoryMove?'슬레이프니르':begins?'텔레키네시스':null;
         moveWithAbility(from,x,territoryMove,label);
         break;
       }
@@ -1975,6 +1992,20 @@ function createCepter(edition="ps2"){
       const outcome=forecast({at:to,from,inv:src.unit.id,attackerSeat:src.owner},null,false);
       return outcome.won?value(s,dst)*1.4-value(s,src)+25:-100;
     }
+    function telekinesisValue(from,to){
+      const src=s.tiles[from],dst=s.tiles[to],unit=cards[src.unit.id];
+      const friendly=allied(s,seat,src.owner)?1:-1;
+      const sourceValue=value(s,src);
+      if(!dst.unit){
+        const next={...dst,owner:src.owner,type:claimTerrain(dst,unit),unit:src.unit};
+        const trial={...s,tiles:s.tiles.map((tile,i)=>i===from?{...src,owner:-1,unit:null}:i===to?next:tile)};
+        return friendly*(value(trial,next)-sourceValue+(combo.matchesTerrain(unit,next.type)?20:0)-(combo.matchesTerrain(unit,src.type)?20:0));
+      }
+      const result=forecast({at:to,from,inv:src.unit.id,invHP:src.unit.hp,attackerSeat:src.owner,teleport:true},null,false);
+      const guard=allied(s,seat,dst.owner)?1:-1,defenseValue=value(s,dst);
+      if(result.won)return friendly*(defenseValue-sourceValue)-guard*defenseValue;
+      return (result.finalHP[0]<=0?-friendly*sourceValue:0)+(result.finalHP[1]<=0?-guard*defenseValue:0);
+    }
     function secretScore(from,to){
       const unit=s.tiles[from].unit,art=fx.secretArt(cards[unit.id],unit);
       return art.move?sleipnirValue(from,to)/8-art.cost/12:fx.secretValue(s,from,to);
@@ -2162,6 +2193,11 @@ function createCepter(edition="ps2"){
         if(k==='targetLand')return scoreSale(s.tiles[x]);
         return Math.max(-20,...fx.targets(s,'landtransfer').map(([,at])=>scoreSale(s.tiles[at])))-c.cost/35;
       }
+      if(begins&&(k==='cast'&&c.effect==='telekinesis'||k==='targetLand'&&s.spellEffect==='telekinesis')){
+        const worth=from=>Math.max(-400,...fx.telekinesisExits(s,from).map(to=>telekinesisValue(from,to)));
+        if(k==='targetLand')return worth(x);
+        return Math.max(-400,...fx.targets(s,c.effect).map(([,from])=>worth(from)))/9-c.cost/20;
+      }
       if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-(revolt?price(p,c,s):c.cost)/35;
       if(['targetLand','comboArea','targetPlayer'].includes(k)&&combo.type[s.spellEffect])return plan.scoreTarget(s.spellEffect,x);
       if(k==='secretArt')return Math.max(...fx.secretTargets(s,x).map(([,at])=>secretScore(x,at)));
@@ -2176,6 +2212,7 @@ function createCepter(edition="ps2"){
       }
       if(k==='abilityLand'||k==='abilityPlayer')return territoryValue(s.abilityFrom,k,x);
       if(k==='breakCard'){const target=s.players[s.spellTarget],cost=cards[target.hand[x]].cost;return allied(s,s.spellTarget,seat)?-cost:cost;}
+      if(k==='teleTo'&&begins&&s.spellEffect==='telekinesis'&&!s.territoryMove)return telekinesisValue(s.teleFrom,x);
       if(k==='teleTo')return s.territoryMove?sleipnirValue(s.teleFrom,x):s.tiles[x].owner>=0?10:1;
       if(k==='eraseDraw')return p.peek?.seat===s.spellTarget?(cards[p.peek.ids[x]]?.cost||0):0;
       if(k==='wormDiscard')return cards[s.players[s.spellTarget].hand[x]].cost;
