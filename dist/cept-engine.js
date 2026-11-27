@@ -1259,7 +1259,7 @@ function createCepter(edition="ps2"){
     const sides=board(s).die;
     const die=()=>fx.idol(s,'ironidol')?4+Math.floor(Math.random()*3):1+Math.floor(Math.random()*sides);
     const roll=()=>p.status==='haste'?(handheld?5:6)+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
-    const faces=fixed!=null?[fixed]:s.fly?[roll(),roll()]:[roll()];
+    const faces=fixed!=null?(begins&&s.fly&&p.word!=null&&p.status!=='bind'?[fixed,fixed]:[fixed]):s.fly?[roll(),roll()]:[roll()];
     return {faces,total:faces.reduce((a,b)=>a+b,0),sides};
   }
   function play(s,a,now=Date.now()){

@@ -2838,9 +2838,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const land=creatures.tiles[2];Object.assign(land,{type:2,owner:1,level:3,unit:{id:gnome,hp:40}});
   const toll=C.toll(creatures,land);land.unit.id=creature('dwarf');
   assert.equal(toll,C.toll(creatures,land)*1.5);
-  function duel(inv,def,invItem=null,defItem=null){
+  function duel(inv,def,invItem=null,defItem=null,hp=C.cards[def].hp){
     Object.assign(creatures,{phase:'attack',battle:{at:2,inv,atkItem:null,defItem:null}});
-    Object.assign(land,{unit:{id:def,hp:C.cards[def].hp},owner:1,type:0,level:1});
+    Object.assign(land,{unit:{id:def,hp,mhp:hp},owner:1,type:0,level:1});
     creatures.players[0].cash=200;enemy.cash=200;enemy.hand=defItem==null?[]:[defItem];
     creatures.players[0].hand=invItem==null?[]:[invItem];
     assert.ok(C.play(creatures,invItem==null?['bare']:['equip',0]));
@@ -2853,6 +2853,33 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(fallen.won&&enemy.hand.includes(phoenix));
   const guarded=duel(fighter,sage,amulet,vest);
   assert.equal(guarded.startHP[1],60);
+  const amoeba=creature('giantamoeba'),cornfolk=creature('cornfolk'),minotaur=creature('minotaur'),dwarf=creature('dwarf');
+  for(const attacker of [minotaur,dwarf]){
+    const neutralized=duel(attacker,amoeba);
+    assert.equal(neutralized.strikes[0].effect,'block');
+    assert.equal(land.unit.hp,30);
+  }
+  const cornBattle=duel(fighter,cornfolk);
+  assert.ok(cornBattle.won);
+  assert.equal(enemy.cash,400);
+  const cornSpell=C.start(2,2,6000,'begins-original-ford');
+  Object.assign(cornSpell.players[0],{hand:[id('bolt')],cash:500});
+  Object.assign(cornSpell.tiles[3],{owner:1,unit:{id:cornfolk,hp:20}});
+  const cash=cornSpell.players[1].cash;
+  assert.ok(C.play(cornSpell,['cast',0])&&C.play(cornSpell,['targetLand',3]));
+  assert.equal(cornSpell.players[1].cash,cash+200);
+  for(const [item,target,other] of [['icicle',minotaur,dwarf],['rockbiter',dwarf,minotaur]]){
+    const weapon=creature(item);
+    assert.equal(C.cards[weapon].cost,25);
+    const matching=duel(goblin,target,weapon,null,100);
+    const different=duel(goblin,other,weapon,null,100);
+    assert.equal(matching.startHP[1]-matching.strikes[0].hp[1],75);
+    assert.equal(different.startHP[1]-different.strikes[0].hp[1],50);
+  }
+  const flight=C.start(2,2,6000,'begins-original-ford');
+  Object.assign(flight.players[0],{hand:[id('fly')],cash:500,word:1});
+  assert.ok(C.play(flight,['cast',0])&&C.play(flight,['roll']));
+  assert.deepEqual([flight.die,flight.mapEffect.faces,flight.players[0].word],[2,[1,1],undefined]);
   for(const [inv,supportColor] of [[pirate,'merfolk'],[sage,'dwarf']]){
     Object.assign(creatures,{phase:'attack',battle:{at:2,inv}});
     creatures.players[0].hand=[fighter,creature(supportColor),creature('wolf'),creature('gascloud')];

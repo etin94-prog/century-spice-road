@@ -412,6 +412,7 @@ const CepterEditions=(()=>{
   const beginsCreatures={
     gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},skeleton:{regenerate:true},
     gnome:{tollFactor:1.5},phoenix:{},wallofice:{stationary:true,battleHP:20},
+    giantamoeba:{neutralizes:[0,2]},cornfolk:{},
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
@@ -424,6 +425,7 @@ const CepterEditions=(()=>{
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},battleaxe:{st:40},
+    icicle:{st:30,critical:0},rockbiter:{st:30,critical:2},
     batteringram:{st:20},gremlinamulet:{},rathunter:{},boomerang:{st:20,hp:10},
     buckler:{},countershield:{effect:'reflect'},diamondarmor:{st:-30,hp:60,last:true},
     earthshield:{},fireshield:{},watershield:{},windshield:{},

@@ -182,7 +182,8 @@ setInterval(tickInputClock,250);
 function selectedAiLevel(){return $('tierChoice').value==='same'?0:Number($('tierChoice').value)+1;}
 function tierBooks(){
   if(C.presets.stronghold){
-    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['intro','beginsArtAssault','beginsTidalGuard']:
+    // Begins recommendations follow 3,696 four-seat trials across six maps, including teams and fixed-level opponents.
+    const order=C.edition==='3ds'?['intro','stronghold','fire']:C.edition==='begins'?['intro','beginsStarterFireEarth','intro']:
       C.edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaBonds']:C.edition==='saga'&&C.presets.sagaAffinity&&C.presets.sagaImmediate?
       ['intro','sagaImmediate','sagaAffinity']:['intro','fire','stronghold'];
     const preferred=order[Number($('tierChoice').value)];
