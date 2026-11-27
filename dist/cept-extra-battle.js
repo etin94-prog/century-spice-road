@@ -111,6 +111,13 @@ const CepterExtraBattle=(()=>{
       if(a.element===3&&boost('hunbaba',a))a.st-=10;
       if(a.c.first&&boost('quetzalcoatl',a))a.st+=10;
       if(a.u.enchant==='wing')a.st+=20;
+      if(s.edition==='saga'){
+        const count=e=>s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],e)).length;
+        if(a.g==='magmaarmor'){a.st+=count(0)*10;a.hp+=count(2)*10;}
+        if(a.g==='stormarmor'){a.st+=count(3)*10;a.hp+=count(1)*10;}
+        if(a.g==='forceanklet')a.hp+=s.players[a.seat].hand.length*10;
+        if(a.g==='forcebracelet')a.st+=s.players[a.seat].hand.length*10;
+      }
       switch(a.g){
         case 'aurablade':a.st+=fx.max(a.u);break;
         case 'chameleonarmor':a.hp=t.level*20;break;
@@ -143,7 +150,8 @@ const CepterExtraBattle=(()=>{
         if(s.predict&&s.edition==='3ds'){b.magicLoss??=[0,0];b.magicLoss[d.defending?1:0]+=cost;}
         lines.push('피해 무효 · 마력 −'+cost+'G');return 'block';
       }
-      if(d.g==='talisman'||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(a.element===0||d.element===0)||
+      const fire=side=>s.edition==='saga'?combo.hasElement(side,0):side.element===0;
+      if(d.g==='talisman'||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(fire(a)||fire(d))||
         ['knightshield','knightsshield'].includes(d.g)&&fx.strength(a.u)>=40||d.n==='grindylow'&&fx.strength(a.u)<=30||
         ['nymph','yeti'].includes(d.n)&&a.element===0||d.n==='dhampir'&&a.element===2||d.n==='kraken'&&a.element===-1){
         lines.push('공격 무효');return 'block';

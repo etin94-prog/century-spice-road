@@ -24,6 +24,10 @@ const describeCepterItem=(()=>{
     fireamulet:'장착한 크리처가 화 속성이면 일반 공격이 강타합니다. 생존하면 전투 종료 시 HP를 최대치까지 회복합니다.',
     flametongue:'수 속성 상대에게 강타합니다.',
     gemoflife:'전투 종료 시 장착한 크리처의 전투 HP가 1~20이면 양쪽 크리처가 파괴됩니다.',
+    forceanklet:'내 손패 한 장당 전투 HP가 10 오릅니다.',
+    forcebracelet:'내 손패 한 장당 전투 ST가 10 오릅니다.',
+    gremlinclaw:'전투 시작 시 상대의 무기, 두루마리 또는 도구를 파괴합니다.',
+    gremlintooth:'전투 시작 시 상대의 방어구, 도구 또는 지원 크리처를 파괴합니다.',
     gremlinamulet:'전투가 시작되면 상대 장비를 파괴합니다. 지원 크리처에도 적용됩니다.',
     heartfibula:'상대를 격파하고 생존하면 장착한 크리처의 최대 HP가 최대 20 증가합니다. 상한은 80입니다.',
     hellblaze:'기본 ST가 20 이하인 상대에게 두루마리 강타가 적용됩니다.',
@@ -33,6 +37,9 @@ const describeCepterItem=(()=>{
     iksear:'내 수 영지 한 곳당 전투 HP가 20 오릅니다.',
     knightshield:'기본 ST가 40 이상인 상대의 일반 공격을 무효화합니다.',
     lunastone:'양쪽이 살아남으면 전투 종료 시 상대의 ST와 HP를 서로 바꿉니다.',
+    magmaarmor:'배치된 화 크리처 한 마리당 전투 ST +10, 지 크리처 한 마리당 전투 HP +10.',
+    stormarmor:'배치된 풍 크리처 한 마리당 전투 ST +10, 수 크리처 한 마리당 전투 HP +10.',
+    soulray:'생존하고 손패에 자리가 있으면 전투 후 이 두루마리가 돌아옵니다.',
     magicshield:'두루마리 공격을 무효화합니다.',
     magussmirror:'두루마리 공격을 반사합니다.',
     markerflag:'일반 침략 전투를 마친 뒤 현재 영지의 행동 선택으로 돌아갑니다.',
@@ -96,6 +103,8 @@ const describeCepterItem=(()=>{
     if(card.last)pieces.push('후공');
     if(card.effect==='reflect'||card.reflectNormal)pieces.push('일반 공격을 반사합니다.');
     if(card.effect==='nullify'||card.neutralizeNormal)pieces.push('일반 공격을 무효화합니다.');
+    if(card.doubleAttack)pieces.push('일반 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
+    if(card.criticalOwnElements?.length)pieces.push('장착한 크리처가 '+list(card.criticalOwnElements)+'이면 일반 공격이 강타합니다.');
     if(card.criticalElements?.length)pieces.push(list(card.criticalElements)+' 상대에게 강타합니다.');
     if(card.pierceElements?.length)pieces.push(list(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(list(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');

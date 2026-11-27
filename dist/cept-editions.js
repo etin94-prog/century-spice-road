@@ -269,6 +269,13 @@ const CepterEditions=(()=>{
     creepingflame:{stationary:true},
     freezingwind:{st:30,hp:0,scrollCriticalElements:[0,2]},firestone:{st:30,hp:0,scrollCriticalElements:[1,3]}
   };
+  const sagaGear={
+    aurablade:{},batteringram:{st:20},coinofpiety:{},fireshield:{},kris:{st:30,protectItem:true},
+    ringofthesuccubus:{first:true},shadowarmor:{},sleep:{},smoketorch:{},tearinghalo:{st:30,protectItem:true},
+    vorpalsword:{st:30},forceanklet:{},forcebracelet:{},knightsshield:{},spikedshield:{},
+    magmaarmor:{},magmahammer:{st:20,criticalOwnElements:[0,2]},stormarmor:{},stormspear:{st:20,criticalOwnElements:[1,3]},
+    soulray:{st:30},tonfa:{doubleAttack:true},gremlinclaw:{},gremlintooth:{}
+  };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
@@ -335,6 +342,7 @@ const CepterEditions=(()=>{
         Object.assign(c,{catalogOnly:false,immediate:true});
         if(slug==='wolverine')c.tollFactor=1.5;
       }
+      if(edition==='saga'&&kind==='item'&&Object.hasOwn(sagaGear,slug))Object.assign(c,{st:0,hp:0,catalogOnly:false},sagaGear[slug]);
       if(edition==='saga'&&Object.hasOwn(sagaStarterEffects,slug))Object.assign(c,{catalogOnly:false},sagaStarterEffects[slug]);
       if(edition==='3ds'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}

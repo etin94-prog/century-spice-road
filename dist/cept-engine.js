@@ -765,7 +765,10 @@ function createCepter(edition="ps2"){
       for(const [a,d] of [[A,D],[D,A]]){
         extra.itemStart(a,d);
         const destroy=a.n==='gremlin'||['talisman','gremlinamulet'].includes(a.g)||a.g==='stinkbottle'&&(d.gear?.category==='tool'||d.gear?.kind==='creature');
-        if(destroy&&!extra.protectedGear(d))useGear(d);
+        const target=d.gear?.category;
+        const gremlin=a.g==='gremlinclaw'&&['weapon','scroll','tool'].includes(target)||
+          a.g==='gremlintooth'&&(['armor','tool'].includes(target)||d.gear?.kind==='creature');
+        if((destroy||gremlin)&&!extra.protectedGear(d))useGear(d);
       }
       const originalIds=sides.map(a=>a.u.id);
       extra.forms(A,originalIds[1]);extra.forms(D,originalIds[0]);
@@ -855,7 +858,7 @@ function createCepter(edition="ps2"){
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||matches(weapon?.pierceElements,d));
-      const elementalCritical=!scroll&&!muted&&(matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d));
+      const elementalCritical=!scroll&&!muted&&(matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||matches(weapon?.criticalOwnElements,a));
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
@@ -964,7 +967,8 @@ function createCepter(edition="ps2"){
     const order=priority(D,A)>priority(A,D)?[D,A]:[A,D];
     for(const a of order){
       const d=a===A?D:A;
-      for(let j=0;j<(['cerberus','pushpull'].includes(a.n)?2:1)&&a.hp>0&&d.hp>0&&a.away==null&&d.away==null&&!a.stolen&&!d.stolen;j++){
+      const attacks=['cerberus','pushpull'].includes(a.n)||a.gear?.doubleAttack?2:1;
+      for(let j=0;j<attacks&&a.hp>0&&d.hp>0&&a.away==null&&d.away==null&&!a.stolen&&!d.stolen;j++){
         const start=lines.length;
         if(!muted&&a.u.enchant==='paralysis'){lines.push('마비 · 공격 불가');break;}
         const effect=hit(a,d)||'hit';
@@ -1034,6 +1038,7 @@ function createCepter(edition="ps2"){
     for(const a of sides){
       const opponent=a===A?D:A;
       if(a.g==='eternalmail'&&a.hp>0)s.players[a.seat].book.unshift(a.item);
+      if(a.g==='soulray'&&a.hp>0&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
       if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent);
       if((a.n==='valkyria'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0){
         const st=fx.strength(a.u);

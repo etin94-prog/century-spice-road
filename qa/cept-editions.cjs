@@ -365,17 +365,20 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.equal(C.battleGround(s,{at:1,inv:id('goblin')}).hp,bonus,name+' on '+type);
     }
   }
-  function fight(attacker,defender,terrain='무속성',gear=null,setup=null){
+  function fight(attacker,defender,terrain='무속성',gear=null,setup=null,defenseGear=null){
     const s=newMatch();
     unit(s,1,defender,1,terrain);
-    s.players[0].pos=1;s.players[0].cash=500;
+    s.players[0].pos=1;s.players[0].cash=500;s.players[0].hand=[];
     s.phase='attack';s.battle={at:1,inv:id(attacker),atkItem:null,defItem:null};
     if(setup)setup(s);
     if(gear){
-      s.players[0].hand=[id(gear)];
+      s.players[0].hand.unshift(id(gear));
       assert.ok(C.play(s,['equip',0]));
     }else assert.ok(C.play(s,['bare']));
-    assert.ok(C.play(s,['bare']));
+    if(defenseGear){
+      Object.assign(s.players[1],{cash:500,hand:[id(defenseGear)]});
+      assert.ok(C.play(s,['equip',0]));
+    }else assert.ok(C.play(s,['bare']));
     return s;
   }
   assert.equal(fight('goblin','aqualing').battle.strikes[0].effect,'block');
@@ -412,6 +415,39 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.equal(saved.tiles[source].owner,-1);
     }
   }
+  const gearStats=gear=>fight('fighter','dwarf','무속성',gear,s=>{
+    s.players[0].hand=[id('goblin'),id('minotaur')];
+    unit(s,8,'crimsonvine',1,0);unit(s,10,'frostbeast',0,1);
+  }).battle;
+  assert.equal(gearStats('aurablade').attackST,80);
+  assert.equal(gearStats('forcebracelet').attackST,60);
+  assert.equal(gearStats('forceanklet').startHP[0],60);
+  for(const armor of ['magmaarmor','stormarmor']){
+    assert.equal(gearStats(armor).attackST,50);
+    assert.equal(gearStats(armor).startHP[0],armor==='magmaarmor'?60:50);
+  }
+  assert.equal(fight('fighter','dwarf','무속성','shadowarmor').battle.startHP[0],100);
+  const tonfa=fight('goblin','dwarf','무속성','tonfa');
+  assert.deepEqual(tonfa.battle.strikes.map(v=>v.side),[0,0,1]);
+  assert.equal(fight('fighter','wallofice','무속성','batteringram').battle.won,true);
+  assert.equal(fight('redogre','wallofice','무속성','magmahammer').battle.won,true);
+  assert.equal(fight('blueogre','wallofice','무속성','stormspear').battle.won,true);
+  assert.equal(fight('blueogre','wallofice','무속성','magmahammer').battle.won,false);
+  assert.equal(fight('fighter','wallofice','무속성','vorpalsword').battle.won,true);
+  assert.equal(fight('fighter','redogre','무속성',null,null,'fireshield').battle.strikes[0].effect,'block');
+  assert.equal(fight('fighter','dwarf','무속성','freezingwind',null,'smoketorch').battle.strikes[0].effect,'block');
+  assert.equal(fight('fighter','dwarf','무속성','mace',null,'knightsshield').battle.strikes[0].effect,'block');
+  assert.deepEqual(fight('fighter','dwarf','무속성',null,null,'spikedshield').battle.strikes[0].hp,[20,30]);
+  assert.equal(fight('fighter','dwarf','무속성','ringofthesuccubus').tiles[1].unit.st,0);
+  assert.equal(fight('fighter','dwarf','무속성','sleep').tiles[1].unit.enchant,'sleep');
+  assert.equal(fight('redogre','blueogre','무속성','tearinghalo',null,'gremlinclaw').battle.won,true);
+  assert.equal(fight('fighter','blueogre','무속성','tearinghalo').battle.won,false);
+  assert.equal(fight('fighter','dwarf','무속성','kris',null,'gremlinclaw').battle.attackST,70);
+  assert.equal(fight('fighter','dwarf','무속성','mace',null,'gremlinclaw').battle.attackST,40);
+  assert.equal(fight('fighter','dwarf','무속성','gremlintooth',null,'shadowarmor').battle.startHP[1],50);
+  assert.ok(fight('fighter','goblin','무속성','soulray').players[0].hand.includes(id('soulray')));
+  assert.ok(!fight('fighter','goblin','무속성','soulray',s=>{s.players[0].hand=Array(6).fill(id('goblin'));}).players[0].hand.includes(id('soulray')));
+  assert.equal(fight('fighter','goblin',1,'coinofpiety').players[0].symbols[1],10);
   assert.equal(fight('flammefleur','goblin').battle.won,true);
   const overlap=fight('warlock','frostbeast',1,'prismaticwand');
   const equal=fight('stymphalides','frostbeast',1,'prismaticwand');
@@ -485,7 +521,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(warlock,['targetPlayer',0]));
   assert.equal(warlock.players[0].antiMagic,undefined);
   assert.equal(warlock.players[0].cash,540);
-  console.log('Saga dual elements, terrain wards, Prismatic Wand, battle traits and territory abilities OK');
+  console.log('Saga dual elements, starter card battles, Creeping Flame movement, and 23 additional battle items OK');
 
   const economy=territory();
   unit(economy,1,'goblin',0,2,4);
