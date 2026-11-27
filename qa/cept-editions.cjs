@@ -7,6 +7,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
   assert.equal(Object.keys(C.maps).length,mapCount);
+  const savedMaps={saga:{'saga-11':'chariot','saga-13':'the-speckled-band'},revolt:{'revolt-1':'battle-wagon','revolt-34':'yin-yang-flat'},begins:{'begins-10':'fortune-alley','begins-11':'holy-hammer','begins-15':'x'}};
+  for(const [id,slug] of Object.entries(savedMaps[edition]||{}))assert.equal(C.maps[id].slug,slug);
   for(const book of Object.values(C.presets))assert.ok(C.validBook(book));
   if(!modern&&edition!=='dc'){
     const sneph=C.start(2,0,0,edition+'-2');

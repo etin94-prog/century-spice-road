@@ -4,7 +4,7 @@ const C=require('./dist/cept-engine');
 const roomState=require('./dist/cept-room-state');
 const engines=new Map([['ps2',C]]);
 function engine(edition='ps2'){
-  if(!['ps2','dc','saturn','ps1'].includes(edition))throw Object.assign(Error('알 수 없는 판본'),{status:400});
+  if(!Object.hasOwn(require('./dist/cept-editions').names,edition))throw Object.assign(Error('알 수 없는 판본'),{status:400});
   if(!engines.has(edition))engines.set(edition,C.createEdition(edition));
   return engines.get(edition);
 }

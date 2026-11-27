@@ -5,9 +5,9 @@ for(const stage of CepterStages)originalStages.append(new Option(stage.stage+' �
 if(C.edition==='ps2'){stageSelect.prepend(originalStages);stageSelect.value='ps2-1';}
 else{
   stageSelect.replaceChildren();
-  for(const [kind,label] of [['story','스토리'],['arena','대전'],['memory','추가 지도']]){
+  for(const [sections,label] of [[['story'],'스토리'],[['tutorial'],'튜토리얼'],[['arena'],'대전'],[['memory','download'],'추가 지도']]){
     const group=document.createElement('optgroup');group.label=label;
-    for(const [id,m] of Object.entries(C.maps))if(m.section===kind)group.append(new Option(m.name,id));
+    for(const [id,m] of Object.entries(C.maps))if(sections.includes(m.section))group.append(new Option(m.name,id));
     if(group.children.length)stageSelect.append(group);
   }
   document.title=document.querySelector('.intro h1').textContent=CepterEditions.names[C.edition];

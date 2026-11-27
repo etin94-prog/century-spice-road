@@ -12,6 +12,18 @@ const CepterEditions=(()=>{
   const economy={"ps1":{"roca":[6000,400,300,6,100],"sneph":[7000,440,350,7,100],"mt-karin":[7000,600,400,7,80],"gosa":[8000,450,350,8,80],"kelder":[8000,600,400,8,80],"talio":[8000,600,500,9,80],"gilman":[10000,600,500,8,80],"bisteam":[8000,500,400,8,80],"nabath":[10000,500,400,8,100],"abyss":[12000,800,600,10,90]},"saturn":{"roca":[6000,400,300,6],"sneph":[7000,450,350,7],"mt-karin":[7000,600,400,7],"gosa":[8000,450,350,7],"kelder":[8000,600,400,8],"talio":[8000,600,500,9],"bisteam":[8000,500,400,8],"gilman":[10000,600,500,8],"nabath":[10000,500,400,8]},
     // Saga: Culdcept Central map list. [goal, starting, lap, highest die, land price (0 = map default), fort bonus]
     "saga":{"alcyon":[8000,250,250,8,0,100],"colosseum":[5000,200,200,6,0,80],"colosseum-2":[6000,250,250,7,0,100],"kaningun":[10000,250,250,8,0,120],"mt-etumer":[9000,300,250,8,0,120],"phoenixion":[9000,250,250,9,0,120],"provedin":[10000,250,250,7,0,150],"santanavillage":[5000,200,200,6,0,100],"zanador":[12000,300,300,9,0,150],"arrow":[8000,200,200,7,0,100],"the-second-morning":[6000,200,200,6,0,100],"the-two-towers":[7000,200,200,7,0,100],"vaulting-horse":[8000,250,250,8,0,150],"windmill":[9000,250,250,8,0,150],"x":[6000,200,200,7,0,100]}};
+  // These slots identify existing saves and replays. New maps use section + slug IDs.
+  const modernMapSlots={
+    saga:'story/alcyon story/colosseum story/colosseum-2 story/kaningun story/mt-etumer story/phoenixion story/provedin story/santanavillage story/zanador arena/arrow download/chariot arena/the-second-morning download/the-speckled-band arena/the-two-towers arena/vaulting-horse arena/windmill arena/x'.split(' '),
+    revolt:'story/battle-wagon story/battle-wagon-tower story/bumblebee story/bumblebee-flat story/bumblebee-trap story/catch-away story/dual-branch story/dual-branch-flat story/dual-branch-full-morph story/junction story/junction-flat story/junction-full-morph story/large-window story/large-window-flat story/large-window-tower story/long-horn story/long-horn-flat story/long-horn-trap story/middle-circle story/middle-circle-full-morph story/middle-circle-trap story/number-8 story/number-8-natural story/route-change story/simple-branch story/simple-branch-full-morph story/simple-circle story/spikes story/spikes-flat story/switch-box story/switch-box-flat story/twin-ring story/yin-yang story/yin-yang-flat'.split(' '),
+    begins:'story/dark-gods-shrine story/gaidess-arena-1 story/gaidess-arena-2 story/library-story-only story/port-ciedamo story/terrair-city-of-spires story/the-temple-of-earth story/the-village-of-rikadh arena/double-heart download/fortune-alley download/holy-hammer arena/library-versus arena/rotary arena/the-eight download/x'.split(' ')
+  };
+  function mapId(edition,map,index){
+    const slots=modernMapSlots[edition];
+    if(!slots)return edition+'-'+(index+1);
+    const slot=slots.indexOf(map.section+'/'+map.slug);
+    return slot>=0?edition+'-'+(slot+1):edition+'-'+map.section+'-'+map.slug;
+  }
   function boards(edition,original){
     const result={};
     for(const [index,m] of data.maps[edition].entries()){
@@ -23,11 +35,11 @@ const CepterEditions=(()=>{
       const other=edition==='dc'&&Object.values(original).find(v=>v.source?.endsWith('/'+m.slug));
       const same=other&&types.length===other.types.length&&types.every((t,i)=>t===other.types[i]&&links[i].length===other.links[i].length&&links[i].every(j=>other.links[i].includes(j)));
       const [goal,startCash,lapBonus,die,landPrice,fortBonus]=economy[edition]?.[m.slug]||[];
-      const id=edition+'-'+(index+1);
+      const id=mapId(edition,m,index),nextMap=data.maps[edition][index+1];
       result[id]={...m,types,links,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
         areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||80,die:die||Number(m.die)||other?.die||6,storyGoal:goal||other?.storyGoal,
-        graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&data.maps[edition][index+1]?.section==='story'?edition+'-'+(index+2):null};
+        graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null};
     }
     return result;
   }
