@@ -899,7 +899,7 @@ function createCepter(edition="ps2"){
            d.n==='caitsith'&&fx.strength(a.u)>=40||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element))){lines.push('공격 무효');return 'block';}
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
-        if(!orb&&['spikeshield','spikedshield'].includes(d.g)){
+        if(!orb&&(['spikeshield','spikedshield'].includes(d.g)||edition==='saga'&&d.n==='spinyagama')){
           const reflected=Math.floor(damage/2);reflectNormal(a,reflected);damage-=reflected;
           if(edition==='saga'&&a.hp<=0)a.defeatedByOpponent=true;
         }
@@ -1086,6 +1086,9 @@ function createCepter(edition="ps2"){
       if(edition==='saga'&&creatureEnd&&a.n==='spudfolk'&&a.defeatedByOpponent){
         const reward=10*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],0)).length;
         p.cash+=reward;if(reward)lines.push('스퍼드포크 · '+reward+'G 획득');
+      }
+      if(edition==='saga'&&creatureEnd&&a.n==='seismodon'&&a.defeatedByOpponent&&t.level>1){
+        t.level--;lines.push('사이즈모돈 · 교전 영지 Lv.'+t.level);
       }
       if(creatureEnd&&(a.n==='fate'&&(revolt||p.hand.length<6)||a.c.evoLegacy==='draw'))draw(p,s);
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
@@ -1584,6 +1587,8 @@ function createCepter(edition="ps2"){
     function territoryValue(from,kind,x){
       const src=s.tiles[from],n=fx.name(src.unit),cost=fx.territoryCost(s,n);
       if(edition==='saga'){
+        if(n==='spinyagama')return src.level<=2&&src.type===2?35:10;
+        if(n==='seismodon')return src.level*12+(src.type===2?10:0);
         if(n==='spudfolk')return 20*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],2)).length;
         if(n==='sylph'){
           const strength=10*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],3)).length;

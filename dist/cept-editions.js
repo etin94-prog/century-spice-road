@@ -261,6 +261,11 @@ const CepterEditions=(()=>{
         spudfolk:2,wolverine:2,witch:2,jackolantern:2,deathchoker:1,longbow:2,petrifystone:2,thehand:2,
         drainmagic:2,dreamterrain:1,echo:1,fairylight:1,feast:1,greed:2,incineration:1,landdrain:2,manna:2,refuge:2,squeeze:2
       },
+      sagaGuilderTwins:{
+        burningtitan:2,coaloid:2,golem:2,lavawurm:2,salamander:2,dragonzombie:2,gigantherium:2,pangolin:2,
+        spinyagama:2,trenchwurm:2,crimsonvine:2,jackolantern:1,magmaavatar:1,firestone:2,magmaarmor:2,
+        magmahammer:4,scalearmor:4,burninghail:2,forestleap:1,holyword0:2,holyword8:2,mountainleap:1,upheaval:2,venomousboil:2,wildgrowth:2
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
@@ -347,12 +352,12 @@ const CepterEditions=(()=>{
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
-    beastgear:{spellWard:true,neutralizeScroll:true},colossus:{},gemoid:{stationary:true,freeToll:true,immutableHP:true},garuda:{},revenant:{paralyze:true},vampire:{first:true},
+    beastgear:{spellWard:true,neutralizeScroll:true},colossus:{},gemoid:{stationary:true,freeToll:true,immutableHP:true},garuda:{},pangolin:{},brontides:{support:true},revenant:{paralyze:true},vampire:{first:true},
     deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
     archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},
-    lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
+    lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},spinyagama:{},seismodon:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={

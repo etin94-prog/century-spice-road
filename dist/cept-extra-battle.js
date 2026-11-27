@@ -93,12 +93,19 @@ const CepterExtraBattle=(()=>{
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
       if(s.edition==='saga'){
+        if(a.n==='pangolin'){
+          if(s.predict)a.hp=Math.floor((a.hp+30)/2);
+          else if(chance(.5)){a.hp=30;lines.push('팽골린 · 전투 HP 30');}
+        }
         if(a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
         if(a.n==='coaloid'){
           const increase=10*lands.filter(v=>v.type===0).length;
           a.st+=increase;a.hp+=increase;
         }
-        if([0,2].some(e=>combo.hasElement(a,e))&&sources.some(v=>fx.name(v.unit)==='hellpyron'&&v.unit.enchant!=='paralysis'))a.st+=10;
+        if([0,2].some(e=>combo.hasElement(a,e))){
+          if(sources.some(v=>fx.name(v.unit)==='hellpyron'&&v.unit.enchant!=='paralysis'))a.st+=10;
+          if(sources.some(v=>fx.name(v.unit)==='brontides'&&v.unit.enchant!=='paralysis'))a.hp+=10;
+        }
       }
       if(s.edition==='saga'&&a.elements){
         const owned=lands.filter(v=>a.elements.includes(v.type)).length;
