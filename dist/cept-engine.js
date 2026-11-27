@@ -898,6 +898,16 @@ function createCepter(edition="ps2"){
       if(a.u.confused&&!muted)a.hp-=Math.floor(damage*.3);
       if(damage>0&&!scroll&&!muted&&(edition!=='ps2'||a.hp>0)){
         extra.onHit(a,d,damage);
+        if(!s.predict&&a.g==='bladeofculdra'){
+          const victim=s.players[d.seat];victim.hand.length=0;
+          for(let j=0;j<6;j++)draw(victim,s);
+          lines.push('컬드라의 검 · 상대 손패 교체');
+        }
+        if(a.n==='deathquito'&&s.players[d.seat].hand.length){
+          const hand=s.players[d.seat].hand;
+          hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);
+          lines.push('데스키토 · 상대 손패 1장 파괴');
+        }
         if(handheld&&a.n==='mystic'&&fx.max(d.u)>=60&&!s.predict&&Math.random()<.7){d.hp=0;lines.push('미스틱 · 즉사');}
         if(a.n==='berserker'){combo.clear(a.u);a.u.confused=true;}
         if(a.n==='samurai'&&(firstEdition?d.c.catalog?.race==='rh':fx.max(d.u)<=30)&&!s.predict&&Math.random()<(firstEdition ? .3 : .6))d.hp=0;

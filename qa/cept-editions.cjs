@@ -488,6 +488,16 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(fight('weretiger','dwarf','무속성',null,s=>{s.round=25;}).battle.attackST,40);
   assert.deepEqual(fight('tetrarm','dwarf','무속성','tonfa').battle.strikes.map(v=>v.side),[0,0,1]);
   assert.equal(id('gearion'),-1,'fusion-only creature is not a collectible card');
+  const resetHand=s=>{s.players[1].hand=[id('mace')];s.players[1].book=Array(7).fill(id('goblin'));};
+  const blade=fight('fighter','dwarf','무속성','bladeofculdra',resetHand);
+  assert.deepEqual(blade.players[1].hand,Array(6).fill(id('goblin')));
+  assert.equal(blade.players[1].book.length,1);
+  assert.equal(blade.battle.won,true);
+  const blocked=fight('redogre','dwarf','무속성','bladeofculdra',resetHand,'fireshield');
+  assert.equal(blocked.battle.strikes[0].effect,'block');
+  assert.equal(blocked.players[1].book.length,7);
+  const mosquito=fight('deathquito','dwarf','무속성',null,resetHand);
+  assert.equal(mosquito.players[1].hand.length,0);
   const belt=fight('goblin','dwarf','무속성','metamorphosebelt',s=>{s.players[1].hand=[id('mace'),id('goblin')];});
   const strider=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='grassstrider');
   assert.equal(belt.battle.forms[0],strider);
@@ -588,7 +598,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(warlock,['targetPlayer',0]));
   assert.equal(warlock.players[0].antiMagic,undefined);
   assert.equal(warlock.players[0].cash,540);
-  console.log('Saga dual elements, starter card battles, Creeping Flame movement, 28 additional items and 18 additional creatures OK');
+  console.log('Saga dual elements, starter card battles, Creeping Flame movement, 29 additional items and 19 additional creatures OK');
 
   const economy=territory();
   unit(economy,1,'goblin',0,2,4);
