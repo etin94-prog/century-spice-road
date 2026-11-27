@@ -177,7 +177,7 @@ const CepterEditions=(()=>{
       shadowleap:'shadowleap',spiritwalk:'spiritwalk',liquidform:'liquidform',armageddon:'armageddon',
       tempest:'beginstempest',scarestorm:'scarestorm',disbelief:'disbelief',blasttrap:'blasttrap',
       culdra:'beginsculdra',immobilize:'immobilize',footrace:'footrace',unholygrasp:'unholygrasp',telekinesis:'telekinesis',
-      blacksmith:'blacksmith',reform:'reform',poisonmind:'beginspoisonmind',discord:'discord',metalform:'metalform',temptation:'temptation'}
+      blacksmith:'blacksmith',reform:'reform',poisonmind:'beginspoisonmind',discord:'discord',metalform:'metalform',temptation:'temptation',subsidence:'subsidence',polymorph:'beginspolymorph'}
   };
   // These three original books are the baseline used to calibrate Revolt difficulty.
   const revoltBaselineBooks={
@@ -698,7 +698,7 @@ const CepterEditions=(()=>{
     archer:{},dhampir:{},holyllama:{remoteVacantElements:[3]},mothman:{first:true},myrmecoleo:{last:true,reviveForm:'dragonfly'},
     nue:{},powdereater:{},pulgasari:{},succubus:{},witch:{scrollCritical:true},
     barong:{},onyx:{anyTerrain:true,neutralizeScroll:true,criticalLargeMHP:40},redcap:{},paleglobster:{immutableHP:true},
-    beacontower:{stationary:true},littlegray:{},mandrake:{},taotieh:{},sphinx:{},wendigo:{},avenger:{},burnacle:{stationary:true},camazotz:{},
+    ambermosquito:{},baldanders:{},sonascetic:{support:true},yowie:{criticalElements:[-1],randomToll:true},beacontower:{stationary:true},littlegray:{},mandrake:{},taotieh:{},sphinx:{},wendigo:{},avenger:{},burnacle:{stationary:true},camazotz:{},
     juggernaut:{noLapHeal:true},mattocktail:{first:true},nezha:{pierceAll:true},sanguivore:{scrollCritical:true},
     amabie:{},otohime:{},swampspawn:{stationary:true},kudzufolk:{},landurchin:{stationary:true},
     shamblingvine:{pierceElements:[0,2]},deathworm:{},doomreaper:{},
@@ -724,7 +724,7 @@ const CepterEditions=(()=>{
     gemoflife:{},holygrail:{},kris:{st:30,protectItem:true},offeringdoll:{},powerbracelet:{},prismaticwand:{},
     silverplow:{hp:10},smoketorch:{hp:20},stinkbottle:{},tearinghalo:{st:30,protectItem:true},vorpalsword:{st:30},
     angrymask:{hp:30},corrosiverobe:{hp:30},corrosivespear:{st:30},voidorb:{hp:20,protectItem:true,blocksCreatureHits:true},stormcauser:{st:60,hp:-30},tonfa:{doubleAttack:true},
-    abyssaltome:{st:20},coinofpiety:{st:20},doomneedle:{st:20},mindshock:{st:30},
+    trapezon:{},proteanring:{protectItem:true},abyssaltome:{st:20},coinofpiety:{st:20},doomneedle:{st:20},mindshock:{st:30},
     necroscarab:{},neutralcloak:{hp:40},migoalblessing:{st:20,hp:20,criticalElements:[1,2],neutralizes:[0,3]}
   };
   const handheldSpecial={

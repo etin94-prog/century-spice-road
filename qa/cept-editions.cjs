@@ -3671,6 +3671,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   Object.assign(supportArt.tiles[2],{owner:1,type:2,unit:{id:combatant('fighter'),hp:40}});
   assert.deepEqual(C.choices(supportArt).filter(([k])=>k==='equip').map(([,index])=>index),[0,1,3]);
   const current=C.presets.intro;
+  assert.equal(C.cards.filter(c=>!c.unlisted&&!c.catalogOnly).length,400);
   const creature=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
   const goblin=creature('goblin'),fighter=creature('fighter');
   const archive=require('../dist/cept-begins-player-books');
@@ -3689,9 +3690,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }
   assert.deepEqual(playable,['1339-infernal-vacation','1342-mothman-and-friends','1343-aggroaf','1344-kelpez','1345-budget-raging-river',
     '1347-power-surge','1348-esupports#main','1348-esupports#alternate','1349-willowisp#main','1349-willowisp#alternate','1350-meme-book',
-    '1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead','1356-support-deck-for-chapter-15',
+    '1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead','1355-multi-meow','1356-support-deck-for-chapter-15',
     '1357-decoys-1-3','1358-raging-river-v3','1359-brynhildr','1360-how-about-no-v01','1361-2v2-drain','1362-iksear','1363-bistair','1364-wabbit-woods-1-1','1365-terrair','1366-selenear','1367-resident-evil','1368-mothra','1369-spell-damage',
-    '1372-bonzey-buddy','1374-mosquito-water','1375-kamikaze','1376-lets-water-the-plants','1377-assassin-red','1378-little-wonders']);
+    '1372-bonzey-buddy','1373-magic-spells-to-activate-kudzu','1374-mosquito-water','1375-kamikaze','1376-lets-water-the-plants','1377-assassin-red','1378-little-wonders']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -3753,6 +3754,44 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   creatures.players[0].symbols=[0,0,0,0];
   assert.ok(duel(fighter,goblin,coin,null,30,1).won);
   assert.deepEqual(creatures.players[0].symbols,[0,0,0,0]);
+  const son=creature('sonascetic'),gremlin=creature('gremlin'),decoy=creature('decoy');
+  const copiedGremlin=duel(fighter,son,axe,gremlin,30,0);
+  assert.equal(copiedGremlin.attackST,C.cards[fighter].st);
+  const acolyte=creature('flameacolyte');
+  assert.equal(duel(son,decoy,acolyte,null,90,1).strikes[0].effect,'reflect');
+  const priorSonBook=creatures.players[0].book;
+  creatures.players[0].book=[axe];
+  const copiedTriton=duel(son,goblin,creature('triton'),null,80,1);
+  assert.deepEqual(copiedTriton.startHP[0],70);
+  assert.match(copiedTriton.lines.join(' '),/카드 1장 뽑기/);
+  assert.ok(creatures.players[0].hand.includes(axe));
+  creatures.players[0].book=priorSonBook;
+  assert.equal(duel(son,gremlin,acolyte,null,70,1).attackST,0);
+
+  const chanceBefore=Math.random,amber=creature('ambermosquito'),tyrant=creature('tyrannosaurus'),rat=creature('giantrat');
+  const bald=creature('baldanders'),ring=creature('proteanring'),trapTool=creature('trapezon');
+  try{
+    Math.random=()=>.85;
+    const amberCombat=duel(goblin,amber);
+    assert.deepEqual([amberCombat.forms[1],land.unit.id,land.unit.hp],[tyrant,amber,40]);
+    const amberSupport=duel(son,goblin,amber,null,80,1);
+    assert.deepEqual([amberSupport.forms[0],amberSupport.attackST,amberSupport.startHP[0]],[tyrant,50,60]);
+    assert.ok(creatures.players[0].hand.includes(son));
+    Math.random=()=>.05;
+    assert.equal(duel(goblin,amber).forms[1],rat);
+    for(const value of [.001,.08,.16,.24,.32,.45,.5,.62,.78,.85,.95,.999]){
+      Math.random=()=>value;
+      const random=duel(goblin,bald).forms[1];
+      assert.notEqual(random,bald);
+      assert.notEqual(C.cards[random].catalog.rarity,'E');
+      const ornament=duel(fighter,gremlin,ring,null,95,1);
+      assert.notEqual(ornament.forms[0],fighter);
+      assert.notEqual(C.cards[ornament.forms[0]].catalog.rarity,'E');
+    }
+    const transformed=duel(goblin,fighter,null,trapTool);
+    assert.deepEqual([transformed.forms[1],transformed.defendST,transformed.startHP[1],land.unit.id],[creature('baal'),50,60,fighter]);
+    assert.equal(transformed.strikes[0].side,1);
+  }finally{Math.random=chanceBefore;}
   const frost=duel(fighter,ice,null,null);
   assert.deepEqual([frost.startHP[1],frost.won],[60,false]);
   const valkyrie=creature('valkyrie');
@@ -4565,6 +4604,53 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     castSpell(temptation);
     assert.ok(C.play(temptation,['targetLand',6]));
     assert.deepEqual([temptation.phase,temptation.turn,temptation.players[0].cash,temptation.tiles[6].unit],['roll',0,710,null]);
+
+    const previousRandom=Math.random;
+    try{
+      for(const [roll,expected] of [[0,[5,5,4]],[.99,[5,4,4]]]){
+        const subsidence=casting('subsidence',true);
+        for(const [at,id,level] of [[3,barong,5],[6,goblin,5],[7,goblin,4]]){
+          Object.assign(subsidence.tiles[at],{owner:1,type:1,level,unit:{id,hp:30}});
+        }
+        castSpell(subsidence,true);
+        Math.random=()=>roll;
+        assert.ok(C.play(subsidence,['targetPlayer',1]));
+        assert.deepEqual([3,6,7].map(at=>subsidence.tiles[at].level),expected);
+        if(roll>0)assert.deepEqual([subsidence.mapEffect.tile,subsidence.mapEffect.label],[6,'영지 레벨 −1']);
+      }
+    }finally{Math.random=previousRandom;}
+
+    const pegasus=creature('pegasus'),yowie=creature('yowie'),printedPool=C.cards.flatMap((card,id)=>!card.unlisted&&card.kind==='creature'&&card.catalog.rarity!=='E'&&id!==pegasus?[id]:[]);
+    assert.equal(printedPool.length,193);
+    try{
+      for(const type of [0,1,2,3]){
+        const morph=casting('polymorph');
+        Object.assign(morph.tiles[3],{owner:1,type,level:4,unit:{id:pegasus,hp:20,enchant:'paralysis'}});
+        Object.assign(morph.tiles[6],{owner:1,type:1,level:3,unit:{id:pegasus,hp:30}});
+        castSpell(morph);
+        assert.ok(!C.choices(morph).some(([,at])=>at===6));
+        Math.random=()=>(printedPool.indexOf(yowie)+.5)/printedPool.length;
+        assert.ok(C.play(morph,['targetLand',3]));
+        assert.deepEqual([morph.tiles[3].owner,morph.tiles[3].level,morph.tiles[3].type,morph.tiles[3].unit],[1,4,type,{id:yowie,hp:40}]);
+      }
+      for(let rate=5;rate<=25;rate++){
+        const s=C.start(4,4,12000,'begins-original-ford');
+        const p=s.players[0],owner=s.players[1];
+        Object.assign(p,{pos:3,cash:1000,hand:[]});
+        Object.assign(s.tiles[3],{owner:1,type:3,level:2,base:100,unit:{id:yowie,hp:40}});
+        Object.assign(s,{phase:'land',visited:[]});
+        const t=s.tiles[3],base=C.value(s,t)*.3,prior=owner.cash;
+        assert.deepEqual(C.tollRange(s,t,0),[Math.floor(base*.5),Math.floor(base*2.5)]);
+        assert.equal(C.owedToll(s,t),Math.floor(base*1.5));
+        Math.random=()=>(rate-5+.5)/21;
+        assert.ok(C.play(s,['pay']));
+        assert.deepEqual([1000-p.cash,owner.cash-prior],[Math.floor(base*rate/10),Math.floor(base*rate/10)]);
+        assert.equal(s.mapEffect.tile,3);
+      }
+      const frozen=casting('polymorph');
+      Object.assign(frozen.tiles[3],{owner:1,type:3,level:2,unit:{id:yowie,hp:40,enchant:'paralysis'}});
+      assert.equal(C.tollRange(frozen,frozen.tiles[3]),null);
+    }finally{Math.random=previousRandom;}
 
     const havoc=casting('armageddon',true);
     [

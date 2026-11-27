@@ -443,6 +443,9 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='onyx'?'최대 HP 40 이상인 상대에게 강타합니다.':
       C.edition==='begins'&&key==='redcap'?'배치된 고블린 한 마리당 자신의 전투 ST와 HP가 20씩 오릅니다. 자신이 전투에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
       C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
+      C.edition==='begins'&&key==='ambermosquito'?'전투에서 티라노사우루스와 자이언트 래트 중 하나로 같은 확률로 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
+      C.edition==='begins'&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
+      C.edition==='begins'&&key==='baldanders'?'전투 중 다른 크리처로 무작위 변신합니다. E 등급은 제외되며 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':
       C.edition==='begins'&&key==='chimera'?'완주 보상을 받을 때마다 기본 ST를 10 올립니다. 최대 100까지 오릅니다.':

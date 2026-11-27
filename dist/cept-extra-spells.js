@@ -14,7 +14,7 @@ const CepterExtraSpells=(()=>{
     remission:'land',magicalleap:'land',shadowleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',sigilofshrink:'land',debility:'land',debilitystrong:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',beginsculdra:'global',immobilize:'global',footrace:'global',unholygrasp:'player',
-    blacksmith:'player',reform:'player',beginspoisonmind:'player',discord:'global',metalform:'land',temptation:'land',
+    blacksmith:'player',reform:'player',beginspoisonmind:'player',discord:'global',metalform:'land',temptation:'land',beginspolymorph:'land',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
@@ -290,7 +290,11 @@ const CepterExtraSpells=(()=>{
           case 'influence':t.type=influence(s,t);break;
           case 'locust':t.level=Math.max(1,t.level-1);break;
           case 'meteor':t.level=s.edition==='begins'&&chain(s,t)>1?Math.max(1,t.level-2):1;break;
-          case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
+          case 'beginspolymorph':case 'polymorph':{
+            const id=sample(creaturePool.filter(id=>id!==u.id&&(s.edition!=='begins'||cards[id].catalog.rarity!=='E')));
+            if(id!=null)morph(t,id);
+            break;
+          }
           case 'stoneblast':fx.spellHarm(s,t,30);break;
           case 'zap':fx.spellHarm(s,t,10);break;
           case 'debility':case 'debilitystrong':
@@ -642,7 +646,7 @@ const CepterExtraSpells=(()=>{
         case 'banishingray':return -sign*(5+weight*4);
         case 'thornfetter':case 'parasite':case 'bindingmist':return -sign*weight*3;
         case 'wing':case 'phantasm':case 'simulacrum':return sign*(t.unit.enchant===e?0:weight*3);
-        case 'polymorph':case 'turntothewall':return -sign*(cards[t.unit.id].cost/12+weight-4);
+        case 'beginspolymorph':case 'polymorph':case 'turntothewall':return -sign*(cards[t.unit.id].cost/12+weight-4);
         case 'removecurse':return (['paralysis','thornfetter','parasite','senility','antielement','disease'].includes(t.unit.enchant)||t.unit.poisoned?sign:-sign)*(combo.enchanted(t.unit)?9:0);
         case 'replace':return Math.max(0,...replacement(s,t).map(a=>sign*(cards[a[2]].hp+cards[a[2]].st-t.unit.hp-fx.strength(t.unit))/5));
         case 'chariot':return chariotExits(s,x).some(i=>s.tiles[i].owner<0&&combo.matchesTerrain(cards[t.unit.id],s.tiles[i].type))?4:1;

@@ -34,6 +34,9 @@ const CepterExtraBattle=(()=>{
   function rules(s,b,t,cards,fx,combo,total,lines,chain){
     const {ids,creatures}=catalog(cards,combo.key);
     function pick(pool){return pool[s.predict?Math.floor(pool.length/2):Math.floor(Math.random()*pool.length)];}
+    function randomForm(excluded){
+      return pick(creatures.filter(id=>id!==excluded&&(s.edition!=='begins'||cards[id].catalog.rarity!=='E')));
+    }
     const chance=n=>!s.predict&&Math.random()<n;
     const onBoard=n=>s.tiles.some(v=>fx.name(v.unit)===n);
     // A Boost provider taking part in the battle cannot affect either side.
@@ -76,21 +79,24 @@ const CepterExtraBattle=(()=>{
         form=ids.get('bundlegear');consume=true;temporary=false;
       }else if(name==='ambermosquito')form=ids.get(pick(['giantrat','tyrannosaurus']));
       else if(name==='doppelganger')form=opponentId;
-      else if(name==='baldanders')form=pick(creatures);
+      else if(name==='baldanders')form=s.edition==='begins'?randomForm(a.u.id):pick(creatures);
       else if(s.edition==='saga'&&name==='revenant'&&combo.enchanted(t.unit))form=ids.get('vampire');
       if(s.edition==='revolt'&&gear==='necroplasma')form=ids.get('skeleton');
       if(s.edition==='revolt'&&gear==='dragonorb'){
         form=ids.get(pick(['volcanicdragon','deepseadragon','hardrockdragon','lightningdragon']));
         consume=true;
       }
-      if(form!=null)transform(a,form,temporary);
+      if(form!=null){
+        transform(a,form,temporary);
+        if(s.edition==='begins'&&a.mimicked)consume=true;
+      }
       if(!consume&&gear==='metamorphosebelt'){
         transform(a,ids.get('grassstrider'),true);consume=true;
       }
       if(!consume&&(gear==='proteanring'||gear==='trapezon')){
         // There is one restoration slot. With two transformations, the
         // creature's first form remains on the board when the item expires.
-        const itemForm=gear==='trapezon'?ids.get('baal'):pick(creatures.filter(id=>id!==a.u.id));
+        const itemForm=gear==='trapezon'?ids.get('baal'):randomForm(a.u.id);
         transform(a,itemForm,true);consume=true;
       }
       if(consume){a.item=null;a.gear=null;a.g=null;}

@@ -446,7 +446,7 @@ function selectingSpellMapTarget(){
   if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
     ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
-  return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong','metalform','temptation'].includes(s.spellEffect);
+  return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong','metalform','temptation','beginspolymorph'].includes(s.spellEffect);
 }
 function selectingSecretPlayer(){
   const unit=s?.tiles[s.secretFrom]?.unit;
@@ -616,7 +616,7 @@ function map(){
     }
     if(t.unit){const miniature=creatureFigure(t.unit.id);miniature.classList.add('summoned');b.append(miniature);}
     if(t.unit){
-      b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+C.toll(s,t)+'G'+(t.unit.fatigued?' · 피로':'')));
+      b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+tollLabel(t)+(t.unit.fatigued?' · 피로':'')));
       if(t.unit.fatigued)b.setAttribute('aria-label',b.getAttribute('aria-label')+' · 피로');
     }
     const pawns=el('div',null,'pawns');
@@ -657,7 +657,7 @@ function map(){
       const c=C.cards[u.id],effect=C.cards.find(card=>u.enchant&&C.combo.key(card)===u.enchant);
       const status=u.poisoned?'독':u.confused?'혼란':u.enchant==='paralysis'?'마비':u.enchant==='phantasm'?'판타즘':effect?.name;
       center.prepend(creatureFigure(u.id));
-      center.append(el('span',[c.name,status,u.fatigued?'피로 · 영지 명령 불가':null,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.chainName(s,t)+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+C.toll(s,t)+'G','가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
+      center.append(el('span',[c.name,status,u.fatigued?'피로 · 영지 명령 불가':null,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.chainName(s,t)+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+tollLabel(t),'가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
     }else if(t.type==='카드 상점'){
       const stock=C.shopStock(s,inspect);
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.shopCost(id)+'G').join(' · '):'이 맵의 상품 정보 없음'));
@@ -707,7 +707,7 @@ function map(){
   if(s.phase==='towerTarget')center.lastElementChild.textContent='사령탑 · 목표 영지를 터치하세요';
   if(s.phase==='towerDeploy')center.lastElementChild.textContent='사령탑 · '+(s.towerAt+1)+'번 영지 · 하단 손패에서 선택';
   if(selectingSpellMapTarget()&&targets.size){
-    const prompt={remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',magicshelter:'방마벽을 걸 영지를 선택하세요',metalform:'금속화할 크리처를 선택하세요',temptation:'영지 능력을 빌릴 크리처를 선택하세요',debility:'기본 ST를 낮출 크리처를 선택하세요',debilitystrong:'기본 ST와 최대 HP를 낮출 크리처를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요',telekinesis:s.phase==='teleMove'?'인접한 도착 영지를 선택하세요':'강제로 이동시킬 크리처를 선택하세요'};
+    const prompt={remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',magicshelter:'방마벽을 걸 영지를 선택하세요',metalform:'금속화할 크리처를 선택하세요',temptation:'영지 능력을 빌릴 크리처를 선택하세요',beginspolymorph:'변신시킬 크리처를 선택하세요',debility:'기본 ST를 낮출 크리처를 선택하세요',debilitystrong:'기본 ST와 최대 HP를 낮출 크리처를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요',telekinesis:s.phase==='teleMove'?'인접한 도착 영지를 선택하세요':'강제로 이동시킬 크리처를 선택하세요'};
     center.lastElementChild.textContent=prompt[s.spellEffect]||'비술을 새길 크리처를 선택하세요';
   }
   center.dataset.rolled=String(!!s.die||s.phase==='over');

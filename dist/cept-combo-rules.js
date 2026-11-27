@@ -52,9 +52,11 @@ const CepterCombos = (() => {
     function targetable(s,t,category='sflash',dispel=false){
       if(!t.unit)return false;
       const n=name(t.unit);
+      const ward=!(s.edition==='begins'&&t.unit.enchant==='paralysis')&&
+        (cards[t.unit.id].spellWard||['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n));
       return (dispel||!['landprotection','magicshelter'].includes(t.unit.enchant)&&!s.players[t.owner].invisible&&
         !(activeWorld(s)==='darkworld'&&enchanted(t.unit)))&&
-        !(s.edition==='saga'&&n==='warlock')&&!cards[t.unit.id].spellWard&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&s.edition!=='begins'&&category==='senchant');
+        !(s.edition==='saga'&&n==='warlock')&&!ward&&!(n==='colossus'&&s.edition!=='begins'&&category==='senchant');
     }
     function death(s,id,count=true){
       if(count)s.destroyedCount=(s.destroyedCount||0)+1;

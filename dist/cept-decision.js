@@ -1,3 +1,7 @@
+function tollLabel(tile,seat){
+  const range=C.tollRange(s,tile,seat);
+  return (range?range.join('–'):seat==null?C.toll(s,tile):C.owedToll(s,tile,seat))+'G';
+}
 function routeOption(action){
   const info=C.routePreview(s,action),tile=s.tiles[info.at],name=C.elements[tile.type]||tile.type;
   const button=btn('',()=>act(action),'route-option');
@@ -9,7 +13,7 @@ function routeOption(action){
   else if(info.phase==='spellCircle')landing+=' · 주문 한 장 무료 사용';
   else if(info.phase==='gemStore')landing+=' · 속성석 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
   else if(info.phase==='temple')landing+=' · 호부 거래'+(info.remaining?' 후 '+info.remaining+'칸':'');
-  else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+info.toll+'G');
+  else if(tile.owner>=0)landing+=' · '+(C.allied(s,tile.owner,s.turn)?'아군 영지':'통행료 '+(C.tollRange(s,tile,s.turn)?tollLabel(tile,s.turn):info.toll+'G'));
   else if(info.phase==='pathSwitch')landing+=' · 다음 '+(info.switchTo+1)+'번 방향 변경 가능';
   else if(info.tower)landing+=' · 원격 소환 또는 침략';
   else if(info.fountain)landing+=' · 손패 교체';
@@ -68,7 +72,11 @@ function decisionText(action,p){
     }
     return relation+' · '+s.players[tile.owner].name+' · '+C.cards[unit.id].name+' · HP '+hp+'/'+max+outcome;
   }
-  if(kind==='pay')return '통행료 '+C.owedToll(s,here)+'G · 지불 후 '+(p.cash-C.owedToll(s,here))+'G';
+  if(kind==='pay'){
+    const range=C.tollRange(s,here,s.turn);
+    const balance=range?[p.cash-range[1],p.cash-range[0]].join('–'):p.cash-C.owedToll(s,here);
+    return '통행료 '+tollLabel(here,s.turn)+' · 지불 후 '+balance+'G';
+  }
   if(['level','element','summon','exchange'].includes(kind)){
     const at=kind==='summon'?position:x,t=s.tiles[at],next={...t};
     let cost;
@@ -85,7 +93,7 @@ function decisionText(action,p){
   }
   if(kind==='invade'){
     const guard=C.cards[here.unit.id],ground=C.battleGround(s,{at:position,inv:p.hand[x]});
-    return guard.name+' · 기본 ST '+(here.unit.st??guard.st)+' / 현재 HP '+here.unit.hp+' · 지형 HP +'+ground.hp+' · '+(s.towerAt!=null?'사령탑 침략 · 통행료 없음':C.allied(s,here.owner,s.turn)?'동맹 영지':'방어 성공 시 통행료 '+C.owedToll(s,here)+'G');
+    return guard.name+' · 기본 ST '+(here.unit.st??guard.st)+' / 현재 HP '+here.unit.hp+' · 지형 HP +'+ground.hp+' · '+(s.towerAt!=null?'사령탑 침략 · 통행료 없음':C.allied(s,here.owner,s.turn)?'동맹 영지':'방어 성공 시 통행료 '+tollLabel(here,s.turn));
   }
   return '';
 }
