@@ -11,8 +11,14 @@
         "seats": {
           ".read": "auth != null",
           "$slot": {
-            ".write": "auth != null && !data.exists() && newData.val() === auth.uid && root.child('ceptRooms').child($id).child('meta').exists() && ($slot === 's1' || ($slot === 's2' && root.child('ceptRooms').child($id).child('meta/needed').val() >= 3) || ($slot === 's3' && root.child('ceptRooms').child($id).child('meta/needed').val() === 4)) && data.parent().child('s0').val() !== auth.uid && data.parent().child('s1').val() !== auth.uid && data.parent().child('s2').val() !== auth.uid && data.parent().child('s3').val() !== auth.uid",
+            ".write": "auth != null && !data.exists() && newData.val() === auth.uid && root.child('ceptRooms').child($id).child('meta').exists() && ($slot === 's1' || ($slot === 's2' && root.child('ceptRooms').child($id).child('meta/needed').val() >= 3) || ($slot === 's3' && root.child('ceptRooms').child($id).child('meta/needed').val() === 4)) && newData.parent().child('s0').val() !== auth.uid && ($slot === 's1' || newData.parent().child('s1').val() !== auth.uid) && ($slot === 's2' || newData.parent().child('s2').val() !== auth.uid) && ($slot === 's3' || newData.parent().child('s3').val() !== auth.uid)",
             ".validate": "newData.isString()"
+          }
+        },
+        "openingBooks": {
+          "$slot": {
+            ".write": "auth != null && !data.exists() && newData.exists() && ($slot === 's1' || $slot === 's2' || $slot === 's3') && data.parent().parent().child('meta/openingBooks').val() === true && !data.parent().parent().child('views').exists() && !data.parent().parent().child('seats').child($slot).exists() && newData.parent().parent().child('seats').child($slot).val() === auth.uid",
+            ".validate": "newData.isString() && newData.val().matches(/^\\[[0-9]{1,4}(,[0-9]{1,4}){49}\\]$/)"
           }
         },
         "connections": { ".read": "auth != null" },

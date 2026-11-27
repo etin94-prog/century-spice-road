@@ -23,8 +23,30 @@ async function main(){
       await host.tap('#hostRoom');
       try{await host.locator('#roomWait input').waitFor({timeout:30000});}
       catch(e){throw Error('Room creation: '+await host.locator('#roomHelp').innerText(),{cause:e});}
-      const invite=await host.inputValue('#roomWait input');
+      const invite=await host.inputValue('#roomWait input'),hostBook=await host.evaluate(()=>chosenBook());
+      const custom=humans===4?await host.evaluate(()=>C.presets.fire.slice().reverse()):null;
+      if(custom)await pages.at(-1).addInitScript(deck=>localStorage.setItem('cept-book-v1',JSON.stringify(deck)),custom);
       await Promise.all(pages.slice(1).map(p=>p.goto(invite)));
+      if(custom){
+        await pages[1].getByRole('button',{name:'이 북으로 참가'}).waitFor();
+        const duplicate=await pages[1].evaluate(async()=>{
+          const {getAuth}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js');
+          const {getDatabase,ref,update}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+          const uid=getAuth().currentUser.uid,id=new URL(location.href).searchParams.get('ceptRoom');
+          try{await update(ref(getDatabase(),'ceptRooms/'+id),{'seats/s1':uid,'seats/s2':uid});return false;}
+          catch(e){return String(e.code||e.message).toLowerCase().includes('permission');}
+        });
+        assert.equal(duplicate,true);
+      }
+      const expectedBooks=new Map();
+      await Promise.all(pages.slice(1).map(async(p,i)=>{
+        await p.getByRole('button',{name:'이 북으로 참가'}).waitFor();
+        const key=custom&&p===pages.at(-1)?'custom':humans===3&&i===1?'host':i%2===0?'intro':'fire';
+        await p.locator('#roomWait select').selectOption(key);
+        const deck=key==='host'?hostBook:await p.evaluate(k=>openingBook(k),key);
+        expectedBooks.set(p,deck);
+      }));
+      await Promise.all(pages.slice(1).map(p=>p.getByRole('button',{name:'이 북으로 참가'}).tap()));
       try{await Promise.all(pages.map(p=>p.waitForFunction(()=>room?.started)));}
       catch(e){for(const p of pages)console.error(await p.evaluate(()=>[room?.seat,document.getElementById('notice').textContent,document.getElementById('roomWait').innerText]));throw e;}
       const bySeat=[];
@@ -34,6 +56,14 @@ async function main(){
         assert.ok(await p.evaluate(()=>s.players.every((q,i)=>!q.book&&(i===room.seat||!q.hand.length))));
       }
       assert.equal(bySeat.filter(Boolean).length,humans);
+      const opening=await host.evaluate(async()=>{
+        const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+        const db=getDatabase(),root='ceptRooms/'+room.id;
+        const snapshot=(await get(ref(db,root))).val();
+        return {books:JSON.parse(snapshot.state).players.map(q=>q.template),hasOpeningBooks:!!snapshot.openingBooks};
+      });
+      assert.equal(opening.hasOpeningBooks,false);
+      for(let seat=1;seat<humans;seat++)assert.deepEqual(opening.books[seat],expectedBooks.get(bySeat[seat]));
       const spectator=bySeat[1];
       if(clockMode){
         const [revision,deadline]=await spectator.evaluate(()=>[room.revision,s.deadlineAt]);
@@ -64,9 +94,16 @@ async function main(){
         const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
         const db=getDatabase(),base='ceptRooms/'+room.id;
         const canRead=async p=>{try{await get(ref(db,base+p));return true;}catch{return false;}};
-        return Promise.all(['/state','/views/s0','/views/s1'].map(canRead));
+        return Promise.all(['/state','/views/s0','/views/s1','/openingBooks/s1'].map(canRead));
       });
-      assert.deepEqual(denied,[false,false,true]);
+      assert.deepEqual(denied,[false,false,true,false]);
+      const afterStart=await guest.evaluate(async()=>{
+        const {getDatabase,ref,set}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+        const target=ref(getDatabase(),'ceptRooms/'+room.id+'/openingBooks/s'+room.seat);
+        try{await set(target,JSON.stringify(C.presets.fire));return false;}
+        catch(e){return String(e.code||e.message).toLowerCase().includes('permission');}
+      });
+      assert.equal(afterStart,true);
       const revision=await guest.evaluate(()=>room.revision);
       await host.goto('about:blank');
       await guest.waitForFunction(()=>document.getElementById('roomConnection').textContent.includes('방장 연결 대기'));

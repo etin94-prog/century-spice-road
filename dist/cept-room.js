@@ -35,14 +35,14 @@ async function joinLocalRoom(book){
   const data=await requestRoom('rooms/'+inviteId+'/join','POST',{book});
   remember(inviteId);applyRoom(data);pollRoom();
 }
-function chooseGuestBook(){
+function chooseGuestBook(joinRoom=joinLocalRoom){
   const waiting=$('roomWait'),label=el('label','사용할 북'),book=el('select'),error=el('p');
   addOpeningBookOptions(book);
   label.append(book);
   const join=btn('이 북으로 참가',async()=>{
     join.disabled=true;error.textContent='';
-    const template=openingBook(book.value);
-    try{await joinLocalRoom(template);}catch(e){error.textContent=e.message;join.disabled=false;}
+    const template=openingBook(book.value)??null;
+    try{await joinRoom(template);}catch(e){error.textContent=e.message;join.disabled=false;}
   },'primary');
   error.setAttribute('role','status');
   waiting.hidden=false;waiting.replaceChildren(el('h2','친구 대전 참가'),label,join,error);

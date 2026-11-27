@@ -17,16 +17,22 @@ const CepterCloudRoom=(()=>{
   const warn=e=>{$('notice').textContent='초대방 연결을 확인하세요. '+e.message;};
   async function create(game,needed){
     const {uid,db}=await connect(),id=newKey().slice(0,32);
-    await db.set(path(id),{meta:{host:uid,needed,edition:game.edition},seats:{s0:uid},state:JSON.stringify(game),revision:0,actor:0});
+    await db.set(path(id),{meta:{host:uid,needed,edition:game.edition,openingBooks:true},seats:{s0:uid},state:JSON.stringify(game),revision:0,actor:0});
     return id;
   }
-  async function seatFor(id,meta){
+  async function seatFor(id,meta,book){
     const {db,uid}=service;
+    if(book!=null&&!C.validBook(book))throw Error('사용할 수 없는 북입니다.');
+    const books=meta.openingBooks&&book!=null?JSON.stringify(book):null;
     for(let i=0;i<meta.needed;i++){
       const ref=path(id,'seats/s'+i),taken=(await db.get(ref)).val();
       if(taken===uid)return i;
       if(taken||!i)continue;
-      try{await db.set(ref,uid);return i;}
+      try{
+        if(books)await db.update(path(id),{['seats/s'+i]:uid,['openingBooks/s'+i]:books});
+        else await db.set(ref,uid);
+        return i;
+      }
       catch(e){const owner=(await db.get(ref)).val();if(owner===uid)return i;if(!owner)throw e;}
     }
     throw Error('모든 좌석이 찼습니다.');
@@ -36,6 +42,16 @@ const CepterCloudRoom=(()=>{
     await db.runTransaction(ref,r=>{
       if(!r||Object.keys(r.seats).length!==r.meta.needed)return;
       const game=JSON.parse(r.state),request=r.pending;
+      if(!r.views){
+        for(let seat=1;seat<r.meta.needed;seat++){
+          const saved=r.openingBooks?.['s'+seat];
+          if(typeof saved!=='string')continue;
+          let book;
+          try{book=JSON.parse(saved);}catch{continue;}
+          C.setOpeningBook(game,seat,book);
+        }
+        delete r.openingBooks;
+      }
       const timedOut=C.expire(game,now);
       if(r.views&&!request&&!timedOut)return;
       if(!timedOut&&request&&request.revision===r.revision&&r.actor===request.seat){
@@ -54,11 +70,18 @@ const CepterCloudRoom=(()=>{
       return r;
     },{applyLocally:false});
   }
-  async function join(id){
+  async function join(id,book){
     const {db,database,uid}=await connect(),meta=(await db.get(path(id,'meta'))).val();
     if(!meta)throw Error('초대방을 찾을 수 없습니다.');
     if(meta.edition!==C.edition){const u=new URL(location.href);u.searchParams.set('edition',meta.edition);location.replace(u.href);return;}
-    const seat=await seatFor(id,meta);
+    if(meta.openingBooks&&book===undefined){
+      const seats=(await db.get(path(id,'seats'))).val()||{};
+      if(!Object.values(seats).includes(uid)){
+        chooseGuestBook(template=>join(id,template));
+        return;
+      }
+    }
+    const seat=await seatFor(id,meta,book);
     session={id,seat,host:meta.host===uid};
     db.onValue(path(id,'seats'),snap=>{
       if(!room?.started)applyRoom({id,seat,revision:0,joined:Object.keys(snap.val()||{}).length,needed:meta.needed});
