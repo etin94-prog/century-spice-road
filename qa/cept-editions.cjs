@@ -1223,6 +1223,59 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(snapshot.world,undefined);
   assert.equal(C.price(snapshot.players[0],C.cards[card('fate')],snapshot),60);
 
+  const joint=fixtures();
+  joint.players[0].hand=[card('jointworld')];
+  place(joint,5,0,'healer',40);
+  place(joint,6,2,'healer',40);
+  Object.assign(joint.tiles[6],{area:joint.tiles[5].area,type:2});
+  place(joint,7,1,'healer',40);
+  Object.assign(joint.tiles[7],{area:joint.tiles[5].area,type:2});
+  const beforeValue=C.value(joint,joint.tiles[5]);
+  const beforeToll=C.toll(joint,joint.tiles[5]);
+  assert.equal(C.chain(joint,joint.tiles[5]),1);
+  assert.ok(C.play(joint,['cast',0]));
+  assert.equal(C.chain(joint,joint.tiles[5]),2);
+  assert.equal(C.chain(joint,joint.tiles[7]),1);
+  assert.match(joint.chainNotice,/화·지 · 2연쇄/);
+  assert.equal(C.value(joint,joint.tiles[5]),Math.floor(beforeValue*1.5));
+  assert.ok(C.toll(joint,joint.tiles[5])>beforeToll);
+  joint.round=6;joint.turn=3;joint.phase='land';
+  assert.ok(C.play(joint,['pass']));
+  assert.equal(C.chain(joint,joint.tiles[5]),1);
+  assert.match(joint.chainNotice,/화·지 · 연쇄 해제/);
+
+  const bright=fixtures();
+  const richDragon=C.evo.encode({age:10,st:70,hp:30,element:0,land:1,discard:1,abilities:[]},0);
+  const trainee=bright.players[0];
+  trainee.cash=100;trainee.hand=[richDragon];trainee.pos=5;bright.phase='land';
+  assert.ok(!C.choices(bright).some(([kind])=>kind==='summon'));
+  trainee.hand.unshift(card('brightworld'));bright.phase='spell';
+  assert.ok(C.play(bright,['cast',0]));
+  bright.phase='land';
+  assert.ok(C.play(bright,['summon',0]));
+  assert.equal(bright.tiles[5].unit.id,richDragon);
+  assert.equal(trainee.cash,30-C.cards[richDragon].cost);
+
+  for(const blocked of [false,true]){
+    const natural=fixtures();
+    place(natural,1,0,'goldentotem',30);
+    place(natural,5,1,'fate',40);
+    const defender=natural.players[1];
+    defender.hand=[];
+    if(blocked){
+      natural.players[0].hand=[card('naturalworld')];
+      assert.ok(C.play(natural,['cast',0]));
+    }
+    natural.phase='spell';
+    assert.equal(C.choices(natural).some(([kind])=>kind==='secretArt'),!blocked);
+    if(blocked)assert.ok(!C.play(natural,['secretArt',1]));
+    natural.phase='attack';
+    natural.battle={at:5,inv:card('armoreddragon'),atkItem:null,defItem:null};
+    assert.ok(C.play(natural,['bare'])&&C.play(natural,['bare']));
+    assert.equal(natural.battle.won,true);
+    assert.equal(defender.hand.length,blocked?0:1);
+  }
+
   const trained=Array.from({length:6}).reduce(C.evo.won,C.evo.fresh());
   for(const [part,key,expectedCost,check] of [
     [32,'heal',10,g=>assert.equal(g.tiles[6].unit.hp,40)],

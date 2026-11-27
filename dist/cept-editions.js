@@ -239,7 +239,7 @@ const CepterEditions=(()=>{
       if(kind==='spell'&&modernSets[edition]){
         const effect=modernSpellEffects[edition][slug]||(edition!=='3ds'&&sharedModernSpells.includes(slug)?slug:null);
         if(effect){c.effect=effect;c.catalogOnly=false;}
-        if(edition==='revolt'&&['darkworld','mistyworld','wasteworld'].includes(slug)){c.effect=slug;c.catalogOnly=false;}
+        if(edition==='revolt'&&['brightworld','darkworld','jointworld','mistyworld','naturalworld','wasteworld'].includes(slug)){c.effect=slug;c.catalogOnly=false;}
         if(edition==='begins'&&slug==='manna')c.magicPerLap=100;
       }
       if(pair){c.elements=pair;c.catalogOnly=false;}

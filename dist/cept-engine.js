@@ -82,9 +82,9 @@ function createCepter(edition="ps2"){
     const land=['fire','water','earth','air'][terrain]||(color==='N'?'neutral':null);
     return c.landBan!==terrain&&!banned.includes(color)&&!(land&&words.includes('no'+land));
   }
-  const allowed=(s,i,c,t)=>canOccupy(c,t)&&(fx.idol(s,'goldidol')||
+  const allowed=(s,i,c,t)=>canOccupy(c,t)&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')||
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>(handheld?allied(s,i,t.owner):t.owner===i)&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
-  const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&fx.idol(s,'goldidol'));
+  const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')));
   const canEquip=(unit,gear)=>gear.kind==='item'?!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')):
     gear.kind==='creature'&&(unit.support||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
@@ -252,7 +252,10 @@ function createCepter(edition="ps2"){
     return {over,tie,leaders:tie?s.leaders.slice():[],
       winners:over&&!tie?s.players.flatMap((_,i)=>allied(s,i,s.winner)?[i]:[]):[]};
   }
-  const sameChain=(a,b,s)=>a.owner>=0&&typeof a.type==='number'&&allied(s,a.owner,b.owner)&&a.type===b.type&&a.area===b.area;
+  const chainType=(s,type)=>typeof type==='number'&&combo.activeWorld(s)==='jointworld'?4+type%2:type;
+  const chainName=(s,t)=>chainNames[chainType(s,t.type)];
+  const chainNames=[...elements,'화·지','수·풍'];
+  const sameChain=(a,b,s)=>a.owner>=0&&typeof a.type==='number'&&allied(s,a.owner,b.owner)&&chainType(s,a.type)===chainType(s,b.type)&&a.area===b.area;
   const chain=(s,t)=>t.owner<0||typeof t.type!=='number'?1:Math.min(5,s.tiles.filter(v=>sameChain(t,v,s)).length);
   const chainRates=[0,10,15,18,20,22];
   const chainRate=(s,t)=>chainRates[chain(s,t)]/10;
@@ -260,7 +263,7 @@ function createCepter(edition="ps2"){
   function chainCounts(s){
     const counts=new Map();
     for(const t of s.tiles)if(t.owner>=0&&typeof t.type==='number'){
-      const key=[s.teams?.[t.owner]??t.owner,t.area??0,t.type].join('/');
+      const key=[s.teams?.[t.owner]??t.owner,t.area??0,chainType(s,t.type)].join('/');
       counts.set(key,Math.min(5,(counts.get(key)||0)+1));
     }
     return counts;
@@ -272,7 +275,7 @@ function createCepter(edition="ps2"){
       if(previous===next||Math.max(previous,next)<2)continue;
       const [owner,area,type]=key.split('/').map(Number);
       const change=next<2?'연쇄 해제':next+'연쇄 · ×'+chainRates[next]/10;
-      messages.push((s.teams?String.fromCharCode(65+owner)+'팀':s.players[owner].name)+' · '+(area+1)+'지역 '+elements[type]+' · '+change);
+      messages.push((s.teams?String.fromCharCode(65+owner)+'팀':s.players[owner].name)+' · '+(area+1)+'지역 '+chainNames[type]+' · '+change);
     }
     if(messages.length){s.chainNotice=messages.join(' / ');note(s,s.chainNotice);}
   }
@@ -960,7 +963,7 @@ function createCepter(edition="ps2"){
         b.strikes.push({effect,side:a===A?0:1,hp:health(),notes:lines.slice(start)});
       }
     }
-    const creatureEnd=!muted&&!active('basaltidol');
+    const creatureEnd=!muted&&!active('basaltidol')&&combo.activeWorld(s)!=='naturalworld';
     for(const a of sides){
       const d=a===A?D:A,originalName=a.n;
       if(!creatureEnd)a.n=null;
@@ -1114,7 +1117,7 @@ function createCepter(edition="ps2"){
       const ok=applyAction(s,pending.action);delete s.cardPaid;return ok;
     }
     const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','secretArt','secretLand','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
-    const previousChains=trackChains||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
+    const previousChains=trackChains||combo.activeWorld(s)==='jointworld'||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
     if(k==='roll'){delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
     const before=!gemTerrain&&(handheld||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
@@ -1682,7 +1685,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

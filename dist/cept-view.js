@@ -548,7 +548,7 @@ function map(){
     b.style.zIndex=String(m.stage?Math.round(c):2*(r+c));b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
     const links=C.chain(s,t);
     if(links>=2){
-      const label=name+' '+links+'연쇄';
+      const label=C.chainName(s,t)+' '+links+'연쇄';
       b.append(el('span',label,'chain-mark'));
       b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+label+' · 영지 가치 ×'+C.chainRate(s,t));
       b.classList.toggle('chain-peer',inspect>=0&&C.sameChain(t,s.tiles[inspect],s));
@@ -614,7 +614,7 @@ function map(){
       const c=C.cards[u.id],effect=C.cards.find(card=>u.enchant&&C.combo.key(card)===u.enchant);
       const status=u.poisoned?'독':u.confused?'혼란':u.enchant==='paralysis'?'마비':u.enchant==='phantasm'?'판타즘':effect?.name;
       center.prepend(creatureFigure(u.id));
-      center.append(el('span',[c.name,status,u.fatigued?'피로 · 영지 명령 불가':null,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.elements[t.type]+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+C.toll(s,t)+'G','가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
+      center.append(el('span',[c.name,status,u.fatigued?'피로 · 영지 명령 불가':null,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.chainName(s,t)+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+C.toll(s,t)+'G','가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
     }else if(t.type==='카드 상점'){
       const stock=C.shopStock(s,inspect);
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));

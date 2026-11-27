@@ -1,6 +1,9 @@
 /* Original card effects shared by human turns, CPU turns and match simulations. */
 const CepterCombos = (() => {
   const worlds={
+    brightworld:{name:'브라이트 월드',description:'크리처를 배치할 때 영지 보유와 카드 제물 비용을 무시합니다.'},
+    jointworld:{name:'조인트 월드',description:'화·지 영지는 서로 연쇄하고, 수·풍 영지도 서로 연쇄합니다.'},
+    naturalworld:{name:'내추럴 월드',description:'크리처의 비술, 전투 종료, 파괴 시 능력이 발동하지 않습니다.'},
     darkworld:{name:'다크 월드',description:'저주가 걸린 크리처는 주문·비술의 대상으로 지정할 수 없습니다.'},
     mistyworld:{name:'미스티 월드',description:'셉터는 주문의 대상으로 지정할 수 없습니다.'},
     wasteworld:{name:'웨이스트 월드',description:'카드 비용이 S는 1.5배, R·E는 2배가 됩니다.'}
@@ -55,9 +58,11 @@ const CepterCombos = (() => {
     function destroy(s,t,caster=s.turn){
       const u=t.unit;
       if(u.enchant==='soulhunt')s.players[u.caster].cash+=max(u)*5;
-      if(name(u)==='cornfolk')s.players[t.owner].cash+=200;
-      if(name(u)==='boggart')s.players[t.owner].hand.push(u.id);
-      if(name(u)==='mephistopheles'&&caster!=null)s.players[caster].cash-=200;
+      if(activeWorld(s)!=='naturalworld'){
+        if(name(u)==='cornfolk')s.players[t.owner].cash+=200;
+        if(name(u)==='boggart')s.players[t.owner].hand.push(u.id);
+        if(name(u)==='mephistopheles'&&caster!=null)s.players[caster].cash-=200;
+      }
       death(s,u.id);vacate(t);
     }
     function damageAmount(s,t,n){
@@ -313,7 +318,7 @@ const CepterCombos = (() => {
     function secretTargets(s,from){
       const src=s.tiles[from];
       const key=cards[src?.unit?.id]?.secretArt,p=s.players[s.turn],art=arts[key];
-      if(s.edition!=='revolt'||!art||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
+      if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
       if(key==='worldDispel')return activeWorld(s)?[['secretSelf',from]]:[];
       if(['offering','draw','lapGain','dice6'].includes(key))return [['secretSelf',from]];
       return s.tiles.flatMap((t,at)=>{
@@ -532,6 +537,9 @@ const CepterCombos = (() => {
         if(activeWorld(s)===e&&s.world.until-s.round>2)return -10;
         if(e==='darkworld')return tiles.reduce((score,t)=>score+(enchanted(t.unit)?advantage(t)*(2+t.level):0),0);
         if(e==='mistyworld')return s.players.reduce((score,q,i)=>score+(friend(i)?1:-1)*(q.cash>=1000?12:0),0);
+        if(e==='naturalworld')return tiles.reduce((score,t)=>score+(cards[t.unit.id].secretArt||cards[t.unit.id].regenerate||cards[t.unit.id].evoLegacy? -advantage(t)*8:0),0);
+        if(e==='brightworld')return p.hand.filter(id=>cards[id].kind==='creature'&&cards[id].catalog?.additionalCost).length*8-4;
+        if(e==='jointworld')return tiles.reduce((score,t)=>score+(typeof t.type==='number'&&tiles.some(v=>t!==v&&t.area===v.area&&allied(s,v.owner,t.owner)&&typeof v.type==='number'&&Math.abs(v.type-t.type)===2)?advantage(t)*9:0),0);
         return s.players.reduce((score,q,i)=>score+(friend(i)?-1:1)*q.hand.reduce((tax,id)=>tax+(cards[id].catalog?.rarity==='S'?1:['R','E'].includes(cards[id].catalog?.rarity)?2:0),0),0);
       }
       if(type[e]!=='global'){
