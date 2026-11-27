@@ -13,7 +13,7 @@ const CepterCombos = (() => {
   };
   const activeWorld=s=>s?.edition==='revolt'&&s.world?.until>s.round?s.world.effect:null;
   const groups = {
-    land: 'barricade greed regeneration vitality disease hustle bulimia fatbody peace landprotection mine vortex energyfield soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
+    land: 'barricade greed regeneration vitality disease hustle bulimia fatbody peace landprotection mine vortex energyfield magicshelter soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
     area: 'refresh holyblight cramp reinforce insectswarm exorcism massphantasm sculpture desertstorm',
     player: 'holyword0 grace pain silence haste despair antimagic changeling wizardeye mindseeker waste wordofrecall suppression drainmagic slow holyword3 holywordx echo dimensiondoor squeeze',
     global: 'catastrophe tempest punisher icestorm fireexplosion thunderstorm deathcloud sonicwave demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker feast '+Object.keys(worlds).join(' ')
@@ -47,10 +47,11 @@ const CepterCombos = (() => {
     const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek'||!!cards[t.unit?.id]?.immutableHP;
     const landLevelLocked=t=>levelLocked(t)||name(t.unit)==='trampleweed';
     const blockedLevel=(s,t)=>landLevelLocked(t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
+    const isDefensive=u=>cards[u.id].stationary||u.enchant==='magicshelter';
     function targetable(s,t,category='sflash',dispel=false){
       if(!t.unit)return false;
       const n=name(t.unit);
-      return (dispel||t.unit.enchant!=='landprotection'&&!s.players[t.owner].invisible&&
+      return (dispel||!['landprotection','magicshelter'].includes(t.unit.enchant)&&!s.players[t.owner].invisible&&
         !(activeWorld(s)==='darkworld'&&enchanted(t.unit)))&&
         !(s.edition==='saga'&&n==='warlock')&&!cards[t.unit.id].spellWard&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&s.edition!=='begins'&&category==='senchant');
     }
@@ -93,6 +94,12 @@ const CepterCombos = (() => {
     }
     const spellHarm=(s,t,n)=>damage(s,t,n,s.turn,true);
     const spellDestroy=(s,t)=>destroy(s,t,s.turn,true);
+    function shrinkHealth(s,t,loss){
+      if(immuneHP(t))return;
+      const u=t.unit;
+      u.mhp=Math.max(0,max(u)-loss);u.hp=Math.min(u.hp,u.mhp);
+      if(!u.hp)spellDestroy(s,t);
+    }
     function morph(u,n){return {id:ids.get(n),hp:cards[ids.get(n)].hp};}
     function targets(s,e){
       const i=s.turn;
@@ -133,7 +140,7 @@ const CepterCombos = (() => {
         }
         else if(e==='shrink'){
           if(s.edition==='saga')u.st=Math.max(0,strength(u)-10);
-          u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)spellDestroy(s,t);
+          shrinkHealth(s,t,10);
         }
         else if(e==='growthbody'){
           const gain=['revolt','begins'].includes(s.edition)?Math.max(0,Math.min(10,100-max(u))):10;
@@ -261,7 +268,7 @@ const CepterCombos = (() => {
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
     function territoryMoveExits(s,from,adjacentOnly=false){
       const links=board(s).links,adjacent=links[from],src=s.tiles[from];
-      if(adjacentOnly&&src.unit.enchant==='thornfetter')return [];
+      if(adjacentOnly&&['thornfetter','magicshelter'].includes(src.unit.enchant))return [];
       const exits=adjacentOnly?adjacent:[...new Set([...adjacent,...adjacent.flatMap(i=>links[i])])];
       return exits.filter(i=>{
         const dst=s.tiles[i];
@@ -410,6 +417,7 @@ const CepterCombos = (() => {
       poison:{cost:30,label:'크리처에 독 부여'},
       earthShift:{cost:120,label:'내 영지를 지 속성으로 변경',own:true},
       stealSpellMagic:{cost:30,label:'적의 손패 주문 1장당 40G 탈취',player:true,enemy:true},
+      shrinkSigil:{cost:50,label:'크리처의 최대 HP −10',shrink:10},
       drainSigil:{cost:20,label:'적의 보유 마력 10% 탈취',player:true,enemy:true},
       floatSigil:{cost:50,label:'셉터의 다음 주사위를 5로 고정',player:true,word:5},
       drawItem:{cost:50,label:'북에서 장비 한 장 뽑기'},
@@ -426,7 +434,7 @@ const CepterCombos = (() => {
       destructionReward:{cost:30,label:'파괴된 크리처 한 마리당 30G 획득 후 파괴 수 초기화',self:true},
       balanceStrength:{cost:60,label:'지도 전체 기본 ST 30 이하는 +20, 50 이상은 −20',self:true}
     };
-    const grantedArts={sigiloffloat:'floatSigil',sigilofdrain:'drainSigil'};
+    const grantedArts={sigiloffloat:'floatSigil',sigilofdrain:'drainSigil',sigilofshrink:'shrinkSigil'};
     const secretKey=(card,unit)=>card?.secretArt||grantedArts[unit?.enchant];
     const secretArt=(card,unit)=>arts[secretKey(card,unit)];
     const vacantLand=t=>!t.unit&&territoryType(t.type);
@@ -452,6 +460,7 @@ const CepterCombos = (() => {
         if(key==='heal'&&t.owner===s.turn&&!immuneHP(t)&&t.unit.hp<max(t.unit))return [['secretLand',at]];
         if(key==='strength'&&strength(t.unit)<100)return [['secretLand',at]];
         if(art.grow&&!immuneHP(t)&&max(t.unit)<100)return [['secretLand',at]];
+        if(art.shrink&&!immuneHP(t))return [['secretLand',at]];
         if(art.enemy&&allied(s,t.owner,s.turn)||art.own&&t.owner!==s.turn)return [];
         if(key==='poison'&&!t.unit.poisoned)return [['secretLand',at]];
         if(key==='earthShift'&&t.type!==2&&activeWorld(s)!=='solidworld')return [['secretLand',at]];
@@ -532,6 +541,7 @@ const CepterCombos = (() => {
       if(art.setFatigue===false)delete target.unit.fatigued;
       if(art.strength<0)target.unit.st=Math.max(0,strength(target.unit)+art.strength);
       if(art.enchant){clear(target.unit);target.unit.enchant=art.enchant;target.unit.caster=s.turn;}
+      if(art.shrink)shrinkHealth(s,target,art.shrink);
       if(art.damage)damage(s,target,art.damage);
       note(s,p.name+' · '+card.name+' 비술 · '+art.label);
       return art.label;
@@ -558,6 +568,7 @@ const CepterCombos = (() => {
       }
       if(spec.grant)utility=p.hand.length<6?14:0;
       if(spec.grow)utility=(friendly?1:-1)*(12+t.level*4);
+      if(spec.shrink)utility=(friendly?-1:1)*(max(t.unit)<=spec.shrink?47+t.level*10:15+t.level*2);
       if(spec.adjacent)utility=vacantNeighbors(s,from).length*22;
       if(spec.form){
         const enemyColors=s.tiles.filter(v=>v.unit&&!allied(s,v.owner,s.turn)).map(v=>cards[v.unit.id].element);
@@ -593,7 +604,7 @@ const CepterCombos = (() => {
     function clearCepter(q){
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
-    return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
+    return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,shrinkHealth,isDefensive,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
       blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[
@@ -745,6 +756,7 @@ const CepterCombos = (() => {
         return (hostile.has(e)?!friend(x):friend(x))?8:-12;
       }
       const t=s.tiles[x],n=fx.name(t.unit);
+      if(e==='magicshelter')return friend(t.owner)&&t.unit.enchant!==e?3+t.level*2+(fx.isDefensive(t.unit)?4:0):-12;
       if(e==='energyfield'){
         if(t.unit.enchant===e)return -20;
         const threat=s.players.some((q,i)=>!allied(s,t.owner,i)&&q.pos===x);

@@ -282,6 +282,7 @@ const CepterCreatureText=(()=>{
   const targets=ids=>ids.map(i=>elements[i]||'무').join('·')+' 속성';
   const revoltBattle={
     hellpyron:'전투에 참여하지 않은 헬 파이론이 지도에 있으면 화·지 크리처의 전투 ST +10.',
+    pyromancer:'장비 없이 두루마리로 30 피해를 줍니다. 상대 일반 공격에 맞고 생존하면 기본 ST 20, 최대 HP 30으로 바뀝니다.',
     lavakin:'현재 라운드 수만큼 전투 ST가 줄고 전투 HP가 오릅니다.',
     otohime:'전투에 참여하지 않은 오토히메가 지도에 있으면 방어 측 전투 HP +10. 전투 후 살아남은 상대에게 노쇠를 겁니다.',
     lordofbane:'전투에 참여하지 않은 로드 오브 베인이 지도에 있으면 수·풍 크리처의 전투 ST +10.',

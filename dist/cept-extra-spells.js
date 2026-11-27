@@ -9,9 +9,9 @@ const CepterExtraSpells=(()=>{
   const ps2Type=Object.fromEntries(Object.entries(groups).flatMap(([phase,names])=>names.split(' ').map(n=>[n,phase])));
   const shifts={fireshift:0,watershift:1,earthshift:2,airshift:3};
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
-  const type={...ps2Type,holyword8:'player',landdrain:'player',
+  const type={...ps2Type,holyword8:'player',landdrain:'player',chargingstep:'player',
     alarm:'global',chaospanic:'global',revoltPlague:'global',philosophy:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
-    remission:'land',magicalleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
+    remission:'land',magicalleap:'land',blasttrap:'land',sigiloffloat:'land',sigilofdrain:'land',sigilofshrink:'land',debility:'land',debilitystrong:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
@@ -19,7 +19,7 @@ const CepterExtraSpells=(()=>{
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
-  const secretSigils=new Set(['sigiloffloat','sigilofdrain']);
+  const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
@@ -42,6 +42,9 @@ const CepterExtraSpells=(()=>{
     chaospanic:'모든 셉터의 다음 이동 방향을 한 번 뒤집습니다.',
     revoltPlague:'지도에 배치된 모든 크리처에 독을 겁니다. 전투가 끝날 때 최대 HP의 절반만큼 피해를 받습니다.',
     philosophy:'손패에 합성 능력이 있는 카드가 있으면 북에서 3장, 없으면 2장 뽑습니다.',
+    chargingstep:'대상 셉터의 다음 두 번 이동은 2~4칸으로 제한됩니다. 대상은 굴릴 때마다 50G를 받습니다.',
+    debility:'고른 크리처의 기본 ST를 0으로 바꾸고 한 장 뽑습니다. 주문을 버려 합성하면 최대 HP도 20 줄입니다.',
+    sigilofshrink:'기존 비술이 없는 내 크리처에게 50G로 대상 크리처의 최대 HP를 10 낮추는 비술을 부여합니다.',
     blasttrap:'크리처에 폭발 함정을 겁니다. 누구든 그 영지에 멈추면 보유 마력의 40%를 잃고 크리처는 HP 20 피해를 받습니다. 한 번 발동합니다.',
     sigiloffloat:'기존 비술이 없는 내 크리처에게 50G로 셉터의 주사위를 5로 고정하는 비술을 부여합니다.',
     sigilofdrain:'기존 비술이 없는 내 크리처에게 20G로 적의 보유 마력 10%를 빼앗는 비술을 부여합니다.',
@@ -192,7 +195,7 @@ const CepterExtraSpells=(()=>{
       switch(e){
         case 'deathmiasma':return card.first||card.support?20:0;
         case 'energyflash':return t.level===1?t.unit.hp:0;
-        case 'acidrain':return cards[t.unit.id].stationary?30:0;
+        case 'acidrain':return fx.isDefensive(t.unit)?30:0;
         case 'avalanche':return t.level===5?30:0;
         case 'elementalrage':return matchesLand(cards[t.unit.id],t.type)?0:Math.ceil(t.unit.hp/2);
         case 'burninghail':return combo.hasElement(card,1)||combo.hasElement(card,3)?20:0;
@@ -242,6 +245,11 @@ const CepterExtraSpells=(()=>{
           case 'polymorph':{const id=sample(creaturePool.filter(id=>id!==u.id));if(id!=null)morph(t,id);break;}
           case 'stoneblast':fx.spellHarm(s,t,30);break;
           case 'zap':fx.spellHarm(s,t,10);break;
+          case 'debility':case 'debilitystrong':
+            u.st=0;
+            if(e==='debilitystrong')fx.shrinkHealth(s,t,20);
+            draw(p,s);
+            break;
           case 'holybanishment':
             if(s.edition==='revolt')fx.returnToHand(s,t);
             else{s.players[t.owner].hand.push(u.id);vacate(t);}
@@ -280,6 +288,7 @@ const CepterExtraSpells=(()=>{
           case 'mesmerize':s.spellTarget=x;return 'mesmerCard';
           case 'holyword2':case 'holyword8':clearCepter(q);q.word=e==='holyword2'?2:8;break;
           case 'backward':clearCepter(q);q.reverse=true;break;
+          case 'chargingstep':setStatus(s,q,e);q.hasteRolls=2;break;
           case 'subsidence':{
             const land=owning(s,x),max=Math.max(0,...land.map(t=>t.level)),target=sample(land.filter(t=>t.level===max));
             if(target&&!fx.blockedLevel(s,target))target.level=Math.max(1,max-1);break;
@@ -455,10 +464,15 @@ const CepterExtraSpells=(()=>{
           case 'dispelmagic':return (['bind','torture','haunt','blackout','babble','waste'].includes(q.status)?sign:-sign)*(q.status||q.word!=null||q.antiMagic?12:0);
           case 'barrier':return sign*(q.status==='barrier'?0:6);
           case 'holyword2':return sign*(q.status==='slow'?6:1);
+          case 'chargingstep':return !enemy(s,x)&&!q.antiMagic&&q.status!==e&&q.word==null?Math.max(0,16-q.cash/60)-(x===s.turn?0:3):-12;
           default:return -sign*(q.status===e?0:5);
         }
       }
       const sign=enemy(s,t.owner)?-1:1,weight=t.level+1;
+      if(e==='debility'||e==='debilitystrong'){
+        const reduction=e==='debilitystrong'&&!fx.immuneHP(t)?20:0;
+        return -sign*(fx.strength(t.unit)/4+(reduction>=fx.max(t.unit)?weight*8:reduction/3));
+      }
       if(secretSigils.has(e))return (cards[t.unit.id].vigorous?14:7)-(t.unit.enchant==='landprotection'?14:0);
       if(e==='blasttrap')return t.unit.enchant===e?-20:enemy(s,t.owner)?10+(t.unit.hp<=20?8:0):2;
       if(Object.hasOwn(terrain,e)||hybridShifts[e]){

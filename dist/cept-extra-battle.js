@@ -255,7 +255,7 @@ const CepterExtraBattle=(()=>{
       if(n==='barrowwight'){combo.clear(d.u);d.u.enchant='sleep';}
       if(['ghoul','hugespider'].includes(n)){combo.clear(d.u);d.u.enchant='paralysis';}
       if(n==='hunbaba'){combo.clear(d.u);d.u.poisoned=true;}
-      if(a.g==='batteringram'&&d.c.stationary||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
+      if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
         n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||n==='yeti'&&d.element===0&&chance(.6)||n==='dhampir'&&d.element===2&&chance(.6)){
         d.hp=0;lines.push('즉사');
       }

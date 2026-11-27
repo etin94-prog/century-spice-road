@@ -130,7 +130,8 @@ const CepterEditions=(()=>{
       peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth',shininggeyser:'shininggeyser',blazesplash:'blazesplash',penalize:'penalize',
       spartoi:'spartoi',speedpenalty:'speedpenalty',magicalleap:'magicalleap',chariot:'chariot',
       sigiloffloat:'sigiloffloat',sigilofdrain:'sigilofdrain',poisonmind:'mindseeker',blasttrap:'blasttrap',
-      chaospanic:'chaospanic',plague:'revoltPlague',philosophy:'philosophy',vortex:'vortex',energyfield:'energyfield'},
+      chaospanic:'chaospanic',plague:'revoltPlague',philosophy:'philosophy',vortex:'vortex',energyfield:'energyfield',magicshelter:'magicshelter',sigilofshrink:'sigilofshrink',
+      debility:'debility',chargingstep:'chargingstep'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -330,6 +331,12 @@ const CepterEditions=(()=>{
         shadowgeist:2,chimera:2,conjurer:3,firebeak:2,firedrake:3,hellpyron:1,kingvaran:2,lavakin:2,minotaur:3,shieldmaiden:3,
         burningrod:2,claymore:3,eaglerapier:1,gremlinseye:2,magmashield:2,wondercharm:2,
         blazesplash:1,burninghail:1,drainmagic:2,energyfield:2,fireshift:3,holyword8:2,magicbolt:2,shatter:2
+      },
+      revoltMemenLame:{
+        fate:2,gelatinouswall:2,kaiserpenguin:2,kawahime:2,triton:2,undine:2,dragonzombie:2,
+        healer:1,lichenoid:2,mummy:3,screamer:2,tigerweta:2,angrymask:2,battleaxe:2,
+        bindingwhip:1,gelatinousarmor:2,shadowblaze:2,squidmantle:2,chaospanic:2,fatbody:2,holyword1:2,
+        insectswarm:1,magicbolt:1,magicshelter:2,plague:1,senility:2,sigilofshrink:2
       }
     });
     if(edition!=='saga'&&edition!=='begins')return presets;
@@ -548,7 +555,7 @@ const CepterEditions=(()=>{
     pixie:{support:true,supportElements:[0,2],vigorous:true},duskdweller:{first:true},rocktitan:{},devastator:{},
     greatfossil:{stationary:true,freeToll:true,reviveForm:'tyrannosaurus'},gigantherium:{},
     conjurer:{scrollCritical:true},gooba:{generatedOnly:true},hiveworker:{},legendarypharos:{stationary:true,noLapHeal:true},
-    lavakin:{},otohime:{},kirin:{first:true,synergy:{element:1,st:20,hp:20}},
+    lavakin:{},otohime:{},pyromancer:{innateScroll:30},kirin:{first:true,synergy:{element:1,st:20,hp:20}},
     chimera:{first:true,lapStrength:true},creepingflame:{stationary:true},lonebeast:{},earthspirit:{commandMHP:10},dunetitan:{commandMHP:-10},
     glowhorn:{synergy:{element:0,st:20,hp:20}},rokh:{synergy:{element:1,st:30}},mudman:{},madharlequin:{vigorous:true},witch:{scrollCritical:true},
     grimalkin:{support:true,supportElements:[0,2],spellWard:true},
@@ -693,6 +700,9 @@ const CepterEditions=(()=>{
           c.effect=effect;c.catalogOnly=false;
           if(edition==='saga'&&clauses.includes('Doublecast'))c.doublecast=true;
           if(edition==='revolt'&&slug==='massgrowth')c.synthesis='item';
+          if(edition==='revolt'&&slug==='debility'){
+            c.synthesis='spell';c.synthesizedEffect='debilitystrong';
+          }
           if(edition==='revolt'&&slug==='shininggeyser'){
             c.synthesis='sflash';c.synthesizedEffect='shininggeyserstrong';
           }

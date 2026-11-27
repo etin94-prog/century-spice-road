@@ -47,7 +47,7 @@ function seats(){
 }
 const modernBookNames=C.edition==='3ds'?
   {intro:'지속성 영지 확장 북',fire:'설욕·이동 침략 북',stronghold:'수속성 방어·견제 북'}:
-  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='revolt'?{revoltAliciaEntry:'알리시아 · 입단 시험',revoltGenSerious:'겐 · 진심',revoltYumaFellowship:'유마 · 동료',revoltYumaResolve:'유마 · 결의',revoltYumaBonds:'유마 · 유대',revoltSomniaSerenity:'솜니아 · 평온',revoltTenetBelief:'테넷 · 신념',revoltTenetPraise:'테넷 · 찬사',revoltAliciaFreedom:'알리시아 · 자유',revoltTenetPoverty:'테넷 · 빈곤',revoltGoliganServant:'골리건 · 시종',revoltZenethPower:'제네스 · 힘',revoltYumaLove:'유마 · 사랑',revoltHypnaPetrify:'히프나 · 석화',revoltMoriAnnoying:'모리 · 교란',revoltSomniaScripture:'솜니아 · 경전',revoltMoriCrazy:'모리 · 광기',revoltHypnaBewitch:'히프나 · 현혹',revoltTerrormireFireClaw:'테러마이어 · 화염 발톱',revoltGoliganSuppression:'골리건 · 제압',revoltTerrormireFireStorm:'테러마이어 · 화염 폭풍'}:{}),...(C.edition==='begins'?{beginsArtAssault:'금술 침략 북',beginsTidalGuard:'수·지 수비 북',beginsStarterFireEarth:'카무르 · 화·지 초기 북',beginsStarterWaterAir:'카무르 · 수·풍 초기 북',beginsVeramiSeaWind:'베라미 · 바다에 부는 바람',beginsIsharaFirst:'이샤라 · 선착',beginsGanzBeast:'간츠 · 야수의 힘',beginsGanzInstinct:'간츠 · 야생의 본능',beginsGanzGiantBeasts:'간츠 · 거대 야수의 습격',beginsTindalosFreeWind:'틴달로스 · 자유롭게 부는 바람',beginsNajaranMistral:'나자란 · 미스트랄 비긴즈',beginsPopoloDragon:'포포로 · 강한 드래곤',beginsSteamdrillPierce:'스팀드릴 · 삼중 관통'}:{}),...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
+  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='revolt'?{revoltAliciaEntry:'알리시아 · 입단 시험',revoltGenSerious:'겐 · 진심',revoltYumaFellowship:'유마 · 동료',revoltYumaResolve:'유마 · 결의',revoltYumaBonds:'유마 · 유대',revoltSomniaSerenity:'솜니아 · 평온',revoltTenetBelief:'테넷 · 신념',revoltTenetPraise:'테넷 · 찬사',revoltAliciaFreedom:'알리시아 · 자유',revoltTenetPoverty:'테넷 · 빈곤',revoltGoliganServant:'골리건 · 시종',revoltZenethPower:'제네스 · 힘',revoltYumaLove:'유마 · 사랑',revoltHypnaPetrify:'히프나 · 석화',revoltMoriAnnoying:'모리 · 교란',revoltSomniaScripture:'솜니아 · 경전',revoltMoriCrazy:'모리 · 광기',revoltHypnaBewitch:'히프나 · 현혹',revoltTerrormireFireClaw:'테러마이어 · 화염 발톱',revoltGoliganSuppression:'골리건 · 제압',revoltTerrormireFireStorm:'테러마이어 · 화염 폭풍',revoltMemenLame:'메멘 · 시시한 속임수'}:{}),...(C.edition==='begins'?{beginsArtAssault:'금술 침략 북',beginsTidalGuard:'수·지 수비 북',beginsStarterFireEarth:'카무르 · 화·지 초기 북',beginsStarterWaterAir:'카무르 · 수·풍 초기 북',beginsVeramiSeaWind:'베라미 · 바다에 부는 바람',beginsIsharaFirst:'이샤라 · 선착',beginsGanzBeast:'간츠 · 야수의 힘',beginsGanzInstinct:'간츠 · 야생의 본능',beginsGanzGiantBeasts:'간츠 · 거대 야수의 습격',beginsTindalosFreeWind:'틴달로스 · 자유롭게 부는 바람',beginsNajaranMistral:'나자란 · 미스트랄 비긴즈',beginsPopoloDragon:'포포로 · 강한 드래곤',beginsSteamdrillPierce:'스팀드릴 · 삼중 관통'}:{}),...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',
     sagaGottliebKill:'고틀리프 · 섬멸',sagaGottliebSlaves:'고틀리프 · 포로',
     sagaBorivalFire:'보리발 · 화염',sagaZenethDragon:'제네스 · 용의 눈',
     sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaRilaraExploit:'리라라 · 강탈',sagaBorivalHellFire:'보리발 · 지옥불',sagaRilaraConspire:'리라라 · 모략',sagaRilaraFierce:'리라라 · 맹공',sagaKoenigStar:'쾨니히 · STAR',sagaTraderMoney:'상인 · MONEY!',sagaGuilderTwins:'길더와 루블 · 쌍둥이',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
@@ -439,7 +439,7 @@ function setMapCamera(root,x,y,zoom){
 }
 function selectingSpellMapTarget(){
   if(C.edition==='revolt'&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
-  return s?.phase==='spellTarget'&&['remission','magicalleap','sigiloffloat','sigilofdrain','blasttrap','energyfield'].includes(s.spellEffect);
+  return s?.phase==='spellTarget'&&['remission','magicalleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong'].includes(s.spellEffect);
 }
 function selectingSecretPlayer(){
   const unit=s?.tiles[s.secretFrom]?.unit;
@@ -697,7 +697,7 @@ function map(){
   if(s.phase==='towerTarget')center.lastElementChild.textContent='사령탑 · 목표 영지를 터치하세요';
   if(s.phase==='towerDeploy')center.lastElementChild.textContent='사령탑 · '+(s.towerAt+1)+'번 영지 · 하단 손패에서 선택';
   if(selectingSpellMapTarget()&&targets.size){
-    const prompt={remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요'};
+    const prompt={remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',magicshelter:'방마벽을 걸 영지를 선택하세요',debility:'기본 ST를 낮출 크리처를 선택하세요',debilitystrong:'기본 ST와 최대 HP를 낮출 크리처를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요'};
     center.lastElementChild.textContent=prompt[s.spellEffect]||'비술을 새길 크리처를 선택하세요';
   }
   center.dataset.rolled=String(!!s.die||s.phase==='over');
