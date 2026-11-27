@@ -127,12 +127,14 @@ function enter(){
 function matchOptions(){
   return {inputSeconds:+$('inputLimit').value,suddenDeath:$('suddenDeath').checked,recordReplay:true};
 }
-const roundLimit=$('roundLimit');
-if(C.edition==='begins')roundLimit.add(new Option('25','25'),[...roundLimit.options].find(option=>+option.value===30));
-roundLimit.addEventListener('change',()=>{
-  $('suddenDeath').disabled=+$('roundLimit').value===0;
-});
-$('suddenDeath').disabled=true;
+const roundLimit=$('roundLimit'),suddenDeathField=$('suddenDeath');
+if(C.edition==='begins'){
+  roundLimit.add(new Option('25','25'),[...roundLimit.options].find(option=>+option.value===30));
+  suddenDeathField.closest('label').lastChild.textContent=' 서든데스 · 목표 절반 도달 후 마력 고갈 시 종료';
+}else{
+  roundLimit.addEventListener('change',()=>{suddenDeathField.disabled=+roundLimit.value===0;});
+  suddenDeathField.disabled=true;
+}
 $('count').onchange=seats;$('setup').onclick=lobby;$('resume').onclick=enter;
 $('humans').addEventListener('change',updateSeatBooks);
 $('localSeatBooks').addEventListener('toggle',()=>{if($('localSeatBooks').open)updateSeatBooks();});
@@ -774,7 +776,7 @@ function render(){
   const i=C.actor(s),p=s.players[i],over=s.phase==='over',local=!C.isComputer(s,i)&&!pending&&!over&&(!room||room.seat===i&&!room.busy);
   $('mapViews').hidden=!!s.battle;
   $('mapName').textContent=C.board(s).name;
-  $('round').textContent=(s.overtime?'서든데스 · ':'')+(s.roundLimit&&!s.overtime?s.round+'/'+s.roundLimit:s.round)+'라운드 · 목표 '+s.target+'G';
+  $('round').textContent=(s.overtime||s.suddenDeathArmed?'서든데스 · ':'')+(s.roundLimit&&!s.overtime?s.round+'/'+s.roundLimit:s.round)+'라운드 · 목표 '+s.target+'G';
   $('gameTitle').textContent=$('editionChoice').selectedOptions[0].textContent;
   const handSeat=over?null:reader??(local?i:null);
   if(pending||over)handPanel.open=false;
@@ -802,7 +804,8 @@ function render(){
   if($('seatDialog').open)seatSummary(Number($('seatDialog').dataset.seat));
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
-  $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
+  const endSummary=s.endReason==='roundLimit'?'제한 라운드 종료':s.endReason==='suddenDeath'?'서든데스 · 마력 고갈':null;
+  $('hint').textContent=over?(endSummary?endSummary+(C.outcome(s).tie?' · 총마력 동률이라 승자가 없습니다.':' · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
   if(local&&s.immediateAt!=null)$('hint').textContent=(s.immediateAt+1)+'번 영지 · 즉시 능력으로 영지 명령을 사용할 수 있습니다.';
   if(local&&s.phase==='spell'&&s.doublecast==='ready')$('hint').textContent='연속 주문 사용 가능 · 주문을 더 쓰거나 주사위를 굴리세요.';
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
@@ -821,7 +824,7 @@ function render(){
     const standings=el('ol',null,'match-standings');
     standings.setAttribute('aria-label','최종 순위');
     const totals=s.players.flatMap((p,j)=>!s.teams||s.teams.indexOf(s.teams[j])===j?[[j,C.total(s,j)]]:[]);
-    const goalWinner=j=>s.endReason!=='roundLimit'&&C.allied(s,j,s.winner);
+    const goalWinner=j=>!endSummary&&C.allied(s,j,s.winner);
     totals.sort((a,b)=>Number(goalWinner(b[0]))-Number(goalWinner(a[0]))||b[1]-a[1]);
     let rank=1;
     totals.forEach(([j,wealth],i)=>{

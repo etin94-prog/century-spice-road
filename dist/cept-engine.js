@@ -614,12 +614,24 @@ function createCepter(edition="ps2"){
     else if(p.previous==null)advance(s,dir===1?board(s).links[p.pos][0]:board(s).links[p.pos].at(-1),preview);
     else resumeMove(s,preview);
   }
+  function armBeginsSuddenDeath(s){
+    if(s.beginsSuddenDeath&&!s.suddenDeathArmed&&s.players.some((_,seat)=>total(s,seat)>=s.target/2)){
+      s.suddenDeathArmed=true;
+      note(s,'서든데스 · 목표 총마력의 절반 도달. 이제 마력 고갈 시 대국을 종료합니다.');
+    }
+  }
   function settleDebts(s,resume){
+    armBeginsSuddenDeath(s);
     for(let offset=0;offset<s.players.length;offset++){
       const seat=(s.turn+offset)%s.players.length,p=s.players[seat];
       if(p.cash>=0)continue;
       if(p.symbols.some(Boolean)||s.tiles.some(t=>t.owner===seat)){
         s.debtor=seat;s.debtResume=resume;s.phase='sell';return true;
+      }
+      if(s.suddenDeathArmed){
+        s.phase='over';s.endReason='suddenDeath';
+        note(s,'서든데스 · '+p.name+' 마력 고갈');
+        return true;
       }
       const map=board(s);
       p.cash=revolt?Math.floor(revoltLapBase(map,p.lap)*1.5):edition==='saga'?Math.floor(map.bonus*1.5):(map.startCash??200);
@@ -1273,7 +1285,8 @@ function createCepter(edition="ps2"){
   function configureMatch(s,{inputSeconds=0,suddenDeath=false,recordReplay=false}={}){
     if(![0,15,30,60].includes(inputSeconds)||typeof suddenDeath!=='boolean'||typeof recordReplay!=='boolean')
       throw Error('대전 옵션을 확인하세요.');
-    s.inputSeconds=inputSeconds;s.suddenDeath=suddenDeath&&!!s.roundLimit;
+    s.inputSeconds=inputSeconds;s.suddenDeath=suddenDeath&&(begins||!!s.roundLimit);
+    if(begins)s.beginsSuddenDeath=s.suddenDeath;
     if(recordReplay)record.begin(s,total,board);
     return s;
   }
@@ -1342,6 +1355,7 @@ function createCepter(edition="ps2"){
     }
     const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','secretArt','secretLand','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','replaceCard'].includes(k);
     const previousChains=trackChains||combo.activeWorld(s)==='jointworld'||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
+    armBeginsSuddenDeath(s);
     if(k==='roll'){delete s.doublecast;delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
     const before=!gemTerrain&&(handheld||begins||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
@@ -1617,18 +1631,19 @@ function createCepter(edition="ps2"){
     }
     if(gemTerrain)updateGemTerrain(s,gemTerrain);else updatePrices(s,before);
     if(previousChains)reportChains(s,previousChains);
-    if(s.endReason==='roundLimit'){
+    if(!['over','sell','result'].includes(s.phase)&&s.players.some(q=>q.cash<0))settleDebts(s,s.phase);
+    if(s.phase!=='over')armBeginsSuddenDeath(s);
+    if(s.endReason==='roundLimit'||s.endReason==='suddenDeath'){
       const entries=s.players.flatMap((_,i)=>!s.teams||s.teams.indexOf(s.teams[i])===i?[[i,total(s,i)]]:[]);
       const top=Math.max(...entries.map(([,g])=>g));
       s.leaders=entries.filter(([,g])=>g===top).map(([i])=>i);
-      if(s.suddenDeath&&s.leaders.length>1){
+      if(s.suddenDeath&&!s.beginsSuddenDeath&&s.leaders.length>1){
         delete s.endReason;delete s.leaders;s.overtime=true;
         note(s,'서든데스 · 한 라운드 더 진행합니다.');nextTurn(s);
       }else s.winner=s.leaders.length>1?-1:s.leaders[0];
     }
     const cue=s.phase==='over'?'victory':({pay:'coin',sell:'coin',buyCard:'coin',buySymbol:'coin',sellSymbol:'coin',buyGem:'coin',sellGem:'coin',stealGem:'coin',liquidate:'coin',equip:'card',discard:'card',fortuneDraw:'card'})[k];
     if(cue)s.actionSound={sequence:(s.actionSound?.sequence||0)+1,cue};
-    if(!['over','sell','result'].includes(s.phase)&&s.players.some(q=>q.cash<0))settleDebts(s,s.phase);
     return true;
   }
   const deckPlans=new WeakMap();

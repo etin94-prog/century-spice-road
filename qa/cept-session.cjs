@@ -125,4 +125,68 @@ const map='classic',deck=C.presets.intro;
     assert.equal(Campaign.complete(progress,game),progress);
   }
 }
-console.log('Clock expiry, replay privacy, team overtime, round-limit ties, campaign progression and replay settings OK');
+{
+  const B=C.createEdition('begins');
+  function tollTrial(enabled=true,roundLimit=0){
+    const game=B.configureMatch(B.start(2,2,6000,'begins-original-ford',undefined,undefined,0,'duel',roundLimit),
+      {suddenDeath:enabled,recordReplay:true});
+    const p=game.players[0];
+    const unit=B.cards.findIndex(c=>!c.unlisted&&B.combo.key(c)==='fighter');
+    Object.assign(game.tiles[2],{type:0,owner:1,level:5,unit:{id:unit,hp:40}});
+    Object.assign(p,{pos:2,cash:0,hand:[]});
+    game.phase='land';
+    return game;
+  }
+  const exhausted=tollTrial();
+  exhausted.players[1].cash=3100;
+  assert.ok(B.play(exhausted,['pay']));
+  assert.deepEqual([exhausted.phase,exhausted.endReason,exhausted.winner],['over','suddenDeath',1]);
+  assert.deepEqual(B.outcome(exhausted).winners,[1]);
+  assert.equal(exhausted.players[0].pos,2);
+  assert.match(exhausted.replay.steps.at(-1).notes.join(' '),/목표 총마력의 절반.*마력 고갈/);
+  const projected=room.view(B,exhausted,1).game;
+  assert.deepEqual([projected.suddenDeathArmed,projected.endReason],[true,'suddenDeath']);
+
+  const unsecured=tollTrial();
+  assert.ok(B.play(unsecured,['pay']));
+  assert.equal(unsecured.suddenDeathArmed,undefined);
+  assert.equal(unsecured.players[0].pos,0);
+  assert.notEqual(unsecured.phase,'over');
+  const disabled=tollTrial(false,25);
+  disabled.players[1].cash=3100;
+  assert.ok(B.play(disabled,['pay']));
+  assert.equal(disabled.suddenDeathArmed,undefined);
+  assert.notEqual(disabled.phase,'over');
+
+  const sell=tollTrial(),fighter=sell.tiles[2].unit.id;
+  sell.players[1].cash=3100;
+  Object.assign(sell.tiles[3],{owner:0,unit:{id:fighter,hp:40}});
+  assert.ok(B.play(sell,['pay']));
+  assert.equal(sell.phase,'sell');
+  assert.ok(sell.suddenDeathArmed);
+  // The trigger persists even after the leader later drops below half of the target.
+  sell.players[1].cash=0;
+  const saved=JSON.parse(JSON.stringify(sell));
+  assert.ok(B.play(saved,['sell',3]));
+  assert.equal(saved.endReason,'suddenDeath');
+  const recovered=tollTrial();
+  recovered.players[1].cash=3100;
+  recovered.players[0].symbols[0]=50;
+  recovered.prices[0]=30;
+  assert.ok(B.play(recovered,['pay']));
+  assert.equal(recovered.phase,'sell');
+  const liquidation=B.choices(recovered).find(([kind])=>kind==='liquidate');
+  assert.ok(B.play(recovered,liquidation));
+  assert.ok(recovered.players[0].cash>=0&&recovered.phase!=='over');
+
+  const equal=B.configureMatch(B.start(2,2,6000,'begins-original-ford',undefined,undefined,0,'duel',25),{suddenDeath:true});
+  Object.assign(equal,{round:25,turn:1,phase:'land'});
+  assert.ok(B.play(equal,['pass']));
+  assert.deepEqual([equal.phase,equal.endReason,equal.overtime,B.outcome(equal).tie],['over','roundLimit',undefined,true]);
+  const legacy=B.configureMatch(B.start(2,2,6000,'begins-original-ford',undefined,undefined,0,'duel',25),{suddenDeath:true});
+  delete legacy.beginsSuddenDeath;
+  Object.assign(legacy,{round:25,turn:1,phase:'land'});
+  assert.ok(B.play(legacy,['pass']));
+  assert.deepEqual([legacy.round,legacy.overtime],[26,true]);
+}
+console.log('Clock expiry, replay privacy, team overtime, Begins bankruptcy sudden death, round-limit ties, campaign progression and replay settings OK');
