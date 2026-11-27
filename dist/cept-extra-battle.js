@@ -93,6 +93,7 @@ const CepterExtraBattle=(()=>{
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
       if(s.edition==='saga'){
+        if(a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
         if(a.n==='coaloid'){
           const increase=10*lands.filter(v=>v.type===0).length;
           a.st+=increase;a.hp+=increase;

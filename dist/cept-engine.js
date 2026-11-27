@@ -1580,6 +1580,10 @@ function createCepter(edition="ps2"){
     function territoryValue(from,kind,x){
       const src=s.tiles[from],n=fx.name(src.unit),cost=fx.territoryCost(s,n);
       if(edition==='saga'){
+        if(n==='sylph'){
+          const strength=10*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],3)).length;
+          return strength>=50?strength+src.level*8+(src.type===3?12:0)-cost*.4:-10;
+        }
         if(n==='hellpyron')return 50*(s.destroyedCount||0)-cost;
         if(n==='gogma')return (allied(s,seat,s.tiles[x].owner)?1:-1)*value(s,s.tiles[x])*1.5;
         if(n==='warlock')return allied(s,seat,x)&&!s.players[x].antiMagic?20:0;

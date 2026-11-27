@@ -44,7 +44,7 @@ const CepterCombos = (() => {
     const strength=u=>u.st??cards[u.id].st;
     const name=u=>names[u?.id]??key(cards[u?.id]);
     const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n&&(s.edition!=='saga'||t.unit.enchant!=='paralysis'));
-    const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek';
+    const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek'||!!cards[t.unit?.id]?.immutableHP;
     const landLevelLocked=t=>levelLocked(t)||name(t.unit)==='trampleweed';
     const blockedLevel=(s,t)=>landLevelLocked(t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
     function targetable(s,t,category='sflash',dispel=false){
@@ -226,7 +226,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40};
+    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -251,7 +251,7 @@ const CepterCombos = (() => {
       if(cost==null||s.players[s.turn].cash<cost||!canUseAbility(s,tile))return [];
       if(s.edition==='saga'){
         if(n==='creepingflame')return territoryMoveExits(s,from,true).length?[['abilitySelf',from]]:[];
-        if(n==='fontaciel'||n==='rockshell'||n==='hellpyron')return [['abilitySelf',from]];
+        if(n==='fontaciel'||n==='rockshell'||n==='hellpyron'||n==='sylph')return [['abilitySelf',from]];
         if(n==='hypnosloth')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
         if(n==='tokebi'||n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&
           (n==='tokebi'||v.type!==2&&!idol(s,'jadeidol'))?[['abilityLand',j]]:[]);
@@ -304,6 +304,7 @@ const CepterCombos = (() => {
           }
           return;
         }
+        if(n==='sylph'){src.unit=morph(src.unit,'garuda');return;}
         if(n==='lamia'){v.unit.st=Math.max(0,strength(v.unit)-20);return;}
         if(n==='hellpyron'){
           const reward=50*(s.destroyedCount||0);

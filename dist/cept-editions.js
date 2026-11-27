@@ -251,6 +251,11 @@ const CepterEditions=(()=>{
         vampire:1,wereboar:2,weretiger:2,wolverine:3,boomerang:2,catapult:2,gremlintooth:2,ringofthesuccubus:2,
         scalearmor:2,capture:1,drainmagic:2,fairylight:2,slow:2,theft:1,venomousboil:2
       },
+      sagaKoenigStar:{
+        fighter:2,gemoid:2,giantrat:4,goblin:4,skeleton:4,statue:2,gascloud:2,phoenix:2,aqualing:2,lizardman:2,
+        dwarf:2,mummy:2,blitzraven:2,sylph:2,chainmail:2,leatherarmor:2,longsword:2,mace:2,
+        haste:2,magicbolt:2,manna:2,slow:2
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2
@@ -337,12 +342,12 @@ const CepterEditions=(()=>{
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
-    beastgear:{spellWard:true,neutralizeScroll:true},colossus:{},revenant:{paralyze:true},vampire:{first:true},
+    beastgear:{spellWard:true,neutralizeScroll:true},colossus:{},gemoid:{stationary:true,freeToll:true,immutableHP:true},garuda:{},revenant:{paralyze:true},vampire:{first:true},
     deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
     archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},
-    lamia:{entryEnchant:'spiritwalk'},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
+    lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={
