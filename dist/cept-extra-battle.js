@@ -98,6 +98,8 @@ const CepterExtraBattle=(()=>{
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
       if(s.edition==='revolt'){
+        if(a.n==='firedrake')a.st+=5*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
+        if(a.n==='amphibianwarrior'&&[1,3].includes(t.type))a.st+=20;
         if(['magmaarmor','stormarmor'].includes(a.g)){
           const elements=a.g==='magmaarmor'?[0,2]:[1,3];
           a.hp+=lands.filter(t=>elements.includes(t.type)).length*20;
@@ -227,7 +229,10 @@ const CepterExtraBattle=(()=>{
       }else{
         if(n==='werewolf'&&chance(.6))convert(d,'wolf');
         if(n==='medusa')convert(d,'statue');
-        if(n==='cockatrice')convert(d,'wallofstone');
+        if(n==='cockatrice'){
+          if(s.edition==='revolt')transform(d,ids.get('wallofstone'));
+          else convert(d,'wallofstone');
+        }
       }
       if(n==='littlegray'&&chance(.5))vacant(d);
       if(n==='nymph'&&fx.max(d.u)<=30&&s.players[a.seat].hand.length<6&&chance(.4)){

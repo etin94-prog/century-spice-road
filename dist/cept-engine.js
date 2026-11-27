@@ -385,7 +385,7 @@ function createCepter(edition="ps2"){
       return cards.find(c=>!c.unlisted&&key(c)==='humbaba')?.name;
   }
   const revivalLabel=(before,after)=>begins&&fx.name(before)==='jackalope'&&fx.name(after)==='humbaba'?cards[after.id].name+' 부활':null;
-  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
+  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
   const beginsShrineModule=begins?(typeof module==='undefined'?CepterBeginsShrines:require('./cept-begins-shrines')):null;
@@ -1008,7 +1008,7 @@ function createCepter(edition="ps2"){
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||
           matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=40||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
-          d.n==='caitsith'&&fx.strength(a.u)>=40||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
+          d.n==='caitsith'&&fx.strength(a.u)>=40||revolt&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&blocks){lines.push('공격 무효');return 'block';}
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
@@ -1192,7 +1192,7 @@ function createCepter(edition="ps2"){
         a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-20;
         if(begins)lines.push('좀비 · 기본 HP 20 감소');
       }
-      if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
+      if(['behemoth','baal','remora'].includes(a.n)&&(!revolt||a.n!=='baal'||a.hp>0)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
       if(!muted&&a.u.enchant==='bulimia'&&a.hp>0){
         const hand=s.players[a.seat].hand;
         if(hand.length){hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);lines.push('불리미아 · 손패 1장 파괴');}

@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsNajaranMistral','beginsPopoloDragon','beginsSteamdrillPierce','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise','revoltAliciaFreedom','revoltTenetPoverty','revoltGoliganServant','revoltZenethPower','revoltYumaLove']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const [name,deck] of Object.entries(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -1094,7 +1094,12 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     revoltYumaBonds:'ninja:2 amazon:2 gianteel:2 kingtortoise:1 lizardman:3 scylla:2 wallofice:2 dryad:3 greattusker:2 greenogre:2 squirrine:2 woodfolk:3 bindingwhip:2 scalearmor:2 sparkball:2 trident:2 wondercharm:2 blackout:2 earthshift:1 fatbody:2 fly:2 gift:2 holyword6:2 shatter:2 watershift:1',
     revoltSomniaSerenity:'borgess:4 creepingcoin:2 halfling:1 steamgear:1 trojanhorse:2 aqualing:2 blueogre:2 gelatinouswall:3 kingtortoise:2 megalodon:2 undine:4 yeti:2 forceanklet:2 ringofthesuccubus:2 stormshield:2 stormspear:2 trident:2 fly:2 foresight:2 freezecyclone:1 holyword3:2 reincarnation:3 squeeze:2 watershift:1',
     revoltTenetBelief:'giantnautilus:2 kaiserpenguin:2 triton:2 wallofice:2 gargoyle:2 sage:2 squirrine:2 wallofstone:2 breezespirit:2 cornfolk:2 knight:2 tornado:2 angelcape:4 goldenhammer:1 mace:2 magicshield:3 tearinghalo:1 escape:2 holybanishment:1 holyword3:2 liquidform:1 prophecy:2 purify:2 quintessence:2 rayoflaw:1 spiritwalk:2',
-    revoltTenetPraise:'giantnautilus:2 hellgrammite:2 kaiserpenguin:2 triton:2 gargoyle:2 mummy:2 rocktroll:2 sage:2 breezespirit:2 knight:2 thunderspawn:2 tornado:2 angelcape:2 diamondarmor:2 goldenhammer:2 tearinghalo:2 trident:2 barrier:2 escape:2 fly:2 holybanishment:2 prophecy:2 purify:1 quintessence:2 rayoflaw:1 spiritwalk:2'
+    revoltTenetPraise:'giantnautilus:2 hellgrammite:2 kaiserpenguin:2 triton:2 gargoyle:2 mummy:2 rocktroll:2 sage:2 breezespirit:2 knight:2 thunderspawn:2 tornado:2 angelcape:2 diamondarmor:2 goldenhammer:2 tearinghalo:2 trident:2 barrier:2 escape:2 fly:2 holybanishment:2 prophecy:2 purify:1 quintessence:2 rayoflaw:1 spiritwalk:2',
+    revoltAliciaFreedom:'halfling:2 wonderwall:2 caitsith:2 firebeak:1 kingvaran:2 phoenix:1 amphibianwarrior:2 blueogre:2 gelatinouswall:1 kaiserpenguin:1 cactuswall:2 cockatrice:1 greattusker:1 woodfolk:2 centaur:2 gremlin:1 thunderspawn:1 yellowogre:2 battleaxe:2 drilllance:2 eaglerapier:2 platemail:2 spikedshield:2 wondercharm:2 drainmagic:2 foresight:2 holyword6:2 quintessence:1 relief:2 spartoi:1',
+    revoltTenetPoverty:'gianteel:2 kingtortoise:2 triton:3 greattusker:3 woodfolk:3 caladrius:2 centaur:3 dhampir:2 knight:2 wyvern:2 armet:3 sparkball:2 spectresrobe:3 swordofpluck:4 blackout:1 escape:2 holybanishment:2 relief:2 speedpenalty:2 spiritwalk:2 wasteworld:3',
+    revoltGoliganServant:'caitsith:2 domovikha:1 kingvaran:2 phoenix:2 redogre:2 giantnautilus:2 kingtortoise:2 lizardman:2 triton:2 breezespirit:2 centaur:2 knight:2 serpentfly:2 tornado:2 battleaxe:2 catapult:2 spectresrobe:2 spikedshield:2 trident:2 growthbody:2 pacifism:2 relief:2 speedpenalty:2 wasteworld:3 windofhope:2',
+    revoltZenethPower:'baal:2 firedrake:2 phoenix:2 gianteel:2 lizardman:2 yeti:2 gargoyle:2 spittingcobra:2 woodfolk:2 centaur:2 gremlin:2 knight:2 angelcape:2 catapult:1 claymore:2 eaglerapier:2 platemail:2 trident:2 drainmagic:3 haste:3 insectswarm:1 magicbolt:4 relief:2 shatter:2',
+    revoltYumaLove:'decoy:2 apsaras:3 fate:2 lilith:3 scylla:2 wallofice:2 dryad:3 dwarvenminer:2 grimalkin:2 sage:3 sakuya:2 chillingblast:2 neutralcloak:2 ragdoll:4 shadowblaze:2 sparkball:2 bindingmist:2 fatbody:4 holyword6:2 vitality:2 windofhope:2'
   };
   const revoltCatalog=ps2.createEdition('revolt');
   for(const [name,entries] of Object.entries(revoltBooks)){
@@ -1111,6 +1116,28 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     })));
   }
   const dealt=({s})=>s.battle.startHP[1]-s.battle.strikes[0].hp[1];
+  assert.equal(revolt(null,null,'fighter','caitsith').s.battle.strikes[0].effect,'block');
+  const armedGoblin=revolt('longsword',null,'goblin','caitsith').s.battle;
+  assert.equal(armedGoblin.attackST,50);
+  assert.equal(armedGoblin.strikes[0].effect,'hit');
+  assert.equal(revolt(null,null,'amphibianwarrior','goblin',state=>{state.tiles[1].type=3;}).s.battle.attackST,60);
+  assert.equal(revolt(null,null,'amphibianwarrior','goblin',state=>{state.tiles[1].type=2;}).s.battle.attackST,40);
+  for(const level of [2,3]){
+    const battle=revolt(null,null,'apsaras','fighter',state=>{state.tiles[1].level=level;}).s.battle;
+    assert.equal(battle.strikes.find(strike=>strike.side===1)?.effect,level===3?'block':'hit');
+  }
+  const flaming=revolt(null,null,'firedrake','minotaur',(state,id)=>{
+    Object.assign(state.tiles[8],{owner:0,type:0,unit:{id:id('minotaur'),hp:40}});
+  }).s.battle;
+  assert.equal(flaming.attackST,40);
+  const turned=revolt(null,'platemail','cockatrice','minotaur').s;
+  assert.equal(revoltCatalog.combo.key(revoltCatalog.cards[turned.tiles[1].unit.id]),'wallofstone');
+  assert.equal(turned.tiles[1].unit.hp,revoltCatalog.cards[turned.tiles[1].unit.id].hp);
+  assert.ok(revolt('batteringram','platemail','cockatrice','minotaur').s.battle.won);
+  const stocked=(state,id)=>{state.players[0].hand=[id('manna'),id('shatter'),id('escape')];};
+  assert.equal(revolt(null,null,'lilith','fighter',stocked).s.battle.attackST,30);
+  assert.equal(revolt(null,null,'baal','goblin',stocked).s.players[0].hand.length,2);
+  assert.equal(revolt(null,'eaglerapier','baal','greattusker',stocked).s.players[0].hand.length,3);
   assert.equal(dealt(revolt(null,'chainmail','phlogiston','fighter')),45);
   assert.equal(dealt(revolt(null,'chainmail','phlogiston','fighter',s=>{s.tiles[1].unit.mhp=50;})),30);
   assert.equal(revolt(null,null,'goblin','aqualing').s.battle.strikes[0].effect,'block');
@@ -1412,7 +1439,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(items.every(c=>!c.catalogOnly));
   }finally{Math.random=random;}
   console.log('Revolt all 75 items enabled, including four dragons, recycling, independent robe rolls and Warlock Disk');
-  console.log('Revolt eight exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
+  console.log('Revolt thirteen exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   const lv3=type=>state=>Object.assign(state.tiles[1],{type,level:3});
   const leveller=begins(null,'chainmail','leveller','fighter',lv3(2)).s;
@@ -2131,6 +2158,54 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   place(llama,1,0,'holyllama',30);
   assert.ok(C.play(llama,['secretArt',1])&&C.play(llama,['roll']));
   assert.deepEqual([llama.players[0].cash,llama.die,llama.mapEffect.faces], [50,6,[6]]);
+
+  const cobra=fixtures();
+  place(cobra,1,0,'spittingcobra',40);
+  place(cobra,2,1,'fate',40,{enchant:'vitality'});
+  place(cobra,3,1,'grimalkin',30);
+  assert.ok(C.play(cobra,['secretArt',1]));
+  assert.ok(!C.choices(cobra).some(a=>a[0]==='secretLand'&&a[1]===3));
+  assert.ok(C.play(cobra,['secretLand',2]));
+  assert.deepEqual([cobra.players[0].cash,cobra.tiles[1].unit.fatigued,cobra.tiles[2].unit.poisoned,cobra.tiles[2].unit.enchant],[70,true,true,undefined]);
+
+  const sakuya=fixtures();
+  sakuya.players[0].cash=200;
+  place(sakuya,1,0,'sakuya',30);
+  place(sakuya,2,0,'woodfolk',30);
+  place(sakuya,3,2,'woodfolk',30);
+  place(sakuya,4,1,'minotaur',40);
+  Object.assign(sakuya.tiles[1],{type:2});
+  Object.assign(sakuya.tiles[2],{type:0,level:5});
+  sakuya.tiles[3].type=sakuya.tiles[4].type=0;
+  const locked=structuredClone(sakuya);
+  locked.world={effect:'solidworld',until:4};
+  assert.ok(!C.choices(locked).some(a=>a[0]==='secretArt'));
+  assert.ok(C.play(sakuya,['secretArt',1]));
+  assert.deepEqual(C.choices(sakuya),[['secretLand',2],['secretCancel']]);
+  assert.ok(C.play(sakuya,['secretLand',2]));
+  assert.deepEqual([sakuya.players[0].cash,sakuya.tiles[1].unit.fatigued,sakuya.tiles[2].type,sakuya.tiles[2].level],[80,true,2,5]);
+
+  const penalty=fixtures();
+  const mate=penalty.teams.findIndex((t,i)=>i>0&&t===penalty.teams[0]);
+  for(const [i,p] of penalty.players.entries())Object.assign(p,{cash:500,lap:i===0?0:i===mate?4:2});
+  penalty.players[0].hand=[card('speedpenalty')];
+  const leader=structuredClone(penalty);
+  leader.players[0].lap=4;
+  assert.ok(C.play(leader,['cast',0]));
+  assert.deepEqual(leader.players.map(p=>p.cash),[430,500,500,500]);
+  assert.ok(C.play(penalty,['cast',0]));
+  assert.equal(penalty.players[mate].cash,500);
+  assert.deepEqual(penalty.players.map(p=>p.cash).sort((a,b)=>a-b),[300,500,500,630]);
+
+  const bones=fixtures();
+  bones.players[0].hand=['spartoi','manna'].map(card);
+  const empty=1;
+  bones.tiles[empty].type=2;
+  for(const [i,t] of bones.tiles.entries())if(i!==empty&&C.territoryType(t.type))place(bones,i,1,'fighter',40);
+  assert.ok(C.play(bones,['cast',0]));
+  assert.equal(bones.phase,'sacrifice');
+  assert.ok(C.play(bones,['sacrifice',1]));
+  assert.deepEqual([bones.players[0].cash,bones.players[0].hand.length,bones.tiles[empty].owner,bones.tiles[empty].unit.id],[70,0,0,card('skeleton')]);
 
   const fay=fixtures();
   place(fay,1,0,'fay',30);

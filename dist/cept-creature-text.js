@@ -326,6 +326,9 @@ const CepterCreatureText=(()=>{
     if(C.edition==='3ds'&&key==='kodama')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(C.edition==='3ds'&&key==='mystic')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 60 이상이면 70% 확률로 즉사시킵니다.');
     if(card.scrollCritical&&!battle[key]?.includes('두루마리'))pieces.push('두루마리 공격이 강타합니다.');
+    if(C.edition==='revolt'&&key==='amphibianwarrior')pieces.push('수·풍 영지에서 싸우면 전투 ST +20. 주문으로 기본 HP가 변하지 않습니다.');
+    if(C.edition==='revolt'&&key==='apsaras')pieces.push('Lv.3 이상 영지에서 싸우면 일반 공격을 무효화합니다.');
+    if(C.edition==='revolt'&&key==='firedrake')pieces.push('지도에 배치된 화 크리처 한 마리마다 전투 ST +5.');
     if(C.edition==='revolt'&&key==='uriel')pieces.push('저주가 걸린 상대에게 강타합니다.');
     if(C.edition==='revolt'&&key==='dwarvenminer')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
     if(card.immediate)pieces.push('즉시. 이 크리처가 소환되거나 교체돼 배치된 영지에 교체를 제외한 영지 명령을 사용할 수 있습니다.');

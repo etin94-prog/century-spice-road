@@ -17,7 +17,7 @@ const CepterExtraSpells=(()=>{
     bravesong:'player',toughsong:'player',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
-    deathmiasma:'global',penalize:'global',colorfrombeyond:'global',
+    deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma']);
@@ -38,6 +38,7 @@ const CepterExtraSpells=(()=>{
     magicfountain:'크리처가 있는 영지를 선택한다. 이곳에 처음 멈춘 셉터가 400G를 받는다.',
     mesmerize:'적 손패의 주문 하나를 골라 사용한다. 메스머라이즈는 고를 수 없다.',
     teleport:'가장 가까운 특수 칸으로 이동한다. 이번 차례의 주사위는 생략한다.',
+    speedpenalty:'나보다 많이 완주한 적 중 최다 완주자 한 명에게서 완주 차이 1회당 100G를 빼앗는다. 동률이면 한 명을 무작위로 고른다.',
     soltis:'행운, 정화, 순위에 따른 마력, 드로우, 호부 가격 하락, 전체 피해, 지역 회복 중 하나를 선택한다.'
   };
   const actions={stealCard:'카드 탈취',soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처'};
@@ -56,13 +57,19 @@ const CepterExtraSpells=(()=>{
     if(p.status==='fairylight')p.cash+=p.hand.length*10;
     if(p.status==='torture')p.cash-=p.hand.filter(id=>cards[id].kind==='spell').length*20;
   }
-  function rules(cards,{fx,combo,board,draw,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade}){
+  function rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
     const sample=a=>a.length?a[Math.floor(Math.random()*a.length)]:undefined;
     const enemy=(s,i)=>!combo.allied(s,s.turn,i);
     const owning=(s,seat)=>s.tiles.filter(t=>t.owner===seat);
+    function speedPenalty(s){
+      const lap=s.players[s.turn].lap;
+      const foes=s.players.filter((q,i)=>enemy(s,i)&&q.lap>lap);
+      const max=Math.max(lap,...foes.map(q=>q.lap));
+      return {amount:(max-lap)*100,leaders:foes.filter(q=>q.lap===max)};
+    }
     const affinity=(s,first,second)=>owning(s,s.turn).filter(t=>t.type===first||t.type===second).length;
     const landDrainRate=s=>s.edition==='saga'?20:30;
     const sharedCash=s=>Math.floor(s.players.reduce((sum,q)=>sum+q.cash,0)/s.players.length);
@@ -301,6 +308,11 @@ const CepterExtraSpells=(()=>{
             }
             break;
           case 'alarm':for(const v of owning(s,s.turn))if(v.unit)delete v.unit.fatigued;break;
+          case 'speedpenalty':{
+            const {amount,leaders}=speedPenalty(s),victim=sample(leaders);
+            if(victim){victim.cash-=amount;p.cash+=amount;note(s,victim.name+' · '+amount+'G 탈취');}
+            break;
+          }
           case 'redivision':{const cash=sharedCash(s);for(const q of s.players)q.cash=cash;break;}
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
           case 'lifestream':for(const v of owning(s,s.turn))if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);break;
@@ -456,6 +468,7 @@ const CepterExtraSpells=(()=>{
         const average=sharedCash(s);
         return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*(average-q.cash),0)/15;
       }
+      if(e==='speedpenalty')return speedPenalty(s).amount/10;
       if(e==='alarm')return mine.reduce((sum,t)=>sum+(t.unit?.fatigued?5+t.level:0),0);
       if(e==='refuge'){
         if(p.cash<120)return 22;

@@ -406,7 +406,9 @@ const CepterCombos = (() => {
       peace:{cost:50,label:'자기 영지 침략 금지 · 통행료 0G',enchant:'peace',self:true,beneficial:true},
       disableTerrain:{cost:40,label:'적 크리처의 지형 효과 무효',enchant:'antielement',enemy:true},
       camouflage:{cost:40,label:'내 크리처에 지형 효과',enchant:'camouflage',own:true,beneficial:true},
-      loseStrength:{cost:30,label:'기본 ST −10',strength:-10}
+      loseStrength:{cost:30,label:'기본 ST −10',strength:-10},
+      poison:{cost:30,label:'크리처에 독 부여'},
+      earthShift:{cost:120,label:'내 영지를 지 속성으로 변경',own:true}
     };
     const secretArt=card=>arts[card?.secretArt];
     function secretTargets(s,from){
@@ -423,6 +425,8 @@ const CepterCombos = (() => {
         if(key==='heal'&&t.owner===s.turn&&!immuneHP(t)&&t.unit.hp<max(t.unit))return [['secretLand',at]];
         if(key==='strength'&&strength(t.unit)<100)return [['secretLand',at]];
         if(art.enemy&&allied(s,t.owner,s.turn)||art.own&&t.owner!==s.turn)return [];
+        if(key==='poison'&&!t.unit.poisoned)return [['secretLand',at]];
+        if(key==='earthShift'&&t.type!==2&&activeWorld(s)!=='solidworld')return [['secretLand',at]];
         if(art.setFatigue!=null&&!!t.unit.fatigued!==art.setFatigue)return [['secretLand',at]];
         if(art.strength<0&&strength(t.unit)>0)return [['secretLand',at]];
         if(art.enchant&&t.unit.enchant!==art.enchant)return [['secretLand',at]];
@@ -442,6 +446,8 @@ const CepterCombos = (() => {
       if(card.secretArt==='lapGain')p.cash+=30*p.lap;
       if(card.secretArt==='dice6'){clearCepter(p);p.word=6;}
       if(card.secretArt==='worldDispel')delete s.world;
+      if(card.secretArt==='poison'){clear(target.unit);target.unit.poisoned=true;}
+      if(card.secretArt==='earthShift')target.type=2;
       if(card.secretArt==='strength')target.unit.st=Math.min(100,strength(target.unit)+20);
       if(art.setFatigue===true)target.unit.fatigued=true;
       if(art.setFatigue===false)delete target.unit.fatigued;
@@ -466,6 +472,12 @@ const CepterCombos = (() => {
       if(art==='strength')utility=(friendly?1:-1)*Math.min(20,100-strength(t.unit));
       if(spec.enchant)utility=(friendly===!!spec.beneficial?1:-1)*(15+(t.level-1)*8);
       if(art==='peace')utility=t.level>=3?-15:8;
+      if(art==='poison')utility=(friendly?-1:1)*(16+t.level*6);
+      if(art==='earthShift'){
+        const earth=s.tiles.filter(v=>v.owner===s.turn&&v.type===2&&v.area===t.area).length;
+        const current=s.tiles.filter(v=>v.owner===s.turn&&v.type===t.type&&v.area===t.area).length;
+        utility=(earth-current+1)*t.level*12+(hasElement(cards[t.unit.id],2)?t.level*18:0);
+      }
       if(spec.setFatigue!=null)utility=18+t.level*3;
       if(spec.strength<0)utility=(friendly?-1:1)*Math.min(-spec.strength,strength(t.unit));
       if(spec.damage)utility=(friendly?-1:1)*(t.unit.hp<=spec.damage?50+(t.level-1)*10:spec.damage);

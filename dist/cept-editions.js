@@ -127,7 +127,8 @@ const CepterEditions=(()=>{
       escape:'escape',gift:'gift',greed:'greed',growthbody:'growthbody',spiritwalk:'spiritwalk',vitality:'vitality',
       miraclecall:'miraclecall',purify:'purify',haste:'haste',massphantasm:'revoltphantasm',revival:'revival',stoneblast:'stoneblast',
       turntothewall:'turntothewall',disease:'disease',pacifism:'pacifism',holybanishment:'holybanishment',liquidform:'liquidform',
-      peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth',shininggeyser:'shininggeyser',blazesplash:'blazesplash',penalize:'penalize'},
+      peace:'peace',senility:'senility',squeeze:'squeeze',exile:'exile',dreamterrain:'dreamterrain',quicksand:'quicksand',fatbody:'fatbody',massgrowth:'massgrowth',shininggeyser:'shininggeyser',blazesplash:'blazesplash',penalize:'penalize',
+      spartoi:'spartoi',speedpenalty:'speedpenalty'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -229,6 +230,35 @@ const CepterEditions=(()=>{
         giantnautilus:2,hellgrammite:2,kaiserpenguin:2,triton:2,gargoyle:2,mummy:2,rocktroll:2,sage:2,breezespirit:2,knight:2,
         thunderspawn:2,tornado:2,angelcape:2,diamondarmor:2,goldenhammer:2,tearinghalo:2,trident:2,barrier:2,escape:2,fly:2,
         holybanishment:2,prophecy:2,purify:1,quintessence:2,rayoflaw:1,spiritwalk:2
+      },
+      revoltAliciaFreedom:{
+        halfling:2,wonderwall:2,caitsith:2,firebeak:1,kingvaran:2,phoenix:1,amphibianwarrior:2,
+        blueogre:2,gelatinouswall:1,kaiserpenguin:1,cactuswall:2,cockatrice:1,greattusker:1,woodfolk:2,
+        centaur:2,gremlin:1,thunderspawn:1,yellowogre:2,battleaxe:2,drilllance:2,eaglerapier:2,
+        platemail:2,spikedshield:2,wondercharm:2,drainmagic:2,foresight:2,holyword6:2,quintessence:1,
+        relief:2,spartoi:1
+      },
+      revoltTenetPoverty:{
+        gianteel:2,kingtortoise:2,triton:3,greattusker:3,woodfolk:3,caladrius:2,centaur:3,
+        dhampir:2,knight:2,wyvern:2,armet:3,sparkball:2,spectresrobe:3,swordofpluck:4,
+        blackout:1,escape:2,holybanishment:2,relief:2,speedpenalty:2,spiritwalk:2,wasteworld:3
+      },
+      revoltGoliganServant:{
+        caitsith:2,domovikha:1,kingvaran:2,phoenix:2,redogre:2,giantnautilus:2,kingtortoise:2,
+        lizardman:2,triton:2,breezespirit:2,centaur:2,knight:2,serpentfly:2,tornado:2,
+        battleaxe:2,catapult:2,spectresrobe:2,spikedshield:2,trident:2,growthbody:2,pacifism:2,
+        relief:2,speedpenalty:2,wasteworld:3,windofhope:2
+      },
+      revoltZenethPower:{
+        baal:2,firedrake:2,phoenix:2,gianteel:2,lizardman:2,yeti:2,gargoyle:2,
+        spittingcobra:2,woodfolk:2,centaur:2,gremlin:2,knight:2,angelcape:2,catapult:1,
+        claymore:2,eaglerapier:2,platemail:2,trident:2,drainmagic:3,haste:3,insectswarm:1,
+        magicbolt:4,relief:2,shatter:2
+      },
+      revoltYumaLove:{
+        decoy:2,apsaras:3,fate:2,lilith:3,scylla:2,wallofice:2,dryad:3,
+        dwarvenminer:2,grimalkin:2,sage:3,sakuya:2,chillingblast:2,neutralcloak:2,ragdoll:4,
+        shadowblaze:2,sparkball:2,bindingmist:2,fatbody:4,holyword6:2,vitality:2,windofhope:2
       }
     });
     if(edition!=='saga'&&edition!=='begins')return presets;
@@ -438,7 +468,9 @@ const CepterEditions=(()=>{
   }
   const revoltBattleCards={
     gascloud:{half:true},woodfolk:{support:true},bandit:{support:true},borgess:{},ninja:{first:true,scrollCritical:true},
-    statue:{stationary:true},trojanhorse:{support:true},
+    statue:{stationary:true},trojanhorse:{support:true},caitsith:{spellWard:true},baal:{first:true},firedrake:{},
+    amphibianwarrior:{immutableHP:true},cockatrice:{},apsaras:{},lilith:{first:true},
+    grimalkin:{support:true,supportElements:[0,2],spellWard:true},
     phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},phoenix:{},
     scylla:{blocksAttackAbilities:true},greattusker:{blocksFirst:true},
     cactuswall:{stationary:true,regenerate:true},tigerweta:{},mummy:{stationary:true},
@@ -611,7 +643,8 @@ const CepterEditions=(()=>{
           dwarvenminer:'lapGain',holyllama:'dice6',armoreddragon:'neutralBlast',
           hardrockdragon:'fireAirBlast',lightningdragon:'waterEarthBlast',fay:'strength',burnacle:'blind',caladrius:'boost',uriel:'worldDispel',
           alp:'fatigue',captaincock:'recover',domovikha:'protect',hyde:'paralyze',rockshell:'peace',
-          screamer:'disableTerrain',hidebehind:'camouflage',kawahime:'loseStrength'
+          screamer:'disableTerrain',hidebehind:'camouflage',kawahime:'loseStrength',
+          spittingcobra:'poison',sakuya:'earthShift'
         }[slug];
         if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
         if(slug==='dwarvenminer')c.tollFactor=1.5;
