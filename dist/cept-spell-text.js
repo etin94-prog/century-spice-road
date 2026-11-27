@@ -178,6 +178,12 @@ const describeCepterSpell=(()=>{
     if(card.kind!=='spell'||card.catalogOnly)return;
     const e=card.effect,edition=C.edition;
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
+    if(edition==='begins'){
+      if(e==='revoltlandtransfer')return '내 영지 한 곳을 포기하고 현재 영지 가치의 80%를 마력으로 얻습니다.';
+      if(e==='growthbody'||e==='massgrowth')return (e==='growthbody'?'고른 크리처의 현재 HP와 최대 HP를 10':'모든 크리처의 현재 HP와 최대 HP를 5씩')+' 올립니다. 최대 HP 상한은 100입니다.';
+      if(e==='greed')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';
+      if(['antielement','disease','drought','fog','vitality','weakness'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
+    }
     if(C.edition==='revolt'&&C.combo.worlds[e])return '전장 저주 · 6라운드. '+C.combo.worlds[e].description;
     switch(e){
       case 'dreamterrain':if(edition==='revolt')return '5라운드 동안 다른 셉터가 통행료를 받을 때마다 그 절반을 추가로 얻습니다.';break;

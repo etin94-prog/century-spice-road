@@ -111,13 +111,17 @@ const CepterCombos = (() => {
         }else if(e==='evilblast')damage(s,t,30);
         else if(immuneHP(t)&&['shrink','growthbody','temperance'].includes(e))return 'roll';
         else if(e==='shrink'){u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)destroy(s,t);}
-        else if(e==='growthbody'){const gain=s.edition==='revolt'?Math.max(0,Math.min(10,100-max(u))):10;u.mhp=max(u)+gain;u.hp+=gain;}
+        else if(e==='growthbody'){
+          const gain=['revolt','begins'].includes(s.edition)?Math.max(0,Math.min(10,100-max(u))):10;
+          u.mhp=max(u)+gain;u.hp=s.edition==='begins'?Math.min(u.mhp,u.hp+10):u.hp+gain;
+        }
         else if(e==='weakness')u.st=0;
         else if(e==='temperance'){u.mhp=30;u.hp=Math.min(30,u.hp);}
         else if(e==='mutation'){
           clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
-        if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e))draw(p,s);
+        if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||
+          s.edition==='begins'&&['antielement','disease','drought','fog','greed','vitality','weakness'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){
           const a=v.unit;

@@ -1586,6 +1586,31 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
+  const C=ps2.createEdition('begins');
+  const id=effect=>C.cards.findIndex(card=>!card.unlisted&&!card.catalogOnly&&card.effect===effect);
+  const unit=C.cards.findIndex(card=>!card.unlisted&&!card.catalogOnly&&C.combo.key(card)==='goblin');
+  const s=C.start(2,2,5000,Object.keys(C.maps)[0]),p=s.players[0];
+  p.cash=1500;
+  p.hand=['growthbody','massgrowth','disease','revoltlandtransfer'].map(id);
+  const [siteA,siteB]=s.tiles.flatMap((tile,i)=>typeof tile.type==='number'?[i]:[]).slice(0,2);
+  Object.assign(s.tiles[siteA],{owner:0,level:2,unit:{id:unit,hp:90,mhp:96}});
+  Object.assign(s.tiles[siteB],{owner:1,unit:{id:unit,hp:90,mhp:94}});
+  assert.ok(C.play(s,['cast',0])&&C.play(s,['targetLand',siteA]));
+  assert.deepEqual([s.tiles[siteA].unit.hp,s.tiles[siteA].unit.mhp],[100,100]);
+  s.phase='spell';
+  assert.ok(C.play(s,['cast',0]));
+  assert.deepEqual([s.tiles[siteB].unit.hp,s.tiles[siteB].unit.mhp],[95,99]);
+  s.phase='spell';
+  assert.ok(C.play(s,['cast',0])&&C.play(s,['targetLand',siteB]));
+  assert.equal(s.tiles[siteB].unit.enchant,'disease');
+  assert.equal(p.hand.length,2);
+  s.phase='spell';
+  const before=p.cash,territory=C.value(s,s.tiles[siteA]);
+  assert.ok(C.play(s,['cast',0])&&C.play(s,['targetLand',siteA]));
+  assert.deepEqual([s.tiles[siteA].owner,s.tiles[siteA].unit,p.cash],[-1,null,before-C.cards[id('revoltlandtransfer')].cost+Math.floor(territory*.8)]);
+  console.log('Begins spells, 100 MHP cap, redraw, and 80 percent land liquidation OK');
+}
+{
   const C=ps2.createEdition('3ds'),archives=require('../dist/cept-edition-data-2012');
   const names=Object.keys(C.maps),intro='3ds-original-bend',shore='3ds-original-shore';
   const id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);

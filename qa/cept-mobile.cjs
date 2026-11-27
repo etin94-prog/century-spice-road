@@ -340,8 +340,23 @@ const {chromium}=require('playwright');
       await picker.locator('.primary').tap();
       await page.waitForFunction(()=>s.phase==='result');
       assert.equal(await page.evaluate(()=>s.battle.startHP[1]-s.battle.strikes[0].hp[1]),25);
+      const expected=await page.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;
+        s=C.start(2,2,5000,'begins-1');
+        const here=s.tiles.findIndex(t=>typeof t.type==='number');
+        const id=C.cards.findIndex(c=>!c.unlisted&&C.combo.key(c)==='goblin');
+        const spell=C.cards.findIndex(c=>!c.unlisted&&c.effect==='revoltlandtransfer');
+        const p=s.players[0];p.cash=1000;p.hand=[spell];
+        Object.assign(s.tiles[here],{owner:0,level:3,unit:{id,hp:30}});
+        render();
+        return {here,cash:1000-C.cards[spell].cost+Math.floor(C.value(s,s.tiles[here])*.8)};
+      });
+      await page.locator('#matchActionsToggle').tap();
+      await page.locator('#buttons button[data-action=cast]').tap();
+      await page.locator('#buttons button[data-action=targetLand]').tap();
+      assert.deepEqual(await page.evaluate(at=>[s.tiles[at].owner,s.players[0].cash],expected.here),[-1,expected.cash]);
       assert.deepEqual(errors,[]);
-      console.log('begins',width+'x'+height,'Korean armor and scroll damage from mobile battle OK');
+      console.log('begins',width+'x'+height,'Korean armor, scroll damage and 80 percent land liquidation by touch OK');
       await page.close();
     }
     for(const [width,height] of [[320,568],[375,812],[844,390]]){

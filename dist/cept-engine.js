@@ -829,7 +829,7 @@ function createCepter(edition="ps2"){
         if(a.u.enchant==='regeneration')a.hp+=20;
         if(a.u.enchant==='vitality'){a.hp+=20;a.st+=20;}
         if(a.u.enchant==='disease'){a.hp-=20;a.st-=20;}
-        if(!revolt&&!handheld&&a.u.enchant==='greed')a.hp-=10;
+        if(!revolt&&!handheld&&edition!=='begins'&&a.u.enchant==='greed')a.hp-=10;
         if(a.element===-1&&extra.boost('borgess',a))a.hp+=20;
         if(a===A&&extra.boost('tetramorph',a))a.hp-=20;
         if(extra.boost('virus',a))a.hp-=10;

@@ -111,7 +111,11 @@ const CepterEditions=(()=>{
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
-      insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation',find:'find',evilblast:'evilblast',elementalwrath:'elementalwrath'}
+      insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation',find:'find',evilblast:'evilblast',elementalwrath:'elementalwrath',
+      acidrain:'acidrain',avalanche:'avalanche',banishingray:'banishingray',changeling:'changeling',erasure:'erasure',
+      growthbody:'growthbody',landprotection:'landprotection',locust:'locust',massgrowth:'massgrowth',landtransfer:'revoltlandtransfer',
+      antielement:'antielement',disease:'disease',drought:'drought',fog:'fog',greed:'greed',vitality:'vitality',weakness:'weakness',
+      peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze'}
   };
   function modernBooks(cards,edition){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);

@@ -170,7 +170,7 @@ const CepterExtraSpells=(()=>{
         else switch(e){
           case 'remission':p.flags.push(board(s).gates[x]);break;
           case 'restore':delete u.fatigued;if(!fx.immuneHP(t))u.hp=fx.max(u);break;
-          case 'revoltlandtransfer':p.cash+=Math.floor(value(s,t)*.7);vacate(t,true);break;
+          case 'revoltlandtransfer':p.cash+=Math.floor(value(s,t)*(s.edition==='begins'?.8:.7));vacate(t,true);break;
           case 'banishingray':fx.destroy(s,t);break;
           case 'bistair':fx.harm(s,t,10*owning(s,s.turn).filter(v=>v.type===0).length);break;
           case 'chariot':s.teleFrom=x;p.book.unshift(ids.get(e));return 'teleMove';
@@ -246,7 +246,7 @@ const CepterExtraSpells=(()=>{
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
           case 'lifestream':for(const v of owning(s,s.turn))if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);break;
           case 'lightcraft':s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});break;
-          case 'massgrowth':for(const v of land){if(fx.immuneHP(v))continue;const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,80-max));v.unit.mhp=max+gain;v.unit.hp+=gain;}break;
+          case 'massgrowth':for(const v of land){if(fx.immuneHP(v))continue;const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,(s.edition==='begins'?100:80)-max));v.unit.mhp=max+gain;v.unit.hp=s.edition==='begins'?Math.min(v.unit.mhp,v.unit.hp+5):v.unit.hp+gain;}break;
           case 'rayoflaw':for(const other of s.players)other.hand=other.hand.filter(id=>cards[id].cost<100);break;
           case 'reincarnation':{const n=p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
           case 'revelation':case 'telegnosis':setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);if(e==='telegnosis')p.book.unshift(ids.get(e));break;
