@@ -61,6 +61,7 @@ jobs:
           node qa/cept-mobile.cjs
           node qa/cept-campaign-mobile.cjs
           node qa/cept-hotseat.cjs
+          node qa/cept-room.cjs --recover-only
           "$RUNNER_TEMP/qa/node_modules/.bin/firebase" emulators:exec --only auth,database --project demo-century 'node qa/rejoin-release.cjs && node qa/guild-mobile.cjs --rooms && node qa/cept-cloud-room.cjs'
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

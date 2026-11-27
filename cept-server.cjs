@@ -3,6 +3,14 @@ const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),
 const C=require('./dist/cept-engine');
 const roomState=require('./dist/cept-room-state');
 const engines=new Map([['ps2',C]]);
+const recoveryLifetime=15*60*1000;
+const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
+const randomSecret=()=>crypto.randomBytes(32).toString('hex');
+function lanOrigin(req){
+  if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress))return;
+  const network=Object.values(os.networkInterfaces()).flat().find(n=>n.family==='IPv4'&&!n.internal&&/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(n.address));
+  if(network)return 'http://'+network.address+':'+req.socket.localPort;
+}
 function engine(edition='ps2'){
   if(!Object.hasOwn(require('./dist/cept-editions').names,edition))throw Object.assign(Error('알 수 없는 판본'),{status:400});
   if(!engines.has(edition))engines.set(edition,C.createEdition(edition));
@@ -37,6 +45,7 @@ function createServer(dir){
   function snapshot(r,seat){
     const C=engine(r.game.edition);
     const ready=r.keys.every(Boolean),out={id:r.id,seat,revision:r.rev,joined:r.keys.filter(Boolean).length,needed:r.keys.length,serverNow:Date.now()};
+    if(seat===0)out.recoverable=r.keys.flatMap((key,i)=>i&&key?[i]:[]);
     if(!ready)return out;
     return Object.assign(out,roomState.view(C,r.game,seat));
   }
@@ -78,10 +87,10 @@ function createServer(dir){
         }
         res.writeHead(200,headers);if(req.method==='HEAD')res.end();else fs.createReadStream(name).pipe(res);return;
       }
-      if(route==='/api/cept/status'&&req.method==='GET'){json(200,{available:true});return;}
+      if(route==='/api/cept/status'&&req.method==='GET'){json(200,{available:true,seatRecovery:true});return;}
       const auth=req.headers.authorization||'';
       if(!/^Bearer [a-f0-9]{64}$/.test(auth))fail(401,'좌석 인증이 필요합니다.');
-      const key=crypto.createHash('sha256').update(auth).digest('hex');
+      const key=hash(auth);
       const data=req.method==='POST'?await body(req):{};
       const lobby=route.match(/^\/api\/cept\/rooms\/([0-9a-f]{32})\/lobby$/);
       if(lobby&&req.method==='GET'){
@@ -100,16 +109,37 @@ function createServer(dir){
         }catch{fail(400,'대국 설정 오류');}
         const r={id:crypto.randomBytes(16).toString('hex'),game,keys:[key,...Array(humans-1).fill(null)],rev:0};
         persist(r);const out=snapshot(r,0);
-        if(['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress)){
-          const lan=Object.values(os.networkInterfaces()).flat().find(n=>n.family==='IPv4'&&!n.internal&&/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(n.address));
-          if(lan)out.lanOrigin='http://'+lan.address+':'+req.socket.localPort;
-        }
+        out.lanOrigin=lanOrigin(req);
         json(201,out);return;
       }
-      const match=route.match(/^\/api\/cept\/rooms\/([0-9a-f]{32})(?:\/(join|action))?$/);
+      const match=route.match(/^\/api\/cept\/rooms\/([0-9a-f]{32})(?:\/(join|action|recovery-link|recover))?$/);
       if(!match||!fs.existsSync(file(match[1])))fail(404,'초대방을 찾을 수 없습니다.');
       // No await between loading a revision and committing its replacement.
       const r=JSON.parse(fs.readFileSync(file(match[1]),'utf8'));const C=engine(r.game.edition);let seat=r.keys.indexOf(key);
+      if(match[2]==='recovery-link'&&req.method==='POST'){
+        if(seat!==0)fail(403,'방장만 좌석 복구 링크를 발급할 수 있습니다.');
+        const target=data.seat;
+        if(!Number.isInteger(target)||target<1||!r.keys[target])fail(400,'복구할 참가 좌석을 확인하세요.');
+        const code=randomSecret(),expiresAt=Date.now()+recoveryLifetime;
+        r.recoveries??={};
+        r.recoveries[target]={digest:hash(code),expiresAt};
+        persist(r);
+        json(201,{code,expiresAt,lanOrigin:lanOrigin(req)});return;
+      }
+      if(match[2]==='recover'&&req.method==='POST'){
+        if(typeof data.code!=='string'||!/^[a-f0-9]{64}$/.test(data.code))fail(400,'좌석 복구 링크를 확인하세요.');
+        const digest=hash(data.code);
+        const entry=Object.entries(r.recoveries||{}).find(([,token])=>token.digest===digest);
+        if(!entry||entry[1].expiresAt<=Date.now())fail(410,'만료되었거나 새 링크로 교체되었습니다. 방장에게 다시 요청하세요.');
+        const target=Number(entry[0]),token=entry[1];
+        if(seat>=0&&seat!==target)fail(409,'이 기기는 이미 다른 좌석에 참가 중입니다.');
+        if(token.claimedBy){
+          if(token.claimedBy!==key||r.keys[target]!==key)fail(410,'이미 사용된 좌석 복구 링크입니다.');
+        }else{
+          r.keys[target]=key;token.claimedBy=key;r.rev++;persist(r);
+        }
+        json(200,snapshot(r,target));return;
+      }
       if(match[2]==='join'&&req.method==='POST'){
         if(seat<0){
           seat=r.keys.indexOf(null);if(seat<0)fail(409,'모든 좌석이 찼습니다.');
