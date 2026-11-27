@@ -888,7 +888,10 @@ function createCepter(edition="ps2"){
            d.n==='caitsith'&&fx.strength(a.u)>=40||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element))){lines.push('공격 무효');return 'block';}
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
-        if(!orb&&['spikeshield','spikedshield'].includes(d.g)){const reflected=Math.floor(damage/2);a.hp-=reflected;damage-=reflected;}
+        if(!orb&&['spikeshield','spikedshield'].includes(d.g)){
+          const reflected=Math.floor(damage/2);a.hp-=reflected;damage-=reflected;
+          if(edition==='saga'&&a.hp<=0)a.defeatedByOpponent=true;
+        }
       }
       if(scroll&&guard?.halveScroll)damage=Math.floor(damage/2);
       if((scroll||penetrates)&&d.land){d.hp-=d.land;d.land=0;lines.push('지형 보너스 관통');}
@@ -983,6 +986,10 @@ function createCepter(edition="ps2"){
         const start=lines.length;
         if(!muted&&a.u.enchant==='paralysis'){lines.push('마비 · 공격 불가');break;}
         const effect=hit(a,d)||'hit';
+        if(edition==='saga'){
+          if(d.hp<=0)d.defeatedByOpponent=true;
+          if(effect==='reflect'&&a.hp<=0)a.defeatedByOpponent=true;
+        }
         if(handheld&&!muted&&a.hp>0&&a.st>0&&a.gear?.category!=='scroll'&&['block','reflect'].includes(effect)){
           revenge(a,d);
         }
@@ -996,13 +1003,20 @@ function createCepter(edition="ps2"){
     for(const a of sides){
       const d=a===A?D:A,originalName=a.n;
       if(!creatureEnd)a.n=null;
-      if(!muted)extra.end(a,d,creatureEnd);
+      if(!muted){
+        const opponentAlive=d.hp>0;
+        extra.end(a,d,creatureEnd);
+        if(edition==='saga'&&opponentAlive&&d.hp<=0)d.defeatedByOpponent=true;
+      }
       if(!muted&&a.hp>0&&a.u.poisoned){const loss=Math.floor(fx.max(a.u)*(edition==='saga'?.3:.5));a.hp=Math.min(a.hp,a.u.hp)-loss;lines.push('독 · '+loss+' 피해');}
       if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||a.u.enchant==='regeneration'||a.g==='fireamulet')){
         a.regenerated=a.heal=true;a.hp=fx.max(a.u);lines.push('재생 · HP 회복');
       }
       if(a.hp>0&&(a.n==='lunatichare'||a.g==='lunastone')&&d.hp>0){const st=Math.max(0,d.st);d.u.st=Math.max(0,Math.min(d.hp,fx.max(d.u)));d.hp=st;}
-      if(a.hp>0&&a.hp<=20&&(a.n==='mandrake'||a.g==='gemoflife'))a.hp=d.hp=0;
+      if(a.hp>0&&a.hp<=20&&(a.n==='mandrake'||a.g==='gemoflife')){
+        if(edition==='saga'&&d.hp>0)d.defeatedByOpponent=true;
+        a.hp=d.hp=0;
+      }
       if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition)a.hp=Math.min(a.hp,a.u.hp)-10;}
       if(a.g==='boomerang'&&edition!=='saga'&&!firstEdition&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
       if(a.n==='zombie'&&a.hp>0)a.hp-=20;
@@ -1021,19 +1035,37 @@ function createCepter(edition="ps2"){
       const defeated=new Set();
       for(const [a,d] of [[A,D],[D,A]]){
         if(a.hp<=0)continue;
-        if(a.g==='corrosiveknife'&&d.hp>0&&d.regenerated){defeated.add(d);lines.push('부식 나이프 · 재생한 상대 격파');}
+        if(a.g==='corrosiveknife'&&d.hp>0&&d.regenerated){d.defeatedByOpponent=true;defeated.add(d);lines.push('부식 나이프 · 재생한 상대 격파');}
         if(a.g==='deathchoker'){defeated.add(a);lines.push('데스 초커 · 장착 크리처 격파');}
       }
       for(const a of defeated)a.hp=0;
     }
     function revive(a){
-      const form=a.g==='necroscarab'?'zombie':creatureEnd?({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld?{greatfossil:'tyrannosaurus'}:{})})[a.n]:null;
+      const scarab=a.g==='necroscarab'&&(edition!=='saga'||itemEnd&&a.defeatedByOpponent);
+      const form=scarab?(edition==='saga'?'skeleton':'zombie'):creatureEnd?({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld?{greatfossil:'tyrannosaurus'}:{})})[a.n]:null;
       if(!form||a.revived)return false;
       extra.transform(a,extra.ids.get(form));a.revived=true;
       return true;
     }
     if(edition==='ps2')for(const a of sides)if(a.hp<=0)revive(a);
     for(const a of sides)if(creatureEnd&&a.hp<=0&&a.n==='sulfurousballoon'){const d=a===A?D:A;d.hp=Math.min(d.hp,d.u.hp)-30;}
+    if(edition==='saga'&&itemEnd){
+      const defeats=sides.filter(a=>a.hp<=0&&a.defeatedByOpponent);
+      for(const a of defeats){
+        const d=a===A?D:A;
+        if(a.g==='tombstone'){
+          const player=s.players[a.seat];
+          if(!s.predict)for(let j=player.hand.length;j<6;j++)draw(player,s);
+          lines.push('툼스톤 · 손패를 6장까지 보충');
+        }
+        if(a.g==='cursedseal'&&d.hp>0){
+          const damage=Math.floor(d.u.hp/2);
+          d.hp=Math.min(d.hp,d.u.hp)-damage;
+          lines.push('저주의 인장 · 상대 기본 HP 피해 '+damage);
+          if(d.hp<=0){d.defeatedByOpponent=true;defeats.push(d);}
+        }
+      }
+    }
     for(const a of sides)if(a.hp<=0){
       if((edition==='ps2'||handheld)&&revive(a))continue;
       if(!s.predict)fx.death(s,a.u.id);

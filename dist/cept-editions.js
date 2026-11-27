@@ -287,7 +287,8 @@ const CepterEditions=(()=>{
     vorpalsword:{st:30},forceanklet:{},forcebracelet:{},knightsshield:{},spikedshield:{},
     magmaarmor:{},magmahammer:{st:20,criticalOwnElements:[0,2]},stormarmor:{},stormspear:{st:20,criticalOwnElements:[1,3]},
     soulray:{st:30},tonfa:{doubleAttack:true},gremlinclaw:{},gremlintooth:{},
-    corrosiveknife:{},deathchoker:{st:30,pierceAll:true},doomneedle:{st:20},neutralcloak:{hp:20},metamorphosebelt:{},bladeofculdra:{st:40,hp:40}
+    corrosiveknife:{},deathchoker:{st:30,pierceAll:true},doomneedle:{st:20},neutralcloak:{hp:20},metamorphosebelt:{},bladeofculdra:{st:40,hp:40},
+    necroscarab:{},tombstone:{},cursedseal:{}
   };
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));

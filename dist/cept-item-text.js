@@ -21,6 +21,8 @@ const describeCepterItem=(()=>{
     doomneedle:'양쪽이 생존하면 상대에게 노쇠를 부여해 다음 전투 종료 시 파괴되게 합니다.',
     metamorphosebelt:'전투 중 그라스 스트라이더(ST 40, HP 40)로 변신합니다. 선제 공격과 상대의 남은 손패 한 장당 전투 ST +10을 얻으며, 생존 시 원래 형태로 돌아옵니다.',
     neutralcloak:'장착한 크리처는 전투 중 무속성이 됩니다.',
+    cursedseal:'장착한 크리처가 상대에게 격파되면 상대 크리처의 기본 HP 절반만큼 피해를 줍니다.',
+    tombstone:'장착한 크리처가 상대에게 격파되면 손패가 여섯 장이 될 때까지 카드를 뽑습니다.',
     daggerofmite:'현재 순위에 20을 곱한 만큼 전투 ST를 올립니다.',
     death:'두루마리. 공격 시 상대 크리처를 60% 확률로 즉사시킵니다. 전투 종료 시 장착한 크리처는 40% 확률로 파괴됩니다.',
     dragonhelm:'화·풍 속성 상대에게 강타하며, 수·지 속성 상대의 일반 공격을 무효화합니다.',
@@ -119,10 +121,11 @@ const describeCepterItem=(()=>{
       const el=list([shields[name]]);
       pieces.push(el+' 상대의 일반 공격을 무효화합니다. 장착한 크리처가 '+el+'이면 모든 일반 공격을 무효화합니다.');
     }
+    if(name==='necroscarab'&&C.edition==='saga')pieces.push('장착한 크리처가 상대에게 격파되면 스켈레톤으로 변합니다.');
     if(name==='boomerang'&&!firstEdition)pieces.push(C.edition==='saga'?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
     if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(firstEdition?5:10)+'G를 얻습니다.');
     if(name==='towershield'&&card.halveScroll)pieces.push('일반 공격과 두루마리 피해를 절반으로 줄입니다.');
-    else if(!(C.edition==='3ds'&&key==='holygrail')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
+    else if(!(C.edition==='3ds'&&key==='holygrail'||C.edition==='saga'&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };
