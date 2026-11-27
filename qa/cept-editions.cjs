@@ -720,6 +720,69 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([necromancer.cash,necromancer.hand],[50,[id('goblin')]]);
   assert.match(fight('necromancer','dwarf','무속성','firestone').battle.strikes[0].notes.join(' '),/45 피해/);
   console.log('Saga 169 source articles, 184 complete recipes, private Replace, Spartoi sacrifice, Trespass, Hunter and Necromancer verified');
+  const boosts=fight('fighter','dwarf','무속성',null,s=>{
+    unit(s,4,'ares',1,0);unit(s,5,'poseidon',0,1);
+  });
+  assert.deepEqual([boosts.battle.attackST,boosts.battle.startHP[1]],[70,70]);
+  const paralyzedBoost=fight('fighter','dwarf','무속성',null,s=>{
+    unit(s,4,'ares',1,0);unit(s,5,'poseidon',0,1);
+    for(const at of [4,5])s.tiles[at].unit.enchant='paralysis';
+  });
+  assert.deepEqual([paralyzedBoost.battle.attackST,paralyzedBoost.battle.startHP[1]],[50,50]);
+  const mask=fight('fighter','dwarf','무속성',null,null,'angrymask');
+  assert.deepEqual(mask.battle.finalHP,[0,10]);
+  assert.match(mask.battle.lines.join(' '),/상대 기본 HP에 40 피해/);
+  const basaltShield=fight('fighter','dwarf','무속성',null,s=>{
+    unit(s,4,'basaltidol',1,'무속성');unit(s,5,'opalidol',0,'무속성');
+    Object.assign(s.tiles[1].unit,{enchant:'senility',st:0,hp:65,mhp:65});
+  },'angrymask');
+  assert.deepEqual(basaltShield.battle.finalHP,[40,15]);
+  const basaltChoker=fight('fighter','dwarf','무속성','deathchoker',s=>unit(s,4,'basaltidol',1,'무속성'));
+  assert.equal(basaltChoker.battle.attackST,70);
+  assert.equal(basaltChoker.battle.won,true);
+  const branch=fight('brancharmy','fighter','무속성',null,s=>{
+    unit(s,4,'dwarf',1,2);unit(s,5,'crimsonvine',0,0);
+  });
+  assert.equal(branch.battle.attackST,C.cards[id('brancharmy')].st+10+C.battleGround(branch,branch.battle).attack);
+  const branchLand=C.start(2,2,8000,'saga-original-crosswind');
+  unit(branchLand,2,'brancharmy',0,2);
+  Object.assign(branchLand.players[0],{pos:2,cash:80});branchLand.phase='land';
+  assert.ok(C.play(branchLand,['ability',2]));
+  assert.deepEqual([branchLand.tiles[2].unit.id,branchLand.players[0].cash],[id('mudman'),30]);
+  const draws=fight('triton','goblin','무속성','longsword',s=>{s.players[0].book=[id('manna')];});
+  assert.ok(draws.players[0].hand.includes(id('manna')));
+  const granite=sagaCast('capture',s=>{
+    unit(s,4,'graniteidol',1,'무속성');
+    s.players[1].hand=[id('mace')];
+  });
+  assert.deepEqual(C.choices(granite),[['fizzle']]);
+  const openGranite=sagaCast('drought',s=>unit(s,4,'graniteidol',1,'무속성'));
+  assert.ok(C.choices(openGranite).some(([kind,seat])=>kind==='targetPlayer'&&seat===1));
+  const reflection=sagaCast('reflection',s=>unit(s,4,'dwarf',0,2));
+  assert.ok(C.play(reflection,['targetLand',4]));
+  assert.equal(reflection.tiles[4].unit.enchant,'reflection');
+  const reflectSetup=s=>{s.tiles[1].unit.enchant='reflection';};
+  const physical=fight('fighter','dwarf','무속성',null,reflectSetup);
+  assert.equal(physical.battle.strikes[0].effect,'reflect');
+  assert.deepEqual(physical.battle.finalHP,[0,50]);
+  const scrollAttack=fight('fighter','dwarf','무속성','firestone',reflectSetup);
+  assert.equal(scrollAttack.battle.strikes[0].effect,'hit');
+  const selective=sagaCast('selection',s=>{
+    unit(s,2,'dwarf',0,2);
+    unit(s,3,'necromancer',1,2);
+    unit(s,4,'quicksilver',0,1);
+    s.tiles[3].unit.enchant='landprotection';
+  });
+  assert.deepEqual(selective.tiles.slice(2,5).map(t=>t.unit.hp),[50,10,10]);
+  const wheel=C.start(4,4,8000,'saga-original-crosswind',undefined,undefined,0,'teams');
+  const foe=wheel.teams.findIndex(team=>team!==wheel.teams[0]);
+  wheel.players.forEach((p,i)=>{p.cash=i===0?600:i===foe?200:wheel.teams[i]===wheel.teams[0]?1000:1;});
+  wheel.players[0].hand=[id('rouetsoleil'),id('fighter')];wheel.phase='spell';
+  const baseCost=C.cards[id('rouetsoleil')].cost;
+  assert.ok(C.play(wheel,['cast',0]));
+  assert.ok(C.play(wheel,['sacrifice',1]));
+  assert.deepEqual([wheel.players[0].cash,wheel.players[foe].cash],[700-baseCost,100]);
+  console.log('Saga global combat boosts, Basalt and Granite, in-battle item effects, Selection and Roulette checked');
   const claw=fight('centaur','fighter','무속성','livingclaw',s=>{s.tiles[1].unit.hp=70;});
   assert.equal(claw.battle.strikes[0].side,0);
   assert.deepEqual([claw.battle.strikes.length,claw.tiles[1].unit.enchant],[1,'paralysis']);
@@ -921,8 +984,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(belt.battle.forms[0],strider);
   assert.deepEqual([belt.battle.attackST,belt.battle.startHP[0],belt.battle.won],[60,40,true]);
   assert.equal(belt.tiles[1].unit.id,id('goblin'));
-  assert.equal(id('grassstrider'),-1);
-  assert.equal(C.validBook([strider,...C.presets.sagaStarterWater.slice(1)]),false);
+  assert.equal(id('grassstrider'),strider);
+  assert.equal(C.validBook([strider,...C.presets.sagaStarterWater.slice(1)]),true);
   const defensiveBelt=fight('fighter','goblin','무속성',null,null,'metamorphosebelt');
   assert.equal(defensiveBelt.battle.strikes[0].side,1);
   assert.equal(defensiveBelt.tiles[1].unit.id,id('goblin'));

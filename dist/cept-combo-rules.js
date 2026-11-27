@@ -116,7 +116,7 @@ const CepterCombos = (() => {
       const i=s.turn;
       if(type[e]==='area')return [...new Set(s.tiles.map(t=>t.area))].map(a=>['comboArea',a]);
       if(type[e]==='player'){
-        if(s.tiles.some(t=>name(t.unit)==='graniteidol')&&['pain','grace','wordofrecall','changeling','wizardeye','mindseeker','suppression','drainmagic','echo','dimensiondoor','squeeze'].includes(e))return [];
+        if(idol(s,'graniteidol')&&['pain','grace','wordofrecall','changeling','wizardeye','mindseeker','suppression','drainmagic','echo','dimensiondoor','squeeze'].includes(e))return [];
         if(e==='squeeze')return s.players.flatMap((q,n)=>q.hand.length?[['targetPlayer',n]]:[]);
         return s.players.flatMap((q,n)=>allied(s,i,n)&&['pain','silence','despair','changeling','mindseeker','waste','drainmagic','echo'].includes(e)||e==='mindseeker'&&!(q.book?.length??q.bookCount)?[]:[['targetPlayer',n]]);
       }
@@ -272,7 +272,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
+    const sagaTerritory={brancharmy:50,quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -286,7 +286,7 @@ const CepterCombos = (() => {
       const highest=Math.max(0,...units.map(max));
       return units.filter(u=>max(u)===highest).map(u=>u.id);
     }
-    const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides',deathscythe:'mummy'};
+    const sagaEvolution={brancharmy:'mudman',sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides',deathscythe:'mummy'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl','swampspawn']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl','burnacle','swampspawn','landurchin']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}

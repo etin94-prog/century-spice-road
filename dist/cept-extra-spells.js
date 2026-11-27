@@ -15,7 +15,7 @@ const CepterExtraSpells=(()=>{
     gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',beginsculdra:'global',immobilize:'global',footrace:'global',unholygrasp:'player',
     blacksmith:'player',reform:'player',beginspoisonmind:'player',discord:'global',metalform:'land',temptation:'land',beginspolymorph:'land',
-    trade:'land',sagadrought:'player',sagafloat:'player',innocence:'player',sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
+    trade:'land',reflection:'land',sagaselection:'global',rouetsoleil:'global',sagadrought:'player',sagafloat:'player',innocence:'player',sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
     bravesong:'player',toughsong:'player',hunterssong:'player',trespass:'global',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
@@ -24,7 +24,7 @@ const CepterExtraSpells=(()=>{
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30};
-  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma','armageddon','beginstempest']);
+  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma','sagaselection','armageddon','beginstempest']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
@@ -77,6 +77,7 @@ const CepterExtraSpells=(()=>{
   }
   function rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,chain,canOccupy,deployable,claim,canInvade}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
+    const spellCards=new Map(cards.flatMap(c=>!c.unlisted&&!c.catalogOnly&&c.effect?[[c.effect,c]]:[]));
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
     const forgePool=cards.flatMap((c,id)=>!c.unlisted&&!c.catalogOnly&&['weapon','armor'].includes(c.category)?[id]:[]);
@@ -140,6 +141,7 @@ const CepterExtraSpells=(()=>{
       seen.delete(pos);
       return [...seen];
     }
+    const rouetTargets=s=>s.players.filter((q,i)=>enemy(s,i)&&q.cash>=2);
     function tradeTargets(s,from){
       const owned=s.tiles[from];
       return s.tiles.flatMap((t,i)=>t.unit&&enemy(s,t.owner)&&t.level===owned.level&&fx.targetable(s,t)?[['targetLand',i]]:[]);
@@ -166,7 +168,7 @@ const CepterExtraSpells=(()=>{
         const missing=map.checkpoints.filter(id=>!flags.includes(id));
         return missing.length>1?Object.entries(map.gates).flatMap(([at,id])=>missing.includes(id)?[['targetLand',Number(at)]]:[]):[];
       }
-      const category=cards[ids.get(e)]?.catalog.category||'sflash';
+      const category=spellCards.get(e)?.catalog?.category||cards[ids.get(e)]?.catalog.category||'sflash';
       if(type[e]==='player'){
         if(e!=='dispelmagic'&&category==='sflash'&&fx.idol(s,'graniteidol'))return [];
         return s.players.flatMap((q,i)=>{
@@ -248,10 +250,11 @@ const CepterExtraSpells=(()=>{
       return 1+new Set(ahead).size;
     }
     const turnoverChange=st=>st<=30?20:st>=50?-20:0;
-    function massDamage(e,t){
+    function massDamage(s,e,t){
       const card=cards[t.unit.id];
       switch(e){
         case 'deathmiasma':return card.first||card.support?20:0;
+        case 'sagaselection':return fx.territoryCost(s,fx.name(t.unit))!=null?20:0;
         case 'energyflash':return t.level===1?t.unit.hp:0;
         case 'armageddon':return fx.max(t.unit)>=40?30:0;
         case 'beginstempest':return fx.strength(t.unit)<=40?20:0;
@@ -289,6 +292,7 @@ const CepterExtraSpells=(()=>{
         else switch(e){
           case 'remission':p.flags.push(board(s).gates[x]);break;
           case 'magicalleap':case 'shadowleap':return warp(s,x);
+          case 'reflection':combo.clear(u);u.enchant=e;break;
           case 'restore':delete u.fatigued;if(!fx.immuneHP(t))u.hp=fx.max(u);break;
           case 'revoltlandtransfer':p.cash+=Math.floor(value(s,t)*(s.edition==='begins'?.8:.7));vacate(t,true);break;
           case 'banishingray':fx.spellDestroy(s,t);break;
@@ -423,11 +427,11 @@ const CepterExtraSpells=(()=>{
           case 'immobilize':
             for(const v of land){combo.clear(v.unit);v.unit.enchant='immobilize';}
             break;
-          case 'armageddon':case 'beginstempest':
+          case 'armageddon':case 'beginstempest':case 'sagaselection':
           case 'acidrain':case 'avalanche':case 'energyflash':case 'elementalrage':
           case 'burninghail':case 'freezecyclone':case 'globalinsectswarm':case 'fatigueddisaster':case 'elementalwrath':case 'deathmiasma':
             for(const v of land){
-              const amount=massDamage(e,v);
+              const amount=massDamage(s,e,v);
               if(e==='energyflash'&&v.level===1)fx.spellDestroy(s,v);
               else if(amount&&e!=='energyflash'){
                 const lower=e==='armageddon'&&v.level>1&&!fx.blockedLevel(s,v)&&fx.damageAmount(s,v,amount)>0;
@@ -453,6 +457,15 @@ const CepterExtraSpells=(()=>{
           }
           case 'sagaiksear':if(affinity(s,1,3)>=5)for(let n=0;n<6;n++)draw(p,s);break;
           case 'sagaselenear':if(affinity(s,0,2)>=5)p.cash+=500;break;
+          case 'rouetsoleil':{
+            const victim=sample(rouetTargets(s));
+            if(victim){
+              const amount=Math.floor(victim.cash/2);
+              victim.cash-=amount;p.cash+=amount;
+              note(s,p.name+' · '+victim.name+'에게서 '+amount+'G 탈취');
+            }
+            break;
+          }
           case 'trespass':setStatus(s,p,e);break;
           case 'fame':p.cash+=100*Math.max(0,...owning(s,s.turn).map(t=>t.level));break;
           case 'desolation':for(const v of s.tiles)if(v.level===3&&!fx.blockedLevel(s,v))v.level--;break;
@@ -663,6 +676,7 @@ const CepterExtraSpells=(()=>{
       switch(e){
         case 'zap':return -sign*(fx.damageAmount(s,t,10)+(t.unit.hp<=10?weight*4:0));
         case 'stoneblast':case 'frostneedle':case 'venomousboil':return -sign*fx.damageAmount(s,t,30)/4;
+        case 'reflection':return sign*(t.unit.enchant===e?0:14+weight*3);
         case 'sagabistair':return affinity(s,0,2)>=5?-sign*fx.damageAmount(s,t,40)/3:-30;
         case 'sagaterrair':return affinity(s,1,3)>=5?-sign*(t.level-1)*12:-30;
         case 'comet':return -sign*Math.min(2,t.level-1)*10;
@@ -689,7 +703,7 @@ const CepterExtraSpells=(()=>{
       if(type[e]!=='global')return Math.max(-40,...targets(s,e).map(([,x])=>scoreTarget(s,e,x)));
       const p=s.players[s.turn],mine=owning(s,s.turn),land=s.tiles.filter(t=>t.unit);
       if(damageSpells.has(e))return land.reduce((sum,v)=>{
-        const amount=massDamage(e,v);
+        const amount=massDamage(s,e,v);
         return sum+(!amount||e!=='energyflash'&&fx.immuneHP(v)?0:(enemy(s,v.owner)?1:-1)*(amount/8+(amount>=v.unit.hp?4*v.level:0)));
       },0);
       if(e==='redivision'){
@@ -711,6 +725,10 @@ const CepterExtraSpells=(()=>{
       if(e==='castlerecall')return p.pos!==0&&p.flags.length===(board(s).checkpoints||board(s).forts).length?25:-20;
       if(e==='selenear')return mine.filter(t=>t.type===2).length*10;
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);
+      if(e==='rouetsoleil'){
+        const candidates=rouetTargets(s);
+        return candidates.length?candidates.reduce((sum,q)=>sum+Math.floor(q.cash/2),0)/candidates.length/8:-20;
+      }
       if(e==='trespass'){
         if(p.status==='trespass')return -10;
         const m=board(s),needed=(m.checkpoints||m.forts).length;

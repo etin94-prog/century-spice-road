@@ -144,7 +144,7 @@ const CepterEditions=(()=>{
       iksear:'sagaiksear',terrair:'sagaterrair',bistair:'sagabistair',selenear:'sagaselenear',
       comet:'comet',crusherstorm:'crusherstorm',desolation:'desolation',elevation:'elevation',erosion:'erosion',
       fame:'fame',frostneedle:'frostneedle',venomousboil:'venomousboil',refuge:'refuge',gift:'sagagift',refresh:'refresh',holyblight:'holyblight',
-      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi',trade:'trade',drought:'sagadrought',float:'sagafloat',innocence:'innocence'},
+      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi',trade:'trade',drought:'sagadrought',float:'sagafloat',innocence:'innocence',reflection:'reflection',selection:'sagaselection',rouetsoleil:'rouetsoleil'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
@@ -769,7 +769,7 @@ const CepterEditions=(()=>{
   const sagaBattleCreatures={
     livingclaw:{itemCreature:true},livingmirror:{itemCreature:true},livingrapier:{itemCreature:true,first:true},
     livingscroll:{itemCreature:true,innateScroll:20,scrollAsItem:20},bloodypudding:{support:true},behemoth:{last:true},
-    cockatrice:{},medusa:{},deathscythe:{},raksas:{},
+    cockatrice:{},medusa:{},deathscythe:{},raksas:{},ares:{},poseidon:{},baal:{first:true},grassstrider:{first:true},triton:{},
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
@@ -777,10 +777,10 @@ const CepterEditions=(()=>{
     deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
-    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},necromancer:{scrollCritical:true},quicksilver:{},
+    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},necromancer:{scrollCritical:true},quicksilver:{},dancingdoll:{},brancharmy:{},
     lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},spinyagama:{},seismodon:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
-  const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
+  const sagaTerritoryIdols=new Set(['basaltidol','graniteidol','clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
   const sagaGear={
     aurablade:{},batteringram:{st:20},coinofpiety:{},fireshield:{},kris:{st:30,protectItem:true},
     godlesspike:{st:20},abyssaltome:{},ringofthesuccubus:{first:true},shadowarmor:{},sleep:{},smoketorch:{},tearinghalo:{st:30,protectItem:true},
@@ -788,7 +788,7 @@ const CepterEditions=(()=>{
     magmaarmor:{},magmahammer:{st:20,criticalOwnElements:[0,2]},stormarmor:{},stormspear:{st:20,criticalOwnElements:[1,3]},
     soulray:{st:30},tonfa:{doubleAttack:true},gremlinclaw:{},gremlintooth:{},
     corrosiveknife:{},deathchoker:{st:30,pierceAll:true},doomneedle:{st:20},neutralcloak:{hp:20},metamorphosebelt:{},bladeofculdra:{st:40,hp:40},
-    necroscarab:{},tombstone:{},cursedseal:{}
+    necroscarab:{},tombstone:{},cursedseal:{},angrymask:{}
   };
   function configure(edition,cards,presets,bookSize,copyLimit){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));

@@ -783,7 +783,7 @@ function createCepter(edition="ps2"){
           return targets.length?targets:[['fizzle']];
         }
         if(extraTypes?.[effect]||combo.type[effect]){const targets=(extraTypes?.[effect]?extra:fx).targets(s,effect).filter(([k,j])=>k!=='targetPlayer'||effect==='dispelmagic'||canTargetPlayer(s.players[j]));return targets.length?targets:[['fizzle']];}
-        if(effect==='shatter'&&s.tiles.some(t=>fx.name(t.unit)==='graniteidol'))return [['fizzle']];
+        if(effect==='shatter'&&fx.idol(s,'graniteidol'))return [['fizzle']];
         if(effect==='plague')return [...new Set(s.tiles.map(t=>t.area))].map(area=>['plagueArea',area]);
         if(effect==='heal'||effect==='bolt'){
           for(const [n,v] of s.tiles.entries()){
@@ -1046,12 +1046,13 @@ function createCepter(edition="ps2"){
     const health=()=>sides.map(a=>Math.max(0,a.hp));
     b.guard=D.u.id;b.guardHP=D.u.hp;b.attackST=A.st;b.defendST=D.st;b.landHP=D.land;b.startHP=health();b.strikes=[];b.forms=sides.map(a=>a.u.id);
     function trackDamage(a,damage,normal){
-      if(revolt||begins)a.receivedDamage=(a.receivedDamage||0)+damage;
+      if(edition==='saga'||revolt||begins)a.receivedDamage=(a.receivedDamage||0)+damage;
       if(normal)a.ordinaryDamage=(a.ordinaryDamage||0)+damage;
     }
     function reflectNormal(a,damage){
       a.hp-=damage;
       trackDamage(a,damage,edition==='saga');
+      if(edition==='saga'&&a.hp<=0)a.defeatedByOpponent=true;
     }
     function hit(a,d){
       const scroll=a.gear?.category==='scroll'||a.gear?.scrollAsItem||!muted&&!a.gear&&(a.c.innateScroll||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb'||a.suppressPhysicalWard;
@@ -1085,7 +1086,7 @@ function createCepter(edition="ps2"){
       if(!scroll&&!muted){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
         const reflects=d.c.reflectNormal||matches(d.c.reflectElements,a)||guard?.reflectNormal||matches(guard?.reflectElements,a)||
-          d.gear?.effect==='reflect'||d.n==='decoy'||revolt&&d.g==='mirrorhoplon'&&!a.gear;
+          d.gear?.effect==='reflect'||d.u.enchant==='reflection'||d.n==='decoy'||revolt&&d.g==='mirrorhoplon'&&!a.gear;
         const blocks=revolt&&d.u.enchant==='energyfield'||begins&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
           d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
@@ -1103,7 +1104,6 @@ function createCepter(edition="ps2"){
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
         if(!orb&&(['spikeshield','spikedshield'].includes(d.g)||edition==='saga'&&d.n==='spinyagama')){
           const reflected=Math.floor(damage/2);reflectNormal(a,reflected);damage-=reflected;
-          if(edition==='saga'&&a.hp<=0)a.defeatedByOpponent=true;
         }
       }
       if(scroll&&guard?.halveScroll)damage=Math.floor(damage/2);
@@ -1279,10 +1279,11 @@ function createCepter(edition="ps2"){
       applyPoison(a);
       if(a.u.enchant==='senility')a.hp=0;
     }
-    if((revolt||begins)&&itemEnd)for(const a of order){
+    if((edition==='saga'||revolt||begins)&&itemEnd)for(const a of order){
       const d=a===A?D:A;
       if(a.g==='angrymask'&&a.hp>0&&d.hp>0&&a.receivedDamage>0){
         d.hp=Math.min(d.hp,d.u.hp)-a.receivedDamage;
+        if(edition==='saga'&&d.hp<=0)d.defeatedByOpponent=true;
         lines.push(a.gear.name+' · 상대 기본 HP에 '+a.receivedDamage+' 피해');
       }
     }
@@ -1291,17 +1292,17 @@ function createCepter(edition="ps2"){
       if(!creatureEnd)a.n=null;
       if(!muted){
         const opponentAlive=d.hp>0;
-        extra.end(a,d,creatureEnd);
+        extra.end(a,d,creatureEnd,itemEnd);
         if(revolt&&creatureEnd&&a.n==='scylla'&&a.hp>0&&d.hp>0){
           combo.clear(d.u);d.u.enchant='sleep';lines.push('스킬라 · 상대 영지 통행료 무효');
         }
         if(edition==='saga'&&opponentAlive&&d.hp<=0)d.defeatedByOpponent=true;
       }
       if(!revolt&&!muted)applyPoison(a);
-      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||a.u.enchant==='regeneration'||a.g==='fireamulet')){
+      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||(edition!=='saga'||!basalt)&&a.u.enchant==='regeneration'||itemEnd&&a.g==='fireamulet')){
         a.regenerated=a.heal=true;a.hp=fx.max(a.u);lines.push('재생 · HP 회복');
       }
-      if(a.hp>0&&(a.n==='lunatichare'||a.g==='lunastone')&&d.hp>0){
+      if(a.hp>0&&(a.n==='lunatichare'||itemEnd&&a.g==='lunastone')&&d.hp>0){
         if(begins&&a.n==='lunatichare'){
           const priorST=Math.max(0,fx.strength(d.u));
           d.u.st=Math.max(0,Math.min(d.hp,d.u.hp));
@@ -1311,7 +1312,7 @@ function createCepter(edition="ps2"){
           const st=Math.max(0,d.st);d.u.st=Math.max(0,Math.min(d.hp,fx.max(d.u)));d.hp=st;
         }
       }
-      if(a.hp>0&&a.hp<=20&&(a.n==='mandrake'||a.g==='gemoflife')){
+      if(a.hp>0&&a.hp<=20&&(a.n==='mandrake'||itemEnd&&a.g==='gemoflife')){
         if(edition==='saga'&&d.hp>0)d.defeatedByOpponent=true;
         a.hp=d.hp=0;
       }
@@ -1321,7 +1322,7 @@ function createCepter(edition="ps2"){
         a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-20;
         if(begins)lines.push('좀비 · 기본 HP 20 감소');
       }
-      const needsSurvivor=(revolt||begins)&&a.n==='baal'||begins&&a.n==='behemoth';
+      const needsSurvivor=(revolt||begins||edition==='saga')&&a.n==='baal'||(begins||edition==='saga')&&a.n==='behemoth';
       if(['behemoth','baal','remora'].includes(a.n)&&(!needsSurvivor||a.hp>0)){
         const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;
         if(hand.length){
@@ -1329,13 +1330,13 @@ function createCepter(edition="ps2"){
           if(begins)lines.push(a.c.name+' · 손패 한 장 파괴');
         }
       }
-      if(!muted&&a.u.enchant==='bulimia'&&a.hp>0){
+      if(!muted&&(edition!=='saga'||!basalt)&&a.u.enchant==='bulimia'&&a.hp>0){
         const hand=s.players[a.seat].hand;
         if(hand.length){hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);lines.push('불리미아 · 손패 1장 파괴');}
       }
-      if(a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
-      if(a.g==='dynamite'||a.n==='wraith'||!revolt&&!muted&&a.u.enchant==='senility')a.hp=0;
-      const plow=a.g==='silverplow'&&(!begins||a.hp>0);
+      if(itemEnd&&a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
+      if(itemEnd&&a.g==='dynamite'||a.n==='wraith'||!revolt&&!muted&&(edition!=='saga'||!basalt)&&a.u.enchant==='senility')a.hp=0;
+      const plow=itemEnd&&a.g==='silverplow'&&(!begins||a.hp>0);
       if(!fx.levelLocked(t,s)&&(revolt?a.hp>0:a.hp>0||d.hp>0)&&(a.n==='leshy'||plow)){
         const previous=t.level;
         t.level=Math.min(5,t.level+(a.n==='leshy')+plow);
@@ -1412,7 +1413,7 @@ function createCepter(edition="ps2"){
       if(creatureEnd&&(a.n==='fate'&&(revolt||begins||p.hand.length<6)||a.c.evoLegacy==='draw'))draw(p,s);
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
       if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
-      if(a.g==='goldengoose'){
+      if(a.g==='goldengoose'&&(edition!=='saga'||itemEnd)){
         const reward=(begins||revolt||handheld?7:firstEdition?5:10)*fx.max(a.u);
         p.cash+=reward;
         if(revolt||handheld)lines.push(a.gear.name+' · '+reward+'G 획득');
@@ -1498,7 +1499,9 @@ function createCepter(edition="ps2"){
         if(revolt&&a.n==='devastator'&&!a.defending&&t.level>1&&!fx.blockedLevel(s,t)){
           t.level--;lines.push(a.c.name+' · 영지 Lv.'+t.level);
         }
-        if(revolt&&a.n==='triton'&&a.gear?.kind==='item')draw(owner,s);
+        if(a.n==='triton'&&a.gear?.kind==='item'&&(revolt||owner.hand.length<6)){
+          draw(owner,s);lines.push(a.c.name+' · 카드 1장 뽑기');
+        }
         if(a.n==='gelatinouswall'&&a.ordinaryDamage>0){
           const gain=a.ordinaryDamage*5;
           owner.cash+=gain;lines.push('젤라티너스 월 · '+gain+'G 획득');
@@ -2385,7 +2388,7 @@ function createCepter(edition="ps2"){
           if(c.effect==='obliterate')return board(s).gemStore?(Math.max(...s.players.filter((_,j)=>!allied(s,seat,j)).map(q=>q.symbols.reduce((sum,n)=>sum+n,0)))-p.symbols.reduce((a,b)=>a+b,0))*1.4-5:-4;
           if(c.effect==='remoteswitch')return board(s).pathSwitches?0:p.hand.length<=2?3:-2;
           if(c.effect==='bolt')return s.tiles.some(t=>fx.targetable(s,t)&&!allied(s,seat,t.owner)&&fx.damageAmount(s,t,20)>0)?4:-10;
-          if(c.effect==='shatter')return !s.tiles.some(t=>fx.name(t.unit)==='graniteidol')&&s.players.some((q,j)=>!allied(s,seat,j)&&q.hand.some(id=>cards[id].kind!=='creature'))?4:-10;
+          if(c.effect==='shatter')return !fx.idol(s,'graniteidol')&&s.players.some((q,j)=>!allied(s,seat,j)&&q.hand.some(id=>cards[id].kind!=='creature'))?4:-10;
           if(['manna','fly','word6'].includes(c.effect))return 4;
           return c.effect==='cash'?10:c.effect==='six'?3:-2;
         case 'switchFlip':case 'switchKeep':{

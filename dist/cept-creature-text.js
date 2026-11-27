@@ -14,6 +14,9 @@ const CepterCreatureText=(()=>{
     livingscroll:'장비 없이 공격하거나 다른 크리처의 장비로 쓰이면 두루마리 피해 20을 줍니다.',
     bandit:'일반 공격으로 준 피해량의 두 배에 해당하는 마력을 상대에게서 빼앗습니다.',
     basaltidol:'맵에 있으면 전투 종료나 패배로 발동하는 크리처 능력을 봉쇄합니다.',
+    poseidon:'교전에 참여하지 않고 지도에 있으면 방어 크리처의 전투 HP를 20 올립니다.',
+    brancharmy:'지도에 배치된 지 속성 크리처 한 마리당 전투 ST가 5 오릅니다.',
+    grassstrider:'전투에서 상대 손패 한 장당 ST가 10 오릅니다.',
     battlegearalpha:'배틀 기어 β를 지원으로 사용하면 번들 기어로 합체합니다. 단일 대상 주문과 영지 능력의 대상이 되지 않습니다.',
     battlegearbeta:'배틀 기어 α를 지원으로 사용하면 번들 기어로 합체합니다. 두루마리 공격을 무효화합니다.',
     berserker:'일반 공격으로 피해를 주면 자신이 혼란에 빠집니다.',
@@ -335,7 +338,7 @@ const CepterCreatureText=(()=>{
     const art=C.secretArt?.(card);
     if(art)return '비술 '+art.cost+'G · '+art.label+'. 주사위를 굴리기 전에 사용합니다.';
     if(C.edition==='revolt')return;
-    const key=C.combo.key(card),saga={quicksilver:'지도에서 최대 HP가 가장 높은 크리처로 진화합니다. 동률이면 무작위로 고르고 카드의 기본 능력치로 돌아갑니다.',necromancer:'가장 최근에 파괴된 크리처 카드를 손패로 가져옵니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
+    const key=C.combo.key(card),saga={brancharmy:'머드맨으로 진화합니다.',quicksilver:'지도에서 최대 HP가 가장 높은 크리처로 진화합니다. 동률이면 무작위로 고르고 카드의 기본 능력치로 돌아갑니다.',necromancer:'가장 최근에 파괴된 크리처 카드를 손패로 가져옵니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
       hypnosloth:'고른 셉터의 다음 주사위를 1로 고정합니다.',lichenoid:'고른 크리처의 최대 HP를 최대 100까지 10 올립니다.',
       spinyagama:'사이즈모돈으로 진화합니다.',seismodon:'브론타이즈로 진화합니다.',
       spudfolk:'지도에 배치된 지 크리처 한 마리당 20G를 얻습니다.',
@@ -455,12 +458,13 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='chimera'?'완주 보상을 받을 때마다 기본 ST를 10 올립니다. 최대 100까지 오릅니다.':
       C.edition==='begins'&&key==='powdereater'?'영지 명령으로 이동하면 원래 영지에도 복제본을 남깁니다. 주문에 의한 이동에는 발동하지 않습니다.':
       C.edition==='begins'&&key==='behemoth'?'전투에서 살아남으면 내 손패 한 장을 무작위로 파괴합니다.':
+      C.edition==='saga'&&key==='basaltidol'?'맵에 있으면 전투 종료나 패배로 발동하는 능력과 장비 효과를 모두 봉쇄합니다.':
       C.edition==='begins'&&key==='mothman'?'지도에 배치된 무속성 크리처 한 마리당 전투 ST가 5 오릅니다.':
       C.edition==='begins'&&key==='bandit'?'공격이 명중하면 준 피해의 두 배만큼 상대 마력을 빼앗습니다. 상대 마력이 부족하면 부채가 생깁니다.':
-      C.edition==='begins'&&key==='baal'?'전투에서 살아남으면 내 손패 한 장을 무작위로 파괴합니다.':
+      ['begins','saga'].includes(C.edition)&&key==='baal'?'전투에서 살아남으면 내 손패 한 장을 무작위로 파괴합니다.':
       C.edition==='begins'&&key==='gelatinouswall'?'전투에서 살아남으면 받은 피해 1당 5G를 얻습니다.':
       C.edition==='begins'&&key==='willothewisp'?'공격이 명중하면 남은 전투 HP의 두 배만큼 상대 마력을 빼앗습니다. 상대 마력이 부족하면 부채가 생깁니다.':
-      ['revolt','begins'].includes(C.edition)&&key==='triton'?'아이템을 사용하고 생존하면 전투가 끝날 때 카드 한 장을 뽑습니다.':
+      ['revolt','begins','saga'].includes(C.edition)&&key==='triton'?'아이템을 사용하고 생존하면 전투가 끝날 때 카드 한 장을 뽑습니다.':
       C.edition==='begins'&&key==='valkyrie'?'승리하면 기본 ST가 최대 100까지 10 오릅니다.':
       C.edition==='revolt'&&key==='halfling'?'모든 속성 영지에서 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='cactuswall'?'수·풍 속성 상대와 싸울 때 전투 HP가 50 오릅니다.':

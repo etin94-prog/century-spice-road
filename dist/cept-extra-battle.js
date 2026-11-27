@@ -43,7 +43,7 @@ const CepterExtraBattle=(()=>{
     // Another copy elsewhere can still provide the same non-stacking bonus.
     const sources=s.tiles.filter((v,j)=>v.unit&&j!==b.at&&j!==b.from);
     function boost(n,a,ownOnly=false){
-      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(!['revolt','begins'].includes(s.edition)||v.unit.enchant!=='paralysis'));
+      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(!['revolt','saga','begins'].includes(s.edition)||v.unit.enchant!=='paralysis'));
     }
     function transform(a,id,temporary=false){
       if(id==null)return;
@@ -185,12 +185,14 @@ const CepterExtraBattle=(()=>{
       }
       if(boost('madclown',a,true))a.hp+=10;
       if(!a.defending&&boost('ares',a))a.st+=20;
+      if(s.edition==='saga'&&a.defending&&boost('poseidon',a))a.hp+=20;
       if(!a.defending&&boost('nue',a))a.st-=10;
       if(a.element===3&&boost(['begins','3ds'].includes(s.edition)?'humbaba':'hunbaba',a))a.st-=10;
       if(a.c.first&&boost('quetzalcoatl',a))a.st+=10;
       if(a.u.enchant==='wing')a.st+=20;
       if(s.edition==='saga'){
         const count=e=>s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],e)).length;
+        if(a.n==='brancharmy')a.st+=count(2)*5;
         if(a.g==='magmaarmor'){a.st+=count(0)*10;a.hp+=count(2)*10;}
         if(a.g==='stormarmor'){a.st+=count(3)*10;a.hp+=count(1)*10;}
 
@@ -291,7 +293,7 @@ const CepterExtraBattle=(()=>{
       if(s.edition==='revolt'&&a.g==='twinspike'&&d.hp>0)transform(d,a.u.id);
       if((n==='bard'||s.edition==='revolt'&&a.g==='argentkey')&&d.hp>0)vacant(a);
     }
-    function end(a,d,creatureEnd){
+    function end(a,d,creatureEnd,itemEnd){
       if(s.edition==='begins'&&creatureEnd&&a.n==='doomreaper'&&!a.defending){
         s.players[a.seat].cash+=100;
         if(s.predict){b.magicLoss??=[0,0];b.magicLoss[0]-=100;}
@@ -315,14 +317,14 @@ const CepterExtraBattle=(()=>{
           if(['begins','3ds'].includes(s.edition))lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
         }
       }
-      if(a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
+      if(itemEnd&&a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
       if(s.edition!=='revolt'&&a.u.enchant==='thornfetter'&&a.hp>0)a.hp=Math.min(a.hp,a.u.hp)-20;
       if(a.u.enchant==='parasite')s.players[a.seat].cash-=100;
       if(['3ds','begins'].includes(s.edition)&&a.g==='offeringdoll'&&a.hp>0&&a.element>=0){
         const i=t.area*4+a.element;
         if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
-      if(a.g==='wingedboots'||a.g==='stinkbottle'){
+      if(itemEnd&&(a.g==='wingedboots'||a.g==='stinkbottle')){
         const book=s.players[a.seat].book;
         book.splice(s.predict?0:Math.floor(Math.random()*(book.length+1)),0,a.item);
       }
