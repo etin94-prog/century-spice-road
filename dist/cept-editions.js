@@ -337,6 +337,18 @@ const CepterEditions=(()=>{
         healer:1,lichenoid:2,mummy:3,screamer:2,tigerweta:2,angrymask:2,battleaxe:2,
         bindingwhip:1,gelatinousarmor:2,shadowblaze:2,squidmantle:2,chaospanic:2,fatbody:2,holyword1:2,
         insectswarm:1,magicbolt:1,magicshelter:2,plague:1,senility:2,sigilofshrink:2
+      },
+      revoltZenethInvasion:{
+        decoy:2,knighterrant:2,pyromancer:3,volcanicdragon:1,gianteel:2,kaiserpenguin:2,lilith:2,
+        nessie:2,duskdweller:2,rocktroll:2,woodfolk:2,gremlin:2,knight:2,boomerang:2,
+        dragonorb:2,murasame:2,platemail:2,soulray:2,sphereshield:2,drainmagic:2,haste:2,
+        magicbolt:2,relief:2,shininggeyser:2,windofhope:2
+      },
+      revoltKranissResurrection:{
+        ammon:2,deathscythe:2,firebeak:2,lonebeast:2,mushussu:2,shieldmaiden:2,cactuswall:2,
+        dwarvenminer:2,gargoyle:2,glowhorn:2,greattusker:2,greenogre:2,pixie:2,angrymask:1,
+        burningrod:2,diamondarmor:3,drilllance:2,magmashield:2,burninghail:1,earthshift:1,fireshift:1,
+        haste:2,magicalleap:2,quintessence:1,reincarnation:1,remission:2,revival:1,squeeze:2
       }
     });
     if(edition!=='saga'&&edition!=='begins')return presets;
@@ -555,7 +567,9 @@ const CepterEditions=(()=>{
     pixie:{support:true,supportElements:[0,2],vigorous:true},duskdweller:{first:true},rocktitan:{},devastator:{},
     greatfossil:{stationary:true,freeToll:true,reviveForm:'tyrannosaurus'},gigantherium:{},
     conjurer:{scrollCritical:true},gooba:{generatedOnly:true},hiveworker:{},legendarypharos:{stationary:true,noLapHeal:true},
-    lavakin:{},otohime:{},pyromancer:{innateScroll:30},kirin:{first:true,synergy:{element:1,st:20,hp:20}},
+    ammon:{spellWard:true,synergy:{element:2,st:20,hp:20}},mushussu:{synergy:{element:2,st:20,hp:10},criticalElements:[0,2]},
+    sproutling:{bonusTerrain:[0]},shankrubber:{spellWard:true},knighterrant:{synthesis:'earth',synthesizedForm:'armedpaladin',partialReflect:.5},
+    armedpaladin:{generatedOnly:true,neutralizeScroll:true},lavakin:{},otohime:{},pyromancer:{innateScroll:30},kirin:{first:true,synergy:{element:1,st:20,hp:20}},
     chimera:{first:true,lapStrength:true},creepingflame:{stationary:true},lonebeast:{},earthspirit:{commandMHP:10},dunetitan:{commandMHP:-10},
     glowhorn:{synergy:{element:0,st:20,hp:20}},rokh:{synergy:{element:1,st:30}},mudman:{},madharlequin:{vigorous:true},witch:{scrollCritical:true},
     grimalkin:{support:true,supportElements:[0,2],spellWard:true},
@@ -738,7 +752,7 @@ const CepterEditions=(()=>{
           spittingcobra:'poison',sakuya:'earthShift',witch:'stealSpellMagic',ironmonger:'drawItem',
           aquahorn:'toMistwing',mistwing:'toAquahorn',deathscythe:'toMummy',
           conjurer:'conjureBaal',goobaqueen:'conjureGooba',hivequeen:'giveHiveWorker',legendarypharos:'buildStatues',
-          creepingflame:'stepMove',lichenoid:'growMHP',clockworkowl:'chooseDirection',hellpyron:'destructionReward',lordofbane:'balanceStrength'
+          creepingflame:'stepMove',lichenoid:'growMHP',clockworkowl:'chooseDirection',hellpyron:'destructionReward',lordofbane:'balanceStrength',sproutling:'toOldWillow',shankrubber:'immobilize'
         }[slug];
         if(art)Object.assign(c,{catalogOnly:false,secretArt:art});
         if(slug==='dwarvenminer')c.tollFactor=1.5;
@@ -746,6 +760,7 @@ const CepterEditions=(()=>{
       }
       if(edition==='revolt'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
+      if(edition==='3ds'&&slug==='pyromancer')Object.assign(c,{catalogOnly:false,innateScroll:30});
       if(edition==='3ds'&&slug==='countershield')Object.assign(c,{catalogOnly:false,effect:'reflect',st:0,hp:0});
       if(edition==='3ds'&&Object.hasOwn(handheldSpecial,slug))Object.assign(c,{catalogOnly:false},handheldSpecial[slug]);
       if(edition==='saga'&&['clockworkowl','barbarian','fay','tokebi','hypnosloth','lichenoid','rockshell','sakuya','wolverine'].includes(slug)){

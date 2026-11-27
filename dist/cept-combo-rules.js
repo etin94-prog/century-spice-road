@@ -412,6 +412,7 @@ const CepterCombos = (() => {
       paralyze:{cost:50,label:'크리처를 마비',enchant:'paralysis'},
       peace:{cost:50,label:'자기 영지 침략 금지 · 통행료 0G',enchant:'peace',self:true,beneficial:true},
       disableTerrain:{cost:40,label:'적 크리처의 지형 효과 무효',enchant:'antielement',enemy:true},
+      immobilize:{cost:30,label:'적 크리처의 영지 이동 금지',enchant:'thornfetter',enemy:true},
       camouflage:{cost:40,label:'내 크리처에 지형 효과',enchant:'camouflage',own:true,beneficial:true},
       loseStrength:{cost:30,label:'기본 ST −10',strength:-10},
       poison:{cost:30,label:'크리처에 독 부여'},
@@ -424,6 +425,7 @@ const CepterCombos = (() => {
       toMistwing:{cost:30,label:'미스트윙으로 변신',form:'mistwing',self:true},
       toAquahorn:{cost:30,label:'아쿠아혼으로 변신',form:'aquahorn',self:true},
       toMummy:{cost:50,label:'머미로 변신',form:'mummy',self:true},
+      toOldWillow:{cost:50,label:'올드 윌로우로 변신',form:'oldwillow',self:true},
       conjureBaal:{cost:80,label:'빈 영지에 바알 소환 후 자신 파괴',summon:'baal',consume:true},
       conjureGooba:{cost:20,label:'빈 영지에 구바 소환',summon:'gooba'},
       giveHiveWorker:{cost:20,label:'하이브 워커를 손패에 추가',grant:'hiveworker',self:true},
@@ -591,6 +593,7 @@ const CepterCombos = (() => {
       if(spec.enchant)utility=(friendly===!!spec.beneficial?1:-1)*(15+(t.level-1)*8);
       if(art==='peace')utility=t.level>=3?-15:8;
       if(art==='poison')utility=(friendly?-1:1)*(16+t.level*6);
+      if(art==='immobilize'&&isDefensive(t.unit))utility=0;
       if(art==='earthShift'){
         const earth=s.tiles.filter(v=>v.owner===s.turn&&v.type===2&&v.area===t.area).length;
         const current=s.tiles.filter(v=>v.owner===s.turn&&v.type===t.type&&v.area===t.area).length;

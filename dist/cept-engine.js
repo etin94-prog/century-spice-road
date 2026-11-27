@@ -859,7 +859,7 @@ function createCepter(edition="ps2"){
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
         a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,blocksFirst:false,criticalMHP:0,battleHP:0,invadeST:0,doubleAttack:false,
-          criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,neutralizeNormal:false};
+          criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1027,6 +1027,10 @@ function createCepter(edition="ps2"){
           d.n==='caitsith'&&fx.strength(a.u)>=40||revolt&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&blocks){lines.push('공격 무효');return 'block';}
+        if(!orb&&d.c.partialReflect){
+          const reflected=Math.floor(damage*d.c.partialReflect);
+          reflectNormal(a,reflected);lines.push('반사 '+reflected);return 'reflect';
+        }
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
         if(!orb&&revolt&&d.g==='wondercharm')damage=Math.floor(damage/5);
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
@@ -1168,12 +1172,14 @@ function createCepter(edition="ps2"){
       const loss=Math.floor(fx.max(a.u)*(edition==='saga'?.3:.5));
       a.hp=Math.min(a.hp,a.u.hp)-loss;lines.push('독 · '+loss+' 피해');
     }
-    if(revolt&&!muted)for(const a of order){
-      const rival=a===A?D:A;
-      if(creatureEnd&&a.n==='pyromancer'&&a.hp>0&&a.hitByOpponent){
+    if((revolt||handheld)&&creatureEnd)for(const a of order){
+      if(a.n==='pyromancer'&&a.hp>0&&a.hitByOpponent){
         a.u.st=20;a.u.mhp=30;a.u.hp=Math.min(a.u.hp,30);a.hp=Math.min(a.hp,30+a.land);
         lines.push(a.c.name+' · 기본 ST 20 · 최대 HP 30');
       }
+    }
+    if(revolt&&!muted)for(const a of order){
+      const rival=a===A?D:A;
       if(creatureEnd&&a.n==='rocktitan'&&a.hp>0){
         a.u.st=Math.max(0,fx.strength(a.u)-10);reduceBattleMhp(a,10);
         lines.push(a.c.name+' · 기본 ST·최대 HP −10');
@@ -1487,6 +1493,12 @@ function createCepter(edition="ps2"){
   function matchesSynthesis(card,sacrifice){
     return !!card?.synthesis&&!!sacrifice&&(card.synthesis===sacrifice.kind||card.synthesis===sacrifice.category);
   }
+  function synthesizedCreature(id,sacrifice){
+    const card=cards[id];
+    if(!card.synthesizedForm||!matchesSynthesis(card,sacrifice))return id;
+    const form=cards.findIndex(c=>!c.unlisted&&key(c)===card.synthesizedForm);
+    return form>=0?form:id;
+  }
   function applyAction(s,a,sacrifice){
     if(!Array.isArray(a)||!choices(s).some(b=>a.length===b.length&&b.every((v,i)=>v===a[i])))return false;
     const [k,x,y]=a,i=actor(s),p=s.players[i],t=s.tiles[p.pos],immediate=s.immediateAt!=null;
@@ -1732,7 +1744,8 @@ function createCepter(edition="ps2"){
       case 'towerTo':s.towerAt=x;s.phase='towerDeploy';break;
       case 'towerCancel':s.phase=s.phase==='towerDeploy'?'towerTarget':'land';delete s.towerAt;break;
       case 'summon':case 'exchange':{
-        const at=k==='summon'?(s.towerAt??p.pos):x,tile=s.tiles[at],id=paid(s,p,k==='summon'?x:y);
+        const at=k==='summon'?(s.towerAt??p.pos):x,tile=s.tiles[at];
+        const id=synthesizedCreature(paid(s,p,k==='summon'?x:y),sacrifice);
         delete s.towerAt;
         if(k==='exchange')p.hand.push(tile.unit.id);
         mapEffect('summon',cards[id].name,at);
@@ -1756,7 +1769,7 @@ function createCepter(edition="ps2"){
         const at=s.towerAt??p.pos,tower=s.phase==='towerDeploy';
         delete s.towerAt;
         mapEffect('invade',tower?'사령탑 침략':'영지 침략',at);
-        s.battle={at,inv:paid(s,p,x),atkItem:null,defItem:null,spellMove:!!s.spellArrival&&!tower,...(tower?{tower}:{})};
+        s.battle={at,inv:synthesizedCreature(paid(s,p,x),sacrifice),atkItem:null,defItem:null,spellMove:!!s.spellArrival&&!tower,...(tower?{tower}:{})};
         s.phase='attack';break;
       }
       case 'bare':case 'equip':{
@@ -1822,16 +1835,27 @@ function createCepter(edition="ps2"){
     const plan=combo.planner(s,seat,cards,fx,groups);
 
     // Only simulate the revealed board and our contemplated equipment. The opposing item is concealed.
-    function forecast(battle,gear,defending,unpaid=false){
+    function forecast(battle,gear,defending,unpaid=false,spent){
       const tiles=s.tiles.map(t=>({...t,unit:t.unit&&{...t.unit}}));
       const players=s.players.map(q=>({...q,hand:q.hand.slice(),symbols:q.symbols.slice(),book:q.book?.slice()||[],peek:q.peek&&{...q.peek,ids:q.peek.ids.slice()}}));
       const acting=players[seat];
       // Hand-size effects see the hand after the selected creature and equipment leave it.
-      if((s.phase==='land'||unpaid)&&battle.from==null){const j=acting.hand.indexOf(battle.inv);if(j>=0)acting.hand.splice(j,1);}
+      const removed=spent??((s.phase==='land'||unpaid)&&battle.from==null?[battle.inv]:[]);
+      for(const id of removed){const j=acting.hand.indexOf(id);if(j>=0)acting.hand.splice(j,1);}
       if(gear!=null){const j=acting.hand.indexOf(gear);if(j>=0)acting.hand.splice(j,1);}
       const trial={...s,predict:true,tiles,players,prices:s.prices.slice(),log:[],battle:{...battle,atkItem:defending?null:gear,defItem:defending?gear:null}};
       resolve(trial);
       return trial.battle;
+    }
+    function invasionValue(at,cardIndex,discardIndex){
+      const base=p.hand[cardIndex],discard=p.hand[discardIndex],inv=synthesizedCreature(base,cards[discard]);
+      const tile=s.tiles[at],tower=s.phase==='towerDeploy'||s.pendingCard?.phase==='towerDeploy',c=cards[base];
+      const canUseItem=discardIndex!=null||!sacrificeRequired(s,c)||p.hand.length>=3;
+      const items=canUseItem?p.hand.filter((id,i)=>i!==cardIndex&&i!==discardIndex&&price(p,cards[id],s)+price(p,c,s)<=p.cash&&canEquip(cards[inv],cards[id])):[];
+      return Math.max(...[null,...items].map(item=>{
+        const battle=forecast({at,inv,tower},item,false,true,discardIndex==null?[base]:[base,discard]);
+        return (battle.won?value(s,tile)+100:battle.noToll&&!tower?toll(s,tile):-60)-c.cost*.5-(cards[item]?.cost||0)*.5;
+      }));
     }
     function sleipnirValue(from,to){
       const src=s.tiles[from],dst=s.tiles[to],unit=cards[src.unit.id];
@@ -2048,7 +2072,11 @@ function createCepter(edition="ps2"){
         const pending=k==='sacrifice'?cards[p.hand[s.pendingCard.index]]:null;
         let synthesis=0;
         if(matchesSynthesis(pending,c)){
-          if(pending.synthesizedEffect)synthesis=2*Math.max(0,extra.scoreCast(s,pending.synthesizedEffect)-extra.scoreCast(s,pending.effect));
+          if(pending.synthesizedForm){
+            const {action,index}=s.pendingCard,at=s.towerAt??p.pos;
+            synthesis=action[0]==='invade'?invasionValue(at,index,x)-invasionValue(at,index):18;
+          }
+          else if(pending.synthesizedEffect)synthesis=2*Math.max(0,extra.scoreCast(s,pending.synthesizedEffect)-extra.scoreCast(s,pending.effect));
           else if(s.tiles.some(t=>t.unit&&!allied(s,seat,t.owner)&&fx.max(t.unit)<100&&!fx.immuneHP(t)))synthesis=8;
         }
         return synthesis-reserved+(p.hand.filter(id=>id===p.hand[x]).length-1)*3-c.cost/40;
@@ -2083,10 +2111,9 @@ function createCepter(edition="ps2"){
         if(k==='cast'&&c.effect==='manna')return 20+p.lap;
         if(k==='cast'&&c.effect==='bolt'&&!s.tiles.some(t=>t.unit&&!allied(s,t.owner,seat)))return -10;
         if(skill>=2&&k==='invade'){
-          const at=s.towerAt??p.pos,tile=s.tiles[at],battle={at,inv:p.hand[x],tower:s.phase==='towerDeploy'};
-          const gear=[null,...p.hand.filter((id,j)=>j!==x&&(!sacrificeRequired(s,c)||p.hand.length>=3)&&price(p,cards[id],s)+price(p,c,s)<=p.cash&&canEquip(c,cards[id]))];
-          return Math.max(...gear.map(id=>{const out=forecast(battle,id,false,true);
-            return (out.won?value(s,tile)+100:out.noToll&&!battle.tower?toll(s,tile):-60)-c.cost*.5-(cards[id]?.cost||0)*.5;}));
+          const at=s.towerAt??p.pos;
+          if(c.synthesizedForm&&sacrificeRequired(s,c))return Math.max(...p.hand.flatMap((_,i)=>i===x?[]:[invasionValue(at,x,i)]));
+          return invasionValue(at,x);
         }
         if(revolt&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);
         if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia'||revolt&&fx.name(s.tiles[x].unit)==='thunderspawn')){
@@ -2169,7 +2196,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,bookSize,copyLimit,evo,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,hasLandDamage,spellRevival,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
+  return {edition,bookSize,copyLimit,evo,synthesizedCreature,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,hasLandDamage,spellRevival,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

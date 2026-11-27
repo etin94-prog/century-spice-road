@@ -283,6 +283,8 @@ const CepterCreatureText=(()=>{
   const revoltBattle={
     hellpyron:'전투에 참여하지 않은 헬 파이론이 지도에 있으면 화·지 크리처의 전투 ST +10.',
     pyromancer:'장비 없이 두루마리로 30 피해를 줍니다. 상대 일반 공격에 맞고 생존하면 기본 ST 20, 최대 HP 30으로 바뀝니다.',
+    knighterrant:'지 속성 크리처를 제물로 버리면 아머드 팔라딘으로 변합니다. 일반 공격 피해의 절반을 반사하고 자신은 피해를 받지 않습니다.',
+    armedpaladin:'배치된 화·지 크리처 한 마리마다 전투 ST 10을 얻습니다. 두루마리 공격은 무효화합니다.',
     lavakin:'현재 라운드 수만큼 전투 ST가 줄고 전투 HP가 오릅니다.',
     otohime:'전투에 참여하지 않은 오토히메가 지도에 있으면 방어 측 전투 HP +10. 전투 후 살아남은 상대에게 노쇠를 겁니다.',
     lordofbane:'전투에 참여하지 않은 로드 오브 베인이 지도에 있으면 수·풍 크리처의 전투 ST +10.',
@@ -401,7 +403,7 @@ const CepterCreatureText=(()=>{
       const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
-    const special=C.edition==='revolt'&&revoltBattle[key]?revoltBattle[key]:
+    const special=(C.edition==='revolt'||C.edition==='3ds'&&key==='pyromancer')&&revoltBattle[key]?revoltBattle[key]:
       C.edition==='begins'&&beginsBattle[key]?beginsBattle[key]:
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
