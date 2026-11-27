@@ -262,6 +262,7 @@ const describeCepterSpell=(()=>{
       if(e==='greed')return '고른 영지의 통행료를 1.5배로 바꾸고 카드 한 장을 뽑습니다.';
       if(['antielement','disease','drought','fog','vitality','weakness'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
     }
+    if(edition==='begins'&&e==='replace')return '내 영지의 크리처 한 마리를 골라 손패의 다른 크리처와 교체합니다.';
     if(C.edition==='revolt'&&C.combo.worlds[e])return '전장 저주 · 6라운드. '+C.combo.worlds[e].description;
     switch(e){
       case 'dreamterrain':if(['revolt','begins','3ds'].includes(edition))return '5라운드 동안 다른 셉터가 통행료를 받을 때마다 그 절반을 얻습니다. 내가 낸 통행료에도 적용됩니다.';break;

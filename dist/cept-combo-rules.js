@@ -267,6 +267,7 @@ const CepterCombos = (() => {
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
       fate:40,mystic:30,necromancer:30,conjurer:80,goobaqueen:20,sleipnir:60
     };
+    const beginsTerritory={sakuya:120,fay:50};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','necromancer','barometz','quakebeast']);
     const sagaEvolution={sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
@@ -297,9 +298,10 @@ const CepterCombos = (() => {
         if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
         if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
       }
-      if(s.edition==='begins'&&n==='sakuya'){
-        if(idol(s,'jadeidol'))return [];
-        return s.tiles.flatMap((v,j)=>v.owner===s.turn&&v.type!==2&&targetable(s,v)?[['abilityLand',j]]:[]);
+      if(s.edition==='begins'){
+        if(n==='sakuya')return idol(s,'jadeidol')?[]:s.tiles.flatMap((v,j)=>
+          v.owner===s.turn&&v.type!==2&&targetable(s,v)?[['abilityLand',j]]:[]);
+        if(n==='fay')return s.tiles.flatMap((v,j)=>targetable(s,v)&&strength(v.unit)<100?[['abilityLand',j]]:[]);
       }
       if(s.edition==='3ds'){
         if(n==='necromancer'&&s.lastDestroyed==null)return [];
@@ -322,10 +324,13 @@ const CepterCombos = (() => {
       });
     }
     const territoryCost=(s,n)=>s.edition==='3ds'?handheldTerritory[n]:
-      s.edition==='begins'&&n==='sakuya'?120:(s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
+      (s.edition==='begins'?beginsTerritory[n]:s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
     function territoryEffect(s,from,x){
       const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];p.cash-=territoryCost(s,n);
-      if(s.edition==='begins'&&n==='sakuya'){v.type=2;return;}
+      if(s.edition==='begins'){
+        if(n==='sakuya'){v.type=2;return;}
+        if(n==='fay'){v.unit.st=Math.min(100,strength(v.unit)+20);return;}
+      }
       if(s.edition==='3ds'){
         if(n==='metalbug'){destroy(s,v);destroy(s,src);return;}
         if(n==='sakuya'){v.type=2;return;}

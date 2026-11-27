@@ -3687,8 +3687,9 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(book.toSorted((a,b)=>a-b),Object.entries(recipe).flatMap(([name,n])=>Array(n).fill(creature(name))).sort((a,b)=>a-b));
     playable.push(source);
   }
-  assert.deepEqual(playable,['1345-budget-raging-river','1348-esupports#main','1351-beginner-book-upgrades-rg',
-    '1352-beginner-book-upgrades-by','1353-full-steam-ahead','1356-support-deck-for-chapter-15']);
+  assert.deepEqual(playable,['1339-infernal-vacation','1344-kelpez','1345-budget-raging-river','1347-power-surge','1348-esupports#main',
+    '1349-willowisp#main','1349-willowisp#alternate','1351-beginner-book-upgrades-rg','1352-beginner-book-upgrades-by','1353-full-steam-ahead',
+    '1356-support-deck-for-chapter-15']);
   const alphaBeta=archive.find(([, ,source])=>source==='1360-how-about-no-v01')[3];
   assert.ok(alphaBeta.battlegearalpha>0&&alphaBeta.battlegearbeta>0);
   const recipes={
@@ -3970,6 +3971,98 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   recalling.players[1].pos=8;
   assert.ok(C.play(recalling,['cast',0]));
   assert.deepEqual([recalling.phase,recalling.die,recalling.players[0].pos,recalling.players[0].lap,recalling.players[1].pos],['land',0,0,1,8]);
+
+
+  const trapBook=C.presets['begins-1344-kelpez'];
+  const trapCards=['kelpie','oldwillow','gelatinouswall','baal','conjurer','willothewisp','fay','corrosiverobe','corrosivespear','angrymask','exchange','gift'];
+  for(const name of trapCards)assert.ok(creature(name)>=0,name);
+  assert.equal(trapBook.filter(card=>card===creature('kelpie')).length,4);
+  assert.deepEqual([C.cards[creature('oldwillow')].catalog.additionalCost,C.cards[creature('baal')].catalog.additionalCost],['R,R','R,+[]']);
+  function approachTrap(name,type,owner,enchant){
+    const m=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+    const card=creature(name);
+    Object.assign(m,{phase:'fork',die:3,remaining:3});
+    Object.assign(m.players[0],{pos:6,previous:5});
+    Object.assign(m.tiles[7],{owner,type,level:3,unit:{id:card,hp:C.cards[card].hp,...(enchant?{enchant}:{})}});
+    assert.ok(C.play(m,['route',7]));
+    return m;
+  }
+  for(const [name,element] of [['kelpie',1],['oldwillow',0]]){
+    const forced=approachTrap(name,element,1);
+    assert.deepEqual([forced.phase,forced.players[0].pos,forced.remaining],['land',7,0]);
+    assert.ok(C.choices(forced).some(([kind])=>kind==='pay'));
+    assert.equal(approachTrap(name,2,1).players[0].pos,8);
+    assert.equal(approachTrap(name,element,2).players[0].pos,8);
+    assert.equal(approachTrap(name,element,1,'paralysis').players[0].pos,8);
+  }
+
+  const gel=creature('gelatinouswall'),robe=creature('corrosiverobe'),spear=creature('corrosivespear');
+  const corrosion=duel(fighter,gel,creature('battleaxe'),robe);
+  assert.deepEqual([corrosion.attackST,corrosion.startHP[1],enemy.cash],[40,80,330]);
+  assert.match(corrosion.lines.join(' '),/파괴/);
+  const coated=duel(fighter,gel,spear,creature('chainmail'));
+  assert.deepEqual([coated.attackST,coated.startHP[1]],[70,50]);
+  const protectedArmor=duel(fighter,gel,spear,creature('vestment'));
+  assert.equal(protectedArmor.startHP[1],80);
+  const scrollLost=duel(fighter,gel,creature('freeze'),robe);
+  assert.equal(scrollLost.attackST,40);
+  const counterattack=duel(fighter,gel,null,creature('angrymask'));
+  assert.equal(counterattack.finalHP[0],0);
+  assert.equal(counterattack.won,false);
+
+  const conjurer=creature('conjurer'),baal=creature('baal'),fay=creature('fay');
+  const summoning=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+  Object.assign(summoning,{phase:'land'});
+  Object.assign(summoning.players[0],{pos:2,cash:400});
+  Object.assign(summoning.tiles[2],{owner:0,unit:{id:conjurer,hp:30}});
+  assert.ok(C.play(summoning,['ability',2]));
+  assert.ok(!C.choices(summoning).some(([,at])=>at===0||at===2));
+  assert.ok(C.play(summoning,['abilityLand',7]));
+  assert.deepEqual([summoning.tiles[2].unit,summoning.tiles[7].owner,summoning.tiles[7].unit.id,summoning.players[0].cash],[null,0,baal,320]);
+
+  const discardBook=enemy.book,oldRandomBaal=Math.random;
+  try{
+    Math.random=()=>0;
+    Object.assign(creatures,{phase:'attack',battle:{at:2,inv:goblin,atkItem:null,defItem:null}});
+    Object.assign(land,{type:2,owner:1,unit:{id:baal,hp:50}});
+    enemy.hand=[fighter,goblin];
+    assert.ok(C.play(creatures,['bare'])&&C.play(creatures,['bare']));
+    assert.deepEqual(enemy.hand,[goblin]);
+  }finally{Math.random=oldRandomBaal;enemy.book=discardBook;}
+
+  const wisp=creature('willothewisp'),lure=C.start(2,2,6000,'begins-original-ford');
+  Object.assign(lure,{phase:'attack',battle:{at:2,inv:wisp,atkItem:null,defItem:null}});
+  Object.assign(lure.tiles[2],{type:2,owner:1,unit:{id:goblin,hp:30}});
+  lure.players[0].cash=50;lure.players[1].cash=10;
+  assert.ok(C.play(lure,['bare'])&&C.play(lure,['bare']));
+  assert.deepEqual([lure.battle.strikes[0].side,lure.players[0].cash,lure.players[1].cash],[1,110,-50]);
+
+  const buff=C.start(2,2,6000,'begins-original-ford');
+  Object.assign(buff,{phase:'land'});
+  Object.assign(buff.players[0],{pos:2,cash:500});
+  Object.assign(buff.tiles[2],{owner:0,unit:{id:fay,hp:40}});
+  Object.assign(buff.tiles[3],{owner:0,unit:{id:fighter,hp:40,st:90}});
+  assert.ok(C.play(buff,['ability',2])&&C.play(buff,['abilityLand',3]));
+  assert.deepEqual([buff.players[0].cash,buff.tiles[3].unit.st],[450,100]);
+
+  const castExchange=C.start(4,4,6000,'begins-original-ford',trapBook,undefined,0,'teams');
+  Object.assign(castExchange.players[0],{pos:0,cash:150,hand:[creature('exchange'),creature('kelpie'),fay]});
+  Object.assign(castExchange.tiles[3],{type:1,owner:0,level:3,unit:{id:gel,hp:18,enchant:'poison'}});
+  Object.assign(castExchange.tiles[7],{type:1,owner:2,unit:{id:goblin,hp:30}});
+  assert.ok(C.play(castExchange,['cast',0]));
+  assert.deepEqual(C.choices(castExchange),[['targetLand',3]]);
+  assert.ok(C.play(castExchange,['targetLand',3]));
+  assert.deepEqual(C.choices(castExchange),[['replaceCard',0,creature('kelpie')]]);
+  const restoredSwap=JSON.parse(JSON.stringify(castExchange));
+  assert.ok(C.play(restoredSwap,['replaceCard',0,creature('kelpie')]));
+  assert.deepEqual([restoredSwap.players[0].cash,restoredSwap.tiles[3].unit,restoredSwap.tiles[3].level,restoredSwap.players[0].hand],
+    [90,{id:creature('kelpie'),hp:30},3,[gel,fay]]);
+
+  const gift=C.start(4,4,6000,'begins-original-ford');
+  gift.players.forEach((q,i)=>{q.cash=200+i*200;});
+  Object.assign(gift.players[0],{hand:[creature('gift')],book:[goblin,fighter,goblin,fighter,goblin]});
+  assert.ok(C.play(gift,['cast',0]));
+  assert.deepEqual([gift.players[0].cash,gift.players[0].hand,gift.players[0].book],[320,[goblin,fighter,goblin,fighter],[goblin]]);
 
   const curse=C.start(2,2,6000,'begins-original-ford');
   const warded=curse.tiles[3],growing={id:fighter,hp:28,mhp:90};

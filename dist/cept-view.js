@@ -895,7 +895,7 @@ function render(){
     const landTarget=choices.some(([kind])=>kind==='targetLand');
     const specialOnMap=selectingSpellMapTarget()&&(landTarget||s.phase==='teleMove');
     const beginsOnMap=C.edition==='begins'&&(
-      landTarget&&['camouflage','chariot','relief','mutation','removecurse','turntothewall'].includes(s.spellEffect)||
+      landTarget&&['camouflage','chariot','relief','mutation','removecurse','turntothewall','replace'].includes(s.spellEffect)||
       s.spellEffect==='chariot'&&choices.some(([kind])=>kind==='teleTo')
     );
     const spellOnMap=C.hasLandDamage(s.spellEffect)&&landTarget||beginsOnMap;

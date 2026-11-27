@@ -84,6 +84,10 @@ const CepterExtraSpells=(()=>{
       return {amount:(max-lap)*100,leaders:foes.filter(q=>q.lap===max)};
     }
     const affinity=(s,first,second)=>owning(s,s.turn).filter(t=>t.type===first||t.type===second).length;
+    function personalRank(s){
+      const wealth=personalTotal(s,s.turn);
+      return 1+s.players.filter((_,seat)=>personalTotal(s,seat)>wealth).length;
+    }
     const landDrainRate=s=>s.edition==='saga'?20:30;
     const sharedCash=s=>Math.floor(s.players.reduce((sum,q)=>sum+q.cash,0)/s.players.length);
     const symbolCount=p=>p.symbols.reduce((a,b)=>a+b,0);
@@ -151,7 +155,7 @@ const CepterExtraSpells=(()=>{
         if(e==='dreadblast'&&matchesLand(creature,t.type))return [];
         if(e==='stoneblast'&&![2,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='holybanishment'&&matchesLand(cards[t.unit.id],t.type))return [];
-        if(e==='replace'&&!replacement(s,t).length)return [];
+        if(e==='replace'&&(s.edition==='begins'&&(t.owner!==s.turn||s.players[s.turn].status==='silence')||!replacement(s,t).length))return [];
         return [['targetLand',i]];
       });
     }
@@ -344,7 +348,7 @@ const CepterExtraSpells=(()=>{
             break;
           }
           case 'gift':{
-            const wealth=personalTotal(s,s.turn),rank=1+s.players.filter((_,j)=>personalTotal(s,j)>wealth).length;
+            const rank=personalRank(s);
             p.cash+=rank*50;for(let n=0;n<rank;n++)draw(p,s);
             break;
           }
@@ -576,7 +580,7 @@ const CepterExtraSpells=(()=>{
       if(e==='soltis')return 19;
       if(e==='soulsteal'||e==='mistletoe')return p.status===e?0:7;
       if(e==='foresight'||e==='prophecy'||e==='find')return 6;
-      if(e==='gift')return 10;
+      if(e==='gift')return s.edition==='begins'?Math.max(-5,personalRank(s)*8-p.cash/100-p.hand.length):10;
       if(e==='charity')return 4*Math.min(allianceRank(s),Math.max(0,7-p.hand.length));
       if(e==='turnover')return land.reduce((score,t)=>score+(enemy(s,t.owner)?-1:1)*turnoverChange(fx.strength(t.unit))/5,0);
       if(e==='purify')return s.tiles.some(t=>t.unit&&combo.enchanted(t.unit))||s.players.some(q=>q.status)?5:-10;
