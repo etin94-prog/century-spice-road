@@ -568,6 +568,9 @@ function map(){
     }else if(t.type==='카드 상점'){
       const stock=C.shopStock(s,inspect);
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.cards[id].cost+'G').join(' · '):'이 맵의 상품 정보 없음'));
+    }else if(t.type==='전송진'){
+      const destination=m.transit?.[inspect];
+      center.append(el('span',destination==null?'목적지 미설정 · 이동 효과 없음':'정지 시 '+(destination+1)+'번으로 이동'));
     }else center.append(el('span',m.transit?.[inspect]!=null?(m.transit[inspect]+1)+'번으로 이동':'점유 크리처 없음'));
     if(targets.has(inspect)){const action=targets.get(inspect);center.append(btn((inspect+1)+'번 · '+labels[action[0]]+' 확정',()=>act(action),'primary'));}
     return;

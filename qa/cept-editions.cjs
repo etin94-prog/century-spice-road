@@ -35,3 +35,30 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   }
   console.log(edition,count,'cards;',catalog.filter(c=>!c.catalogOnly).length,'playable;',mapCount*3,'matches completed');
 }
+
+{
+  const data=require('../dist/cept-edition-data-modern');
+  const map={section:'arena',slug:'qa-portal',name:'QA portal',loc:[[0,0],[0,1],[2,8],[2,9]],
+    types:['castle','teleport','teleport','fort-north'],transit:{1:2,2:1}};
+  data.maps.saga.unshift(map);
+  try{
+    const C=ps2.createEdition('saga'),id='saga-arena-qa-portal';
+    assert.equal(C.maps['saga-1'].slug,'alcyon');
+    const s=C.start(2,2,5000,id);
+    s.phase='fork';s.remaining=1;
+    assert.equal(C.routePreview(s,['route',1]).at,2);
+    assert.equal(s.players[0].pos,0);
+    assert.ok(C.play(s,['route',1]));
+    assert.equal(s.players[0].pos,2);
+    assert.deepEqual(s.lastMove.path,[0,1,2]);
+    const saved=JSON.parse(JSON.stringify(s));
+    assert.equal(C.board(saved).transit[1],2);
+    map.transit={1:42};
+    assert.throws(()=>ps2.createEdition('saga'),/qa-portal/);
+    map.transit={3:1};
+    assert.throws(()=>ps2.createEdition('saga'),/qa-portal/);
+  }finally{
+    data.maps.saga.shift();
+  }
+  console.log('Modern portal destination validation, preview, travel, and saved map IDs OK');
+}

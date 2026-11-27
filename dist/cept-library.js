@@ -30,7 +30,9 @@ function showStage(){
   $('target').querySelector('[value="0"]').textContent=(m.storyGoal?'스토리 목표 · ':'기본 목표 · ')+(m.storyGoal||5000)+'G';
   if(m.graph){
     preview.hidden=false;preview.querySelector('img').hidden=true;
-    preview.querySelector('figcaption').replaceChildren(m.types.length+'칸 · 요새 '+m.forts.length+'곳 · ',sourceLink(m.source,'원작 지도'));
+    const unlinked=m.types.filter((type,index)=>type==='전송진'&&m.transit?.[index]==null).length;
+    const warning=unlinked?' · 목적지 미설정 전송진 '+unlinked+'곳':'';
+    preview.querySelector('figcaption').replaceChildren(m.types.length+'칸 · 요새 '+m.forts.length+'곳'+warning+' · ',sourceLink(m.source,'원작 지도'));
     return;
   }
   preview.hidden=!m.stage;

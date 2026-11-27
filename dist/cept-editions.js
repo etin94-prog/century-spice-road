@@ -24,6 +24,17 @@ const CepterEditions=(()=>{
     const slot=slots.indexOf(map.section+'/'+map.slug);
     return slot>=0?edition+'-'+(slot+1):edition+'-'+map.section+'-'+map.slug;
   }
+  function checkedTransit(id,map,types,links){
+    const transit=map.transit||{};
+    for(const [key,destination] of Object.entries(transit)){
+      const entry=Number(key);
+      if(String(entry)!==key||!['전송진','다리'].includes(types[entry])||
+         !Number.isInteger(destination)||entry===destination||!links[destination]?.length){
+        throw Error(id+' · 잘못된 특수 이동: '+key+' → '+destination);
+      }
+    }
+    return transit;
+  }
   function boards(edition,original){
     const result={};
     for(const [index,m] of data.maps[edition].entries()){
@@ -36,7 +47,8 @@ const CepterEditions=(()=>{
       const same=other&&types.length===other.types.length&&types.every((t,i)=>t===other.types[i]&&links[i].length===other.links[i].length&&links[i].every(j=>other.links[i].includes(j)));
       const [goal,startCash,lapBonus,die,landPrice,fortBonus]=economy[edition]?.[m.slug]||[];
       const id=mapId(edition,m,index),nextMap=data.maps[edition][index+1];
-      result[id]={...m,types,links,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
+      const transit=modernMapSlots[edition]?checkedTransit(id,m,types,links):m.transit;
+      result[id]={...m,types,links,transit,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
         areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||80,die:die||Number(m.die)||other?.die||6,storyGoal:goal||other?.storyGoal,
         graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null};
