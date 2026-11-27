@@ -612,6 +612,70 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(C.play(s,['cast',0]),spell);
     return s;
   }
+  const trade=sagaCast('trade',s=>{
+    unit(s,1,'goblin',0,0,3);
+    unit(s,2,'dwarf',0,2,2);
+    unit(s,3,'fighter',1,0,2);
+    unit(s,4,'greenogre',1,2,2);
+    s.tiles[4].unit.enchant='landprotection';
+    s.tiles[3].unit.enchant='fog';
+  });
+  assert.deepEqual(C.choices(trade),[['targetLand',2]]);
+  assert.ok(C.play(trade,['targetLand',2]));
+  const savedTrade=JSON.parse(JSON.stringify(trade));
+  assert.deepEqual(C.choices(savedTrade),[['targetLand',3]]);
+  assert.ok(!C.play(savedTrade,['targetLand',4]));
+  assert.ok(C.play(savedTrade,['targetLand',3]));
+  assert.deepEqual([savedTrade.tradeFrom,savedTrade.phase,savedTrade.players[0].cash],[undefined,'roll',500]);
+  assert.deepEqual([2,3].map(at=>{
+    const {owner,type,level,unit}=savedTrade.tiles[at];
+    return [owner,type,level,unit.id,unit.enchant];
+  }),[[1,2,2,id('dwarf'),undefined],[0,0,2,id('fighter'),'fog']]);
+  const teamTrade=C.start(4,4,8000,'saga-original-crosswind',undefined,undefined,0,'teams');
+  const ally=teamTrade.teams.findIndex((team,i)=>i!==0&&team===teamTrade.teams[0]);
+  unit(teamTrade,1,'fighter',0,0,2);
+  unit(teamTrade,2,'dwarf',ally,2,2);
+  teamTrade.phase='spell';Object.assign(teamTrade.players[0],{cash:500,hand:[id('trade')]});
+  assert.ok(C.play(teamTrade,['cast',0]));
+  assert.deepEqual(C.choices(teamTrade),[['fizzle']]);
+  const dry=sagaCast('drought',s=>{
+    unit(s,2,'dwarf',0,2,3);
+    unit(s,3,'goblin',1,2,3);
+  });
+  assert.ok(C.play(dry,['targetPlayer',0]));
+  assert.deepEqual([dry.players[0].status,dry.players[0].enchantDeadline],['sagadrought',6]);
+  dry.players[0].pos=2;dry.phase='land';
+  assert.ok(!C.choices(dry).some(([action])=>action==='level'));
+  assert.ok(C.choices(dry).some(([action])=>action==='element'));
+  dry.players[1].hand=[id('desolation')];dry.players[1].cash=800;dry.turn=1;dry.phase='spell';
+  assert.ok(C.play(dry,['cast',0]));
+  assert.deepEqual(dry.tiles.slice(2,4).map(t=>t.level),[3,2]);
+  const floating=sagaCast('float');
+  assert.ok(C.play(floating,['targetPlayer',0]));
+  assert.equal(floating.players[0].enchantDeadline,4);
+  assert.ok(C.play(floating,['roll']));
+  assert.equal(floating.die,5);
+  assert.equal(floating.players[0].status,'sagafloat');
+  const innocence=sagaCast('innocence');
+  assert.ok(C.play(innocence,['targetPlayer',0]));
+  unit(innocence,2,'dwarf',1,2,3);
+  innocence.players[0].pos=2;innocence.phase='land';
+  assert.ok(!C.choices(innocence).some(([action])=>action==='invade'));
+  const balances=innocence.players.map(p=>p.cash);
+  assert.ok(C.play(innocence,['pay']));
+  assert.deepEqual(innocence.players.map(p=>p.cash),balances);
+  for(const [value,form] of [[0,'goblin'],[.99,'dwarf']]){
+    const evolve=C.start(2,2,8000,'saga-original-crosswind');
+    unit(evolve,2,'quicksilver',0,1,3);
+    unit(evolve,4,'goblin',1,0,1,1);
+    unit(evolve,5,'dwarf',1,2,1,1);
+    for(const at of [4,5])Object.assign(evolve.tiles[at].unit,{mhp:80,st:5});
+    evolve.phase='land';evolve.players[0].pos=2;evolve.players[0].cash=100;
+    const random=Math.random;try{Math.random=()=>value;assert.ok(C.play(evolve,['ability',2]));}finally{Math.random=random;}
+    assert.deepEqual(evolve.tiles[2].unit,{id:id(form),hp:C.cards[id(form)].hp});
+    assert.deepEqual([evolve.players[0].cash,evolve.tiles[2].level],[40,3]);
+  }
+  console.log('Saga Trade, Drought, Float, Innocence and Quicksilver checked for targeting, team play and saved decisions');
   const song=sagaCast('hunterssong');
   assert.ok(C.play(song,['targetPlayer',1]));
   assert.deepEqual([song.players[1].status,song.players[1].enchantDeadline],['hunterssong',8]);

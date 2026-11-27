@@ -327,7 +327,7 @@ function createCepter(edition="ps2"){
     const enchant={sleep:0,peace:0,barricade:1.3,greed:1.5,fog:.5}[t.unit?.enchant]??1;
     return Math.floor(value(s,t)*tollRates[t.level]*factor*enchant*({sagaTollUp:1.3,sagaTollDown:.7}[status]??1));
   }
-  const owedToll=(s,t,seat=s.turn,randomRate=15)=>s.players[seat].status==='goodluck'||s.players[seat].sagaClemency?0:toll(s,t,randomRate);
+  const owedToll=(s,t,seat=s.turn,randomRate=15)=>s.players[seat].status==='goodluck'||s.players[seat].status==='innocence'||s.players[seat].sagaClemency?0:toll(s,t,randomRate);
   function tollRange(s,t,seat){
     if(!tollAbility(t)?.randomToll)return null;
     const low=seat==null?toll(s,t,5):owedToll(s,t,seat,5),high=seat==null?toll(s,t,25):owedToll(s,t,seat,25);
@@ -336,7 +336,7 @@ function createCepter(edition="ps2"){
   const debtSaleValue=(s,t)=>revolt||begins?Math.floor(value(s,t)*.8):value(s,t);
   const revoltLapBase=(map,laps)=>Math.floor(map.bonus*(1+laps/10));
   const personalTotal=(s,i)=>s.tiles.reduce((v,t)=>v+(t.owner===i?value(s,t):0),s.players[i].cash)+(s.players[i].symbols||[]).reduce((v,n,k)=>v+n*s.prices[k],0);
-  const canInvade=(s,attacker,defender)=>defender<0||combo.activeWorld(s)!=='mercifulworld'||total(s,attacker)<=total(s,defender);
+  const canInvade=(s,attacker,defender)=>defender<0||s.players[attacker]?.status!=='innocence'&&(combo.activeWorld(s)!=='mercifulworld'||total(s,attacker)<=total(s,defender));
   const total=(s,i)=>s.teams?s.players.reduce((sum,_,j)=>sum+(allied(s,i,j)?personalTotal(s,j):0),0):personalTotal(s,i);
   function vacate(t,release=false){t.owner=-1;if(release)t.level=1;t.unit=null;}
   function landValues(s){
@@ -834,7 +834,7 @@ function createCepter(edition="ps2"){
           const leadIdol=edition==='saga'&&fx.idol(s,'leadidol');
           for(const n of territory(s)){
             const v=s.tiles[n];if(!revolt&&fx.territoryTargets(s,n).length)options.push(['ability',n]);if(!revolt&&fx.name(v.unit)==='goldentotem'&&fx.canUseAbility(s,v))options.push(['totem',n]);for(let level=v.level+1;level<=5;level++){
-              if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level,p))options.push(['level',n,level]);
+              if(!fx.levelLocked(v,s)&&p.cash>=levelCost(v,level,p))options.push(['level',n,level]);
             }
             if(!leadIdol)for(const dest of territoryDestinations(s,n)){
               if(begins&&fx.name(s.tiles[dest].unit)==='landurchin'&&s.tiles[dest].unit.enchant!=='paralysis')continue;
@@ -1195,7 +1195,7 @@ function createCepter(edition="ps2"){
           opponent.cash-=amount;player.cash+=amount;impact+=amount*2;
           lines.push('설욕 · 마력 '+amount+'G 탈취');
         }
-        if(effect==='level'&&t.level>1&&!fx.levelLocked(t)){
+        if(effect==='level'&&t.level>1&&!fx.levelLocked(t,s)){
           const prior=value(s,t);t.level--;
           impact+=(prior-value(s,t))*(allied(s,a.seat,t.owner)?-1:1);
           lines.push('설욕 · 영지 Lv.'+t.level);
@@ -1336,7 +1336,7 @@ function createCepter(edition="ps2"){
       if(a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
       if(a.g==='dynamite'||a.n==='wraith'||!revolt&&!muted&&a.u.enchant==='senility')a.hp=0;
       const plow=a.g==='silverplow'&&(!begins||a.hp>0);
-      if(!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed'&&(revolt?a.hp>0:a.hp>0||d.hp>0)&&(a.n==='leshy'||plow)){
+      if(!fx.levelLocked(t,s)&&(revolt?a.hp>0:a.hp>0||d.hp>0)&&(a.n==='leshy'||plow)){
         const previous=t.level;
         t.level=Math.min(5,t.level+(a.n==='leshy')+plow);
         if((revolt||begins)&&previous!==t.level)lines.push((plow?a.gear.name:a.c.name)+' · 영지 Lv.'+t.level);
@@ -1406,7 +1406,7 @@ function createCepter(edition="ps2"){
         const reward=10*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],0)).length;
         p.cash+=reward;if(reward)lines.push('스퍼드포크 · '+reward+'G 획득');
       }
-      if(edition==='saga'&&creatureEnd&&a.n==='seismodon'&&a.defeatedByOpponent&&t.level>1){
+      if(edition==='saga'&&creatureEnd&&a.n==='seismodon'&&a.defeatedByOpponent&&t.level>1&&s.players[t.owner]?.status!=='sagadrought'){
         t.level--;lines.push('사이즈모돈 · 교전 영지 Lv.'+t.level);
       }
       if(creatureEnd&&(a.n==='fate'&&(revolt||begins||p.hand.length<6)||a.c.evoLegacy==='draw'))draw(p,s);
@@ -1600,7 +1600,7 @@ function createCepter(edition="ps2"){
     s.deadlineAt=now+s.inputSeconds*1000;return true;
   }
   function movementRoll(s,p){
-    const fixed=p.status==='bind'?0:p.word??(s.fixed||null);
+    const fixed=p.status==='bind'?0:p.status==='sagafloat'?5:p.word??(s.fixed||null);
     if(edition==='revolt'){
       // OmiyaSoft's six-sided dice show 0–5. An all-zero roll moves 12 spaces.
       const die=()=>Math.floor(Math.random()*6);
@@ -1856,8 +1856,12 @@ function createCepter(edition="ps2"){
       case 'comboArea':case 'targetLand':{
         const tile=s.tiles[x],unit=tile?.unit,prior=unit?.hp;
         if(extraTypes?.[s.spellEffect]){
-          const effect=s.spellEffect;
+          const effect=s.spellEffect,tradeFrom=s.tradeFrom;
           s.phase=extra.apply(s,effect,x);
+          if(effect==='trade'){
+            if(tradeFrom!=null)mapEffect('cast','영지 교환',x,{source:tradeFrom});
+            break;
+          }
           const damage=prior-(tile.unit?.hp??0),showDamage=extraSpells.landDamage[effect];
           const label=effect==='magicalleap'?'매지컬 리프':effect==='shadowleap'?'섀도 리프':revivalLabel(unit,tile.unit)??(damage>0?'−'+damage+' HP'+(showDamage&&!tile.unit?' · 격파':''):showDamage?'피해 없음':effect);
           mapEffect('cast',label,x);break;
@@ -2184,6 +2188,14 @@ function createCepter(edition="ps2"){
       if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld||begins?100:80)?handheld||begins?40:20:0;
       if(n==='beacontower')return p.status!=='enlightenment'&&p.cash>=150&&s.tiles.some((t,at)=>at!==from&&t.owner===seat&&t.level<5&&!fx.blockedLevel(s,t))?28:-20;
       if(n==='fate')return p.hand.length<5?30:0;
+      if(n==='quicksilver'){
+        const forms=fx.quicksilverForms(s);
+        const found=forms.reduce((sum,id)=>{
+          const card=cards[id];
+          return sum+card.st+card.hp+(combo.matchesTerrain(card,src.type)?src.level*10:0);
+        },0)/forms.length;
+        return found-fx.strength(src.unit)-src.unit.hp;
+      }
       if(n==='necromancer')return p.hand.length<6?Math.max(24,cards[s.lastDestroyed].cost*.65):0;
       if(n==='barometz')return (p.lap+1)*30;
       if(n==='astralqueen')return s.tiles.reduce((a,t)=>a+(t.unit&&t.unit.enchant!=='camouflage'&&cards[t.unit.id].element!==t.type?sign(t)*t.level*10:0),0);

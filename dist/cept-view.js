@@ -445,6 +445,7 @@ function setMapCamera(root,x,y,zoom){
 function selectingSpellMapTarget(){
   if(C.edition==='begins'&&s?.spellEffect==='telekinesis'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
+  if(C.edition==='saga'&&s?.phase==='spellTarget'&&s.spellEffect==='trade')return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
     ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
   return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong','metalform','temptation','beginspolymorph'].includes(s.spellEffect);
@@ -692,7 +693,8 @@ function map(){
         const revival=C.spellRevival(s,t,s.spellEffect);
         center.append(el('span',revival?'예상 · '+revival+'로 부활':'예상 HP '+u.hp+' → '+next+(next===0?' · 격파':'')));
       }
-      const label=s.phase==='spellTarget'&&['magicalleap','shadowleap'].includes(s.spellEffect)?'이동':labels[action[0]];
+      const label=s.phase==='spellTarget'&&s.spellEffect==='trade'?(s.tradeFrom==null?'교환할 내 영지':'교환할 적 영지'):
+        s.phase==='spellTarget'&&['magicalleap','shadowleap'].includes(s.spellEffect)?'이동':labels[action[0]];
       center.append(btn((inspect+1)+'번 · '+label+' 확정',()=>act(action),'primary'));
     }
     return;
@@ -708,7 +710,7 @@ function map(){
   if(s.phase==='towerTarget')center.lastElementChild.textContent='사령탑 · 목표 영지를 터치하세요';
   if(s.phase==='towerDeploy')center.lastElementChild.textContent='사령탑 · '+(s.towerAt+1)+'번 영지 · 하단 손패에서 선택';
   if(selectingSpellMapTarget()&&targets.size){
-    const prompt={remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',magicshelter:'방마벽을 걸 영지를 선택하세요',metalform:'금속화할 크리처를 선택하세요',temptation:'영지 능력을 빌릴 크리처를 선택하세요',beginspolymorph:'변신시킬 크리처를 선택하세요',debility:'기본 ST를 낮출 크리처를 선택하세요',debilitystrong:'기본 ST와 최대 HP를 낮출 크리처를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요',telekinesis:s.phase==='teleMove'?'인접한 도착 영지를 선택하세요':'강제로 이동시킬 크리처를 선택하세요'};
+    const prompt={trade:s.tradeFrom==null?'교환할 내 영지를 선택하세요':'같은 레벨의 적 영지를 선택하세요',remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',magicshelter:'방마벽을 걸 영지를 선택하세요',metalform:'금속화할 크리처를 선택하세요',temptation:'영지 능력을 빌릴 크리처를 선택하세요',beginspolymorph:'변신시킬 크리처를 선택하세요',debility:'기본 ST를 낮출 크리처를 선택하세요',debilitystrong:'기본 ST와 최대 HP를 낮출 크리처를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요',telekinesis:s.phase==='teleMove'?'인접한 도착 영지를 선택하세요':'강제로 이동시킬 크리처를 선택하세요'};
     center.lastElementChild.textContent=prompt[s.spellEffect]||'비술을 새길 크리처를 선택하세요';
   }
   center.dataset.rolled=String(!!s.die||s.phase==='over');
@@ -828,7 +830,7 @@ function render(){
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
   const endSummary=s.endReason==='roundLimit'?'제한 라운드 종료':s.endReason==='suddenDeath'?'서든데스 · 마력 고갈':null;
-  $('hint').textContent=over?(endSummary?endSummary+(C.outcome(s).tie?' · 총마력 동률이라 승자가 없습니다.':' · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):selectingSecretPlayer()?'비술을 적용할 적 셉터를 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='magicalleap'?'지도에서 이동할 칸을 고르세요.':hints[s.phase];
+  $('hint').textContent=over?(endSummary?endSummary+(C.outcome(s).tie?' · 총마력 동률이라 승자가 없습니다.':' · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):selectingSecretPlayer()?'비술을 적용할 적 셉터를 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='magicalleap'?'지도에서 이동할 칸을 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='trade'?(s.tradeFrom==null?'교환할 내 영지를 누르세요.':'지도에서 같은 레벨의 적 영지를 누르세요.'):hints[s.phase];
   if(local&&s.immediateAt!=null)$('hint').textContent=(s.immediateAt+1)+'번 영지 · 즉시 능력으로 영지 명령을 사용할 수 있습니다.';
   if(local&&s.phase==='spell'&&s.doublecast==='ready')$('hint').textContent='연속 주문 사용 가능 · 주문을 더 쓰거나 주사위를 굴리세요.';
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';

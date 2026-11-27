@@ -144,7 +144,7 @@ const CepterEditions=(()=>{
       iksear:'sagaiksear',terrair:'sagaterrair',bistair:'sagabistair',selenear:'sagaselenear',
       comet:'comet',crusherstorm:'crusherstorm',desolation:'desolation',elevation:'elevation',erosion:'erosion',
       fame:'fame',frostneedle:'frostneedle',venomousboil:'venomousboil',refuge:'refuge',gift:'sagagift',refresh:'refresh',holyblight:'holyblight',
-      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi'},
+      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi',trade:'trade',drought:'sagadrought',float:'sagafloat',innocence:'innocence'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
@@ -777,7 +777,7 @@ const CepterEditions=(()=>{
     deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
-    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},necromancer:{scrollCritical:true},
+    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},necromancer:{scrollCritical:true},quicksilver:{},
     lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},spinyagama:{},seismodon:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);

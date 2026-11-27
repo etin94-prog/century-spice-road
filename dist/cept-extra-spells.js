@@ -15,7 +15,7 @@ const CepterExtraSpells=(()=>{
     gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',beginsculdra:'global',immobilize:'global',footrace:'global',unholygrasp:'player',
     blacksmith:'player',reform:'player',beginspoisonmind:'player',discord:'global',metalform:'land',temptation:'land',beginspolymorph:'land',
-    sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
+    trade:'land',sagadrought:'player',sagafloat:'player',innocence:'player',sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
     bravesong:'player',toughsong:'player',hunterssong:'player',trespass:'global',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
@@ -30,7 +30,7 @@ const CepterExtraSpells=(()=>{
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
   const stolenKind={capture:'item',theft:'spell'};
   const enemyOnly=new Set(['capture','theft','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind']);
-  const duration={bravesong:4,toughsong:4,hunterssong:4,trespass:2,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
+  const duration={bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
   const soltis={
     goodluck:'행운 · 2라운드 통행료 면제',purify:'정화 · 모든 영지의 인챈트 해제',affection:'은총 · 순위 × 200G',
     hope:'희망 · 2장 드로우',depression:'불황 · 모든 호부 가격 20% 하락',suffocate:'질식 · 모든 크리처에 10 피해',lifeflow:'생명 · 한 지역의 내 크리처 전체 회복'
@@ -140,7 +140,22 @@ const CepterExtraSpells=(()=>{
       seen.delete(pos);
       return [...seen];
     }
+    function tradeTargets(s,from){
+      const owned=s.tiles[from];
+      return s.tiles.flatMap((t,i)=>t.unit&&enemy(s,t.owner)&&t.level===owned.level&&fx.targetable(s,t)?[['targetLand',i]]:[]);
+    }
+    function tradeScore(s,from,to){
+      const own=s.tiles[from],target=s.tiles[to],seat=s.turn;
+      const peers=(tile,owner)=>s.tiles.filter(t=>t!==tile&&t.owner===owner&&t.type===tile.type&&t.area===tile.area).length;
+      const control=(tile,owner)=>peers(tile,owner)*(tile.level+2);
+      const strength=tile=>fx.strength(tile.unit)+tile.unit.hp;
+      return control(target,seat)+control(own,target.owner)-control(own,seat)-control(target,target.owner)+(strength(target)-strength(own))/5;
+    }
     function targets(s,e){
+      if(e==='trade'){
+        if(s.tradeFrom!=null)return tradeTargets(s,s.tradeFrom);
+        return s.tiles.flatMap((t,i)=>t.owner===s.turn&&fx.targetable(s,t)&&tradeTargets(s,i).length?[['targetLand',i]]:[]);
+      }
       if(e==='magicalleap'||e==='shadowleap'){
         const nativeShadow=e==='shadowleap';
         return leapDestinations(s,nativeShadow?5:4,!nativeShadow).flatMap(at=>
@@ -322,6 +337,14 @@ const CepterExtraSpells=(()=>{
             const first=fx.territoryTargets(s,x,true)[0];
             if(first?.[0]==='abilitySelf')fx.territoryEffect(s,x,x,true);
             else if(first){s.abilityFrom=x;s.borrowedAbility=true;return 'territoryTarget';}
+            break;
+          }
+          case 'trade':{
+            if(s.tradeFrom==null){s.tradeFrom=x;return 'spellTarget';}
+            const from=s.tradeFrom,own=s.tiles[from];
+            [own.owner,t.owner]=[t.owner,own.owner];
+            delete s.tradeFrom;
+            note(s,'트레이드 · '+(from+1)+'번 ↔ '+(x+1)+'번 영지 소유권 교환');
             break;
           }
           case 'replace':s.replaceAt=x;return 'replaceCard';
@@ -569,6 +592,8 @@ const CepterExtraSpells=(()=>{
       return 'roll';
     }
     function scoreTarget(s,e,x){
+      if(e==='trade')return s.tradeFrom!=null?tradeScore(s,s.tradeFrom,x):
+        Math.max(-40,...tradeTargets(s,x).map(([,to])=>tradeScore(s,x,to)));
       const p=s.players[s.turn],t=s.tiles[x],q=s.players[x];
       if(e==='remission')return 10;
       if(e==='magicalleap'||e==='shadowleap'){
@@ -592,6 +617,9 @@ const CepterExtraSpells=(()=>{
           case 'beginspoisonmind':return Math.min(8,(q.book?.length??q.bookCount)/3);
           case 'capture':case 'theft':return Math.max(0,...q.hand.filter(id=>cards[id].kind===stolenKind[e]).map(id=>cards[id].cost/5));
           case 'bravesong':case 'toughsong':return sign*(q.status===e?0:Math.min(24,6+3*owning(s,x).length));
+          case 'sagafloat':return q.status===e?-10:sign*(2+q.flags.length*3);
+          case 'innocence':return q.status===e?-12:sign*Math.max(0,...s.tiles.filter(t=>t.owner>=0&&!combo.allied(s,t.owner,x)).map(t=>value(s,t)/20-7));
+          case 'sagadrought':return q.status===e?-12:-sign*Math.min(42,owning(s,x).filter(t=>t.level<5).length*9);
           case 'hunterssong':return sign*(q.status===e?0:4+q.hand.filter(id=>cards[id].kind==='creature'&&cards[id].st>=30).length*9);
           case 'sagagift':return sign*(10+(q.hand.length<5?8:0));
           case 'landdrain':return Math.min(owning(s,x).length*landDrainRate(s),Math.max(0,q.cash)+50)/9;
