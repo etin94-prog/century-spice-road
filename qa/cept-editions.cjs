@@ -76,7 +76,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaGottliebKill','sagaGottliebSlaves','sagaBorivalFire','sagaZenethDragon','sagaTicomunKill','sagaTicomunChallenge','sagaRilaraExploit','sagaBorivalHellFire','sagaRilaraConspire','sagaRilaraFierce','sagaKoenigStar','sagaTraderMoney','sagaGuilderTwins','sagaImmediate','sagaAffinity']:edition==='begins'?['beginsStarterFireEarth','beginsStarterWaterAir','beginsVeramiSeaWind','beginsIsharaFirst','beginsGanzBeast','beginsGanzInstinct','beginsGanzGiantBeasts','beginsTindalosFreeWind','beginsArtAssault','beginsTidalGuard']:edition==='revolt'?['revoltAliciaEntry','revoltGenSerious','revoltYumaFellowship','revoltYumaResolve','revoltYumaBonds','revoltSomniaSerenity','revoltTenetBelief','revoltTenetPraise']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const [name,deck] of Object.entries(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -1247,6 +1247,34 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(thunder.attackST,50);
   console.log('Revolt eight exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
+  const lv3=type=>state=>Object.assign(state.tiles[1],{type,level:3});
+  const leveller=begins(null,'chainmail','leveller','fighter',lv3(2)).s;
+  assert.equal(leveller.tiles[1].level,2);
+  assert.match(leveller.battle.lines.join(' '),/교전 영지 Lv\.2/);
+  assert.equal(begins(null,'chainmail','leveller','fighter',lv3(3)).s.tiles[1].level,3);
+  assert.equal(begins(null,'claymore','leveller','fighter',state=>{
+    lv3(2)(state);
+    Object.assign(state.tiles[1].unit,{hp:100,mhp:100});
+  }).s.tiles[1].level,3);
+  const nike=begins(null,null,'werewolf','nike',state=>{
+    state.tiles[1].unit.hp=40;
+    state.tiles[1].unit.mhp=40;
+  }).s;
+  assert.equal(nike.battle.strikes[0].side,1);
+  const withWhip=begins('bindingwhip','chainmail','goblin','fighter').s;
+  assert.equal(withWhip.tiles[1].unit.enchant,'paralysis');
+  assert.equal(withWhip.battle.strikes.length,1);
+  const blockedWhip=begins('bindingwhip','buckler','goblin','fighter').s;
+  assert.equal(blockedWhip.battle.strikes[0].effect,'block');
+  assert.equal(blockedWhip.tiles[1].unit.enchant,undefined);
+  const wolf=begins(null,null,'werewolf','fighter');
+  assert.equal(wolf.C.combo.key(wolf.C.cards[wolf.s.tiles[1].unit.id]),'wolf');
+  assert.equal(wolf.s.tiles[1].unit.hp,40);
+  const ram=begins('batteringram','chainmail','cockatrice','fighter').s;
+  assert.ok(ram.battle.won);
+  assert.match(ram.battle.strikes[0].notes.join(' '),/변신.*즉사/);
+  const fusion=begins('dragonfly',null,'carbuncle','goblin');
+  assert.equal(fusion.C.combo.key(fusion.C.cards[fusion.s.tiles[1].unit.id]),'carbunfly');
   for(const [attacker,elementalGuard] of [['flameacolyte','pillarofflame'],['aquaacolyte','kingtortoise'],['terraacolyte','dwarf'],['aeroacolyte','griffon']]){
     const matched=begins(null,null,attacker,elementalGuard);
     assert.equal(matched.s.battle.attackST,30);
@@ -2822,7 +2850,10 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     beginsStarterWaterAir:'battleaxe chainmail:2 cornfolk:2 fighter:2 fly giantamoeba:2 giantbat harpy:2 holyword1:2 holyword6:2 hurricane:2 icicle kingtortoise:2 lizardman:2 longsword magicbolt manna:2 merfolk rockbiter scalearmor:2 spectre:2 wallofice:2 windofhope:2 wolf:2',
     beginsVeramiSeaWind:'bandit:3 dwarf:2 fighter:3 fly:3 giantrat:3 holyword1:2 holyword3:2 holyword6:3 lizardman:2 megalodon:2 merfolk:2 pirate:4 sage:3 shatter:2 wallofice woodfolk:3',
     beginsIsharaFirst:'cornfolk:3 fly:2 giantbat:3 gnome:3 haste:2 holyword3:2 holyword6:2 leatherarmor:3 mace:3 manna:2 phoenixamulet:2 spear:2 spectre:3 tigerbeetle:3 wallofstone:3 windofhope:2',
-    beginsGanzBeast:'blynx:3 carbuncle:3 cerberus:3 chainmail:2 earthshift:2 fly:2 greattusker:3 growthbody:2 haste:2 jackalope:3 lunatichare:2 massgrowth:2 morningstar:2 scalearmor towershield vitality:2 weakness windofhope:2 wolf:2'
+    beginsGanzBeast:'blynx:3 carbuncle:3 cerberus:3 chainmail:2 earthshift:2 fly:2 greattusker:3 growthbody:2 haste:2 jackalope:3 lunatichare:2 massgrowth:2 morningstar:2 scalearmor towershield vitality:2 weakness windofhope:2 wolf:2',
+    beginsGanzInstinct:'batteringram:2 carbuncle:2 catapult:2 coati:2 earthshift:2 fly:3 gigantherium:3 greattusker:3 grimalkin:4 growthbody:2 haste:3 jackalope:4 massgrowth sage:2 towershield werewolf:2 windofhope:2',
+    beginsGanzGiantBeasts:'batteringram:2 catapult:2 coati:3 cockatrice:2 earthshield:2 earthshift:2 fly:2 gigantherium:3 greattusker:3 grimalkin:3 haste:2 jackalope:3 odradek:3 sage:3 werewolf:2 windofhope:3',
+    beginsTindalosFreeWind:'airshift:2 armet:2 bindingmist:3 bindingwhip:2 centaur:3 firebeak giantamoeba:2 gianteel:2 gremlinamulet:2 holyword3:2 hornet:3 leveller:2 nike:2 phoenix:2 senility:2 sprite:2 swordofthefalcon:2 windshield:2 windofhope:2'
   };
   for(const [name,recipe] of Object.entries(recipes)){
     const book=C.presets[name];
@@ -3004,6 +3035,21 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const cornBattle=duel(fighter,cornfolk);
   assert.ok(cornBattle.won);
   assert.equal(enemy.cash,400);
+  const guardedEarth=C.start(2,2,6000,'begins-original-ford');
+  const grimalkin=creature('grimalkin'),odradek=creature('odradek');
+  Object.assign(guardedEarth.players[0],{hand:[id('bolt')],cash:500});
+  Object.assign(guardedEarth.tiles[3],{owner:1,unit:{id:grimalkin,hp:30}});
+  Object.assign(guardedEarth.tiles[4],{owner:1,unit:{id:odradek,hp:20}});
+  Object.assign(guardedEarth.tiles[6],{owner:1,unit:{id:fighter,hp:40}});
+  assert.ok(C.play(guardedEarth,['cast',0]));
+  assert.deepEqual(C.choices(guardedEarth),[['targetLand',4],['targetLand',6]]);
+  assert.ok(C.play(guardedEarth,['targetLand',4]));
+  assert.equal(guardedEarth.tiles[4].unit.hp,20);
+  for(const inv of [grimalkin,odradek]){
+    Object.assign(creatures,{phase:'attack',battle:{at:2,inv}});
+    Object.assign(creatures.players[0],{hand:[fighter,creature('dwarf'),minotaur,creature('merfolk')],cash:500});
+    assert.deepEqual(C.choices(creatures).filter(([kind])=>kind==='equip'),[['equip',0],['equip',1]]);
+  }
   const cornSpell=C.start(2,2,6000,'begins-original-ford');
   Object.assign(cornSpell.players[0],{hand:[id('bolt')],cash:500});
   Object.assign(cornSpell.tiles[3],{owner:1,unit:{id:cornfolk,hp:20}});

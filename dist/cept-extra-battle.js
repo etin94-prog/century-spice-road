@@ -201,9 +201,14 @@ const CepterExtraBattle=(()=>{
         if(amount)lines.push('공격 명중 · '+amount+'G 탈취');
       }
       if(d.hp<=0)return;
-      if(n==='werewolf'&&chance(.6))convert(d,'wolf');
-      if(n==='medusa')convert(d,'statue');
-      if(n==='cockatrice')convert(d,'wallofstone');
+      if(s.edition==='begins'){
+        const alteredForm={werewolf:'wolf',medusa:'statue',cockatrice:'wallofstone'}[n];
+        if(alteredForm)transform(d,ids.get(alteredForm));
+      }else{
+        if(n==='werewolf'&&chance(.6))convert(d,'wolf');
+        if(n==='medusa')convert(d,'statue');
+        if(n==='cockatrice')convert(d,'wallofstone');
+      }
       if(n==='littlegray'&&chance(.5))vacant(d);
       if(n==='nymph'&&fx.max(d.u)<=30&&s.players[a.seat].hand.length<6&&chance(.4)){
         d.stolen=true;s.players[a.seat].hand.push(d.u.id);lines.push('상대 크리처를 손패로 획득');
@@ -224,7 +229,11 @@ const CepterExtraBattle=(()=>{
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(a.n==='fungonoid')grow(a,10);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
-        if((a.n==='basilisk'||a.n==='leveler'&&t.type!==3)&&!fx.blockedLevel(s,t))t.level=Math.max(1,t.level-1);
+        const leveller=s.edition==='begins'?a.n==='leveller':a.n==='leveler';
+        if((a.n==='basilisk'||leveller&&t.type!==3)&&t.level>1&&!fx.blockedLevel(s,t)){
+          t.level--;
+          if(s.edition==='begins')lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
+        }
       }
       if(a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
       if(a.u.enchant==='thornfetter'&&a.hp>0)a.hp=Math.min(a.hp,a.u.hp)-20;

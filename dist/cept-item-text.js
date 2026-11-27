@@ -120,7 +120,7 @@ const describeCepterItem=(()=>{
     if(C.edition==='revolt'&&name==='stormshield')pieces.push('수·풍 크리처가 장착하면 일반 공격을 무효화합니다.');
     if(C.edition==='revolt'&&name==='moonscimitar')pieces.push('일반 공격으로 피해를 주면 상대의 영지 통행료를 무효화합니다.');
     if(C.edition==='revolt'&&name==='wondercharm')pieces.push('받는 일반 공격 피해의 80%를 무효화합니다.');
-    if(C.edition==='revolt'&&name==='bindingwhip')pieces.push('일반 공격으로 피해를 주면 상대에게 마비를 부여합니다.');
+    if(['revolt','begins'].includes(C.edition)&&name==='bindingwhip')pieces.push('일반 공격으로 피해를 주면 상대에게 마비를 부여합니다.');
     if(card.pierceElements?.length)pieces.push(list(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(list(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(list(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');

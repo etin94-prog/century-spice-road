@@ -247,6 +247,10 @@ const CepterCreatureText=(()=>{
     warlock:'고른 셉터에게 안티 매직을 부여합니다.'
   };
   const beginsBattle={
+    werewolf:'일반 공격으로 피해를 준 상대가 살아 있으면 울프로 바꿉니다.',
+    cockatrice:'일반 공격으로 피해를 준 상대가 살아 있으면 월 오브 스톤으로 바꿉니다.',
+    odradek:'주문으로 현재 HP와 최대 HP를 바꿀 수 없습니다.',
+    leveller:'전투에서 생존하면 풍 속성이 아닌 교전 영지의 레벨을 1 낮춥니다.',
     centaur:'전투에서 생존하면 사용한 아이템을 북에 넣고 남은 카드를 섞습니다.',
     wereboar:'전투 중 ST가 30 오릅니다.',
     roadrunner:'이동 명령으로 한 칸 또는 두 칸 떨어진 영지에 갈 수 있습니다.',

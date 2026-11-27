@@ -254,6 +254,19 @@ const CepterEditions=(()=>{
         scalearmor:1,towershield:1,weakness:1,chainmail:2,morningstar:2,wolf:2,lunatichare:2,growthbody:2,
         carbuncle:3,cerberus:3,blynx:3,jackalope:3,haste:2,fly:2,windofhope:2,vitality:2,massgrowth:2,earthshift:2,greattusker:3
       },
+      beginsGanzInstinct:{
+        towershield:1,catapult:2,batteringram:2,werewolf:2,carbuncle:2,coati:2,sage:2,growthbody:2,gigantherium:3,
+        grimalkin:4,jackalope:4,massgrowth:1,windofhope:2,earthshift:2,haste:3,fly:3,greattusker:3
+      },
+      beginsGanzGiantBeasts:{
+        catapult:2,earthshield:2,batteringram:2,werewolf:2,cockatrice:2,coati:3,odradek:3,grimalkin:3,
+        sage:3,gigantherium:3,jackalope:3,haste:2,fly:2,earthshift:2,windofhope:3,greattusker:3
+      },
+      beginsTindalosFreeWind:{
+        swordofthefalcon:2,windshield:2,gremlinamulet:2,armet:2,bindingwhip:2,sprite:2,leveller:2,nike:2,
+        giantamoeba:2,gianteel:2,phoenix:2,hornet:3,centaur:3,firebeak:1,holyword3:2,windofhope:2,senility:2,
+        airshift:2,bindingmist:3
+      },
       beginsArtAssault:{
         abyssalmonarch:1,hornedchameleon:3,gascloud:3,flameacolyte:3,flamegoetia:2,aeroacolyte:3,aerogoetia:2,fighter:2,
         chainmail:3,magicshield:2,gremlinamulet:1,boomerang:2,
@@ -441,6 +454,9 @@ const CepterEditions=(()=>{
     battlegearalpha:{support:true,spellWard:true},battlegearbeta:{support:true,neutralizeScroll:true},
     bundlegear:{spellWard:true,neutralizeScroll:true,generatedOnly:true},
     jackalope:{support:true},humbaba:{poison:true},lunatichare:{},
+    werewolf:{},cockatrice:{},grimalkin:{support:true,supportElements:[-1,2],spellWard:true},
+    odradek:{support:true,supportElements:[-1,2],immutableHP:true},leveller:{},nike:{first:true},
+    carbunfly:{first:true,generatedOnly:true},
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
@@ -449,12 +465,12 @@ const CepterEditions=(()=>{
     terragoetia:{innateScroll:40,support:true,supportElements:[-1,2],blocksAttackAbilities:true},
     aquagoetia:{innateScroll:40,half:true},flamegoetia:{innateScroll:40},aerogoetia:{innateScroll:40,first:true},abyssalmonarch:{innateScroll:50}
   };
-  const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y'};
+  const beginsExtraTerritories={flamegoetia:'R,R',aerogoetia:'Y,Y',carbunfly:'R,R'};
   // Only enable Begins items whose printed effects the battle engine handles.
   const beginsGear={
     gaseousform:{effect:'nullify'},airslasher:{st:30},flametongue:{st:30},battleaxe:{st:40},
     icicle:{st:30,critical:0},rockbiter:{st:30,critical:2},phoenixamulet:{},goldengoose:{},ringofthesuccubus:{first:true},
-    batteringram:{st:20},gremlinamulet:{},rathunter:{},boomerang:{st:20,hp:10},
+    batteringram:{st:20},bindingwhip:{st:30},gremlinamulet:{},rathunter:{},boomerang:{st:20,hp:10},
     buckler:{},countershield:{effect:'reflect'},diamondarmor:{st:-30,hp:60,last:true},
     earthshield:{},fireshield:{},watershield:{},windshield:{},
     eternalmail:{hp:40},knightsshield:{},magicshield:{hp:30},spikedshield:{},

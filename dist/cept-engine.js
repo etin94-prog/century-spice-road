@@ -1002,7 +1002,7 @@ function createCepter(edition="ps2"){
           const amount=Math.min(s.players[d.seat].cash,attacker==='amazon'?(s.players[a.seat].lap+1)*(s.edition==='revolt'?30:20):Math.min(a.hp,a.u.hp)*2);
           s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
         }
-        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||revolt&&a.g==='bindingwhip'&&d.n!=='scylla'){
+        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||(revolt||begins)&&a.g==='bindingwhip'&&d.n!=='scylla'){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
         if((revolt||begins)&&a.g==='ringofthesuccubus'&&d.n!=='scylla'){
