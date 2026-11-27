@@ -770,6 +770,11 @@ const CepterEditions=(()=>{
     livingclaw:{itemCreature:true},livingmirror:{itemCreature:true},livingrapier:{itemCreature:true,first:true},
     livingscroll:{itemCreature:true,innateScroll:20,scrollAsItem:20},bloodypudding:{support:true},behemoth:{last:true},
     cockatrice:{},medusa:{},deathscythe:{},raksas:{},ares:{},poseidon:{},baal:{first:true},grassstrider:{first:true},triton:{},
+    tengu:{first:true,scrollCritical:true},wyvern:{first:true},blynx:{spellWard:true},
+    yeti:{neutralizes:[0]},dhampir:{neutralizes:[2]},saint:{neutralizes:[-1]},angostura:{stationary:true},
+    trampleweed:{stationary:true},avenger:{},barrowwight:{},fungonoid:{},chimera:{first:true},doppelganger:{},
+    trapspider:{entryEnchant:'camouflage',paralyze:true},armedprincess:{first:true,support:true,immutableHP:true},
+    redcap:{},ukobach:{},mothman:{first:true},rahab:{blocksLarge:true},
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
@@ -777,7 +782,10 @@ const CepterEditions=(()=>{
     deathquito:{first:true},salamander:{},charon:{},centaur:{first:true},gelatinouswall:{stationary:true},seahag:{entryEnchant:'greed'},sirgawain:{},coaloid:{},bia:{},burningtitan:{},kasha:{},aspidochelone:{},weretiger:{},tetrarm:{doubleAttack:true}
   };
   const sagaTerritoryCreatures={
-    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},necromancer:{scrollCritical:true},quicksilver:{},dancingdoll:{},brancharmy:{},
+    archbishop:{},domovoi:{},sharazad:{support:true},bookworm:{},hyde:{},healer:{regenerate:true},holyllama:{},necromancer:{scrollCritical:true},quicksilver:{},dancingdoll:{},brancharmy:{},fate:{},
+    armoreddragon:{first:true,neutralizes:[-1]},heraldspirit:{immediate:true},swampspawn:{stationary:true},
+    venomouspore:{stationary:true,regenerate:true},swordprincess:{entryEnchant:'phantasm',first:true},
+    possession:{},lordofbane:{},bonegolem:{regenerate:true},ahuizotl:{},nobleshaman:{scrollCritical:true},
     lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},spinyagama:{},seismodon:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['basaltidol','graniteidol','clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);

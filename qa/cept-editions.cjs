@@ -720,6 +720,122 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([necromancer.cash,necromancer.hand],[50,[id('goblin')]]);
   assert.match(fight('necromancer','dwarf','무속성','firestone').battle.strikes[0].notes.join(' '),/45 피해/);
   console.log('Saga 169 source articles, 184 complete recipes, private Replace, Spartoi sacrifice, Trespass, Hunter and Necromancer verified');
+  const hunt=C.start(4,4,8000,'saga-original-crosswind',undefined,undefined,0,'teams');
+  const allySeat=hunt.teams.findIndex((team,i)=>i!==0&&team===hunt.teams[0]);
+  const enemySeat=hunt.teams.findIndex(team=>team!==hunt.teams[0]);
+  unit(hunt,2,'tengu',0,3);unit(hunt,5,'goblin',enemySeat,3);
+  unit(hunt,6,'goblin',allySeat,3);unit(hunt,7,'goblin',enemySeat,0);
+  unit(hunt,8,'goblin',enemySeat,3);hunt.tiles[8].area=hunt.tiles[2].area+1;
+  hunt.phase='land';Object.assign(hunt.players[0],{pos:2,cash:1000});
+  assert.ok(!C.board(hunt).links[2].includes(5));
+  const moves=C.choices(hunt).filter(([action,from,to])=>action==='transfer'&&from===2&&[5,6,7,8].includes(to));
+  assert.deepEqual(moves,[['transfer',2,5]]);
+  hunt.tiles[2].unit.enchant='paralysis';
+  assert.ok(!C.choices(hunt).some(([action,from,to])=>action==='transfer'&&from===2&&to===5));
+  delete hunt.tiles[2].unit.enchant;
+  assert.ok(C.play(hunt,['transfer',2,5]));
+  assert.deepEqual([hunt.phase,hunt.battle.from,hunt.battle.at],['attack',2,5]);
+  assert.ok(C.play(hunt,['bare'])&&C.play(hunt,['bare']));
+  assert.equal(hunt.battle.strikes[0].side,0);
+  assert.equal(hunt.battle.noToll,true);
+  for(const [name,terrain] of [['wyvern',3],['blynx',2]]){
+    const remote=C.start(2,2,8000,'saga-original-crosswind');
+    unit(remote,2,name,0,3);
+    remote.tiles[5].type=remote.tiles[6].type=terrain;remote.tiles[6].area=remote.tiles[2].area+1;
+    remote.tiles[7].type=0;
+    remote.phase='land';remote.players[0].pos=2;
+    assert.ok(C.choices(remote).some(([action,from,to])=>action==='transfer'&&from===2&&to===5));
+    assert.ok(!C.choices(remote).some(([action,from,to])=>action==='transfer'&&from===2&&to===6));
+    assert.equal(C.choices(remote).some(([action,from,to])=>action==='transfer'&&from===2&&to===7),name==='blynx');
+  }
+  const mimic=fight('doppelganger','dwarf','무속성');
+  assert.equal(mimic.battle.forms[0],id('dwarf'));
+  assert.equal(mimic.players[0].hand.includes(id('doppelganger')),true);
+  for(const [hunter,prey,threshold] of [['saint','fighter',.8],['yeti','crimsonvine',.6],['dhampir','crimsonvine',.6],['angostura','gremlin',.8]]){
+    for(const rate of [threshold-.01,threshold]){
+      const random=Math.random;
+      try{
+        Math.random=()=>rate;
+        const setup=s=>{s.tiles[1].unit.hp=75;};
+        const battle=hunter==='angostura'?fight(prey,hunter,'무속성',null,s=>{
+          unit(s,8,prey,0,3,80);s.battle.from=8;
+          Object.assign(s.tiles[1].unit,{hp:100,mhp:100});
+        }):fight(hunter,prey,'무속성',null,setup);
+        assert.equal(battle.battle.strikes.some(strike=>strike.notes.includes('즉사')),rate<threshold,hunter);
+      }finally{Math.random=random;}
+    }
+  }
+  const barrow=fight('barrowwight','dwarf','무속성');
+  assert.equal(barrow.tiles[1].unit.enchant,'sleep');
+  assert.equal(C.toll(barrow,barrow.tiles[1]),0);
+  const lowRank=fight('avenger','dwarf','무속성',null,s=>{s.players[1].cash=5000;});
+  const highRank=fight('avenger','dwarf','무속성',null,s=>{s.players[1].cash=100;});
+  assert.equal(lowRank.battle.attackST-highRank.battle.attackST,10);
+  assert.equal(lowRank.battle.startHP[0]-highRank.battle.startHP[0],10);
+  console.log('Saga Tengu, Wyvern and Blynx regional movement, attack thresholds, Avenger ranks and copying checked');
+  function fromTerritory(name){
+    const s=C.start(2,2,8000,'saga-original-crosswind');
+    unit(s,2,name,0,2);
+    Object.assign(s.players[0],{pos:2,cash:600,hand:[]});s.phase='land';
+    return s;
+  }
+  const herald=fromTerritory('heraldspirit');
+  unit(herald,6,'dwarf',0,2);
+  assert.ok(!C.choices(herald).some(([action,at])=>action==='level'&&at===6));
+  assert.ok(C.play(herald,['ability',2]));
+  assert.deepEqual([herald.players[0].status,herald.players[0].enchantDeadline,herald.players[0].cash],['enlightenment',4,550]);
+  herald.turn=0;herald.round=2;herald.phase='land';herald.players[0].pos=2;
+  assert.ok(C.choices(herald).some(([action,at])=>action==='level'&&at===6));
+  const swamp=fromTerritory('swampspawn');
+  assert.ok(C.play(swamp,['ability',2])&&C.play(swamp,['abilityPlayer',1]));
+  assert.equal(swamp.players[1].word,0);
+  const attackDragon=fromTerritory('armoreddragon');
+  unit(attackDragon,4,'fighter',1,'무속성');unit(attackDragon,5,'redogre',1,0);
+  assert.ok(C.play(attackDragon,['ability',2]));
+  assert.ok(!C.choices(attackDragon).some(([action,at])=>action==='abilityLand'&&at===5));
+  assert.ok(C.play(attackDragon,['abilityLand',4]));
+  assert.equal(attackDragon.tiles[4].unit.hp,10);
+  const spores=fromTerritory('venomouspore');
+  unit(spores,4,'dwarf',1,2);unit(spores,5,'blueogre',1,1);
+  spores.tiles[4].unit.enchant='landprotection';spores.tiles[5].area=1;
+  assert.ok(C.play(spores,['ability',2])&&C.play(spores,['abilityLand',4]));
+  assert.ok(spores.tiles[2].unit.poisoned&&spores.tiles[4].unit.poisoned&&!spores.tiles[5].unit.poisoned);
+  const princess=fromTerritory('swordprincess');
+  assert.ok(C.play(princess,['ability',2]));
+  assert.equal(princess.tiles[2].unit.id,id('armedprincess'));
+  assert.equal(C.spellHP(princess,princess.tiles[2],'bolt'),C.cards[id('armedprincess')].hp);
+  const possession=fromTerritory('possession');
+  unit(possession,4,'goblin',1,0);unit(possession,5,'blueogre',1,1,2);
+  assert.ok(C.play(possession,['ability',2]));
+  assert.deepEqual(C.choices(possession),[['abilityLand',4]]);
+  assert.ok(C.play(possession,['abilityLand',4]));
+  assert.deepEqual([possession.tiles[2].owner,possession.tiles[4].owner,possession.tiles[4].unit.id],[-1,0,id('goblin')]);
+  const bane=fromTerritory('lordofbane');
+  bane.players[1].cash=300;bane.players[1].symbols[0]=13;
+  assert.ok(C.play(bane,['ability',2])&&C.play(bane,['abilityPlayer',1]));
+  assert.equal(bane.players[1].cash,235);
+  const bone=fromTerritory('bonegolem');
+  unit(bone,4,'skeleton',1,'무속성');
+  assert.ok(C.play(bone,['ability',2])&&C.play(bone,['abilityLand',4]));
+  assert.equal(bone.tiles[4].unit.id,id('bonegolem'));
+  const waterLand=fromTerritory('ahuizotl');
+  unit(waterLand,4,'goblin',0,0);
+  assert.ok(C.play(waterLand,['ability',2])&&C.play(waterLand,['abilityLand',4]));
+  assert.equal(waterLand.tiles[4].type,1);
+  const clear=fromTerritory('nobleshaman');
+  unit(clear,4,'goblin',1,0);clear.tiles[4].unit.enchant='landprotection';
+  assert.ok(C.play(clear,['ability',2]));
+  assert.equal(clear.tiles[4].unit.enchant,undefined);
+  const redcap=fight('redcap','dwarf','무속성',null,s=>{
+    unit(s,4,'goblin',1,0);unit(s,5,'goblin',0,1);
+  });
+  assert.equal(redcap.battle.startHP[0],40);
+  const goblin=fight('goblin','dwarf','무속성',null,s=>unit(s,4,'redcap',1,0));
+  assert.equal(goblin.battle.startHP[0],50);
+  const rahab=fight('tyrannosaurus','rahab','무속성');
+  assert.equal(rahab.battle.strikes[0].effect,'block');
+  assert.equal(fight('fighter','rahab','무속성').battle.strikes[0].effect,'hit');
+  console.log('Saga new territory abilities, area poison, land seizure, evolution, ward clearing and Goblin boosts checked');
   const boosts=fight('fighter','dwarf','무속성',null,s=>{
     unit(s,4,'ares',1,0);unit(s,5,'poseidon',0,1);
   });

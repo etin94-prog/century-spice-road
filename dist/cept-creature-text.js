@@ -17,6 +17,11 @@ const CepterCreatureText=(()=>{
     poseidon:'교전에 참여하지 않고 지도에 있으면 방어 크리처의 전투 HP를 20 올립니다.',
     brancharmy:'지도에 배치된 지 속성 크리처 한 마리당 전투 ST가 5 오릅니다.',
     grassstrider:'전투에서 상대 손패 한 장당 ST가 10 오릅니다.',
+    avenger:'내 총마력 순위에 10을 곱한 만큼 전투 ST와 HP가 오릅니다.',
+    rahab:'최대 HP가 50 이상인 상대의 일반 공격을 무효화합니다. 교전에 참여하지 않고 지도에 있으면 수·풍 속성 크리처의 전투 HP를 10 올립니다.',
+    ukobach:'내 보유 마력이 상대보다 적으면 전투 ST와 HP가 20씩 오릅니다.',
+    lordofbane:'교전에 참여하지 않고 지도에 있으면 수·풍 속성 크리처의 전투 ST를 10 올립니다.',
+    tengu:'같은 지역에서 적이 소유한 풍 영지로 이동해 침략할 수 있습니다.',
     battlegearalpha:'배틀 기어 β를 지원으로 사용하면 번들 기어로 합체합니다. 단일 대상 주문과 영지 능력의 대상이 되지 않습니다.',
     battlegearbeta:'배틀 기어 α를 지원으로 사용하면 번들 기어로 합체합니다. 두루마리 공격을 무효화합니다.',
     berserker:'일반 공격으로 피해를 주면 자신이 혼란에 빠집니다.',
@@ -338,7 +343,18 @@ const CepterCreatureText=(()=>{
     const art=C.secretArt?.(card);
     if(art)return '비술 '+art.cost+'G · '+art.label+'. 주사위를 굴리기 전에 사용합니다.';
     if(C.edition==='revolt')return;
-    const key=C.combo.key(card),saga={brancharmy:'머드맨으로 진화합니다.',quicksilver:'지도에서 최대 HP가 가장 높은 크리처로 진화합니다. 동률이면 무작위로 고르고 카드의 기본 능력치로 돌아갑니다.',necromancer:'가장 최근에 파괴된 크리처 카드를 손패로 가져옵니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
+    const key=C.combo.key(card),saga={
+      heraldspirit:'다음 차례까지 위치에 관계없이 내 모든 영지에 명령할 수 있습니다.',
+      swampspawn:'고른 셉터의 다음 주사위 눈을 0으로 고정합니다.',
+      armoreddragon:'고른 무속성 크리처에게 30 피해를 줍니다.',
+      venomouspore:'고른 지역에 있는 모든 크리처에게 독을 부여합니다.',
+      swordprincess:'아머드 프린세스로 진화합니다.',
+      possession:'고른 적의 레벨 1 영지를 점유하고 자신은 파괴됩니다.',
+      lordofbane:'고른 적 셉터는 보유한 호부 하나당 5G를 잃습니다.',
+      bonegolem:'고른 스켈레톤을 본 골렘으로 진화시킵니다.',
+      ahuizotl:'고른 내 영지의 속성을 수로 바꿉니다.',
+      nobleshaman:'지도에 있는 모든 크리처와 그 영지의 인챈트를 해제합니다.',
+      brancharmy:'머드맨으로 진화합니다.',quicksilver:'지도에서 최대 HP가 가장 높은 크리처로 진화합니다. 동률이면 무작위로 고르고 카드의 기본 능력치로 돌아갑니다.',necromancer:'가장 최근에 파괴된 크리처 카드를 손패로 가져옵니다.',fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
       hypnosloth:'고른 셉터의 다음 주사위를 1로 고정합니다.',lichenoid:'고른 크리처의 최대 HP를 최대 100까지 10 올립니다.',
       spinyagama:'사이즈모돈으로 진화합니다.',seismodon:'브론타이즈로 진화합니다.',
       spudfolk:'지도에 배치된 지 크리처 한 마리당 20G를 얻습니다.',
@@ -455,10 +471,14 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='baldanders'?'전투 중 다른 크리처로 무작위 변신합니다. E 등급은 제외되며 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':
-      C.edition==='begins'&&key==='chimera'?'완주 보상을 받을 때마다 기본 ST를 10 올립니다. 최대 100까지 오릅니다.':
+      C.edition==='saga'&&key==='saint'?'무속성 상대에게 일반 공격으로 피해를 주면 80% 확률로 즉사시킵니다.':
+      C.edition==='saga'&&key==='fungonoid'?'전투에서 생존하면 최대 HP가 10 오릅니다. 상한은 100입니다.':
+      ['begins','saga'].includes(C.edition)&&key==='chimera'?'완주 보상을 받을 때마다 기본 ST를 10 올립니다. 최대 100까지 오릅니다.':
       C.edition==='begins'&&key==='powdereater'?'영지 명령으로 이동하면 원래 영지에도 복제본을 남깁니다. 주문에 의한 이동에는 발동하지 않습니다.':
       C.edition==='begins'&&key==='behemoth'?'전투에서 살아남으면 내 손패 한 장을 무작위로 파괴합니다.':
       C.edition==='saga'&&key==='basaltidol'?'맵에 있으면 전투 종료나 패배로 발동하는 능력과 장비 효과를 모두 봉쇄합니다.':
+      C.edition==='saga'&&key==='mothman'?'지도에 있는 무속성 크리처 한 마리당 전투 ST와 HP가 10씩 됩니다.':
+      C.edition==='saga'&&key==='redcap'?'지도에 있는 고블린 한 마리당 전투 ST와 HP가 20씩 됩니다. 교전에 참여하지 않고 지도에 있으면 고블린의 전투 ST와 HP를 20씩 올립니다.':
       C.edition==='begins'&&key==='mothman'?'지도에 배치된 무속성 크리처 한 마리당 전투 ST가 5 오릅니다.':
       C.edition==='begins'&&key==='bandit'?'공격이 명중하면 준 피해의 두 배만큼 상대 마력을 빼앗습니다. 상대 마력이 부족하면 부채가 생깁니다.':
       ['begins','saga'].includes(C.edition)&&key==='baal'?'전투에서 살아남으면 내 손패 한 장을 무작위로 파괴합니다.':

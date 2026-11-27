@@ -272,7 +272,8 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={brancharmy:50,quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
+    const sagaTerritory={armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
+      possession:80,lordofbane:60,bonegolem:60,ahuizotl:80,nobleshaman:50,brancharmy:50,quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -286,7 +287,7 @@ const CepterCombos = (() => {
       const highest=Math.max(0,...units.map(max));
       return units.filter(u=>max(u)===highest).map(u=>u.id);
     }
-    const sagaEvolution={brancharmy:'mudman',sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides',deathscythe:'mummy'};
+    const sagaEvolution={swordprincess:'armedprincess',brancharmy:'mudman',sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides',deathscythe:'mummy'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl','swampspawn']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl','burnacle','swampspawn','landurchin']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
@@ -309,6 +310,17 @@ const CepterCombos = (() => {
           const forms=quicksilverForms(s);
           return forms.some(id=>id!==tile.unit.id)&&forms.every(id=>!cards[id].catalogOnly)?[['abilitySelf',from]]:[];
         }
+        if(n==='heraldspirit'||n==='nobleshaman')return [['abilitySelf',from]];
+        if(n==='lordofbane')return idol(s,'graniteidol')?[]:s.players.flatMap((q,j)=>!allied(s,j,s.turn)&&q.status!=='barrier'?[['abilityPlayer',j]]:[]);
+        if(n==='swampspawn')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
+        if(n==='venomouspore')return s.tiles.flatMap((v,j)=>v.unit?[['abilityLand',j]]:[]);
+        if(n==='armoreddragon'||n==='bonegolem'||n==='possession'||n==='ahuizotl')return s.tiles.flatMap((v,j)=>{
+          if(!targetable(s,v))return [];
+          const legal=n==='armoreddragon'?cards[v.unit.id].element===-1:
+            n==='bonegolem'?name(v.unit)==='skeleton':
+            n==='possession'?v.level===1&&!allied(s,s.turn,v.owner):v.owner===s.turn&&v.type!==1&&!idol(s,'jadeidol');
+          return legal?[['abilityLand',j]]:[];
+        });
         if(n==='creepingflame')return territoryMoveExits(s,from,true).length?[['abilitySelf',from]]:[];
         if(n==='fontaciel'||n==='rockshell'||n==='hellpyron'||n==='spudfolk'||Object.hasOwn(sagaEvolution,n))return [['abilitySelf',from]];
         if(n==='hypnosloth')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
@@ -389,6 +401,30 @@ const CepterCombos = (() => {
           const forms=quicksilverForms(s),id=forms[Math.floor(Math.random()*forms.length)];
           src.unit={id,hp:cards[id].hp};return;
         }
+        if(n==='heraldspirit'){
+          clearCepter(p);p.status='enlightenment';p.enchantDeadline=(s.round+1)*s.players.length+s.turn;
+          return;
+        }
+        if(n==='swampspawn'){
+          if(q.antiMagic)delete q.antiMagic;else{clearCepter(q);q.word=0;}
+          return;
+        }
+        if(n==='lordofbane'){
+          if(q.antiMagic)delete q.antiMagic;else q.cash-=5*q.symbols.reduce((sum,count)=>sum+count,0);
+          return;
+        }
+        if(n==='nobleshaman'){
+          for(const t of s.tiles)if(t.unit){clear(t.unit);delete t.enchant;}
+          return;
+        }
+        if(n==='venomouspore'){
+          for(const t of s.tiles)if(t.area===v.area&&t.unit){clear(t.unit);t.unit.poisoned=true;}
+          return;
+        }
+        if(n==='armoreddragon'){damage(s,v,30);return;}
+        if(n==='bonegolem'){v.unit=morph(v.unit,'bonegolem');return;}
+        if(n==='possession'){v.owner=s.turn;destroy(s,src);return;}
+        if(n==='ahuizotl'){v.type=1;return;}
         if(n==='creepingflame'){s.teleFrom=from;s.territoryMove='adjacent';return 'teleMove';}
         if(n==='fontaciel'){
           for(const t of s.tiles){

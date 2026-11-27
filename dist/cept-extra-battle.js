@@ -185,6 +185,10 @@ const CepterExtraBattle=(()=>{
       }
       if(boost('madclown',a,true))a.hp+=10;
       if(!a.defending&&boost('ares',a))a.st+=20;
+      if(s.edition==='saga'&&[1,3].some(e=>combo.hasElement(a,e))){
+        if(boost('lordofbane',a))a.st+=10;
+        if(boost('rahab',a))a.hp+=10;
+      }
       if(s.edition==='saga'&&a.defending&&boost('poseidon',a))a.hp+=20;
       if(!a.defending&&boost('nue',a))a.st-=10;
       if(a.element===3&&boost(['begins','3ds'].includes(s.edition)?'humbaba':'hunbaba',a))a.st-=10;
@@ -193,6 +197,10 @@ const CepterExtraBattle=(()=>{
       if(s.edition==='saga'){
         const count=e=>s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],e)).length;
         if(a.n==='brancharmy')a.st+=count(2)*5;
+        if(a.n==='mothman')a.st=a.hp=count(-1)*10;
+        if(a.n==='redcap')a.st=a.hp=20*s.tiles.filter(v=>fx.name(v.unit)==='goblin').length;
+        if(a.n==='goblin'&&boost('redcap',a)){a.st+=20;a.hp+=20;}
+        if(a.n==='ukobach'&&s.players[a.seat].cash<s.players[d.seat].cash){a.st+=20;a.hp+=20;}
         if(a.g==='magmaarmor'){a.st+=count(0)*10;a.hp+=count(2)*10;}
         if(a.g==='stormarmor'){a.st+=count(3)*10;a.hp+=count(1)*10;}
 
@@ -284,7 +292,9 @@ const CepterExtraBattle=(()=>{
       if(['ghoul','hugespider','livingclaw'].includes(n)||s.edition==='saga'&&a.g==='livingclaw'){combo.clear(d.u);d.u.enchant='paralysis';}
       if(n==='hunbaba'){combo.clear(d.u);d.u.poisoned=true;}
       if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
-        s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||n==='yeti'&&d.element===0&&chance(.6)||n==='dhampir'&&d.element===2&&chance(.6)){
+        s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||
+        n==='yeti'&&combo.hasElement(d,0)&&chance(.6)||n==='dhampir'&&combo.hasElement(d,2)&&chance(.6)||
+        s.edition==='saga'&&n==='saint'&&combo.hasElement(d,-1)&&chance(.8)){
         d.hp=0;lines.push('즉사');
       }
       if(s.edition==='revolt'&&a.gear?.instantDeathElements?.some(e=>combo.hasElement(d,e))&&d.hp>0&&chance(.6)){
@@ -331,7 +341,7 @@ const CepterExtraBattle=(()=>{
       if(a.g==='markerflag'&&!b.teleport&&!b.spellMove)b.markerFlag=true;
     }
     function grow(a,n){
-      const cap=s.edition==='3ds'?100:80,max=fx.max(a.u),gain=Math.max(0,Math.min(cap,max+n)-max);
+      const cap=['3ds','saga'].includes(s.edition)?100:80,max=fx.max(a.u),gain=Math.max(0,Math.min(cap,max+n)-max);
       a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
     }
     function victory(a,d){

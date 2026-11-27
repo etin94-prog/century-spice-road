@@ -609,7 +609,7 @@ function createCepter(edition="ps2"){
             if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit))||begins&&cards[v.unit.id]?.noLapHeal)continue;
             const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+(begins?10:Math.floor(max/5)));
             if(fx.name(v.unit)==='chimera'){
-              const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(handheld||begins?100:80,st+10));
+              const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(handheld||begins||edition==='saga'?100:80,st+10));
             }
           }
           if(edition==='saga')for(const q of s.players)if(q!==p&&q.status==='trespass'){
@@ -740,11 +740,13 @@ function createCepter(edition="ps2"){
     const nearby=name==='roadrunner'?[...(begins?links[from]:[]),...links[from].flatMap(j=>links[j]).filter(j=>j!==from)]:links[from];
     const remote=s.tiles.flatMap((tile,j)=>{
       if(tile.unit&&!allied(s,owner,tile.owner)&&unit.enchant!=='paralysis'){
-        if(name==='aerogoetia'&&tile.type===3||revolt&&name==='thunderspawn'&&!combo.matchesTerrain(cards[tile.unit.id],tile.type))return [j];
+        if(name==='aerogoetia'&&tile.type===3||revolt&&name==='thunderspawn'&&!combo.matchesTerrain(cards[tile.unit.id],tile.type)||
+          edition==='saga'&&name==='tengu'&&tile.area===area&&tile.type===3)return [j];
       }
       if(tile.owner>=0||!territoryType(tile.type))return [];
       if((remoteVacant||remoteVacantElements?.includes(tile.type)||begins&&unit.enchant==='spiritwalk')&&unit.enchant!=='paralysis')return [j];
       if(tile.area!==area)return [];
+      if(edition==='saga'&&unit.enchant==='paralysis')return [];
       const unrestricted=unit.enchant==='spiritwalk'||!remoteVacant&&name==='blynx';
       return unrestricted||tile.type===3&&(name==='holyllama'||!remoteVacantElements&&name==='wyvern')||!remoteVacantElements&&tile.type===2&&name==='dryad'?[j]:[];
     });
@@ -947,7 +949,7 @@ function createCepter(edition="ps2"){
       if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
       if((handheld||begins)&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
       if((handheld||begins)&&a.n==='camazotz')a.st+=baseStrength[a===A?1:0];
-      if(begins&&a.n==='avenger'){
+      if((begins||edition==='saga')&&a.n==='avenger'){
         const wealth=personalTotal(s,a.seat);
         const amount=10*(1+s.players.filter((_,seat)=>personalTotal(s,seat)>wealth).length);
         a.st+=amount;a.hp+=amount;
@@ -1091,7 +1093,7 @@ function createCepter(edition="ps2"){
           d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||
-          matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=40||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
+          matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=(edition==='saga'&&d.n==='rahab'?50:40)||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
           d.n==='caitsith'&&fx.strength(a.u)>=40||(revolt||begins)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&blocks){lines.push('공격 무효');return 'block';}
@@ -2150,6 +2152,8 @@ function createCepter(edition="ps2"){
         if(q.antiMagic)return friend?-30:5;
         if(n==='holyllama'||n==='hypnosloth'||n==='swampspawn')return alliedWordTarget(x,n==='hypnosloth'?1:n==='swampspawn'?2:6);
         if(n==='clockworkowl')return friend&&q.previous!=null&&!q.chooseDirection?15:-10;
+        if(edition==='saga'&&n==='lordofbane')return friend?-30:q.symbols.reduce((sum,count)=>sum+count,0)*.6;
+        if(edition==='saga'&&n==='swampspawn')return !friend&&s.tiles[q.pos].owner===seat&&owedToll(s,s.tiles[q.pos],x)>50?owedToll(s,s.tiles[q.pos],x)/3:-20;
         if(n==='bookworm')return friend?-60:Math.max(0,...q.hand.map(id=>(cards[id]?.cost||0)*.6));
         if((handheld||begins)&&n==='witch')return friend?-60:Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*30);
         return friend?-100:q.cash/20;
@@ -2164,6 +2168,14 @@ function createCepter(edition="ps2"){
           const trial={...s,tiles:s.tiles.map(v=>v===t?{...v,type:2}:v)};
           return total(trial,seat)-total(s,seat)+(cards[u.id].element===2?20:0);
         }
+        if(edition==='saga'&&n==='ahuizotl'){
+          const trial={...s,tiles:s.tiles.map(v=>v===t?{...v,type:1}:v)};
+          return total(trial,seat)-total(s,seat)+(combo.hasElement(cards[u.id],1)?20:0);
+        }
+        if(edition==='saga'&&n==='armoreddragon')return damageValue(t,30);
+        if(edition==='saga'&&n==='bonegolem')return sign(t)*(8+t.level*8);
+        if(edition==='saga'&&n==='possession')return (value(s,t)-value(s,src))/4+(fx.max(u)-fx.max(src.unit))/2;
+        if(edition==='saga'&&n==='venomouspore')return s.tiles.reduce((sum,v)=>sum+(v.area===t.area&&v.unit&&!v.unit.poisoned?-sign(v)*(5+v.level*3):0),0);
         if(edition==='saga'&&n==='tokebi')return p.cash<100?Math.min(value(s,t),200)*.22-t.level*4: -20;
         if((begins||edition==='saga')&&n==='fay')return sign(t)*Math.min(20,100-fx.strength(u));
         if(edition==='saga'&&n==='lichenoid')return sign(t)*Math.min(10,100-fx.max(u))*(1+t.level*.3);
@@ -2191,6 +2203,8 @@ function createCepter(edition="ps2"){
       if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld||begins?100:80)?handheld||begins?40:20:0;
       if(n==='beacontower')return p.status!=='enlightenment'&&p.cash>=150&&s.tiles.some((t,at)=>at!==from&&t.owner===seat&&t.level<5&&!fx.blockedLevel(s,t))?28:-20;
       if(n==='fate')return p.hand.length<5?30:0;
+      if(edition==='saga'&&n==='heraldspirit')return p.status!=='enlightenment'&&s.tiles.some((t,i)=>t.owner===seat&&!territory(s).includes(i))?16:-20;
+      if(edition==='saga'&&n==='nobleshaman')return s.tiles.reduce((sum,t)=>sum+(t.unit&&combo.enchanted(t.unit)?sign(t)*(['paralysis','disease','senility','fog'].includes(t.unit.enchant)||t.unit.poisoned?12:-8):0),0);
       if(n==='quicksilver'){
         const forms=fx.quicksilverForms(s);
         const found=forms.reduce((sum,id)=>{
@@ -2343,7 +2357,7 @@ function createCepter(edition="ps2"){
           return 26+value(s,s.tiles[y])/15+(s.tiles[y].type===3?4:0);
         }
         if((revolt||begins)&&k==='transfer'&&s.tiles[y].owner<0&&cards[s.tiles[x].unit.id].remoteVacantElements)return sleipnirValue(x,y);
-        if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia'||revolt&&fx.name(s.tiles[x].unit)==='thunderspawn')){
+        if(k==='transfer'&&s.tiles[y].owner>=0&&(skill===3||edition==='saga'&&fx.name(s.tiles[x].unit)==='tengu'||edition==='begins'&&fx.name(s.tiles[x].unit)==='aerogoetia'||revolt&&fx.name(s.tiles[x].unit)==='thunderspawn')){
           const src=s.tiles[x],out=forecast({at:y,from:x,inv:src.unit.id,invHP:src.unit.hp,attackerSeat:src.owner},null,false);
           return out.won?value(s,s.tiles[y])*1.4-value(s,src)+25:-100;
         }
