@@ -638,7 +638,7 @@ function map(){
       const stock=C.shopStock(s,inspect);
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.shopCost(id)+'G').join(' · '):'이 맵의 상품 정보 없음'));
     }else if(t.type==='모프'){
-      center.append(el('span','처음 배치한 크리처의 속성을 얻습니다. '+(C.edition==='revolt'?'무속성 크리처를 배치하면 복합 영지가 됩니다. ':'')+'변한 속성은 영지가 비어도 유지됩니다.'));
+      center.append(el('span','처음 배치한 크리처의 속성을 얻습니다. '+(['revolt','begins'].includes(C.edition)?'무속성 크리처를 배치하면 복합 영지가 됩니다. ':'')+'변한 속성은 영지가 비어도 유지됩니다.'));
     }else if(t.type==='마법진'){
       center.append(el('span','멈추면 제시된 주문 두 장 중 한 장을 0G로 사용할 수 있습니다.'));
     }else if(t.type==='보석 상점'){

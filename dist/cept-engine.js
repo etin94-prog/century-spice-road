@@ -6,7 +6,7 @@ function createCepter(edition="ps2"){
   const maps=editions?editions.boards(edition,originalMaps):originalMaps;
   const original=typeof module==='undefined'?CepterCards:require('./cept-cards.js');
   const board=s=>maps[(s.mapId?.startsWith('ps2-')&&!s.layoutRevision?'legacy-':'')+(s.mapId||'classic')];
-  const firstEdition=edition==='saturn'||edition==='ps1',revolt=edition==='revolt',handheld=edition==='3ds';
+  const firstEdition=edition==='saturn'||edition==='ps1',revolt=edition==='revolt',handheld=edition==='3ds',begins=edition==='begins';
   const elements=['화','수','지','풍'];
   const creature=(name,element,st,hp,cost)=>({name,kind:'creature',element,st,hp,cost});
   const item=(name,st,hp,cost)=>({name,kind:'item',st,hp,cost});
@@ -254,8 +254,8 @@ function createCepter(edition="ps2"){
   const worth=t=>(t.base||80)*2**(t.level-1);
   const {territoryType}=combo;
   function claimTerrain(tile,card){
-    if(tile.type!=='모프'||!(revolt||edition==='saga'))return tile.type;
-    if(card.elements||revolt&&card.element<0)return '복합';
+    if(tile.type!=='모프'||!(revolt||begins||edition==='saga'))return tile.type;
+    if(card.elements||(revolt||begins)&&card.element<0)return '복합';
     return card.element<0?'무속성':card.element;
   }
   function claim(tile,seat,unit){
@@ -280,7 +280,7 @@ function createCepter(edition="ps2"){
   const chainNames=[...elements,'화·지','수·풍'];
   const sameChain=(a,b,s)=>a.owner>=0&&typeof a.type==='number'&&allied(s,a.owner,b.owner)&&chainType(s,a.type)===chainType(s,b.type)&&a.area===b.area;
   const chain=(s,t)=>t.owner<0||typeof t.type!=='number'?1:Math.min(5,s.tiles.filter(v=>sameChain(t,v,s)).length);
-  const chainRates=[0,10,15,18,20,22];
+  const chainRates=begins?[0,10,15,20,25,30]:[0,10,15,18,20,22];
   const chainRate=(s,t)=>chainRates[chain(s,t)]/10;
   const value=(s,t)=>Math.floor(worth(t)*chainRates[chain(s,t)]/10);
   function chainCounts(s){
@@ -302,10 +302,11 @@ function createCepter(edition="ps2"){
     }
     if(messages.length){s.chainNotice=messages.join(' / ');note(s,s.chainNotice);}
   }
-  const toll=(s,t)=>s.players[t.owner]?.status==='blackout'||cards[t.unit?.id]?.freeToll?0:Math.floor(value(s,t)*[0,.2,.3,.4,.6,.8][t.level]*
+  const tollRates=begins?[0,.2,.3,.4,.5,.6]:[0,.2,.3,.4,.6,.8];
+  const toll=(s,t)=>s.players[t.owner]?.status==='blackout'||cards[t.unit?.id]?.freeToll?0:Math.floor(value(s,t)*tollRates[t.level]*
     (cards[t.unit?.id]?.tollFactor||{boggart:2,gnome:1.5,steamgear:.5}[key(cards[t.unit?.id])]||1)*({sleep:0,peace:0,barricade:1.3,greed:1.5,fog:.5}[t.unit?.enchant]??1)*({sagaTollUp:1.3,sagaTollDown:.7}[s.players[t.owner]?.status]??1));
   const owedToll=(s,t,seat=s.turn)=>s.players[seat].status==='goodluck'||s.players[seat].sagaClemency?0:toll(s,t);
-  const debtSaleValue=(s,t)=>revolt?Math.floor(value(s,t)*.8):value(s,t);
+  const debtSaleValue=(s,t)=>revolt||begins?Math.floor(value(s,t)*.8):value(s,t);
   const revoltLapBase=(map,laps)=>Math.floor(map.bonus*(1+laps/10));
   const personalTotal=(s,i)=>s.tiles.reduce((v,t)=>v+(t.owner===i?value(s,t):0),s.players[i].cash)+(s.players[i].symbols||[]).reduce((v,n,k)=>v+n*s.prices[k],0);
   const canInvade=(s,attacker,defender)=>defender<0||combo.activeWorld(s)!=='mercifulworld'||total(s,attacker)<=total(s,defender);
@@ -318,14 +319,15 @@ function createCepter(edition="ps2"){
   }
   function updatePrices(s,before){
     if(!before)return;
-    if(!handheld&&edition!=='ps2'&&edition!=='saga'){
+    if(!handheld&&!begins&&edition!=='ps2'&&edition!=='saga'){
       landValues(s).forEach((v,k)=>{s.prices[k]=Math.max(1,s.prices[k]+Math.trunc((v-before[k])/100));});
       return;
     }
     s.priceRemainder||=Array(s.prices.length).fill(0);
     landValues(s).forEach((v,k)=>{
       const change=v-before[k]+s.priceRemainder[k],whole=Math.trunc(change/100);
-      s.prices[k]=Math.max(1,s.prices[k]+whole);s.priceRemainder[k]=change-whole*100;
+      const price=Math.max(1,s.prices[k]+whole);
+      s.prices[k]=begins?Math.min(99,price):price;s.priceRemainder[k]=change-whole*100;
     });
   }
   const opposingGem=[1,0,3,2],alliedGem=[2,3,0,1];
@@ -524,7 +526,9 @@ function createCepter(edition="ps2"){
           const cashBeforeLap=p.cash;p.lap++;p.flags=[];
           const lapIncrement=edition==='saga'||handheld?m.bonus/10:20;
           const lands=s.tiles.filter(v=>handheld?allied(s,v.owner,s.turn):v.owner===s.turn).length;
-          p.cash+=m.bonus+Math.floor(lapIncrement*(p.lap-1))+(handheld?s.players.length*10:20)*lands;
+          const fixed=begins?(p.lap+1)*100:m.bonus+Math.floor(lapIncrement*(p.lap-1));
+          const landBonus=begins?(s.players.length===2?60:80):handheld?s.players.length*10:20;
+          p.cash+=fixed+landBonus*lands;
           if(handheld){
             for(const [k,n] of p.symbols.entries()){
               if(!n)continue;
@@ -538,7 +542,7 @@ function createCepter(edition="ps2"){
           }if(p.sagaFeast){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);delete p.sagaFeast;}if(p.status==='triumph'){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);extraSpells.clearCepter(p);}
           for(const v of s.tiles){
             if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit)))continue;
-            const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+Math.floor(max/5));
+            const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+(begins?10:Math.floor(max/5)));
             if(fx.name(v.unit)==='chimera'){
               const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(80,st+10));
             }
@@ -726,7 +730,8 @@ function createCepter(edition="ps2"){
         options.push(['leaveGem']);break;
       case 'temple':
         s.prices.forEach((price,k)=>{
-          for(let n=1;n<=Math.min(50,Math.floor(p.cash/price));n++)options.push(['buySymbol',k,n]);
+          const capacity=begins?50-p.symbols[k]:50;
+          for(let n=1;n<=Math.min(capacity,Math.floor(p.cash/price));n++)options.push(['buySymbol',k,n]);
           for(let n=1;n<=Math.min(50,p.symbols[k]);n++)options.push(['sellSymbol',k,n]);
         });options.push(['leaveTemple']);break;
       case 'spellCircle':return [...s.circleOffers.map(id=>['circleCast',id]),['circleSkip']];
@@ -734,7 +739,7 @@ function createCepter(edition="ps2"){
       case 'towerTarget':return [...towerTargets(s),['towerCancel']];
       case 'towerDeploy':return [...towerCards(s,s.towerAt),['towerCancel']];
       case 'land':
-        if(s.immediateAt==null&&t.owner>=0&&(handheld||revolt?!allied(s,t.owner,i):t.owner!==i)&&canInvade(s,i,t.owner)&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
+        if(s.immediateAt==null&&t.owner>=0&&(handheld||revolt||begins?!allied(s,t.owner,i):t.owner!==i)&&canInvade(s,i,t.owner)&&t.unit?.enchant!=='peace'&&!['sagaFear','pacifism'].includes(p.status))hand('creature','invade');
         if(s.immediateAt==null&&t.owner>=0&&!allied(s,t.owner,i))options.push(['pay']);
         {
           if(s.immediateAt==null&&t.owner<0&&territoryType(t.type))hand('creature','summon');
@@ -745,7 +750,7 @@ function createCepter(edition="ps2"){
               if(!fx.levelLocked(v)&&p.cash>=levelCost(v,level))options.push(['level',n,level]);
             }
             if(!leadIdol)for(const dest of territoryDestinations(s,n)){
-              if(v.unit.enchant!=='thornfetter'&&canInvade(s,v.owner,s.tiles[dest].owner)&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld||revolt?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
+              if(v.unit.enchant!=='thornfetter'&&canInvade(s,v.owner,s.tiles[dest].owner)&&s.tiles[dest].unit?.enchant!=='peace'&&canOccupy(cards[v.unit.id],s.tiles[dest])&&!cards[v.unit.id].stationary&&territoryType(s.tiles[dest].type)&&(handheld||revolt||begins?!allied(s,s.tiles[dest].owner,i):s.tiles[dest].owner!==i)&&(p.status!=='pacifism'||s.tiles[dest].owner<0))options.push(['transfer',n,dest]);
             }
             if(p.cash>=elementCost(v))elements.forEach((_,e)=>{if(e!==v.type)options.push(['element',n,e]);});
             if(!leadIdol&&s.immediateAt==null)p.hand.forEach((id,j)=>{if(p.status!=='silence'&&deployable(s,id)&&(s.cardPaid||!sacrificeRequired(s,cards[id])||p.hand.length>=2)&&cards[id].kind==='creature'&&allowed(s,i,cards[id],v)&&price(p,cards[id],s)<=p.cash&&cards[id].landBan!==v.type)options.push(['exchange',n,j]);});
@@ -1297,7 +1302,7 @@ function createCepter(edition="ps2"){
     const previousChains=trackChains||combo.activeWorld(s)==='jointworld'||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
     if(k==='roll'){delete s.doublecast;delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
     const gemTerrain=board(s).gemStore?s.tiles.map(t=>[t.type,t.level]):null;
-    const before=!gemTerrain&&(handheld||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
+    const before=!gemTerrain&&(handheld||begins||edition==='ps2'||edition==='saga'||s.mapId==='market'||board(s).special?.includes('Temple'))?landValues(s):null;
     function mapEffect(type,label,tile=p.pos,extra={}){
       s.mapEffect={sequence:(s.mapEffect?.sequence||0)+1,type,label,tile,source:p.pos,...extra};
     }

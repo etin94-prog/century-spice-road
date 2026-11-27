@@ -91,12 +91,15 @@ const CepterMaps=(()=>{
   ],[
     '성',1,0,2,'동쪽 요새',3,0,1,'무속성',2,3,1,'서쪽 요새',0,2,3,
     2,'신전',1,0,'성소',3,1,'점술관',2
-  ],[4,12],90,6,[
+  ],[4,12],90,8,[
     ...loop(16),[0,16],[16,17],[17,18],[18,2],
     [8,19],[19,20],[20,21],[21,10],[2,22],[22,23],[23,24],[24,10]
   ],Array(25).fill(0),240);
   const beginsPractice={'begins-original-ford':{...ford,areaCount:1,section:'arena',graph:true,startCash:250,
-    fortBonus:80,defaultGoal:6000,castles:[0],checkpoints:ford.forts}};
+    fortBonus:200,defaultGoal:6000,castles:[0],checkpoints:ford.forts}};
+  beginsPractice['begins-original-ford-morph']={...beginsPractice['begins-original-ford'],
+    name:'돌등 여울 · 모프 · 창작 지도',
+    types:ford.types.map((type,at)=>[2,6,8,14,18,22,24].includes(at)?'모프':type)};
   const handheldBend=map('솔바람 굽이 · 창작 지도',[...ring,[2,3],[3,3],[3,4],[4,4]],
     ['성',0,1,0,3,1,2,2,1,3,1,0,'남쪽 요새',2,3,0,1,2,3,0],
     [12],100,6,[...loop(16),[2,16],[16,17],[17,18],[18,19],[19,7]],Array(20).fill(0),200);

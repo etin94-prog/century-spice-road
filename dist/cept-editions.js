@@ -83,8 +83,8 @@ const CepterEditions=(()=>{
       const shop=edition==='begins'?beginsShops[m.slug]:null;
       result[id]={...m,types,links,transit,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
-        areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||80,die:die||Number(m.die)||other?.die||6,storyGoal:goal||other?.storyGoal,
-        graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
+        areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||(edition==='begins'&&m.slug==='gaidess-arena-2'?100:80),die:die||Number(m.die)||other?.die||(edition==='begins'?8:6),storyGoal:goal||other?.storyGoal,
+        graph:true,...(fortBonus||edition==='begins'?{fortBonus:fortBonus||200}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
         ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{}),
         ...(shop?{cardShops:Object.fromEntries(types.flatMap((t,i)=>t==='카드 상점'?[[i,shop]]:[]))}:{})};
     }

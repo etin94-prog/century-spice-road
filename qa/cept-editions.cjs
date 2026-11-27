@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,41],['begins',400,16]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,41],['begins',400,17]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -3035,6 +3035,81 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const savedOpening=structuredClone(opening);
   savedOpening.players[1].template=old;
   assert.ok(C.setOpeningBook(savedOpening,1,old));assert.equal(savedOpening.players[1].book.length,46);
+  assert.ok(Object.values(C.maps).every(m=>m.die===8));
+  const die=C.start(2,2,6000,'begins-original-ford'),random=Math.random;
+  die.phase='roll';
+  try{Math.random=()=>.999;assert.ok(C.play(die,['roll']));}finally{Math.random=random;}
+  assert.deepEqual([die.die,die.mapEffect.faces,die.mapEffect.sides],[8,[8],8]);
+
+  for(const seats of [2,4]){
+    const lap=C.start(seats,seats,6000,'begins-original-ford'),player=lap.players[0];
+    Object.assign(player,{pos:1,previous:2,dir:1,cash:500,flags:C.board(lap).checkpoints.slice(),word:1});
+    Object.assign(lap.tiles[3],{owner:0,unit:{id:fighter,hp:11}});
+    Object.assign(lap.tiles[6],{owner:0,unit:{id:fighter,hp:21}});
+    lap.phase='roll';
+    assert.ok(C.play(lap,['roll']));
+    assert.equal(player.pos,0);assert.equal(player.lap,1);assert.deepEqual(player.flags,[]);
+    const lands=lap.tiles.filter(t=>t.owner===0).length;
+    assert.equal(player.cash,700+lands*(seats===2?60:80));
+    assert.equal(lap.tiles[3].unit.hp,21);
+    assert.equal(lap.tiles[6].unit.hp,31);
+  }
+  const fort=C.start(2,2,6000,'begins-1'),board=C.board(fort);
+  const duplicate=board.forts.find(at=>board.forts.filter(i=>fort.tiles[i].type===fort.tiles[at].type).length>1);
+  const sister=board.forts.find(at=>at!==duplicate&&fort.tiles[at].type===fort.tiles[duplicate]?.type);
+  assert.ok(duplicate!=null&&sister!=null);
+  for(const at of [duplicate,sister]){
+    const pos=board.links[at][0];
+    Object.assign(fort,{phase:'fork',die:1,remaining:1});
+    Object.assign(fort.players[0],{pos,previous:board.links[pos].find(n=>n!==at)});
+    assert.ok(C.play(fort,['route',at]));
+    assert.equal(fort.players[0].cash,400);
+  }
+
+  const economy=C.start(4,4,6000,'begins-original-ford'),buyer=economy.players[0];
+  const lands=economy.tiles.filter(t=>typeof t.type==='number').slice(0,5);
+  for(const tile of lands)Object.assign(tile,{owner:0,type:2,base:100,unit:{id:fighter,hp:40}});
+  for(let n=1;n<=5;n++){
+    lands.slice(n).forEach(t=>t.owner=-1);
+    lands.slice(0,n).forEach(t=>t.owner=0);
+    assert.equal(C.chainRate(economy,lands[0]),[1,1.5,2,2.5,3][n-1]);
+  }
+  lands[0].level=4;assert.equal(C.toll(economy,lands[0]),1200);
+  lands[0].level=5;assert.equal(C.toll(economy,lands[0]),2880);
+  assert.equal(C.debtSaleValue(economy,lands[0]),3840);
+
+  economy.phase='temple';buyer.cash=2000;buyer.symbols[0]=48;
+  assert.ok(!C.play(economy,['buySymbol',0,3]));
+  assert.ok(C.play(economy,['buySymbol',0,2]));
+  assert.deepEqual([buyer.symbols[0],buyer.cash],[50,1980]);
+  economy.phase='temple';assert.ok(!C.choices(economy).some(([kind,e])=>kind==='buySymbol'&&e===0));
+
+  const prices=C.start(2,2,6000,'begins-original-ford'),priceBuyer=prices.players[0];
+  Object.assign(prices.tiles[3],{owner:0,type:2,base:100,unit:{id:fighter,hp:40}});
+  priceBuyer.cash=2000;priceBuyer.hand=[id('fireshift')];
+  assert.ok(C.play(prices,['cast',0])&&C.play(prices,['targetLand',3]));
+  assert.deepEqual(prices.prices,[11,10,9,10]);
+  prices.phase='land';prices.prices[0]=98;
+  assert.ok(C.play(prices,['level',3,5]));
+  assert.equal(prices.prices[0],99);
+
+  const morph=C.start(4,4,0,'begins-original-ford-morph');
+  morph.phase='land';morph.players[0].pos=2;morph.players[0].hand=[goblin];
+  assert.ok(C.play(morph,['summon',0]));
+  assert.equal(morph.tiles[2].type,'복합');
+  morph.phase='land';morph.players[1].pos=6;morph.players[1].hand=[creature('merfolk')];
+  assert.ok(C.play(morph,['summon',0]));
+  assert.deepEqual([morph.tiles[6].type,morph.tiles[6].owner],[1,1]);
+  const alliedBoard=C.start(4,4,6000,'begins-original-ford',undefined,undefined,0,'teams');
+  alliedBoard.phase='land';alliedBoard.visited=[2];
+  Object.assign(alliedBoard.players[0],{pos:3,hand:[fighter]});
+  Object.assign(alliedBoard.tiles[2],{owner:0,unit:{id:fighter,hp:40}});
+  Object.assign(alliedBoard.tiles[3],{owner:2,unit:{id:fighter,hp:40}});
+  assert.ok(!C.choices(alliedBoard).some(([kind,from,to])=>kind==='invade'||kind==='pay'||kind==='transfer'&&from===2&&to===3));
+  alliedBoard.tiles[3].owner=1;
+  assert.ok(C.choices(alliedBoard).some(([kind])=>kind==='invade'));
+  console.log('Begins one 8-sided die, lap magic, fort bonus, recovery, chains, tolls, symbol limits, alliance movement and Morph passed');
+
   const ford=C.start(4,4,0,'begins-original-ford');
   assert.equal(C.board(ford).name,'돌등 여울 · 창작 지도');
   assert.equal(ford.tiles.length,25);
