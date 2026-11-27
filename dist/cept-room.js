@@ -1,6 +1,7 @@
 // Room state is authoritative on the server. A seat credential stays on its device.
 const inviteId=new URLSearchParams(location.search).get('ceptRoom');
 const recoveryCode=new URLSearchParams(location.hash.slice(1)).get('recoverSeat');
+const seatEnded='이 기기의 좌석 연결이 종료되었습니다. 방장에게 복구 링크를 요청하세요.';
 const recoveryControl=btn('좌석 복구',showRecoveryDialog);
 recoveryControl.hidden=true;
 $('matchMenu').querySelector('.match-menu-items').append(recoveryControl);
@@ -16,7 +17,7 @@ function applyRoom(data){
   const lanOrigin=data.lanOrigin||room?.lanOrigin;
   const clockOffset=data.serverNow!=null?data.serverNow-Date.now():(room?.clockOffset||0);
   room={lanOrigin,clockOffset,id:data.id,seat:data.seat,revision:data.revision,busy:false,started:!!data.game,choices:data.choices||[],recoverable:data.recoverable||[]};
-  recoveryControl.hidden=!room.recoverable.length||cloudRoom;
+  recoveryControl.hidden=!room.recoverable.length;
   $('roomWait').hidden=!!data.game;$('config').hidden=true;
   $('campaignPanel').hidden=true;$('replayLobby').hidden=true;
   if(data.game&&(data.game.edition||'ps2')!==C.edition){const url=new URL(location.href);url.searchParams.set('edition',data.game.edition||'ps2');location.replace(url);return;}
@@ -41,7 +42,7 @@ function roomInviteUrl(id,lan=room.lanOrigin){
   return here;
 }
 function showRecoveryDialog(){
-  if(cloudRoom||!room?.recoverable.length)return;
+  if(!room?.recoverable.length)return;
   const dialog=$('matchInfo'),panel=$('matchInfoBody'),menu=$('matchMenu'),id=room.id;
   const select=el('select'),label=el('label','복구할 좌석'),status=el('p'),link=el('input'),output=el('div');
   for(const seat of room.recoverable)select.add(new Option((seat+1)+'번 좌석',seat));
@@ -56,7 +57,8 @@ function showRecoveryDialog(){
   const issue=btn('일회용 링크 발급',async()=>{
     issue.disabled=true;select.disabled=true;status.textContent='';output.hidden=true;
     try{
-      const result=await requestRoom('rooms/'+id+'/recovery-link','POST',{seat:Number(select.value)});
+      const seat=Number(select.value);
+      const result=cloudRoom?await CepterCloudRoom.issueRecovery(id,seat):await requestRoom('rooms/'+id+'/recovery-link','POST',{seat});
       const url=roomInviteUrl(id,result.lanOrigin||room.lanOrigin);url.hash='recoverSeat='+result.code;
       link.value=url.href;output.hidden=false;link.focus();link.select();
       status.textContent='선택한 참가자에게만 전달하세요. 링크는 15분 동안 유효합니다.';
@@ -68,15 +70,26 @@ function showRecoveryDialog(){
   dialog.addEventListener('close',()=>{panel.replaceChildren();if(room?.started)menu.querySelector('summary').focus();},{once:true});
   dialog.showModal();
 }
+function cloudSeatEnded(){
+  for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
+  room=null;s=null;
+  lobby();
+  $('game').inert=true;
+  $('hand').replaceChildren();$('detail').replaceChildren();
+  recoveryControl.hidden=true;
+  const waiting=$('roomWait');waiting.hidden=false;
+  waiting.replaceChildren(el('p',seatEnded),btn('로비로',()=>location.assign(location.pathname)));
+}
 function claimRecovery(){
   const waiting=$('roomWait'),status=el('p');
   status.setAttribute('role','status');
   const claim=btn('기존 좌석 복구',async()=>{
     claim.disabled=true;status.textContent='';
-    const pending='cept-room-recovery-'+inviteId;
-    onlineKey=localStorage.getItem('cept-room-seat-'+inviteId)||sessionStorage.getItem(pending)||newKey();
-    sessionStorage.setItem(pending,onlineKey);
     try{
+      if(cloudRoom){await CepterCloudRoom.claimRecovery(inviteId,recoveryCode);return;}
+      const pending='cept-room-recovery-'+inviteId;
+      onlineKey=localStorage.getItem('cept-room-seat-'+inviteId)||sessionStorage.getItem(pending)||newKey();
+      sessionStorage.setItem(pending,onlineKey);
       const data=await requestRoom('rooms/'+inviteId+'/recover','POST',{code:recoveryCode});
       remember(inviteId);sessionStorage.removeItem(pending);applyRoom(data);pollRoom();
     }catch(e){status.textContent=e.message;claim.disabled=false;}
@@ -106,7 +119,7 @@ async function pollRoom(){
     try{const data=await requestRoom('rooms/'+room.id);
       if(!room.busy&&room.revision===revision&&data.revision>revision)applyRoom(data);
     }catch(e){
-      if(e.status===403){room.busy=true;render();$('notice').textContent='이 기기의 좌석 연결이 종료되었습니다. 방장에게 복구 링크를 요청하세요.';return;}
+      if(e.status===403){room.busy=true;render();$('notice').textContent=seatEnded;return;}
       $('notice').textContent='연결 재시도 중 · '+e.message;
     }
   }
@@ -140,13 +153,13 @@ $('hostRoom').onclick=async()=>{
     $('config').hidden=true;
     $('campaignPanel').hidden=true;$('replayLobby').hidden=true;
     try{
-      if(cloudRoom){await CepterCloudRoom.join(inviteId);return;}
+      if(cloudRoom){if(recoveryCode)claimRecovery();else await CepterCloudRoom.join(inviteId);return;}
       const savedKey=localStorage.getItem('cept-room-seat-'+inviteId);
       onlineKey=savedKey||newKey();
       if(savedKey&&!recoveryCode){
         try{applyRoom(await requestRoom('rooms/'+inviteId));pollRoom();}
         catch(e){
-          if(e.status===403)throw Error('이 기기의 좌석 연결이 종료되었습니다. 방장에게 복구 링크를 요청하세요.');
+          if(e.status===403)throw Error(seatEnded);
           throw e;
         }
         return;

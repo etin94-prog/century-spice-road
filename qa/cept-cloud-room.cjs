@@ -9,9 +9,12 @@ async function main(){
   const browser=await chromium.launch({executablePath:process.env.CHROME_BIN||undefined});
   try{
     await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
-    const base='http://127.0.0.1:'+server.address().port+'/cept.html?emulator=1';
+    const publicSite=process.argv.includes('--public');
+    const base=publicSite?'https://etin94-prog.github.io/century-spice-road/cept.html?ceptQA=1':
+      'http://127.0.0.1:'+server.address().port+'/cept.html?emulator=1';
     const clockMode=process.argv.includes('--clock');
-    for(const [humans,edition] of clockMode?[[2,'ps2']]:[[2,'saturn'],[3,'dc'],[4,'ps2']]){
+    const cases=clockMode?[[2,'ps2']]:process.argv.includes('--recover-only')?[[4,'ps2']]:[[2,'saturn'],[3,'dc'],[4,'ps2']];
+    for(const [humans,edition] of cases){
       const pages=[],errors=[];
       for(let i=0;i<humans;i++){
         const p=await browser.newPage({viewport:i%2?{width:740,height:360}:{width:360,height:740},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
@@ -20,6 +23,7 @@ async function main(){
       const host=pages[0];await host.goto(base+'&edition='+edition);
       await host.selectOption('#humans',String(humans));
       if(clockMode)await host.selectOption('#inputLimit','15');
+      if(publicSite)await host.selectOption('#roundLimit','20');
       await host.tap('#hostRoom');
       try{await host.locator('#roomWait input').waitFor({timeout:30000});}
       catch(e){throw Error('Room creation: '+await host.locator('#roomHelp').innerText(),{cause:e});}
@@ -87,7 +91,7 @@ async function main(){
         await host.locator('.route-option,[data-action=pass],[data-action=leaveTemple],button[data-action=fortuneDraw]').first().tap();
         await host.waitForFunction(rev=>room.revision>rev,before);
       }
-      const guest=bySeat[1];await guest.locator('[data-action=roll]').waitFor();
+      let guest=bySeat[1];await guest.locator('[data-action=roll]').waitFor();
       await guest.reload();await guest.waitForFunction(()=>room?.seat===1&&room.started);
       // Only the host computes full game state. A valid guest seat has no read access to it.
       const denied=await guest.evaluate(async()=>{
@@ -114,6 +118,77 @@ async function main(){
       snapshots.forEach(s=>assert.deepEqual(s,snapshots[0]));assert.deepEqual(errors,[]);
       console.log(edition,humans+' humans + '+(4-humans)+' AI: touch, simultaneous join, private hands, queued roll, host/guest restore OK');
       if(humans===4){
+        const old=guest;
+        const issue=async()=>{
+          await host.locator('#matchMenu summary').tap();
+          await host.getByRole('button',{name:'좌석 복구',exact:true}).tap();
+          await host.locator('#matchInfo select').selectOption('1');
+          await host.getByRole('button',{name:'일회용 링크 발급'}).tap();
+          const field=host.getByRole('textbox',{name:'일회용 좌석 복구 링크'});
+          try{await field.waitFor({timeout:15000});}
+          catch(e){throw Error(await host.locator('#matchInfoBody').innerText(),{cause:e});}
+          const url=await field.inputValue();
+          await host.keyboard.press('Escape');
+          return url;
+        };
+        const forbidden=await old.evaluate(()=>CepterCloudRoom.issueRecovery(room.id,1).then(()=>false,()=>true));
+        assert.equal(forbidden,true);
+        const before=await host.evaluate(async()=>{
+          const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+          return (await get(ref(getDatabase(),'ceptRooms/'+room.id+'/state'))).val();
+        });
+        const expired=await issue();
+        await host.evaluate(async()=>{
+          const {getDatabase,ref,set}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+          await set(ref(getDatabase(),'ceptRooms/'+room.id+'/recoveryTickets/s1/expires'),Date.now()-60000);
+        });
+        const probe=await browser.newPage({viewport:{width:320,height:568},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+        const denyLink=async url=>{
+          await probe.goto('about:blank');
+          await probe.goto(url);
+          await probe.getByRole('button',{name:'기존 좌석 복구'}).tap();
+          await probe.getByText('이 링크는 만료되었거나',{exact:false}).waitFor();
+        };
+        await denyLink(expired);
+        const superseded=await issue(),link=await issue();
+        await denyLink(superseded);
+        const sameRoomSeat=await bySeat[2].evaluate(async url=>{
+          try{await CepterCloudRoom.claimRecovery(room.id,new URLSearchParams(new URL(url).hash.slice(1)).get('recoverSeat'));return false;}
+          catch(e){return e.message.includes('다른 좌석');}
+        },link);
+        assert.equal(sameRoomSeat,true);
+        guest=await browser.newPage({viewport:{width:320,height:568},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+        guest.on('pageerror',e=>errors.push(e.message));
+        await guest.goto(link);
+        await guest.getByRole('button',{name:'기존 좌석 복구'}).tap();
+        try{await guest.waitForFunction(()=>room?.started&&room.seat===1,undefined,{timeout:25000});}
+        catch(e){throw Error(await guest.locator('#roomWait').innerText(),{cause:e});}
+        assert.equal(new URL(guest.url()).hash,'');
+        const after=await host.evaluate(async()=>{
+          const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+          return (await get(ref(getDatabase(),'ceptRooms/'+room.id+'/state'))).val();
+        });
+        assert.equal(after,before);
+        await old.getByText('이 기기의 좌석 연결이 종료되었습니다.',{exact:false}).waitFor();
+        assert.equal(await old.locator('#game').isVisible(),false);
+        await old.reload();
+        await old.getByText('이 기기의 좌석 연결이 종료되었습니다.',{exact:false}).waitFor();
+        assert.equal(await old.evaluate(async()=>{
+          const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js');
+          const db=getDatabase(),id=new URL(location.href).searchParams.get('ceptRoom');
+          try{await get(ref(db,'ceptRooms/'+id+'/views/s1'));return false;}
+          catch(e){return /permission|denied/i.test(e.code||e.message);}
+        }),true);
+        await denyLink(link);
+        await probe.context().close();
+        await guest.goto('about:blank');await guest.goto(link);
+        await guest.getByRole('button',{name:'기존 좌석 복구'}).tap();
+        await guest.waitForFunction(()=>room?.started&&room.seat===1);
+        await guest.reload();
+        await guest.waitForFunction(()=>room?.started&&room.seat===1);
+        bySeat[1]=guest;pages[pages.indexOf(old)]=guest;
+        await old.context().close();
+        console.log('Four cloud seats: one-time transfer, expiry, replacement, former seat revocation, and preserved match OK');
         let actions=0;
         while(actions++<2500){
           const [phase,actor,rev]=await host.evaluate(()=>[s.phase,C.actor(s),room.revision]);

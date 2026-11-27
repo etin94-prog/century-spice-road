@@ -11,7 +11,7 @@
         "seats": {
           ".read": "auth != null",
           "$slot": {
-            ".write": "auth != null && !data.exists() && newData.val() === auth.uid && root.child('ceptRooms').child($id).child('meta').exists() && ($slot === 's1' || ($slot === 's2' && root.child('ceptRooms').child($id).child('meta/needed').val() >= 3) || ($slot === 's3' && root.child('ceptRooms').child($id).child('meta/needed').val() === 4)) && newData.parent().child('s0').val() !== auth.uid && ($slot === 's1' || newData.parent().child('s1').val() !== auth.uid) && ($slot === 's2' || newData.parent().child('s2').val() !== auth.uid) && ($slot === 's3' || newData.parent().child('s3').val() !== auth.uid)",
+            ".write": "auth != null && !data.exists() && newData.val() === auth.uid && root.child('ceptRooms').child($id).child('meta').exists() && !root.child('ceptRooms').child($id).child('formerSeats').child(auth.uid).exists() && ($slot === 's1' || ($slot === 's2' && root.child('ceptRooms').child($id).child('meta/needed').val() >= 3) || ($slot === 's3' && root.child('ceptRooms').child($id).child('meta/needed').val() === 4)) && newData.parent().child('s0').val() !== auth.uid && ($slot === 's1' || newData.parent().child('s1').val() !== auth.uid) && ($slot === 's2' || newData.parent().child('s2').val() !== auth.uid) && ($slot === 's3' || newData.parent().child('s3').val() !== auth.uid)",
             ".validate": "newData.isString()"
           }
         },
@@ -19,6 +19,18 @@
           "$slot": {
             ".write": "auth != null && !data.exists() && newData.exists() && ($slot === 's1' || $slot === 's2' || $slot === 's3') && data.parent().parent().child('meta/openingBooks').val() === true && !data.parent().parent().child('views').exists() && !data.parent().parent().child('seats').child($slot).exists() && newData.parent().parent().child('seats').child($slot).val() === auth.uid",
             ".validate": "newData.isString() && newData.val().matches(/^\\[[0-9]{1,4}(,[0-9]{1,4}){49}\\]$/)"
+          }
+        },
+        "recoveryTickets": {
+          "$slot": {
+            ".validate": "$slot.matches(/^s[1-3]$/) && newData.hasChildren(['proof','expires']) && newData.child('proof').isString() && newData.child('proof').val().matches(/^[0-9a-f]{64}$/) && newData.child('expires').isNumber()",
+            "claims": {
+              "$proof": {
+                ".read": "auth != null && data.val() === auth.uid",
+                ".write": "auth != null && !data.exists() && newData.val() === auth.uid && $slot.matches(/^s[1-3]$/) && $proof === data.parent().parent().child('proof').val() && now < data.parent().parent().child('expires').val() && !data.parent().parent().child('redeemed').exists() && data.parent().parent().parent().parent().child('seats').child($slot).exists() && data.parent().parent().parent().parent().child('seats/s0').val() !== auth.uid && data.parent().parent().parent().parent().child('seats/s1').val() !== auth.uid && data.parent().parent().parent().parent().child('seats/s2').val() !== auth.uid && data.parent().parent().parent().parent().child('seats/s3').val() !== auth.uid",
+                ".validate": "newData.isString()"
+              }
+            }
           }
         },
         "connections": { ".read": "auth != null" },
