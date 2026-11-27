@@ -293,6 +293,10 @@ const CepterEditions=(()=>{
       if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
       if(edition==='3ds'&&slug==='countershield')Object.assign(c,{catalogOnly:false,effect:'reflect',st:0,hp:0});
       if(edition==='3ds'&&Object.hasOwn(handheldSpecial,slug))Object.assign(c,{catalogOnly:false},handheldSpecial[slug]);
+      if(edition==='saga'&&['clockworkowl','barbarian','fay','tokebi','hypnosloth','lichenoid','rockshell','sakuya','wolverine'].includes(slug)){
+        Object.assign(c,{catalogOnly:false,immediate:true});
+        if(slug==='wolverine')c.tollFactor=1.5;
+      }
       if(edition==='3ds'&&slug==='wallofice')Object.assign(c,{catalogOnly:false,stationary:true,battleHP:20});
       if(first&&slug==='wallofice'){c.stationary=true;c.battleHP=edition==='ps1'?20:0;}
       if(first&&slug==='giantspider'){c.paralyze=true;c.statusRaces=['rh','rb'];}

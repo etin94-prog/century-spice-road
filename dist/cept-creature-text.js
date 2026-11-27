@@ -246,7 +246,10 @@ const CepterCreatureText=(()=>{
     const art=C.secretArt?.(card);
     if(art)return '비술 '+art.cost+'G · '+art.label+'. 주사위를 굴리기 전에 사용합니다.';
     if(C.edition==='revolt')return;
-    const key=C.combo.key(card),effect=(C.edition==='3ds'?handheldTerritory[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
+    const key=C.combo.key(card),saga={fay:'고른 크리처의 기본 ST를 최대 100까지 20 올립니다.',tokebi:'내 영지 한 곳을 포기하고 영지 가치만큼 마력을 얻습니다.',
+      hypnosloth:'고른 셉터의 다음 주사위를 1로 고정합니다.',lichenoid:'고른 크리처의 최대 HP를 최대 100까지 10 올립니다.',
+      rockshell:'이 영지의 침략을 막고 통행료를 0G로 바꿉니다.',sakuya:'내 영지 한 곳을 지 속성으로 바꿉니다.'};
+    const effect=(C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
   function describe(C,card){
@@ -268,6 +271,8 @@ const CepterCreatureText=(()=>{
     if(card.scrollCritical&&!battle[key]?.includes('두루마리'))pieces.push('두루마리 공격이 강타합니다.');
     if(C.edition==='revolt'&&key==='uriel')pieces.push('저주가 걸린 상대에게 강타합니다.');
     if(C.edition==='revolt'&&key==='dwarvenminer')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
+    if(card.immediate)pieces.push('즉시. 이 크리처가 소환되거나 교체돼 배치된 영지에 교체를 제외한 영지 명령을 사용할 수 있습니다.');
+    if(C.edition==='saga'&&key==='wolverine')pieces.push('이 영지의 통행료를 1.5배로 올립니다.');
     if(card.vigorous)pieces.push('활력. 영지 명령이나 비술 사용 후 피로 상태가 되지 않습니다.');
     if(card.half)pieces.push('받는 일반 공격 피해가 절반으로 줄어듭니다.');
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');

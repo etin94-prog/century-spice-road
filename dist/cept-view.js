@@ -766,6 +766,7 @@ function render(){
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
   $('hint').textContent=over?(s.endReason==='roundLimit'?(C.outcome(s).tie?'제한 라운드 종료 · 총마력 동률이라 승자가 없습니다.':'제한 라운드 종료 · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingSleipnir()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):hints[s.phase];
+  if(local&&s.immediateAt!=null)$('hint').textContent=(s.immediateAt+1)+'번 영지 · 즉시 능력으로 영지 명령을 사용할 수 있습니다.';
   if(local&&s.phase==='spell'&&s.doublecast==='ready')$('hint').textContent='연속 주문 사용 가능 · 주문을 더 쓰거나 주사위를 굴리세요.';
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';
   const limited=s.players[reader??i]?.evoOpeningLimited;

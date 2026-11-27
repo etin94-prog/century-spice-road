@@ -219,7 +219,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={fontaciel:50,gogma:200,warlock:60};
+    const sagaTerritory={fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
       fanatic:50,sharazad:30,algasphere:60,banshee:60,bookworm:40,hyde:50,healer:10,spittingcobra:10,archer:20,holyllama:30,witch:30,
@@ -240,7 +240,12 @@ const CepterCombos = (() => {
       const tile=s.tiles[from],n=name(tile.unit),cost=territoryCost(s,n);
       if(cost==null||s.players[s.turn].cash<cost||!canUseAbility(s,tile))return [];
       if(s.edition==='saga'){
-        if(n==='fontaciel')return [['abilitySelf',from]];
+        if(n==='fontaciel'||n==='rockshell')return [['abilitySelf',from]];
+        if(n==='hypnosloth')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
+        if(n==='tokebi'||n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&
+          (n==='tokebi'||v.type!==2)?[['abilityLand',j]]:[]);
+        if(n==='fay'||n==='lichenoid')return s.tiles.flatMap((v,j)=>targetable(s,v)&&
+          (n==='fay'?strength(v.unit)<100:!immuneHP(v)&&max(v.unit)<100)?[['abilityLand',j]]:[]);
         if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
         if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
       }
@@ -286,6 +291,12 @@ const CepterCombos = (() => {
           }
           return;
         }
+        if(n==='rockshell'){clear(src.unit);src.unit.enchant='peace';return;}
+        if(n==='hypnosloth'){if(q.antiMagic)delete q.antiMagic;else{clearCepter(q);q.word=1;}return;}
+        if(n==='tokebi'){p.cash+=value(s,v);vacate(v,true);return;}
+        if(n==='sakuya'){v.type=2;return;}
+        if(n==='fay'){v.unit.st=Math.min(100,strength(v.unit)+20);return;}
+        if(n==='lichenoid'){const gain=Math.min(10,100-max(v.unit));v.unit.mhp=max(v.unit)+gain;v.unit.hp+=gain;return;}
         if(n==='gogma'){v.level=3;return;}
         if(n==='warlock'){
           if(q.antiMagic)delete q.antiMagic;
@@ -296,7 +307,7 @@ const CepterCombos = (() => {
       if(cepterAbilities.has(n)&&q.antiMagic){delete q.antiMagic;}
       else if(n==='archbishop')clear(v.unit);
       else if(n==='astralqueen'){for(const t of s.tiles)if(t.unit){clear(t.unit);t.unit.enchant='camouflage';}}
-      else if(n==='clockworkowl'){q.chooseDirection=true;}
+      else if(n==='clockworkowl'){if(s.edition==='saga')clearCepter(q);q.chooseDirection=true;}
       else if(n==='dancingdoll'){s.prices=s.prices.map(price=>Math.max(1,Math.floor(price*.8)));}
       else if(n==='domovoi'||n==='hyde'){clear(v.unit);v.unit.enchant=n==='domovoi'?'phantasm':'paralysis';}
       else if(n==='fanatic'){damage(s,v,20);if(src.unit)damage(s,src,s.edition==='3ds'?10:20);}

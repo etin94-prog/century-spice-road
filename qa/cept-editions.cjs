@@ -1705,6 +1705,41 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(affinity,['discard',6]));
   assert.deepEqual([affinity.phase,C.actor(affinity),guest.hand.length],['roll',0,6]);
   console.log('Saga spell stat limits, recycling, exhausted book, element thresholds and private six-card correction OK');
+  const placed=C.start(2,2,5000,map),builder=placed.players[0],barbarian=id('barbarian');
+  builder.pos=at;builder.hand=[barbarian,goblin];builder.cash=650;placed.phase='land';
+  assert.ok(C.play(placed,['summon',0]));
+  assert.deepEqual([placed.immediateAt,placed.turn,placed.phase],[at,0,'land']);
+  const restored=JSON.parse(JSON.stringify(placed));
+  assert.ok(C.choices(restored).every(([type,source])=>type==='pass'||['level','element','transfer','ability'].includes(type)&&source===at));
+  assert.ok(!C.play(restored,['exchange',at,0]));
+  assert.ok(C.play(restored,['level',at,2]));
+  assert.equal(restored.tiles[at].level,2);
+  assert.deepEqual([restored.turn,restored.immediateAt],[1,undefined]);
+  assert.ok(C.play(placed,['pass']));
+  assert.equal(placed.turn,1);
+
+  const swapped=C.start(2,2,5000,map);
+  swapped.phase='land';swapped.players[0].cash=650;swapped.players[0].hand=[id('tokebi')];
+  swapped.players[0].pos=at;Object.assign(swapped.tiles[at],{owner:0,unit:{id:goblin,hp:30}});
+  assert.ok(C.play(swapped,['exchange',at,0]));
+  assert.equal(swapped.immediateAt,at);
+  const priorValue=C.value(swapped,swapped.tiles[at]),priorSwap=swapped.players[0].cash;
+  assert.ok(C.play(swapped,['ability',at])&&C.play(swapped,['abilityLand',at]));
+  assert.deepEqual([swapped.tiles[at].owner,swapped.tiles[at].unit,swapped.players[0].cash],[-1,null,priorSwap+priorValue]);
+
+  const win=C.start(2,2,5000,map);
+  win.phase='attack';win.players[0].pos=at;win.battle={at,inv:barbarian,atkItem:null,defItem:null};
+  Object.assign(win.tiles[at],{owner:1,unit:{id:goblin,hp:30}});
+  assert.ok(C.play(win,['bare'])&&C.play(win,['bare'])&&C.play(win,['continue']));
+  assert.deepEqual([win.tiles[at].owner,win.immediateAt,win.turn],[0,at,0]);
+
+  const poison=C.start(2,2,5000,map);
+  poison.phase='attack';poison.battle={at,inv:goblin,atkItem:null,defItem:null};
+  Object.assign(poison.tiles[at],{owner:1,unit:{id:goblin,hp:50,mhp:50,poisoned:true}});
+  assert.ok(C.play(poison,['bare'])&&C.play(poison,['bare']));
+  assert.ok(poison.battle.lines.includes('독 · 15 피해'));
+  assert.equal(poison.tiles[at].unit.hp,15);
+  console.log('Saga Immediate after summon, exchange and invasion, restricted commands and poison at 30 percent OK');
 }
 {
   const C=ps2.createEdition('begins');
