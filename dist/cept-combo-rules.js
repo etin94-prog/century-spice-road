@@ -10,12 +10,16 @@ const CepterCombos = (() => {
   const damageSpells=new Set(['catastrophe','tempest','punisher','sonicwave',...Object.keys(stormElement)]);
   function takesAreaDamage(effect,tile,cards){
     if(tile.unit.enchant==='phantasm')return false;
-    if(Object.hasOwn(stormElement,effect))return cards[tile.unit.id].element===stormElement[effect];
+    if(Object.hasOwn(stormElement,effect))return hasElement(cards[tile.unit.id],stormElement[effect]);
     if(effect==='sonicwave')return !!cards[tile.unit.id].first;
     return effect==='tempest'||effect==='punisher'&&enchanted(tile.unit);
   }
   const type = Object.fromEntries(Object.entries(groups).flatMap(([group,names]) => names.split(' ').map(name => [name,group])));
   const key=c=>c?.catalog?.path.split('/').pop();
+  const hasElement=(card,element)=>card?.elements?.includes(element)??(card?.element===element);
+  const sameElements=(a,b)=>a.elements&&b.elements?a.elements.length===b.elements.length&&a.elements.every(e=>hasElement(b,e))
+    :!a.elements&&!b.elements&&a.element===b.element;
+  const matchesTerrain=(card,type)=>typeof type==='number'?hasElement(card,type):type==='복합'&&(!!card.elements||card.element>=0);
   const enchanted=u=>!!(u?.enchant||u?.poisoned||u?.confused);
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
   function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
@@ -34,7 +38,7 @@ const CepterCombos = (() => {
       if(!t.unit)return false;
       const n=name(t.unit);
       return (dispel||t.unit.enchant!=='landprotection'&&!s.players[t.owner].invisible)&&
-        !['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&category==='senchant');
+        !(s.edition==='saga'&&n==='warlock')&&!['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n)&&!(n==='colossus'&&category==='senchant');
     }
     function death(s,id){
       s.destroyedCount=(s.destroyedCount||0)+1;s.lastDestroyed=id;
@@ -171,13 +175,19 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
+    const sagaTerritory={fontaciel:50,gogma:200,warlock:60};
     const selfAbilities=new Set(['astralqueen','dancingdoll','sharazad','algasphere','banshee','fate','barometz','quakebeast']);
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
     function territoryTargets(s,from){
-      const tile=s.tiles[from],n=name(tile.unit),cost=territoryCosts[n];
+      const tile=s.tiles[from],n=name(tile.unit),cost=territoryCost(s,n);
       if(cost==null||s.players[s.turn].cash<cost||!canUseAbility(s,tile))return [];
+      if(s.edition==='saga'){
+        if(n==='fontaciel')return [['abilitySelf',from]];
+        if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
+        if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
+      }
       if(selfAbilities.has(n))return [['abilitySelf',from]];
       if(cepterAbilities.has(n)){
         if(!enchantAbilities.has(n)&&idol(s,'graniteidol'))return [];
@@ -187,12 +197,29 @@ const CepterCombos = (() => {
         if(['conjurer','goobaqueen'].includes(n))return !v.unit&&(typeof v.type==='number'||['복합','무속성'].includes(v.type))?[['abilityLand',j]]:[];
         if(!targetable(s,v,enchantAbilities.has(n)?'senchant':'sflash',n==='archbishop'))return [];
         if(n==='archer'&&allied(s,v.owner,s.turn))return [];
-        if(n==='tetramorph'&&(allied(s,v.owner,s.turn)||cards[v.unit.id].element===v.type))return [];
+        if(n==='tetramorph'&&(allied(s,v.owner,s.turn)||hasElement(cards[v.unit.id],v.type)))return [];
         return [['abilityLand',j]];
       });
     }
+    const territoryCost=(s,n)=>(s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
     function territoryEffect(s,from,x){
-      const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];p.cash-=territoryCosts[n];
+      const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];p.cash-=territoryCost(s,n);
+      if(s.edition==='saga'){
+        if(n==='fontaciel'){
+          for(const t of s.tiles){
+            if(t.owner!==s.turn||!t.unit||immuneHP(t))continue;
+            const prior=max(t.unit),gain=Math.max(0,Math.min(5,100-prior));
+            t.unit.mhp=prior+gain;t.unit.hp+=gain;
+          }
+          return;
+        }
+        if(n==='gogma'){v.level=3;return;}
+        if(n==='warlock'){
+          if(q.antiMagic)delete q.antiMagic;
+          else{clearCepter(q);q.antiMagic=true;}
+          return;
+        }
+      }
       if(cepterAbilities.has(n)&&q.antiMagic){delete q.antiMagic;}
       else if(n==='archbishop')clear(v.unit);
       else if(n==='astralqueen'){for(const t of s.tiles)if(t.unit){clear(t.unit);t.unit.enchant='camouflage';}}
@@ -224,7 +251,7 @@ const CepterCombos = (() => {
     function clearCepter(q){
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection'])delete q[field];
     }
-    return {targets,targetable,apply,max,strength,name,destroy,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,levelLocked:landLevelLocked,
+    return {targets,targetable,apply,max,strength,name,destroy,death,harm:damage,damageAmount,immuneHP,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
       blockedLevel,clearCepter,canUseAbility,territoryTargets,territoryEffect};
   }
   const recipes=[
@@ -371,7 +398,7 @@ const CepterCombos = (() => {
       }
       const t=s.tiles[x],n=fx.name(t.unit);
       if(e==='evilblast')return (t.unit.hp<=30?20*t.level:3)-Number(t.unit.enchant==='phantasm')*100;
-      if(e==='camouflage')return friend(t.owner)&&t.unit.enchant!==e&&typeof t.type==='number'&&cards[t.unit.id].element!==t.type?6+t.level*2:-10;
+      if(e==='camouflage')return friend(t.owner)&&t.unit.enchant!==e&&typeof t.type==='number'&&!hasElement(cards[t.unit.id],t.type)?6+t.level*2:-10;
       if(e==='drought')return !friend(t.owner)&&t.level<5&&!levelLocked(t)?12-t.level:-10;
       if(e==='relief'){
         const other=s.tiles[s.reliefFrom];if(!other)return friendly.some(v=>v!==t&&pair(n,fx.name(v.unit)))?12:friendly.length>=2?1:-12;
@@ -434,6 +461,6 @@ const CepterCombos = (() => {
     }
     return {pair,ready,scoreTarget,cast,sequence};
   }
-  return {rules,type,key,damageSpells,allied,clear,enchanted,levelLocked,recipes,matches,planner};
+  return {rules,type,key,hasElement,sameElements,matchesTerrain,damageSpells,allied,clear,enchanted,levelLocked,recipes,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;

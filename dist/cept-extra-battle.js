@@ -46,7 +46,7 @@ const CepterExtraBattle=(()=>{
       if(temporary)a.original={...a.u};
       else delete a.original;
       const c=cards[id],u={id,hp:c.hp};
-      Object.assign(a,{u,c,n:combo.key(c),element:c.element,hp:c.hp,st:c.st,land:0});
+      Object.assign(a,{u,c,n:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
       lines.push(c.name+' 변신');
     }
     function protectedGear(a){return ['archbishop','sage'].includes(a.n)||protectedItems.has(a.g);}
@@ -87,6 +87,12 @@ const CepterExtraBattle=(()=>{
     }
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
+      if(s.edition==='saga'&&a.elements){
+        const owned=lands.filter(v=>a.elements.includes(v.type)).length;
+        if(a.n==='flammefleur')a.st=owned*10;
+        if(a.n==='fontaciel')a.hp=owned*10;
+        if(a.n==='magmaavatar'||a.n==='stormavatar')a.st=a.hp=owned*15;
+      }
       switch(a.n){
         case 'astralqueen':a.hp+=5*s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===-1).length;break;
         case 'leoknight':a.st=10*s.tiles.filter(v=>v.owner===d.seat).length;a.hp=10*lands.length;break;
@@ -109,12 +115,12 @@ const CepterExtraBattle=(()=>{
         case 'chameleonarmor':a.hp=t.level*20;break;
         case 'daggerofmite':a.st+=20*(1+s.players.filter((_,j)=>total(s,j)>total(s,a.seat)).length);break;
         case 'iksear':a.hp+=20*lands.filter(v=>v.type===1).length;break;
-        case 'prismaticwand':if(a.element!==d.element){a.hp+=40;a.st+=40;}break;
+        case 'prismaticwand':if(!combo.sameElements(a,d)){a.hp+=40;a.st+=40;}break;
         case 'shadowarmor':a.hp+=(7-t.level)*10;break;
       }
     }
     function critical(a,d,scroll){
-      if(scroll)return ['wizard','efreet','conjurer'].includes(a.n)||a.g==='hellblaze'&&fx.strength(d.u)<=20||a.g==='stonehail'&&d.element===3||a.g==='tearinghalo'&&a.element!==-1;
+      if(scroll)return s.edition==='saga'&&a.n==='warlock'||['wizard','efreet','conjurer'].includes(a.n)||a.g==='hellblaze'&&fx.strength(d.u)<=20||a.g==='stonehail'&&d.element===3||a.g==='tearinghalo'&&a.element!==-1;
       return a.n==='elf'&&!a.c.criticalRace&&d.element===2||a.g==='earthamulet'&&a.element===2||a.g==='windamulet'&&a.element===3||a.g==='icicle'&&d.element===0||a.g==='vorpalsword'&&fx.max(d.u)>=40;
     }
     function protect(a,d,damage,scroll,penetrates,orb){
@@ -146,7 +152,12 @@ const CepterExtraBattle=(()=>{
     function onHit(a,d,damage){
       a.hit=true;
       const n=a.n;
-      if(n==='vampire'){a.hp+=damage;a.absorbed=true;}
+      if(n==='vampire'||s.edition==='saga'&&n==='crimsonvine'){a.hp+=damage;a.absorbed=true;}
+      if(s.edition==='saga'&&n==='jackolantern'){
+        const amount=Math.min(Math.max(0,s.players[d.seat].cash),Math.max(0,Math.min(a.u.hp,a.hp))*2);
+        s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
+        if(amount)lines.push('공격 명중 · '+amount+'G 탈취');
+      }
       if(d.hp<=0)return;
       if(n==='werewolf'&&chance(.6))convert(d,'wolf');
       if(n==='medusa')convert(d,'statue');
@@ -166,6 +177,7 @@ const CepterExtraBattle=(()=>{
     }
     function end(a,d,creatureEnd){
       if(creatureEnd&&a.hp>0){
+        if(s.edition==='saga'&&a.n==='flammefleur'&&!a.dealtDamage&&d.hp>0){d.hp=0;lines.push('전투 종료 · 피해를 주지 못해 상대 격파');}
         if(lord.includes(a.n))s.players[a.seat].cash-=100;
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(a.n==='fungonoid')grow(a,10);

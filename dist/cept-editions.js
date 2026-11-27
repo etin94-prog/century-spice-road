@@ -76,7 +76,7 @@ const CepterEditions=(()=>{
   }
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');
   const modernSpellEffects={
-    saga:{magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone'},
+    saga:{magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
@@ -127,6 +127,9 @@ const CepterEditions=(()=>{
       stronghold:build(26,14,.25,'barrier lifestream heal windofhope manna')
     };
   }
+  // Element pairs are separate from the land requirements in the catalog.
+  const sagaPairs={crimsonvine:[0,2],flammefleur:[0,2],fontaciel:[1,3],frostbeast:[1,3],gogma:[2,3],
+    jackolantern:[0,2],magmaavatar:[0,2],stormavatar:[1,3],stymphalides:[1,3],warlock:[0,1]};
   const battleElements=['fire','water','earth','air'];
   const elementalTraits={'Critical Hit':'criticalElements',Penetrates:'pierceElements',Reflects:'reflectElements',Neutralizes:'neutralizes'};
   function elementalTrait(clause){
@@ -158,7 +161,8 @@ const CepterEditions=(()=>{
       const variant=first&&['dragon','pan','hornet','holyword1','holyword6','magicbolt','steamgear','golem','sorcerer','manticore','armadillo','coati','darkelf','elf','knight','samurai','deathgaze','goldengoose','wallofice','giantspider','giantsnake','stonehail','cure'].includes(slug);
       const compatible=!!base&&!base.catalogOnly&&(r.shared||variant);
       const name=base?.name||r.name.replace(/([a-z])([A-Z])/g,'$1 $2');
-      const element=battleElements.indexOf(category);
+      const pair=edition==='saga'?sagaPairs[slug]:null;
+      const element=pair?-2:battleElements.indexOf(category);
       const format=(arr,lookup)=>arr.map(k=>lookup[k]).filter(Boolean).join(',');
       const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
         ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
@@ -168,6 +172,8 @@ const CepterEditions=(()=>{
         if(effect){c.effect=effect;c.catalogOnly=false;}
         if(edition==='begins'&&slug==='manna')c.magicPerLap=100;
       }
+      if(pair){c.elements=pair;c.catalogOnly=false;}
+      if(edition==='saga'&&slug==='prismaticwand'){c.st=0;c.hp=0;c.catalogOnly=false;}
       if(simple)for(const effect of effects.values())if(effect)Object.assign(c,effect);
       if(kind==='creature'){c.st=r.st;c.hp=r.hp;delete c.landBan;}
       if(kind==='creature')for(const clause of clauses)if(traits[clause])c[traits[clause]]=true;

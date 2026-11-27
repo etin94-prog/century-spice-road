@@ -297,6 +297,113 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
+  const C=ps2.createEdition('saga'),id=name=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const newMatch=()=>C.start(2,2,5000,'saga-1');
+  function unit(s,at,name,owner,type,level=1,hp=C.cards[id(name)].hp){
+    assert.ok(id(name)>=0,name+' is playable');
+    Object.assign(s.tiles[at],{owner,type,level,unit:{id:id(name),hp}});
+  }
+  const pairs={crimsonvine:[0,2],flammefleur:[0,2],fontaciel:[1,3],frostbeast:[1,3],gogma:[2,3],
+    jackolantern:[0,2],magmaavatar:[0,2],stormavatar:[1,3],stymphalides:[1,3],warlock:[0,1]};
+  for(const [name,pair] of Object.entries(pairs)){
+    assert.ok(id(name)>=0,name+' is playable');
+    assert.deepEqual(C.cards[id(name)].elements,pair);
+    const s=newMatch();
+    for(const [type,bonus] of [[pair[0],30],[pair[1],30],['복합',30],['무속성',0],[[0,1,2,3].find(e=>!pair.includes(e)),0]]){
+      unit(s,1,name,1,type,3);
+      assert.equal(C.battleGround(s,{at:1,inv:id('goblin')}).hp,bonus,name+' on '+type);
+    }
+  }
+  function fight(attacker,defender,terrain='무속성',gear=null,setup=null){
+    const s=newMatch();
+    unit(s,1,defender,1,terrain);
+    s.players[0].pos=1;s.players[0].cash=500;
+    s.phase='attack';s.battle={at:1,inv:id(attacker),atkItem:null,defItem:null};
+    if(setup)setup(s);
+    if(gear){
+      s.players[0].hand=[id(gear)];
+      assert.ok(C.play(s,['equip',0]));
+    }else assert.ok(C.play(s,['bare']));
+    assert.ok(C.play(s,['bare']));
+    return s;
+  }
+  assert.equal(fight('flammefleur','goblin').battle.won,true);
+  const overlap=fight('warlock','frostbeast',1,'prismaticwand');
+  const equal=fight('stymphalides','frostbeast',1,'prismaticwand');
+  assert.equal(overlap.battle.attackST,60);
+  assert.equal(equal.battle.attackST,50);
+  assert.equal(equal.battle.strikes[0].effect,'reflect');
+  const vine=fight('goblin','crimsonvine',2,null,s=>{s.tiles[1].unit.hp=27;});
+  assert.equal(vine.tiles[1].unit.hp,47);
+  const jack=fight('jackolantern','goblin');
+  assert.equal(jack.battle.strikes[0].side,1);
+  assert.equal(jack.players[0].cash,580);
+  const magma=fight('magmaavatar','goblin','무속성',null,s=>{
+    const distant=s.tiles.map((_,i)=>i).filter(i=>i>1&&!C.board(s).links[1].includes(i));
+    [0,2,2,1].forEach((type,i)=>unit(s,distant[i],'goblin',0,type));
+  });
+  assert.equal(magma.battle.attackST,45);
+  assert.equal(magma.battle.startHP[0],45);
+  const storm=fight('stormavatar','goblin','무속성',null,s=>{
+    const distant=s.tiles.map((_,i)=>i).filter(i=>i>1&&!C.board(s).links[1].includes(i));
+    [1,3,2].forEach((type,i)=>unit(s,distant[i],'goblin',0,type));
+  });
+  assert.equal(storm.battle.attackST,30);
+  const fontBattle=fight('fontaciel','goblin','무속성',null,s=>{
+    const distant=s.tiles.map((_,i)=>i).filter(i=>i>1&&!C.board(s).links[1].includes(i));
+    [1,3].forEach((type,i)=>unit(s,distant[i],'goblin',0,type));
+  });
+  assert.equal(fontBattle.battle.startHP[0],20);
+  const stymph=fight('stymphalides','frostbeast',1);
+  assert.equal(stymph.battle.strikes[0].effect,'reflect');
+
+  const rage=newMatch();
+  unit(rage,1,'warlock',1,1);unit(rage,2,'warlock',1,2);
+  unit(rage,3,'crimsonvine',0,2);unit(rage,4,'frostbeast',1,'복합');
+  rage.players[0].cash=500;rage.players[0].hand=[id('elementalrage')];
+  assert.ok(C.play(rage,['cast',0]));
+  assert.deepEqual(rage.tiles.slice(1,5).map(t=>t.unit.hp),[30,15,50,30]);
+
+  function territory(){
+    const s=newMatch();
+    s.players[0].cash=600;s.phase='land';
+    return s;
+  }
+  const font=territory();
+  unit(font,1,'fontaciel',0,1);unit(font,2,'goblin',0,2,1,20);unit(font,3,'fighter',1,0);
+  font.tiles[2].unit.mhp=98;
+  assert.ok(C.play(font,['ability',1]));
+  assert.deepEqual([font.tiles[2].unit.mhp,font.tiles[2].unit.hp],[100,22]);
+  assert.equal(font.tiles[3].unit.mhp,undefined);
+
+  const gogma=territory();
+  unit(gogma,1,'gogma',0,3);unit(gogma,2,'goblin',0,2);unit(gogma,3,'fighter',1,0,2);
+  assert.ok(C.play(gogma,['ability',1]));
+  assert.ok(!C.choices(gogma).some(([,i])=>i===3));
+  assert.ok(C.play(gogma,['abilityLand',2]));
+  assert.equal(gogma.tiles[2].level,3);
+  assert.equal(gogma.players[0].cash,400);
+
+  const bolt=newMatch();
+  unit(bolt,1,'warlock',1,1);unit(bolt,2,'goblin',1,2);
+  bolt.players[0].cash=500;bolt.players[0].hand=[id('magicbolt')];
+  assert.ok(C.play(bolt,['cast',0]));
+  assert.deepEqual(C.choices(bolt),[['targetLand',2]]);
+
+  const warlock=territory();
+  unit(warlock,1,'warlock',0,0);
+  assert.ok(C.play(warlock,['ability',1]));
+  assert.ok(C.play(warlock,['abilityPlayer',0]));
+  assert.equal(warlock.players[0].antiMagic,true);
+  warlock.players[1].hand=[id('drainmagic')];warlock.players[1].cash=500;
+  assert.ok(C.play(warlock,['cast',0]));
+  assert.ok(C.play(warlock,['targetPlayer',0]));
+  assert.equal(warlock.players[0].antiMagic,undefined);
+  assert.equal(warlock.players[0].cash,540);
+  console.log('Saga dual elements, terrain wards, Prismatic Wand, battle traits and territory abilities OK');
+}
+
+{
   const data=require('../dist/cept-edition-data-modern');
   const map={section:'arena',slug:'qa-portal',name:'QA portal',loc:[[0,0],[0,1],[2,8],[2,9]],
     types:['castle','teleport','teleport','fort-north'],transit:{1:2,2:1}};

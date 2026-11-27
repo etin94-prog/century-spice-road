@@ -188,12 +188,13 @@ function chosenAiBook(){if(storyCastSelected())return $('mapChoice').value==='ps
 function chosenBook(){if(/^(source|combo)-/.test($('bookChoice').value))return sourceBook($('bookChoice')).deck;if($('bookChoice').value==='recommend')return tierBooks().player.deck;return $('bookChoice').value==='custom'?customBook:C.presets[$('bookChoice').value];}
 const bookKey='cept-book-v1'+(C.edition==='ps2'?'':'-'+C.edition);
 try{const data=JSON.parse(localStorage.getItem(bookKey));if(C.validBook(data)){customBook=data;$('bookChoice').lastElementChild.disabled=false;}}catch{}
-const catalogTypes={neutral:'무속성',fire:'화속성',water:'수속성',earth:'지속성',air:'풍속성',weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구',sflash:'단일 즉시 주문',mflash:'복수 즉시 주문',senchant:'단일 지속 주문',menchant:'복수 지속 주문'};
+const cardElements=c=>c.elements?.map(e=>C.elements[e]).join('·')||C.elements[c.element]||'무';
+const catalogTypes={dual:'복합 속성',neutral:'무속성',fire:'화속성',water:'수속성',earth:'지속성',air:'풍속성',weapon:'무기',armor:'방어구',scroll:'두루마리',tool:'도구',sflash:'단일 즉시 주문',mflash:'복수 즉시 주문',senchant:'단일 지속 주문',menchant:'복수 지속 주문'};
 function showCatalogCard(c,id){
   const entry=c.catalog;
   $('catalogName').textContent=entry&&entry.name!==c.name?c.name+' · '+entry.name:c.name;
   $('catalogArt').replaceChildren(cardSeal(id));
-  $('catalogStats').textContent=entry?[catalogTypes[entry.category]||entry.category,entry.rarity,entry.stats].join(' · '):c.cost+'G';
+  $('catalogStats').textContent=entry?[c.elements?cardElements(c)+' 속성':catalogTypes[entry.category]||entry.category,entry.rarity,entry.stats].join(' · '):c.cost+'G';
   $('catalogAbility').textContent=localAbility(c)||entry?.ability||stats(c);
   if(entry){
     const terms={R:'화 영지',B:'수 영지',G:'지 영지',Y:'풍 영지','+[]':'손패 1장',Fire:'화',Water:'수',Earth:'지',Air:'풍',Weapon:'무기',Armor:'방어구',Scroll:'두루마리',Tool:'도구'};
@@ -258,6 +259,20 @@ const spellText={plague:'선택한 지역의 모든 크리처에게 독 부여',
 const gearText={freeze:'두루마리 · 화 속성에 강타',reflect:'ST 0 · 일반 공격 반사',nullify:'ST 0 · 일반 공격 무효',orb:'무효·반사 무시',pierceEarth:'지 속성 지형 보너스 관통'};
 function localAbility(c){
   const original=C.combo.key(c);
+  if(C.edition==='saga'&&c.elements){
+    return {
+      crimsonvine:'일반 공격이 명중하면 준 피해만큼 HP를 회복합니다.',
+      flammefleur:'전투 ST는 내 화·지 영지 수 ×10입니다. 살아남고 피해를 한 번도 주지 못하면 상대를 격파합니다.',
+      fontaciel:'전투 HP는 내 수·풍 영지 수 ×10입니다. 영지 명령 50G로 내 크리처의 최대 HP를 5 올립니다. 상한은 100입니다.',
+      frostbeast:'화·수·지·풍 속성의 일반 공격을 반사합니다.',
+      gogma:'선제. 영지 명령 200G로 대상 레벨 1 영지를 레벨 3으로 올립니다.',
+      jackolantern:'후공. 일반 공격이 명중하면 남은 기본 HP의 두 배만큼 상대 마력을 빼앗습니다.',
+      magmaavatar:'전투 ST와 HP는 내 화·지 영지 수 ×15입니다.',
+      stormavatar:'전투 ST와 HP는 내 수·풍 영지 수 ×15입니다.',
+      stymphalides:'수·풍 크리처의 지형 보너스를 관통합니다.',
+      warlock:'단일 대상 주문과 영지 능력의 대상이 되지 않습니다. 두루마리 강타. 영지 명령 60G로 대상 셉터에게 안티 매직을 부여합니다.'
+    }[original];
+  }
   if(c.magicPerLap)return '(완료한 주회 + 1) × '+c.magicPerLap+'G 획득';
   if(C.edition==='revolt'&&c.effect==='fly')return '다음 이동에 주사위 3개를 굴립니다.';
   if(C.spellDescriptions?.[original])return C.spellDescriptions[original];
@@ -824,7 +839,7 @@ function render(){
       }
       showHandSelection(owner,choices);
     },'card'+(j===focusCard?' active':''));const ready=choices.find(([kind,index])=>index===j&&['cast','equip','summon','invade'].includes(kind));
-    const type=c.kind==='creature'?(C.elements[c.element]||'무')+' · 크리처':c.kind==='item'?'아이템':'주문';
+    const type=c.kind==='creature'?cardElements(c)+' · 크리처':c.kind==='item'?'아이템':'주문';
     const availability={cast:'주문 사용 가능',equip:'장비 가능',summon:'소환 가능',invade:'침략 가능'};
     b.classList.toggle('ready',!!ready);b.setAttribute('aria-pressed',String(j===focusCard));
     b.append(cardSeal(id),el('span',ready?availability[ready[0]]:type,'card-type'),el('b',c.name),el('span',stats(c)),el('span',C.price(owner,c,s)+' G'));hand.append(b);});

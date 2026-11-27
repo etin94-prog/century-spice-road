@@ -50,7 +50,7 @@ const CepterExtraSpells=(()=>{
   }
   function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,value,canOccupy,deployable}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
-    const matchesLand=(card,land)=>card.element===land||land==='복합'&&card.element>=0||land==='무속성'&&card.element===-1;
+    const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
     const sample=a=>a.length?a[Math.floor(Math.random()*a.length)]:undefined;
     const enemy=(s,i)=>!combo.allied(s,s.turn,i);
@@ -131,14 +131,14 @@ const CepterExtraSpells=(()=>{
       return max?sample(winners):t.type;
     }
     function massDamage(e,t){
-      const element=cards[t.unit.id].element;
+      const card=cards[t.unit.id];
       switch(e){
         case 'energyflash':return t.level===1?t.unit.hp:0;
         case 'acidrain':return cards[t.unit.id].stationary?30:0;
         case 'avalanche':return t.level===5?30:0;
         case 'elementalrage':return matchesLand(cards[t.unit.id],t.type)?0:Math.ceil(t.unit.hp/2);
-        case 'burninghail':return element===1||element===3?20:0;
-        case 'freezecyclone':return element===0||element===2?20:0;
+        case 'burninghail':return combo.hasElement(card,1)||combo.hasElement(card,3)?20:0;
+        case 'freezecyclone':return combo.hasElement(card,0)||combo.hasElement(card,2)?20:0;
         case 'globalinsectswarm':return t.unit.hp<fx.max(t.unit)?20:0;
         case 'fatigueddisaster':return t.unit.fatigued&&fx.max(t.unit)>=50?30:0;
         case 'elementalwrath':return matchesLand(cards[t.unit.id],t.type)?0:20;
@@ -298,8 +298,8 @@ const CepterExtraSpells=(()=>{
       }
       const sign=enemy(s,t.owner)?-1:1,weight=t.level+1;
       if(Object.hasOwn(terrain,e)||hybridShifts[e]){
-        const element=cards[t.unit.id].element,dest=hybridShifts[e]?.[t.type]??terrain[e];
-        if(s.edition!=='revolt')return sign*((element===dest?2:0)-(element===t.type?2:0))*weight;
+        const dest=hybridShifts[e]?.[t.type]??terrain[e];
+        if(s.edition!=='revolt')return sign*((combo.hasElement(cards[t.unit.id],dest)?2:0)-(combo.hasElement(cards[t.unit.id],t.type)?2:0))*weight;
         if(t.type===dest)return -10;
         const before=matchesLand(cards[t.unit.id],t.type),after=matchesLand(cards[t.unit.id],dest);
         const own=owning(s,t.owner);
@@ -317,7 +317,7 @@ const CepterExtraSpells=(()=>{
         case 'polymorph':case 'turntothewall':return -sign*(cards[t.unit.id].cost/12+weight-4);
         case 'removecurse':return (['paralysis','thornfetter','parasite','senility','antielement','disease'].includes(t.unit.enchant)||t.unit.poisoned?sign:-sign)*(combo.enchanted(t.unit)?9:0);
         case 'replace':return Math.max(0,...replacement(s,t).map(a=>sign*(cards[a[2]].hp+cards[a[2]].st-t.unit.hp-fx.strength(t.unit))/5));
-        case 'chariot':return chariotExits(s,x).some(i=>s.tiles[i].owner<0&&cards[t.unit.id].element===s.tiles[i].type)?4:1;
+        case 'chariot':return chariotExits(s,x).some(i=>s.tiles[i].owner<0&&combo.matchesTerrain(cards[t.unit.id],s.tiles[i].type))?4:1;
         case 'magicfountain':return p.pos===x?0:1;
         case 'influence':return sign*(owning(s,t.owner).filter(v=>v.type===t.type).length<=1?5:-2);
         default:return sign*(t.unit.enchant===e?0:weight);

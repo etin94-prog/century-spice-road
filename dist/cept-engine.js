@@ -169,7 +169,7 @@ function createCepter(edition="ps2"){
   const levelCost=(t,level)=>(t.base||80)*2**(level-1)-worth(t);
   const worth=t=>(t.base||80)*2**(t.level-1);
   const territoryType=type=>typeof type==='number'||type==='복합'||type==='무속성';
-  const landBonus=(unit,t)=>unit.element===t.type||t.type==='복합'&&unit.element>=0?10*t.level:0;
+  const landBonus=(unit,t)=>combo.matchesTerrain(unit,t.type)?10*t.level:0;
   const allied=combo.allied;
   // One verdict for every screen and record. A shared top total at the round limit has no winner.
   // Saves written before this rule kept the first tied seat in `winner`, so `leaders` decides.
@@ -487,15 +487,15 @@ function createCepter(edition="ps2"){
     if(revolt)return 0;
     return 10*board(s).links[at].filter(n=>n!==from&&allied(s,s.tiles[n].owner,seat)).length;
   }
-  function terrainHP(t,unit,element,name,muted){
+  function terrainHP(t,unit,card,name,muted){
     if(unit.enchant==='antielement')return 0;
     const any=!muted&&(name==='hornedchameleon'||unit.enchant==='camouflage');
-    return any&&(typeof t.type==='number'||t.type==='복합')?10*t.level:landBonus({element},t);
+    return any&&(typeof t.type==='number'||t.type==='복합')?10*t.level:landBonus(card,t);
   }
   function battleGround(s,b){
     const tile=s.tiles[b.at],guard=cards[tile.unit.id],name=key(guard);
     const muted=tile.unit.enchant==='vortex'||name==='seabonze'||key(cards[b.inv])==='seabonze';
-    return {hp:terrainHP(tile,tile.unit,guard.element,name,muted),
+    return {hp:terrainHP(tile,tile.unit,guard,name,muted),
       attack:supportST(s,b.at,b.from,b.attackerSeat??s.turn),defense:supportST(s,b.at,b.from,tile.owner)};
   }
   function resolve(s){
@@ -503,7 +503,7 @@ function createCepter(edition="ps2"){
     const lines=[],active=n=>s.tiles.some(t=>fx.name(t.unit)===n);
     const make=(u,seat,item,defending)=>{
       const c=cards[u.id],gear=cards[item];
-      return {u:{...u},c,n:c.basicBattle?null:key(c),seat,gear,g:key(gear),item,defending,land:0,hp:u.hp,st:fx.strength(u),element:c.element};
+      return {u:{...u},c,n:c.basicBattle?null:key(c),seat,gear,g:key(gear),item,defending,land:0,hp:u.hp,st:fx.strength(u),element:c.element,elements:c.elements};
     };
     const A=make(s.tiles[b.from]?.unit||{id:b.inv,hp:b.invHP??cards[b.inv].hp},b.attackerSeat??s.turn,b.atkItem,false);
     const D=make(t.unit,t.owner,b.defItem,true),sides=[A,D];
@@ -565,9 +565,9 @@ function createCepter(edition="ps2"){
       if(a.n==='nightfiend')a.st+=t.level*20;
       if(a.n==='peri'&&other.book.length-owner.book.length>=3){a.st+=20;a.hp+=20;}
       if(a.g==='changingsalve')[a.st,a.hp]=[a.hp,a.st];
-      if(a.g==='neutralamulet')a.element=-1;
+      if(a.g==='neutralamulet'){a.element=-1;a.elements=null;}
       if(!muted)extra.baseStats(a,d);
-      a.land=a.defending?terrainHP(t,a.u,a.element,a.n,muted):0;
+      a.land=a.defending?terrainHP(t,a.u,a,a.n,muted):0;
       a.hp+=a.land+(a.gear?.hp||0)+(muted?0:a.c.battleHP||0);
       a.st+=supportST(s,b.at,b.from,a.seat)+(a.gear?.st||0);
       if(!muted){
@@ -595,8 +595,9 @@ function createCepter(edition="ps2"){
     function hit(a,d){
       const scroll=a.gear?.category==='scroll'||!firstEdition&&a.n==='sorcerer'&&!a.gear,orb=a.gear?.effect==='orb';
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
-      const pierce=!scroll&&!muted&&(a.c.pierceElements?.includes(d.element)||weapon?.pierceElements?.includes(d.element));
-      const elementalCritical=!scroll&&!muted&&(a.c.criticalElements?.includes(d.element)||weapon?.criticalElements?.includes(d.element));
+      const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
+      const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||matches(weapon?.pierceElements,d));
+      const elementalCritical=!scroll&&!muted&&(matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d));
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
@@ -617,11 +618,11 @@ function createCepter(edition="ps2"){
       if(reflected){if(ward!=='reflect')a.hp-=damage;lines.push('스크롤 반사 '+damage);return 'reflect';}
       if(!scroll&&!muted){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
-        const reflects=d.c.reflectNormal||d.c.reflectElements?.includes(a.element)||guard?.reflectNormal||guard?.reflectElements?.includes(a.element);
-        const blocks=d.c.neutralizeNormal||guard?.neutralizeNormal||guard?.neutralizes?.includes(a.element);
+        const reflects=d.c.reflectNormal||matches(d.c.reflectElements,a)||guard?.reflectNormal||matches(guard?.reflectElements,a);
+        const blocks=d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a);
         if(!orb&&(reflects||d.gear?.effect==='reflect'||d.n==='decoy')){a.hp-=damage;lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&(blocks||d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
-           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||d.c.neutralizes?.includes(a.element)||d.c.blocksLarge&&fx.max(a.u)>=40||
+           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=40||
            d.n==='caitsith'&&fx.strength(a.u)>=40||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element))){lines.push('공격 무효');return 'block';}
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
@@ -629,6 +630,7 @@ function createCepter(edition="ps2"){
       }
       if((scroll||penetrates)&&d.land){d.hp-=d.land;d.land=0;lines.push('지형 보너스 관통');}
       d.hp-=damage;lines.push(a.c.name+' → '+damage+' 피해');
+      if(damage>0)a.dealtDamage=true;
       if(!scroll)d.ordinaryDamage=(d.ordinaryDamage||0)+damage;
       if(a.u.confused&&!muted)a.hp-=Math.floor(damage*.3);
       if(damage>0&&!scroll&&!muted&&(edition!=='ps2'||a.hp>0)){
@@ -1030,7 +1032,12 @@ function createCepter(edition="ps2"){
       return Math.max(-100,...exits.map(n=>landing(n,q.pos,steps,j)))/12;
     }
     function territoryValue(from,kind,x){
-      const src=s.tiles[from],n=fx.name(src.unit),cost=fx.territoryCosts[n];
+      const src=s.tiles[from],n=fx.name(src.unit),cost=fx.territoryCost(s,n);
+      if(edition==='saga'){
+        if(n==='gogma')return (allied(s,seat,s.tiles[x].owner)?1:-1)*value(s,s.tiles[x])*1.5;
+        if(n==='warlock')return allied(s,seat,x)&&!s.players[x].antiMagic?20:0;
+        if(n==='fontaciel')return s.tiles.reduce((sum,t)=>sum+(t.owner===seat&&t.unit&&fx.max(t.unit)<100&&!fx.immuneHP(t)?12:0),0);
+      }
       const sign=t=>allied(s,t.owner,seat)?1:-1;
       const damageValue=(t,damage)=>{
         const amount=fx.damageAmount(s,t,damage);
@@ -1092,7 +1099,7 @@ function createCepter(edition="ps2"){
         const unit=fx.name(s.tiles[x].unit);
         if(unit==='spittingcobra')return p.hand.some(id=>key(cards[id])==='exile')?65:20;
         if(['conjurer','windimp','heatimp'].includes(unit)&&p.hand.some(id=>key(cards[id])==='raisedead'))return 80;
-        return Math.max(-100,...fx.territoryTargets(s,x).map(([kind,j])=>territoryValue(x,kind,j)))-fx.territoryCosts[unit]*.2;
+        return Math.max(-100,...fx.territoryTargets(s,x).map(([kind,j])=>territoryValue(x,kind,j)))-fx.territoryCost(s,unit)*.2;
       }
       if(k==='abilityLand'||k==='abilityPlayer')return territoryValue(s.abilityFrom,k,x);
       if(k==='breakCard'){const target=s.players[s.spellTarget],cost=cards[target.hand[x]].cost;return allied(s,s.spellTarget,seat)?-cost:cost;}
@@ -1177,7 +1184,7 @@ function createCepter(edition="ps2"){
           if(c.effect==='shatter')return !s.tiles.some(t=>fx.name(t.unit)==='graniteidol')&&s.players.some((q,j)=>!allied(s,seat,j)&&q.hand.some(id=>cards[id].kind!=='creature'))?4:-10;
           if(['manna','fly','word6'].includes(c.effect))return 4;
           return c.effect==='cash'?10:c.effect==='six'?3:-2;
-        case 'summon':return 70+c.hp/10+(c.element===s.tiles[p.pos].type?4:0);
+        case 'summon':return 70+c.hp/10+(combo.matchesTerrain(c,s.tiles[p.pos].type)?4:0);
         case 'invade':{const g=s.tiles[p.pos],hp=g.unit.hp+landBonus(cards[g.unit.id],g);
           return c.st+(p.hand.some(id=>cards[id].kind==='item'&&cards[id].st&&cards[id].cost+c.cost<=p.cash)?30:0)>=hp?40: -2;}
         case 'equip':return (s.phase==='attack'?c.st:c.hp)/5-1;
