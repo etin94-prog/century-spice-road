@@ -1308,10 +1308,10 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   const {s:spiked}=begins(null,'spikedshield');
   assert.deepEqual(spiked.battle.strikes[0].hp,spiked.battle.startHP.map(h=>h-20));
   const {s:eternal,a}=begins(null,'eternalmail');
-  assert.equal(eternal.players[1].book.at(0),a);
+  assert.equal(eternal.players[1].book.filter(id=>id===a).length,1);
   const loser=begins('claymore','eternalmail');
   assert.equal(loser.s.battle.finalHP[1],0);
-  assert.notEqual(loser.s.players[1].book.at(0),loser.a);
+  assert.ok(!loser.s.players[1].book.includes(loser.a));
   console.log('Edition Boomerang return, Begins armor protection, scroll reduction, reflection, and surviving book return OK');
 }
 
@@ -3075,11 +3075,15 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     command.phase='spell';
     const oldBook=player.book.slice(),random=Math.random;
     try{
-      Math.random=()=>.5;
+      Math.random=()=>0;
+      command.players[1].peek={seat:0,ids:oldBook.slice(-6).reverse()};
       assert.ok(C.play(command,['cast',0]));
     }finally{Math.random=random;}
     assert.equal(player.enchantDeadline,rounds*2);
-    if(effect==='telegnosis')oldBook.splice(Math.floor((oldBook.length+1)/2),0,spell);
+    if(effect==='telegnosis'){
+      oldBook.push(spell,oldBook.shift());
+      assert.equal(command.players[1].peek,undefined);
+    }
     assert.deepEqual(player.book,oldBook);
     for(let i=0;i<rounds;i++){
       command.phase='land';assert.ok(action()&&C.play(command,['pass']));
@@ -3088,6 +3092,55 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(command.round,rounds+1);
     command.phase='land';assert.equal(action(),false);
   }
+
+  const recycler=C.start(2,2,5000,'begins-original-ford'),recycled=recycler.players[0];
+  const shortBook=[fighter,goblin,creature('wolf'),creature('merfolk')];
+  const originalRandom=Math.random;
+  const recyclingSpell=effect=>{
+    Object.assign(recycler,{phase:'spell',turn:0});
+    Object.assign(recycled,{cash:500,hand:[id(effect)],book:shortBook.slice()});
+    recycler.players[1].peek={seat:0,ids:shortBook.slice().reverse()};
+    assert.ok(C.play(recycler,['cast',0]));
+  };
+  const expectRecycle=e=>{
+    assert.deepEqual(recycled.book,[...shortBook.slice(1),id(e),shortBook[0]]);
+    assert.equal(recycler.players[1].peek,undefined);
+  };
+  Object.assign(recycler.tiles[2],{owner:0,unit:{id:goblin,hp:24,enchant:'weakness'}});
+  Object.assign(recycler.tiles[3],{owner:0,unit:{id:fighter,hp:32,st:51}});
+  try{
+    Math.random=()=>0;
+    recyclingSpell('camouflage');
+    assert.ok(C.play(recycler,['targetLand',2]));
+    assert.equal(recycler.tiles[2].unit.enchant,'camouflage');
+    expectRecycle('camouflage');
+
+    recyclingSpell('relief');
+    assert.ok(C.play(recycler,['targetLand',2]));
+    assert.equal(recycler.reliefFrom,2);
+    assert.deepEqual(C.choices(recycler),[['targetLand',3]]);
+    assert.ok(C.play(recycler,['targetLand',3]));
+    assert.deepEqual(recycler.tiles[2].unit,{id:fighter,hp:32,st:51});
+    assert.deepEqual(recycler.tiles[3].unit,{id:goblin,hp:24});
+    expectRecycle('relief');
+
+    recyclingSpell('chariot');
+    assert.ok(C.play(recycler,['targetLand',3]));
+    assert.ok(!C.choices(recycler).some(([,at])=>at===2));
+    assert.ok(C.play(recycler,['teleTo',5]));
+    assert.deepEqual([recycler.tiles[3].unit,recycler.tiles[5].unit,recycler.phase],[null,{id:goblin,hp:24},'roll']);
+    expectRecycle('chariot');
+
+    const centaur=creature('centaur');
+    for(const gear of ['eternalmail','boomerang']){
+      const item=creature(gear),before=enemy.book.slice();
+      const battle=duel(goblin,centaur,null,item);
+      assert.equal(battle.strikes[0].side,1);
+      assert.deepEqual(enemy.book,[...before.slice(1),item,before[0]]);
+      assert.ok(!enemy.hand.includes(item));
+    }
+  }finally{Math.random=originalRandom;}
+  assert.equal(new Set(C.cards.filter(c=>!c.unlisted&&c.catalog).map(c=>c.catalog.path)).size,400);
 
   for(const [mapId,at,stock] of [
     ['begins-3',1,['longsword','chainmail','manna','holyword6']],

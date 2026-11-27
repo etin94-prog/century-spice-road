@@ -133,6 +133,7 @@ const describeCepterItem=(()=>{
       C.edition==='saga'?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
     if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(firstEdition?5:10)+'G를 얻습니다.');
     if(name==='towershield'&&card.halveScroll)pieces.push('일반 공격과 두루마리 피해를 절반으로 줄입니다.');
+    else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(C.edition==='begins'&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(!(C.edition==='3ds'&&key==='holygrail'||C.edition==='saga'&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');

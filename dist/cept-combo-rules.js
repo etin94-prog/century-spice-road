@@ -37,7 +37,7 @@ const CepterCombos = (() => {
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
   function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
-  function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace=p=>p.hand.length<6}){
+  function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace=p=>p.hand.length<6,returnToBook}){
     const names=cards.map(key);
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
@@ -120,7 +120,7 @@ const CepterCombos = (() => {
         else if(e==='exile')returnToHand(s,t);
         else if(e==='relief'){
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
-          const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;p.book.unshift(ids.get(e));
+          const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;returnToBook(s,i,ids.get(e));
         }else if(e==='evilblast')damage(s,t,30);
         else if(immuneHP(t)&&['shrink','growthbody','temperance'].includes(e)){
           if(e==='shrink'&&s.edition==='saga')u.st=Math.max(0,strength(u)-10);
@@ -143,6 +143,7 @@ const CepterCombos = (() => {
         else if(e==='mutation'){
           clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(s.edition==='saga'?100:80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
+        if(s.edition==='begins'&&e==='camouflage')returnToBook(s,i,ids.get(e));
         if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||
           s.edition==='begins'&&['antielement','disease','drought','fog','greed','vitality','weakness'].includes(e))draw(p,s);
       }else if(type[e]==='area'){

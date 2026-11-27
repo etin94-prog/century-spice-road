@@ -222,6 +222,7 @@ const describeCepterSpell=(()=>{
     }
     if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
     if(edition==='begins'){
+      if(['camouflage','chariot','relief','telegnosis'].includes(e))return text[e].replace(' 사용한 주문은 북으로 돌아갑니다.','')+' 사용한 주문을 북에 넣고 남은 카드를 섞습니다.';
       if(e==='haste'||e==='slow')return '고른 셉터가 다음 두 번 굴리는 주사위 눈을 '+(e==='haste'?'5~7':'1~3')+'로 제한합니다.';
       if(e==='silence')return '고른 적은 2라운드 동안 크리처를 소환·교체하거나 원군으로 사용할 수 없습니다.';
       if(e==='triumph')return '다음 주회를 완주할 때 받는 마력이 1.3배가 됩니다.';

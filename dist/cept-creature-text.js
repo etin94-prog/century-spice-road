@@ -351,7 +351,8 @@ const CepterCreatureText=(()=>{
       const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
       pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
     }
-    const special=C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
+    const special=C.edition==='begins'&&key==='centaur'?'전투에서 생존하면 사용한 아이템을 북에 넣고 남은 카드를 섞습니다.':
+      C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='thunderspawn'?'내 수 영지 한 곳당 전투 ST가 10 오릅니다. 영지와 크리처의 속성이 다른 적 영지로 원거리 침략할 수 있습니다.':

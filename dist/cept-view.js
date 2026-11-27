@@ -670,6 +670,10 @@ function map(){
     return;
   }
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.phase==='over'?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.phase==='over'?winLabel():s.die?'주사위 '+s.die:m.name),el('span',(m.gates?'게이트 ':'요새 ')+p.flags.length+'/'+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  if(C.edition==='begins'&&s.phase==='spellTarget'&&s.spellEffect==='relief')
+    center.lastElementChild.textContent=s.reliefFrom==null?'교환할 첫 영지를 누르세요.':'교환할 두 번째 영지를 누르세요.';
+  if(C.edition==='begins'&&s.phase==='teleMove'&&s.spellEffect==='chariot')
+    center.lastElementChild.textContent='두 칸 떨어진 도착 영지를 누르세요.';
   if(s.phase==='spellCircle')center.lastElementChild.textContent='마법진 · 주문 한 장 무료 사용';
   if(s.phase==='gemStore')center.lastElementChild.textContent='보석 상점 · '+(s.remaining?'거래 후 '+s.remaining+'칸 이동':'속성석 거래');
   if(s.phase==='pathSwitch')center.lastElementChild.textContent='분기 스위치 · 유지 또는 변경을 선택하세요';
@@ -863,12 +867,16 @@ function render(){
   if(menuState.game!==s||menuState.key!==menuKey){
     const landTarget=choices.some(([kind])=>kind==='targetLand');
     const gateOnMap=selectingGate()&&landTarget;
-    const damageOnMap=C.hasLandDamage(s.spellEffect)&&landTarget;
+    const beginsMove=C.edition==='begins'&&(
+      landTarget&&['camouflage','chariot','relief'].includes(s.spellEffect)||
+      s.spellEffect==='chariot'&&choices.some(([kind])=>kind==='teleTo')
+    );
+    const spellOnMap=C.hasLandDamage(s.spellEffect)&&landTarget||beginsMove;
     const towerOnMap=s.phase==='towerTarget'||s.phase==='towerDeploy';
     const secretOnMap=s.phase==='secretTarget'&&choices.some(([kind])=>kind==='secretLand');
-    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!damageOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
+    menuState={game:s,key:menuKey,open:!optional&&!gateOnMap&&!spellOnMap&&!towerOnMap&&!secretOnMap&&!selectingTerritoryMove()};
     if(towerOnMap&&choices.length)handPanel.open=s.phase==='towerDeploy';
-    if(damageOnMap)handPanel.open=false;
+    if(spellOnMap)handPanel.open=false;
     // A card bubble left open from reading the hand must not cover a new decision.
     if(choices.length&&$('detail').classList.contains('card-popup'))focusCard=-1;
   }

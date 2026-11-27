@@ -56,7 +56,7 @@ const CepterExtraSpells=(()=>{
     if(p.status==='fairylight')p.cash+=p.hand.length*10;
     if(p.status==='torture')p.cash-=p.hand.filter(id=>cards[id].kind==='spell').length*20;
   }
-  function rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade}){
+  function rules(cards,{fx,combo,board,draw,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
@@ -201,7 +201,7 @@ const CepterExtraSpells=(()=>{
           case 'comet':t.level=Math.max(1,t.level-2);break;
           case 'elevation':t.level=2;break;
           case 'frostneedle':case 'venomousboil':fx.harm(s,t,30);break;
-          case 'chariot':s.teleFrom=x;p.book.unshift(ids.get(e));return 'teleMove';
+          case 'chariot':s.teleFrom=x;returnToBook(s,s.turn,ids.get(e));return 'teleMove';
           case 'influence':t.type=influence(s,t);break;
           case 'locust':t.level=Math.max(1,t.level-1);break;
           case 'meteor':t.level=1;break;
@@ -315,11 +315,7 @@ const CepterExtraSpells=(()=>{
           case 'reincarnation':{const n=p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
           case 'revelation':case 'telegnosis':
             setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);
-            if(e==='telegnosis'){
-              const at=s.edition==='begins'?Math.floor(Math.random()*(p.book.length+1)):0;
-              p.book.splice(at,0,ids.get(e));
-              if(s.edition==='begins')forgetPeek(s,s.turn);
-            }
+            if(e==='telegnosis')returnToBook(s,s.turn,ids.get(e));
             break;
           case 'selenear':p.cash+=100*owning(s,s.turn).filter(t=>t.type===2).length;break;
           case 'soltis':return 'soltisPower';

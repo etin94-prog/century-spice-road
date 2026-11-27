@@ -137,6 +137,15 @@ function createCepter(edition="ps2"){
     for(let i=book.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[book[i],book[j]]=[book[j],book[i]];}
     return book;
   }
+  // Begins reshuffles the whole remaining book when a card returns to it.
+  // Confirmed in-game at https://culdcept.club/blog/fukumen/20261125194640773.
+  function returnToBook(s,seat,id){
+    const p=s.players[seat];
+    if(!begins){p.book.unshift(id);return;}
+    p.book.push(id);
+    if(!s.predict)p.book=shuffledBook(p.book);
+    for(const q of s.players)if(q.peek?.seat===seat)delete q.peek;
+  }
   const discardAtEnd=revolt||edition==='begins';
   const hasHandSpace=p=>p.hand.length<(revolt?10:6);
   function draw(p,s){
@@ -358,7 +367,7 @@ function createCepter(edition="ps2"){
   function stealableGems(buyer,seller){
     return seller.symbols.flatMap((count,e)=>count>0&&buyer.symbols[e]<20?Array(count).fill(e):[]);
   }
-  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace});
+  const fx=combo.rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace,returnToBook});
   function spellHP(s,t,e){
     const u=t.unit;
     const damage=e==='bolt'?20:extraSpells?.landDamage[e];
@@ -366,7 +375,7 @@ function createCepter(edition="ps2"){
     if(fx.immuneHP(t))return u.hp;
     return edition==='saturn'?Math.min(fx.max(u),u.hp+Math.floor(fx.max(u)/2)):fx.max(u);
   }
-  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
+  const extra=extraSpells?.rules(cards,{fx,combo,board,draw,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,canOccupy,deployable,claim,canInvade});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
   const shrine=shrineModule?.rules(cards,{fx,combo,board,draw,note});
   const roundGain=s=>Math.min(50,19+s.round);
@@ -1102,7 +1111,7 @@ function createCepter(edition="ps2"){
       if(a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
       if(a.g==='dynamite'||a.n==='wraith'||!muted&&a.u.enchant==='senility')a.hp=0;
       if(!combo.levelLocked(t)&&fx.name(t.unit)!=='trampleweed'&&(a.hp>0||d.hp>0)&&(a.n==='leshy'||a.g==='silverplow'))t.level=Math.min(5,t.level+(a.n==='leshy')+(a.g==='silverplow'));
-      if(a.item!=null&&(a.n==='centaur'&&edition!=='saga'&&(!revolt||a.hp>0)||['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
+      if(a.item!=null&&(a.n==='centaur'&&edition!=='saga'&&!begins&&(!revolt||a.hp>0)||['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
       a.n=originalName;
     }
     if(itemEnd){
@@ -1184,7 +1193,8 @@ function createCepter(edition="ps2"){
     }
     for(const a of sides){
       const opponent=a===A?D:A;
-      if(a.g==='eternalmail'&&a.hp>0)s.players[a.seat].book.unshift(a.item);
+      const centaurReturn=begins&&a.hp>0&&creatureEnd&&a.n==='centaur'&&a.gear?.kind==='item';
+      if(a.hp>0&&(centaurReturn||a.g==='eternalmail'&&(!begins||itemEnd)))returnToBook(s,a.seat,a.item);
       if((edition==='saga'||revolt)&&creatureEnd&&a.hp>0){
         const owner=s.players[a.seat];
         if(edition==='saga'&&a.n==='centaur'&&a.item!=null)owner.book.unshift(a.item);
@@ -1195,7 +1205,7 @@ function createCepter(edition="ps2"){
           owner.cash+=gain;lines.push('젤라티너스 월 · '+gain+'G 획득');
         }
       }
-      if(edition==='begins'&&itemEnd&&a.hp>0&&a.g==='boomerang')s.players[a.seat].hand.push(a.item);
+      if(begins&&!centaurReturn&&itemEnd&&a.hp>0&&a.g==='boomerang')s.players[a.seat].hand.push(a.item);
       if(edition==='saga'&&itemEnd&&a.hp>0){
         if(['boomerang','soulray'].includes(a.g)&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
         if(a.g==='doomneedle'&&opponent.hp>0){combo.clear(opponent.u);opponent.u.enchant='senility';lines.push('둠 니들 · 노쇠');}
@@ -1360,16 +1370,17 @@ function createCepter(edition="ps2"){
       case 'teleTo':{
         const from=s.teleFrom,src=s.tiles[from],dst=s.tiles[x],territoryMove=s.territoryMove;
         delete s.teleFrom;delete s.territoryMove;
-        const moveName=territoryMove==='adjacent'?'크리핑 플레임':'슬레이프니르';
+        const chariotMove=begins&&s.spellEffect==='chariot';
+        const moveName=chariotMove?'채리엇':territoryMove==='adjacent'?'크리핑 플레임':'슬레이프니르';
         if(dst.unit){
-          if(territoryMove)mapEffect('invade',moveName+' 이동 침략',x,{source:from});
+          if(territoryMove||chariotMove)mapEffect('invade',moveName+' 이동 침략',x,{source:from});
           s.battle={at:x,from,inv:src.unit.id,invHP:src.unit.hp,atkItem:null,defItem:null,attackerSeat:src.owner,...(territoryMove?{}:{teleport:true})};
           s.phase='attack';
         }else{
           claim(dst,src.owner,{...src.unit});combo.clear(dst.unit);
           if(fx.name(src.unit)!=='powdereater')vacate(src);
-          if(territoryMove){mapEffect('cast',moveName+' 이동',x,{source:from});afterTerritory(s);}
-          else s.phase='roll';
+          if(territoryMove||chariotMove)mapEffect('cast',moveName+' 이동',x,{source:from});
+          if(territoryMove)afterTerritory(s);else s.phase='roll';
         }
         break;
       }

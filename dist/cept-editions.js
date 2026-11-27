@@ -138,7 +138,8 @@ const CepterEditions=(()=>{
       peace:'peace',permission:'permission',phantasm:'phantasm',pressure:'pressure',punisher:'punisher',revival:'revival',senility:'senility',squeeze:'squeeze',
       massphantasm:'revoltphantasm',deathmiasma:'deathmiasma',dreadblast:'dreadblast',
       antimagic:'antimagic',dreamterrain:'dreamterrain',revelation:'revelation',telegnosis:'telegnosis',
-      haste:'haste',slow:'slow',silence:'silence',triumph:'triumph',colorfrombeyond:'colorfrombeyond'}
+      haste:'haste',slow:'slow',silence:'silence',triumph:'triumph',colorfrombeyond:'colorfrombeyond',
+      camouflage:'camouflage',chariot:'chariot',relief:'relief'}
   };
   function modernBooks(cards,edition,bookSize,copyLimit){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
@@ -423,7 +424,7 @@ const CepterEditions=(()=>{
     gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},skeleton:{regenerate:true},
     gnome:{tollFactor:1.5},phoenix:{},wallofice:{stationary:true,battleHP:20},
     giantamoeba:{neutralizes:[0,2]},cornfolk:{},spectre:{},
-    greattusker:{blocksFirst:true},blynx:{spellWard:true,remoteVacant:true},troll:{regenerate:true},zombie:{},
+    greattusker:{blocksFirst:true},blynx:{spellWard:true,remoteVacant:true},troll:{regenerate:true},zombie:{},centaur:{first:true},
     sage:{support:true,supportElements:[-1,2],protectGear:true},pirate:{support:true,supportElements:[-1,1]},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
@@ -491,7 +492,8 @@ const CepterEditions=(()=>{
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
     for(const c of cards){c.unlisted=true;}
     for(const [i,r] of data.cards[edition].entries()){
-      const slug=r.slug||r.name.toLowerCase().replace(/[^a-z0-9]/g,''),id=index.get(slug),base=cards[id];
+      const sourceSlug=r.slug||r.name.toLowerCase().replace(/[^a-z0-9]/g,''),id=index.get(sourceSlug),base=cards[id];
+      const slug=edition==='begins'&&sourceSlug==='battlegear'?r.image.split('/').pop():sourceSlug;
       const category=categories[r.type],kind=r.type[0]==='e'?'creature':r.type[0]==='i'?'item':'spell';
       const path=base?.catalog.path||((kind==='creature'?category:kind+'s')+'/'+slug);
       const traits={'援護':'support','再生':'regenerate','先制':'first','後手':'last','防御型':'stationary',...(edition==='revolt'?{Vigorous:'vigorous'}:{})};
