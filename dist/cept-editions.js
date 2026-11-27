@@ -61,6 +61,10 @@ const CepterEditions=(()=>{
     }
     return {gates,gateNames:Object.fromEntries([...ids].map(([key,i])=>[i,tiles['fort-'+key].replace('요새','게이트')])),checkpoints:[...ids.values()]};
   }
+  const beginsShops={
+    'gaidess-arena-2':['longsword','chainmail','manna','holyword6'],
+    'double-heart':['skeleton','catapult','shatter','holyword6']
+  };
   const sagaShrineKinds={'mt-etumer':{4:'light',52:'dark'},zanador:{46:'light',64:'dark'}};
   function boards(edition,original){
     if(edition==='3ds')return {...original.handheldPractice};
@@ -76,11 +80,13 @@ const CepterEditions=(()=>{
       const [goal,startCash,lapBonus,die,landPrice,fortBonus]=economy[edition]?.[m.slug]||[];
       const id=mapId(edition,m,index),nextMap=data.maps[edition][index+1];
       const transit=modernMapSlots[edition]?checkedTransit(id,m,types,links):m.transit;
+      const shop=edition==='begins'?beginsShops[m.slug]:null;
       result[id]={...m,types,links,transit,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
         areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||80,die:die||Number(m.die)||other?.die||6,storyGoal:goal||other?.storyGoal,
         graph:true,...(fortBonus?{fortBonus}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
-        ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{})};
+        ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{}),
+        ...(shop?{cardShops:Object.fromEntries(types.flatMap((t,i)=>t==='카드 상점'?[[i,shop]]:[]))}:{})};
     }
     if(edition==='saga')Object.assign(result,original.sagaPractice);
     if(edition==='revolt')Object.assign(result,original.revoltPractice);
@@ -394,7 +400,7 @@ const CepterEditions=(()=>{
     petrifystone:{},prismaticwand:{},ringofthesuccubus:{first:true},tearinghalo:{st:30,protectItem:true},wondercharm:{}
   };
   const beginsCreatures={
-    gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},
+    gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},skeleton:{regenerate:true},
     flameacolyte:{innateScroll:30,scrollCriticalElements:[0]},
     aquaacolyte:{innateScroll:30,scrollCriticalElements:[1]},
     terraacolyte:{innateScroll:30,scrollCriticalElements:[2]},

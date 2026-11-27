@@ -48,7 +48,7 @@ function createCepter(edition="ps2"){
   const shopIds=new Map(cards.map((card,id)=>[key(card),id]));
   function shopStock(s,at=s.players[s.turn].pos){
     if(!s.layoutRevision||s.tiles[at]?.type!=='카드 상점')return [];
-    if(revolt)return (board(s).cardShops?.[at]||[]).map(name=>revoltShopIds.get(name)).filter(Number.isInteger);
+    if(flatFeeShop)return (board(s).cardShops?.[at]||[]).map(name=>flatFeeShopIds.get(name)).filter(Number.isInteger);
     return (shopLists[s.mapId]?.[at]||[]).map(name=>shopIds.get(name));
   }
   const enabled=new Set('boggart gnome oldwillow kelpie cornfolk dryad sage manes seabonze goldentotem caitsith decoy bandit executor cerberus grendel phoenix mummy zombie mandrake lunatichare nike succubus leprechaun gremlin leshy gouda drool undine mujina spectre centaur migoal nightmare nightfiend powdereater goblin statue silveridol brassidol borgess lung virus sulfurousballoon wraith sonascetic livingshield mermecoleo bloodypudding behemoth remora deathgaze tetramorph sphinx peri conjurer baal heatimp windimp witch spittingcobra goobaqueen gooba graniteidol marbleidol cleric carbuncle berserker thief hellhound roadrunner wereboar griffon knight lilith pyrodrake dragonzombie firegiant stormgiant hornedchameleon ninja mastermonk willothewisp amazon golem pegasus wyvern wonderwall steamgear trenchworm lavaworm vision samurai troll mudman pushpull tyrannosaurus hydra shellcreeper larvae darkelf coati cyclops grimalkin gladiator gigantherium dragon bunyip wendigo sorcerer valkyria domovikha paladin sprite chimera manticore'.split(' '));
@@ -94,8 +94,9 @@ function createCepter(edition="ps2"){
   if(editions)editions.configure(edition,cards,presets,bookSize,copyLimit);
   const evo=revolt?(typeof module==='undefined'?CepterEvo:require('./cept-evo')):null;
   if(evo)cards=evo.catalog(cards);
-  const revoltShopIds=revolt?new Map(cards.flatMap((card,id)=>!card.unlisted&&!card.catalogOnly&&card.catalog?.path?[[card.catalog.path.split('/').pop(),id]]:[])):null;
-  const shopCost=id=>revolt?20:cards[id].cost;
+  const flatFeeShop=revolt||edition==='begins';
+  const flatFeeShopIds=flatFeeShop?new Map(cards.flatMap((card,id)=>!card.unlisted&&!card.catalogOnly&&card.catalog?.path?[[card.catalog.path.split('/').pop(),id]]:[])):null;
+  const shopCost=id=>flatFeeShop?20:cards[id].cost;
   const modern=!!presets.stronghold;
   const extraSpells=edition==='ps2'||modern?(typeof module==='undefined'?CepterExtraSpells:require('./cept-extra-spells.js')):null;
   const extraTypes=edition==='ps2'?extraSpells.type:extraSpells?.modernType;
@@ -135,6 +136,7 @@ function createCepter(edition="ps2"){
     for(let i=book.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[book[i],book[j]]=[book[j],book[i]];}
     return book;
   }
+  const discardAtEnd=revolt||edition==='begins';
   const hasHandSpace=p=>p.hand.length<(revolt?10:6);
   function draw(p,s){
     if(revolt&&!hasHandSpace(p))return;
@@ -365,7 +367,7 @@ function createCepter(edition="ps2"){
   const roundGain=s=>Math.min(50,19+s.round);
   function finish(s){
     if(settleDebts(s,'endTurn'))return;
-    if(revolt&&s.players[s.turn].hand.length>6){s.discardReturn='endTurn';s.phase='discard';return;}
+    if(discardAtEnd&&s.players[s.turn].hand.length>6){s.discardReturn='endTurn';s.phase='discard';return;}
     if(s.shrineClemencyUsed){delete s.players[s.turn].sagaClemency;delete s.shrineClemencyUsed;}
     delete s.spellArrival;
     if(s.roundLimit&&s.round>=s.roundLimit&&s.turn===s.players.length-1){
@@ -382,7 +384,7 @@ function createCepter(edition="ps2"){
     if(revolt)p.cash+=roundGain(s);
     extraSpells?.startTurn(s,cards);
     for(let j=0;j<(fx.idol(s,'brassidol')?2:1);j++){draw(p,s);if(p.status==='despair')p.hand.pop();}
-    s.phase=!revolt&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
+    s.phase=!discardAtEnd&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
   }
   function price(p,c,s){
     const status=c.kind==='spell'?1:({waste:2,lifeforce:.5,sagaDeduction:.3,sagaInflation:1.3}[p.status]??1);
@@ -1173,7 +1175,7 @@ function createCepter(edition="ps2"){
           owner.cash+=gain;lines.push('젤라티너스 월 · '+gain+'G 획득');
         }
       }
-      if(edition==='begins'&&itemEnd&&a.hp>0&&a.g==='boomerang'&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
+      if(edition==='begins'&&itemEnd&&a.hp>0&&a.g==='boomerang')s.players[a.seat].hand.push(a.item);
       if(edition==='saga'&&itemEnd&&a.hp>0){
         if(['boomerang','soulray'].includes(a.g)&&s.players[a.seat].hand.length<6)s.players[a.seat].hand.push(a.item);
         if(a.g==='doomneedle'&&opponent.hp>0){combo.clear(opponent.u);opponent.u.enchant='senility';lines.push('둠 니들 · 노쇠');}
@@ -1552,7 +1554,7 @@ function createCepter(edition="ps2"){
     if(s.circleCasting&&['roll','land'].includes(s.phase)){
       s.phase='land';delete s.circleCasting;
     }
-    if(!revolt&&(s.phase==='roll'||edition==='saga'&&s.phase==='spell')){
+    if(!discardAtEnd&&(s.phase==='roll'||edition==='saga'&&s.phase==='spell')){
       const seat=edition==='saga'?s.players.findIndex(p=>p.hand.length>6):s.players[s.turn].hand.length>6?s.turn:-1;
       if(seat>=0){
         if(seat!==s.turn)s.discardSeat=seat;

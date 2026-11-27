@@ -369,7 +369,8 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     for(const [at,owner,hp,enchant] of [[1,0,40],[2,ally,40],[5,foe,40],[6,foe,40,'landprotection'],[8,foe,40,'phantasm']]){
       Object.assign(match.tiles[at],{owner,unit:{id:fighter,hp,enchant}});
     }
-    assert.deepEqual(C.ai(match),['cast',1]);
+    const recommendation=C.ai(match);
+    assert.deepEqual([recommendation[0],caster.hand[recommendation[1]]],['cast',spell]);
     assert.ok(C.play(match,['cast',1]));
     assert.ok(!C.play(match,['sacrifice',1]));
     if(damage===40)assert.deepEqual(C.ai(match),['sacrifice',2]);
@@ -2897,6 +2898,58 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.equal(command.round,rounds+1);
     command.phase='land';assert.equal(action(),false);
   }
+
+  for(const [mapId,at,stock] of [
+    ['begins-3',1,['longsword','chainmail','manna','holyword6']],
+    ['begins-9',14,['skeleton','catapult','shatter','holyword6']]
+  ]){
+    const board=C.maps[mapId],approach=steps=>{
+      const match=C.start(4,4,5000,mapId),player=match.players[0],pos=board.links[at][0];
+      Object.assign(match,{phase:'fork',die:steps,remaining:steps});
+      Object.assign(player,{pos,previous:board.links[pos].find(n=>n!==at),cash:100,hand:Array(6).fill(fighter)});
+      assert.ok(C.play(match,['route',at]));
+      return match;
+    };
+    const passing=approach(2);
+    assert.equal(passing.players[0].pos,board.links[at][1]);
+    assert.notEqual(passing.phase,'shop');
+    const match=approach(1),player=match.players[0],offers=stock.map(creature);
+    assert.ok(offers.every(i=>i>=0));
+    assert.equal(match.phase,'shop');
+    assert.deepEqual(C.shopStock(match),offers);
+    assert.deepEqual(offers.map(C.shopCost),[20,20,20,20]);
+    const replay=JSON.parse(JSON.stringify(match));
+    const before=player.template.slice(),book=player.book.slice();
+    assert.ok(C.play(match,['buyCard',offers[0]])&&C.play(replay,['buyCard',offers[0]]));
+    assert.deepEqual(match.players[0],replay.players[0]);
+    assert.deepEqual([player.cash,player.hand.length,player.hand[6],match.phase,match.discardReturn],[80,7,offers[0],'discard','endTurn']);
+    assert.deepEqual(player.template,before);
+    assert.deepEqual(player.book,book);
+    assert.ok(!C.play(match,['buyCard',offers[1]]));
+    assert.ok(C.play(match,['discard',0]));
+    assert.deepEqual([match.turn,player.hand.length,player.hand[5]],[1,6,offers[0]]);
+  }
+
+  const overflow=C.start(2,2,5000,'begins-original-ford');
+  const incoming=overflow.players[1],drawSpell=id('windofhope');
+  Object.assign(incoming,{pos:2,hand:Array(6).fill(goblin),book:[drawSpell],cash:300});
+  overflow.phase='land';assert.ok(C.play(overflow,['pass']));
+  assert.deepEqual([overflow.turn,overflow.phase,incoming.hand.length],[1,'spell',7]);
+  assert.ok(C.play(overflow,['cast',6]));
+  assert.deepEqual([overflow.phase,incoming.hand.length],['roll',8]);
+  overflow.phase='land';assert.ok(C.play(overflow,['pass']));
+  assert.deepEqual([overflow.turn,overflow.phase,overflow.discardReturn],[1,'discard','endTurn']);
+  assert.ok(C.play(overflow,['discard',7]));
+  assert.equal(overflow.turn,1);
+  assert.ok(C.play(overflow,['discard',6]));
+  assert.deepEqual([overflow.turn,incoming.hand.length],[0,6]);
+
+  const regeneration=C.start(2,2,5000,'begins-original-ford');
+  regeneration.phase='attack';regeneration.battle={at:1,inv:goblin,atkItem:null,defItem:null};
+  Object.assign(regeneration.tiles[1],{owner:1,unit:{id:creature('skeleton'),hp:31}});
+  assert.ok(C.play(regeneration,['bare'])&&C.play(regeneration,['bare']));
+  assert.equal(regeneration.tiles[1].unit.hp,40);
+  assert.match(regeneration.battle.lines.join(' '),/재생/);
 
   const monarchId=creature('abyssalmonarch'),gooba=creature('gooba'),aero=creature('aerogoetia');
   assert.equal(C.copyLimit(C.cards[monarchId]),1);
