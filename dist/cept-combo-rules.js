@@ -14,7 +14,7 @@ const CepterCombos = (() => {
   const activeWorld=s=>s?.edition==='revolt'&&s.world?.until>s.round?s.world.effect:null;
   const groups = {
     land: 'barricade greed regeneration vitality disease hustle bulimia fatbody peace landprotection mine vortex soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
-    area: 'cramp reinforce insectswarm exorcism massphantasm sculpture desertstorm',
+    area: 'refresh holyblight cramp reinforce insectswarm exorcism massphantasm sculpture desertstorm',
     player: 'holyword0 grace pain silence haste despair antimagic changeling wizardeye mindseeker waste wordofrecall suppression drainmagic slow holyword3 holywordx echo dimensiondoor squeeze',
     global: 'catastrophe tempest punisher icestorm fireexplosion thunderstorm deathcloud sonicwave demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker feast '+Object.keys(worlds).join(' ')
   };
@@ -109,8 +109,14 @@ const CepterCombos = (() => {
           if(s.reliefFrom==null){s.reliefFrom=x;return 'spellTarget';}
           const src=s.tiles[s.reliefFrom];[src.unit,t.unit]=[u,src.unit];clear(src.unit);clear(t.unit);delete s.reliefFrom;p.book.unshift(ids.get(e));
         }else if(e==='evilblast')damage(s,t,30);
-        else if(immuneHP(t)&&['shrink','growthbody','temperance'].includes(e))return 'roll';
-        else if(e==='shrink'){u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)destroy(s,t);}
+        else if(immuneHP(t)&&['shrink','growthbody','temperance'].includes(e)){
+          if(e==='shrink'&&s.edition==='saga')u.st=Math.max(0,strength(u)-10);
+          return 'roll';
+        }
+        else if(e==='shrink'){
+          if(s.edition==='saga')u.st=Math.max(0,strength(u)-10);
+          u.mhp=Math.max(0,max(u)-10);u.hp=Math.min(u.hp,u.mhp);if(!u.hp)destroy(s,t);
+        }
         else if(e==='growthbody'){
           const gain=['revolt','begins'].includes(s.edition)?Math.max(0,Math.min(10,100-max(u))):10;
           u.mhp=max(u)+gain;u.hp=s.edition==='begins'?Math.min(u.mhp,u.hp+10):u.hp+gain;
@@ -122,15 +128,17 @@ const CepterCombos = (() => {
         }
         else if(e==='temperance'){u.mhp=30;u.hp=Math.min(30,u.hp);}
         else if(e==='mutation'){
-          clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
+          clear(u);if(!immuneHP(t)){const next=Math.max(max(u),Math.min(s.edition==='saga'?100:80,max(u)+20));u.hp+=next-max(u);u.mhp=next;}u.poisoned=true;
         }else{clear(u);u.enchant=e;u.caster=i;if(e==='barricade'||e==='quicksand')u.expires=s.round+(e==='barricade'?3:2);}
         if(['revolt','3ds'].includes(s.edition)&&['greed','vitality','disease'].includes(e)||
           s.edition==='begins'&&['antielement','disease','drought','fog','greed','vitality','weakness'].includes(e))draw(p,s);
       }else if(type[e]==='area'){
         for(const v of tiles){
           const a=v.unit;
+          if(e==='refresh'&&!immuneHP(v))a.hp=max(a);
+          if(e==='holyblight'&&hasElement(cards[a.id],-1))damage(s,v,20);
           if(e==='cramp')a.st=Math.max(0,strength(a)-20);
-          if(e==='reinforce')a.st=Math.max(strength(a),Math.min(80,strength(a)+10));
+          if(e==='reinforce')a.st=Math.max(strength(a),Math.min(s.edition==='saga'?100:80,strength(a)+10));
           if(e==='insectswarm'&&a.hp<max(a))damage(s,v,20);
           if(e==='massphantasm'||e==='desertstorm'){clear(a);a.enchant=e==='massphantasm'?'phantasm':e;if(e==='desertstorm')a.expires=s.round+2;}
           if(e==='exorcism'&&enchanted(a)){clear(a);if(!immuneHP(v)){a.mhp=max(a)+10;a.hp+=10;}}
@@ -534,7 +542,7 @@ const CepterCombos = (() => {
     function scoreTarget(e,x){
       if(type[e]==='area'){
         return tiles.filter(t=>t.area===x).reduce((v,t)=>{
-          const u=t.unit,amount=e==='insectswarm'?(u.hp<fx.max(u)?(u.hp<=20?-18:-7):0):e==='exorcism'?(enchanted(u)?10:0):
+          const u=t.unit,amount=e==='refresh'?Math.min(15,fx.max(u)-u.hp):e==='holyblight'?(hasElement(cards[u.id],-1)?-12:0):e==='insectswarm'?(u.hp<fx.max(u)?(u.hp<=20?-18:-7):0):e==='exorcism'?(enchanted(u)?10:0):
             e==='sculpture'?(fx.max(u)<=30?-9:0):e==='cramp'?-6:e==='reinforce'?6:e==='massphantasm'?4:e==='desertstorm'?-3:0;
           return v+advantage(t)*amount;
         },0);

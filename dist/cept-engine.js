@@ -225,6 +225,7 @@ function createCepter(edition="ps2"){
   function note(s,t){s.log.unshift(t);if(s.log.length>16)s.log.pop();s.logSequence=(s.logSequence||0)+1;}
   function actor(s){
     if(s.phase==='sell')return s.debtor??s.turn;
+    if(s.phase==='discard'&&s.discardSeat!=null)return s.discardSeat;
     if(s.phase==='defend')return s.tiles[s.battle.at].owner;
     if(s.phase==='attack')return s.battle.attackerSeat??s.turn;
     if(s.phase==='result'&&isComputer(s,s.turn)){
@@ -1359,7 +1360,7 @@ function createCepter(edition="ps2"){
       case 'discard':
         p.hand.splice(x,1);
         if(p.hand.length<=6){
-          const next=s.discardReturn||'spell';delete s.discardReturn;
+          const next=s.discardReturn||'spell';delete s.discardReturn;delete s.discardSeat;
           if(next==='endTurn')finish(s);else s.phase=next;
         }
         break;
@@ -1370,7 +1371,13 @@ function createCepter(edition="ps2"){
     if(s.circleCasting&&['roll','land'].includes(s.phase)){
       s.phase='land';delete s.circleCasting;
     }
-    if(!revolt&&s.phase==='roll'&&s.players[s.turn].hand.length>6){s.discardReturn='roll';s.phase='discard';}
+    if(!revolt&&(s.phase==='roll'||edition==='saga'&&s.phase==='spell')){
+      const seat=edition==='saga'?s.players.findIndex(p=>p.hand.length>6):s.players[s.turn].hand.length>6?s.turn:-1;
+      if(seat>=0){
+        if(seat!==s.turn)s.discardSeat=seat;
+        s.discardReturn=s.phase;s.phase='discard';
+      }
+    }
     if(gemTerrain)updateGemTerrain(s,gemTerrain);else updatePrices(s,before);
     if(previousChains)reportChains(s,previousChains);
     if(s.endReason==='roundLimit'){

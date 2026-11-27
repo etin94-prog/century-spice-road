@@ -13,6 +13,9 @@ const CepterExtraSpells=(()=>{
     alarm:'global',burninghail:'global',freezecyclone:'global',globalinsectswarm:'global',fatigueddisaster:'global',elementalwrath:'global',redivision:'global',
     remission:'land',restore:'land',revoltlandtransfer:'land',stoneblast:'land',zap:'land',holybanishment:'land',liquidform:'land',
     gift:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
+    sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
+    comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
+    frostneedle:'land',venomousboil:'land',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
@@ -56,6 +59,7 @@ const CepterExtraSpells=(()=>{
     const sample=a=>a.length?a[Math.floor(Math.random()*a.length)]:undefined;
     const enemy=(s,i)=>!combo.allied(s,s.turn,i);
     const owning=(s,seat)=>s.tiles.filter(t=>t.owner===seat);
+    const affinity=(s,first,second)=>owning(s,s.turn).filter(t=>t.type===first||t.type===second).length;
     const landDrainRate=s=>s.edition==='saga'?20:30;
     const sharedCash=s=>Math.floor(s.players.reduce((sum,q)=>sum+q.cash,0)/s.players.length);
     const symbolCount=p=>p.symbols.reduce((a,b)=>a+b,0);
@@ -88,7 +92,10 @@ const CepterExtraSpells=(()=>{
         if(s.edition==='3ds'&&['sink','upheaval','weathering','wildgrowth'].includes(e)&&t.level>3)return [];
         if(!fx.targetable(s,t,category,e==='removecurse'))return [];
         if((hasTerrain||e==='influence')&&(fx.idol(s,'jadeidol')||combo.activeWorld(s)==='solidworld'))return [];
-        if((e==='meteor'||e==='locust')&&fx.blockedLevel(s,t))return [];
+        if(['meteor','locust','comet','sagaterrair','elevation'].includes(e)&&fx.blockedLevel(s,t))return [];
+        if(e==='comet'&&(!enemy(s,t.owner)||t.level<2)||e==='elevation'&&t.level!==1)return [];
+        if(e==='frostneedle'&&![0,2].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
+        if(e==='venomousboil'&&![1,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='chariot'&&(t.owner!==s.turn||!chariotExits(s,i).length))return [];
         if((e==='bistair'||e==='parasite')&&!enemy(s,t.owner)||e==='banishingray'&&cards[t.unit.id].element!==-1)return [];
         if(e==='stoneblast'&&![2,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
@@ -173,6 +180,11 @@ const CepterExtraSpells=(()=>{
           case 'revoltlandtransfer':p.cash+=Math.floor(value(s,t)*(s.edition==='begins'?.8:.7));vacate(t,true);break;
           case 'banishingray':fx.destroy(s,t);break;
           case 'bistair':fx.harm(s,t,10*owning(s,s.turn).filter(v=>v.type===0).length);break;
+          case 'sagabistair':if(affinity(s,0,2)>=5)fx.harm(s,t,40);break;
+          case 'sagaterrair':if(affinity(s,1,3)>=5)t.level=1;break;
+          case 'comet':t.level=Math.max(1,t.level-2);break;
+          case 'elevation':t.level=2;break;
+          case 'frostneedle':case 'venomousboil':fx.harm(s,t,30);break;
           case 'chariot':s.teleFrom=x;p.book.unshift(ids.get(e));return 'teleMove';
           case 'influence':t.type=influence(s,t);break;
           case 'locust':t.level=Math.max(1,t.level-1);break;
@@ -196,10 +208,14 @@ const CepterExtraSpells=(()=>{
       }else if(type[e]==='player'){
         switch(e){
           case 'corruption':q.cash-=10*symbolCount(q);break;
+          case 'sagagift':q.cash+=100;draw(q,s);break;
           case 'landdrain':{const amount=owning(s,x).length*landDrainRate(s);p.cash+=amount;q.cash-=amount;break;}
           case 'judgment':{const victim=Math.random()<2/3?q:p;victim.cash-=Math.floor(Math.max(0,victim.cash)*.8);break;}
           case 'eclipse':q.cash+=10*mostSymbols(q,20);break;
-          case 'dispelmagic':clearCepter(q);break;
+          case 'dispelmagic':
+            clearCepter(q);
+            if(s.edition==='saga')p.book.unshift(ids.get(e));
+            break;
           case 'revival':resetBook(s,x,true);break;
           case 'ruin':p.hand=p.hand.filter(id=>cards[id].kind!=='spell');q.hand=q.hand.filter(id=>cards[id].kind!=='spell');break;
           case 'rust':q.hand=q.hand.filter(id=>cards[id].kind!=='item');break;
@@ -234,6 +250,17 @@ const CepterExtraSpells=(()=>{
           case 'foresight':
             if(!p.book.length)resetBook(s,s.turn);return 'foresightCard';
           case 'prophecy':if(!p.book.length)resetBook(s,s.turn);return 'prophecyKind';
+          case 'sagaiksear':if(affinity(s,1,3)>=5)for(let n=0;n<6;n++)draw(p,s);break;
+          case 'sagaselenear':if(affinity(s,0,2)>=5)p.cash+=500;break;
+          case 'fame':p.cash+=100*Math.max(0,...owning(s,s.turn).map(t=>t.level));break;
+          case 'desolation':for(const v of s.tiles)if(v.level===3&&!fx.blockedLevel(s,v))v.level--;break;
+          case 'crusherstorm':for(const q of s.players)q.hand=q.hand.filter(id=>cards[id].kind!=='item');break;
+          case 'erosion':{
+            const counts=new Map();
+            for(const q of s.players)for(const id of q.hand)counts.set(id,(counts.get(id)||0)+1);
+            for(const q of s.players)q.hand=q.hand.filter(id=>counts.get(id)===1);
+            break;
+          }
           case 'gift':{
             const wealth=personalTotal(s,s.turn),rank=1+s.players.filter((_,j)=>personalTotal(s,j)>wealth).length;
             p.cash+=rank*50;for(let n=0;n<rank;n++)draw(p,s);
@@ -247,7 +274,7 @@ const CepterExtraSpells=(()=>{
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
           case 'lifestream':for(const v of owning(s,s.turn))if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);break;
           case 'lightcraft':s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});break;
-          case 'massgrowth':for(const v of land){if(fx.immuneHP(v))continue;const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,(s.edition==='begins'?100:80)-max));v.unit.mhp=max+gain;v.unit.hp=s.edition==='begins'?Math.min(v.unit.mhp,v.unit.hp+5):v.unit.hp+gain;}break;
+          case 'massgrowth':for(const v of land){if(fx.immuneHP(v))continue;const max=fx.max(v.unit),gain=Math.max(0,Math.min(5,(['saga','begins'].includes(s.edition)?100:80)-max));v.unit.mhp=max+gain;v.unit.hp=s.edition==='begins'?Math.min(v.unit.mhp,v.unit.hp+5):v.unit.hp+gain;}break;
           case 'rayoflaw':for(const other of s.players)other.hand=other.hand.filter(id=>cards[id].cost<100);break;
           case 'reincarnation':{const n=p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
           case 'revelation':case 'telegnosis':setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);if(e==='telegnosis')p.book.unshift(ids.get(e));break;
@@ -314,6 +341,7 @@ const CepterExtraSpells=(()=>{
           case 'ruin':return -sign*count('spell')*7-p.hand.filter(id=>cards[id].kind==='spell'&&combo.key(cards[id])!==e).length*5;
           case 'mesmerize':return -sign*Math.max(0,...q.hand.filter(id=>cards[id].kind==='spell').map(id=>cards[id].cost/9));
           case 'corruption':return -sign*symbolCount(q)/2;
+          case 'sagagift':return sign*(10+(q.hand.length<5?8:0));
           case 'landdrain':return Math.min(owning(s,x).length*landDrainRate(s),Math.max(0,q.cash)+50)/9;
           case 'judgment':return -sign*q.cash/30-p.cash/58;
           case 'eclipse':{
@@ -343,7 +371,11 @@ const CepterExtraSpells=(()=>{
       }
       switch(e){
         case 'zap':return -sign*(fx.damageAmount(s,t,10)+(t.unit.hp<=10?weight*4:0));
-        case 'stoneblast':return -sign*fx.damageAmount(s,t,30)/4;
+        case 'stoneblast':case 'frostneedle':case 'venomousboil':return -sign*fx.damageAmount(s,t,30)/4;
+        case 'sagabistair':return affinity(s,0,2)>=5?-sign*fx.damageAmount(s,t,40)/3:-30;
+        case 'sagaterrair':return affinity(s,1,3)>=5?-sign*(t.level-1)*12:-30;
+        case 'comet':return -sign*Math.min(2,t.level-1)*10;
+        case 'elevation':return sign*10;
         case 'holybanishment':return -sign*(5+weight+t.unit.hp/8);
         case 'liquidform':return sign*(40-t.unit.hp)/7;
         case 'restore':return sign*((fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3)+(t.unit.fatigued?4+weight:0));
@@ -390,6 +422,11 @@ const CepterExtraSpells=(()=>{
       if(e==='purify')return s.tiles.some(t=>t.unit&&combo.enchanted(t.unit))||s.players.some(q=>q.status)?5:-10;
       if(e==='pacifism')return s.tiles.filter(t=>t.owner===s.turn&&t.level>2).length*2-3;
       if(e==='revoltphantasm')return s.tiles.filter(t=>t.owner===s.turn&&t.unit?.hp).length-3;
+      if(e==='sagaiksear')return affinity(s,1,3)>=5?25-(p.hand.length-1)*3:-30;
+      if(e==='sagaselenear')return affinity(s,0,2)>=5?30:-30;
+      if(e==='fame')return Math.max(0,...mine.map(t=>t.level))*5;
+      if(e==='desolation')return s.tiles.reduce((score,t)=>score+(t.owner>=0&&t.level===3&&!fx.blockedLevel(s,t)?(enemy(s,t.owner)?12:-12):0),0);
+      if(e==='crusherstorm')return s.players.reduce((score,q,seat)=>score+(enemy(s,seat)?1:-1)*q.hand.filter(id=>cards[id].kind==='item').length*6,0);
       if(e==='reincarnation'&&s.edition!=='ps2')return p.hand.length<=2?10:p.hand.every(id=>cards[id].kind!=='creature')?7:1;
       if(e==='revelation'||e==='telegnosis')return mine.length&&p.status!=='enlightenment'?5:0;
       return 2;

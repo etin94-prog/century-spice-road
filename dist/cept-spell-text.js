@@ -3,6 +3,21 @@ const describeCepterSpell=(()=>{
   const text={
     one:'이번 차례에 1칸 이동합니다.',
     zap:'고른 크리처에게 10 피해를 줍니다.',
+    sagaiksear:'내 수·풍 영지가 합계 5곳 이상이면 카드 6장을 뽑습니다.',
+    sagaterrair:'내 수·풍 영지가 합계 5곳 이상이면 고른 영지를 레벨 1로 낮춥니다.',
+    sagabistair:'내 화·지 영지가 합계 5곳 이상이면 고른 크리처에게 40 피해를 줍니다.',
+    sagaselenear:'내 화·지 영지가 합계 5곳 이상이면 500G를 얻습니다.',
+    sagagift:'고른 셉터가 100G를 얻고 카드 한 장을 뽑습니다.',
+    comet:'고른 적 영지의 레벨을 2 내립니다. 최저 레벨은 1입니다.',
+    crusherstorm:'모든 셉터의 손패에서 아이템 카드를 전부 파괴합니다.',
+    desolation:'레벨 3인 모든 영지의 레벨을 1 내립니다.',
+    elevation:'고른 레벨 1 영지를 레벨 2로 올립니다.',
+    erosion:'모든 셉터의 손패를 합쳐 같은 카드가 둘 이상 있으면 해당 카드를 전부 파괴합니다.',
+    fame:'내 영지 중 최고 레벨 × 100G를 얻습니다.',
+    frostneedle:'고른 화·지 크리처에게 30 피해를 줍니다.',
+    venomousboil:'고른 수·풍 크리처에게 30 피해를 줍니다.',
+    refresh:'고른 지역의 모든 크리처의 HP를 최대치까지 회복시킵니다.',
+    holyblight:'고른 지역에 있는 모든 무속성 크리처에게 20 피해를 줍니다.',
     hustle:'고른 크리처의 전투 ST와 HP를 30씩 올립니다.',
     bulimia:'고른 크리처가 전투에서 생존하면 주인의 손패 한 장을 무작위로 파괴합니다.',
     fatbody:'고른 크리처의 최대 HP를 20 올리고 기본 ST를 20 낮춥니다.',
@@ -182,6 +197,13 @@ const describeCepterSpell=(()=>{
     if(card.kind!=='spell'||card.catalogOnly)return;
     const e=card.effect,edition=C.edition;
     if(Object.hasOwn(fixed,e))return '고른 셉터의 다음 이동 주사위 눈을 고정합니다. 고정값은 '+fixed[e]+'입니다.';
+    if(edition==='saga'){
+      if(e==='shrink')return '고른 적 크리처의 기본 ST와 최대 HP를 10씩 낮춥니다.';
+      if(e==='mutation')return '고른 크리처의 최대 HP를 최대 100까지 20 올리고 독을 부여합니다.';
+      if(e==='massgrowth')return '모든 크리처의 최대 HP를 최대 100까지 5 올립니다.';
+      if(e==='reinforce')return '고른 지역의 모든 크리처의 기본 ST를 최대 100까지 10 올립니다.';
+      if(e==='dispelmagic')return '고른 셉터의 저주를 해제합니다. 사용한 주문은 북으로 돌아갑니다.';
+    }
     if(edition==='saga'&&e==='mindseeker')return '고른 적의 북 맨 위 카드 6장을 보고 그중 한 장을 파괴합니다.';
     if(edition==='begins'){
       if(e==='revoltlandtransfer')return '내 영지 한 곳을 포기하고 현재 영지 가치의 80%를 마력으로 얻습니다.';
