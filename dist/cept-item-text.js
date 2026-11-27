@@ -129,9 +129,11 @@ const describeCepterItem=(()=>{
       pieces.push(el+' 상대의 일반 공격을 무효화합니다. 장착한 크리처가 '+el+'이면 모든 일반 공격을 무효화합니다.');
     }
     if(name==='necroscarab'&&C.edition==='saga')pieces.push('장착한 크리처가 상대에게 격파되면 스켈레톤으로 변합니다.');
-    if(name==='boomerang'&&!firstEdition)pieces.push(['saga','begins'].includes(C.edition)?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
+    if(name==='boomerang'&&!firstEdition)pieces.push(C.edition==='begins'?'장착한 크리처가 생존하면 전투 후 이 장비가 돌아옵니다.':
+      C.edition==='saga'?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
     if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(firstEdition?5:10)+'G를 얻습니다.');
     if(name==='towershield'&&card.halveScroll)pieces.push('일반 공격과 두루마리 피해를 절반으로 줄입니다.');
+    else if(C.edition==='begins'&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(!(C.edition==='3ds'&&key==='holygrail'||C.edition==='saga'&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;

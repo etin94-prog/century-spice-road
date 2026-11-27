@@ -649,17 +649,17 @@ function createCepter(edition="ps2"){
   }
   function territoryDestinations(s,from){
     const {unit,area,owner}=s.tiles[from],name=fx.name(unit),links=board(s).links;
-    const remoteVacant=cards[unit.id].remoteVacantElements;
+    const {remoteVacant,remoteVacantElements}=cards[unit.id];
     const nearby=name==='roadrunner'?links[from].flatMap(j=>links[j]).filter(j=>j!==from):links[from];
     const remote=s.tiles.flatMap((tile,j)=>{
       if(tile.unit&&!allied(s,owner,tile.owner)&&unit.enchant!=='paralysis'){
         if(name==='aerogoetia'&&tile.type===3||revolt&&name==='thunderspawn'&&!combo.matchesTerrain(cards[tile.unit.id],tile.type))return [j];
       }
       if(tile.owner>=0||!territoryType(tile.type))return [];
-      if(remoteVacant?.includes(tile.type)&&unit.enchant!=='paralysis')return [j];
+      if((remoteVacant||remoteVacantElements?.includes(tile.type))&&unit.enchant!=='paralysis')return [j];
       if(tile.area!==area)return [];
-      const unrestricted=unit.enchant==='spiritwalk'||name==='blynx';
-      return unrestricted||tile.type===3&&(name==='holyllama'||!remoteVacant&&name==='wyvern')||!remoteVacant&&tile.type===2&&name==='dryad'?[j]:[];
+      const unrestricted=unit.enchant==='spiritwalk'||!remoteVacant&&name==='blynx';
+      return unrestricted||tile.type===3&&(name==='holyllama'||!remoteVacantElements&&name==='wyvern')||!remoteVacantElements&&tile.type===2&&name==='dryad'?[j]:[];
     });
     return new Set([...nearby,...remote]);
   }
@@ -1090,7 +1090,10 @@ function createCepter(edition="ps2"){
       }
       if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition)a.hp=Math.min(a.hp,a.u.hp)-10;}
       if(a.g==='boomerang'&&edition!=='saga'&&edition!=='begins'&&!firstEdition&&(!revolt||a.n!=='centaur'||a.hp<=0)&&hasHandSpace(s.players[a.seat]))s.players[a.seat].hand.push(a.item);
-      if(a.n==='zombie'&&a.hp>0)a.hp-=20;
+      if(a.n==='zombie'&&a.hp>0){
+        a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-20;
+        if(begins)lines.push('좀비 · 기본 HP 20 감소');
+      }
       if(['behemoth','baal','remora'].includes(a.n)){const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;if(hand.length)hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);}
       if(!muted&&a.u.enchant==='bulimia'&&a.hp>0){
         const hand=s.players[a.seat].hand;
@@ -1155,7 +1158,15 @@ function createCepter(edition="ps2"){
       if(creatureEnd&&a.c.evoLegacy==='cash'){p.cash+=100;lines.push('마력 유산 · 100G');}
       if(creatureEnd&&a.c.evoLegacy==='draw')lines.push('카드 유산 · 카드 1장');
       if(a.g==='goldengoose')p.cash+=(firstEdition?5:10)*fx.max(a.u);
-      if((creatureEnd&&a.n==='phoenix'||a.g==='phoenixamulet')&&(!revolt||hasHandSpace(p)))p.hand.push(a.u.id);
+      const amulet=a.g==='phoenixamulet'&&(!begins||itemEnd);
+      if((creatureEnd&&a.n==='phoenix'||amulet)&&(!revolt||hasHandSpace(p))){
+        const returned=begins&&amulet?(a.original?.id??a.u.id):a.u.id;
+        p.hand.push(returned);
+        if(begins&&amulet){
+          const refund=cards[returned].cost;
+          p.cash+=refund;lines.push(a.gear.name+' · 손패로 복귀 · '+refund+'G 획득');
+        }
+      }
       const victor=a===A?D:A;
       if(victor.hp>0&&victor.n==='deathgaze'&&!s.predict&&Math.random()<(firstEdition ? .6 : .8)){
         const enemy=s.players[a.seat],id=a.u.id;

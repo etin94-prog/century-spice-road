@@ -367,7 +367,8 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='amazon'?'장비 없이 일반 공격으로 피해를 주면 이번 주회 번호 × 30G를 상대에게서 빼앗습니다.':
       firstEdition?(firstRules[key]||battle[key]):battle[key];
     if(card.remoteVacantElements?.length)pieces.push('어느 지역이든 빈 '+targets(card.remoteVacantElements)+' 영지로 이동할 수 있습니다.');
-    if(!card.basicBattle&&!card.revenge&&special&&!card.remoteVacantElements)pieces.push(special);
+    if(card.remoteVacant)pieces.push('어느 지역의 빈 영지로든 이동할 수 있습니다.');
+    if(!card.basicBattle&&!card.revenge&&special&&!card.remoteVacant&&!card.remoteVacantElements)pieces.push(special);
     if(!firstEdition&&key==='samurai')pieces.push('일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
     const landAbility=territorySummary(C,card);
     if(landAbility)pieces.push(landAbility);
