@@ -40,7 +40,7 @@ const CepterExtraBattle=(()=>{
     // Another copy elsewhere can still provide the same non-stacking bonus.
     const sources=s.tiles.filter((v,j)=>v.unit&&j!==b.at&&j!==b.from);
     function boost(n,a,ownOnly=false){
-      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(n!=='madharlequin'||v.unit.enchant!=='paralysis'));
+      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(s.edition!=='revolt'||v.unit.enchant!=='paralysis'));
     }
     function transform(a,id,temporary=false){
       if(id==null)return;
@@ -106,6 +106,10 @@ const CepterExtraBattle=(()=>{
         if(a.n==='amphibianwarrior'&&[1,3].includes(t.type))a.st+=20;
         if(a.n==='nessie'&&t.type===1)a.hp+=t.level*10;
         if(a.n==='lonebeast')a.hp+=fx.strength(a.u);
+        if(a.n==='lavakin'){a.st-=s.round;a.hp+=s.round;}
+        if([0,2].includes(a.element)&&boost('hellpyron',a))a.st+=10;
+        if([1,3].includes(a.element)&&boost('lordofbane',a))a.st+=10;
+        if(a.defending&&boost('otohime',a))a.hp+=10;
         if(a.n==='hiveworker'){
           const amount=10*s.tiles.filter((v,j)=>j!==b.from&&fx.name(v.unit)==='hiveworker').length;
           a.st+=amount;a.hp+=amount;

@@ -1018,7 +1018,7 @@ function createCepter(edition="ps2"){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
         const reflects=d.c.reflectNormal||matches(d.c.reflectElements,a)||guard?.reflectNormal||matches(guard?.reflectElements,a)||
           d.gear?.effect==='reflect'||d.n==='decoy'||revolt&&d.g==='mirrorhoplon'&&!a.gear;
-        const blocks=d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
+        const blocks=revolt&&d.u.enchant==='energyfield'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
           d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||
@@ -1324,6 +1324,21 @@ function createCepter(edition="ps2"){
         for(const player of s.players)if(player.peek?.seat===a.seat)delete player.peek;
       }
       if(edition!=='ps2'&&!handheld&&!revolt)revive(a);
+    }
+    if(revolt&&creatureEnd){
+      for(const a of sides){
+        const d=a===A?D:A;
+        if(a.n==='otohime'&&a.hp>0&&d.hp>0){
+          combo.clear(d.u);d.u.enchant='senility';lines.push(a.c.name+' · 상대에게 노쇠 부여');
+        }
+      }
+      for(const a of sides){
+        if(a.hp<=0||a.u.enchant!=='energyfield')continue;
+        const d=a===A?D:A;
+        s.players[a.seat].cash-=100;s.players[d.seat].cash+=100;
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[a.defending?1:0]+=100;b.magicLoss[a.defending?0:1]-=100;}
+        lines.push('마력 결계 · '+s.players[d.seat].name+'에게 100G 탈취당함');
+      }
     }
     if(D.hp>0)for(const a of sides){
       if(a.hp<=0||muted)continue;

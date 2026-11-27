@@ -281,6 +281,10 @@ const CepterCreatureText=(()=>{
   const elements=['화','수','지','풍'],races={rh:'인간형',rb:'야수형',rd:'용형',ru:'불사형'};
   const targets=ids=>ids.map(i=>elements[i]||'무').join('·')+' 속성';
   const revoltBattle={
+    hellpyron:'전투에 참여하지 않은 헬 파이론이 지도에 있으면 화·지 크리처의 전투 ST +10.',
+    lavakin:'현재 라운드 수만큼 전투 ST가 줄고 전투 HP가 오릅니다.',
+    otohime:'전투에 참여하지 않은 오토히메가 지도에 있으면 방어 측 전투 HP +10. 전투 후 살아남은 상대에게 노쇠를 겁니다.',
+    lordofbane:'전투에 참여하지 않은 로드 오브 베인이 지도에 있으면 수·풍 크리처의 전투 ST +10.',
     sulfurousballoon:'전투에서 격파되면 상대의 기본 HP에 40 피해를 줍니다.',
     nessie:'수 영지에서 싸우면 영지 레벨 × 10만큼 전투 HP가 오릅니다.',
     soulcollector:'이번 대국에서 지금까지 파괴된 크리처 한 마리마다 전투 ST +5.',

@@ -13,7 +13,7 @@ const CepterCombos = (() => {
   };
   const activeWorld=s=>s?.edition==='revolt'&&s.world?.until>s.round?s.world.effect:null;
   const groups = {
-    land: 'barricade greed regeneration vitality disease hustle bulimia fatbody peace landprotection mine vortex soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
+    land: 'barricade greed regeneration vitality disease hustle bulimia fatbody peace landprotection mine vortex energyfield soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
     area: 'refresh holyblight cramp reinforce insectswarm exorcism massphantasm sculpture desertstorm',
     player: 'holyword0 grace pain silence haste despair antimagic changeling wizardeye mindseeker waste wordofrecall suppression drainmagic slow holyword3 holywordx echo dimensiondoor squeeze',
     global: 'catastrophe tempest punisher icestorm fireexplosion thunderstorm deathcloud sonicwave demonictrade aurora pressure gravity scourge permission windofhope disbelief dreamterrain invisibility chaospanic raisedead shine goblinslair earthshaker feast '+Object.keys(worlds).join(' ')
@@ -422,7 +422,9 @@ const CepterCombos = (() => {
       buildStatues:{cost:80,label:'인접한 빈 영지에 스태추 소환',adjacent:'statue',self:true},
       stepMove:{cost:30,label:'한 칸 이동 또는 이동 침략',move:true},
       growMHP:{cost:30,label:'최대 HP +10 · 최대 100',grow:10},
-      chooseDirection:{cost:40,label:'다음 이동 방향을 선택',player:true,chooseDirection:true}
+      chooseDirection:{cost:40,label:'다음 이동 방향을 선택',player:true,chooseDirection:true},
+      destructionReward:{cost:30,label:'파괴된 크리처 한 마리당 30G 획득 후 파괴 수 초기화',self:true},
+      balanceStrength:{cost:60,label:'지도 전체 기본 ST 30 이하는 +20, 50 이상은 −20',self:true}
     };
     const grantedArts={sigiloffloat:'floatSigil',sigilofdrain:'drainSigil'};
     const secretKey=(card,unit)=>card?.secretArt||grantedArts[unit?.enchant];
@@ -441,7 +443,7 @@ const CepterCombos = (() => {
       if(art.adjacent)return vacantNeighbors(s,from).length?[['secretSelf',from]]:[];
       if(art.form||art.grant)return [['secretSelf',from]];
       if(key==='worldDispel')return activeWorld(s)?[['secretSelf',from]]:[];
-      if(['offering','draw','lapGain','dice6'].includes(key)||art.self&&src.unit.enchant!==art.enchant)return [['secretSelf',from]];
+      if(['offering','draw','lapGain','dice6'].includes(key)||art.self&&(!art.enchant||src.unit.enchant!==art.enchant))return [['secretSelf',from]];
       if(art.self)return [];
       return s.tiles.flatMap((t,at)=>{
         if(!t.unit)return [];
@@ -505,6 +507,18 @@ const CepterCombos = (() => {
       if(key==='dispel')clear(target.unit);
       if(key==='heal')target.unit.hp=Math.min(max(target.unit),target.unit.hp+30);
       if(key==='lapGain')p.cash+=30*p.lap;
+      if(key==='destructionReward'){
+        const reward=30*(s.destroyedCount||0);
+        p.cash+=reward;s.destroyedCount=0;
+        note(s,p.name+' · '+card.name+' 비술 · '+reward+'G 획득');
+        return reward+'G 획득';
+      }
+      if(key==='balanceStrength')for(const t of s.tiles){
+        if(!t.unit)continue;
+        const prior=strength(t.unit);
+        if(prior<=30)t.unit.st=prior+20;
+        if(prior>=50)t.unit.st=prior-20;
+      }
       if(key==='dice6'){clearCepter(p);p.word=6;}
       if(key==='worldDispel')delete s.world;
       if(key==='poison'){clear(target.unit);target.unit.poisoned=true;}
@@ -554,6 +568,12 @@ const CepterCombos = (() => {
       if(art==='dispel')utility=(friendly?1:-1)*(['peace','landprotection','regeneration','soulhunt','abilityplus'].includes(t.unit.enchant)?-16:14);
       if(art==='heal')utility=Math.min(30,max(t.unit)-t.unit.hp)+(t.level-1)*4;
       if(art==='lapGain')utility=p.lap*30;
+      if(art==='destructionReward')utility=15*(s.destroyedCount||0)-spec.cost*.75;
+      if(art==='balanceStrength')utility=s.tiles.reduce((sum,v)=>{
+        if(!v.unit)return sum;
+        const prior=strength(v.unit),change=prior<=30?20:prior>=50?-20:0;
+        return sum+change*(allied(s,s.turn,v.owner)?1:-1)*(.5+v.level*.1);
+      },0);
       if(art==='dice6')utility=p.word==null?13:-10;
       if(art==='worldDispel')utility=Object.hasOwn(worlds,activeWorld(s))?(s.world.until-s.round)*4:0;
       if(art==='strength')utility=(friendly?1:-1)*Math.min(20,100-strength(t.unit));
@@ -725,6 +745,12 @@ const CepterCombos = (() => {
         return (hostile.has(e)?!friend(x):friend(x))?8:-12;
       }
       const t=s.tiles[x],n=fx.name(t.unit);
+      if(e==='energyfield'){
+        if(t.unit.enchant===e)return -20;
+        const threat=s.players.some((q,i)=>!allied(s,t.owner,i)&&q.pos===x);
+        return friend(t.owner)?threat&&t.level>=3&&p.cash>=160?9+t.level:0:
+          !threat&&s.players[t.owner].cash<160?7:-8;
+      }
       if(e==='evilblast')return (t.unit.hp<=30?20*t.level:3)-Number(t.unit.enchant==='phantasm')*100;
       if(e==='camouflage')return friend(t.owner)&&t.unit.enchant!==e&&typeof t.type==='number'&&!hasElement(cards[t.unit.id],t.type)?6+t.level*2:-10;
       if(e==='drought')return !friend(t.owner)&&t.level<5&&!levelLocked(t)?12-t.level:-10;
