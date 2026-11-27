@@ -455,7 +455,13 @@ const CepterEditions=(()=>{
     sphereshield:{effect:'nullify'},murasame:{st:20,effect:'orb'},magmashield:{},mirrorhoplon:{},squidmantle:{hp:40},
     reactivearmor:{hp:30},gremlinseye:{},magmaarmor:{},stormarmor:{},tombstone:{protectItem:true},
     aurastrike:{},burningrod:{scrollTerritoryElements:[0,2],scrollCriticalElements:[1,3]},
-    chillingblast:{scrollTerritoryElements:[1,3],scrollCriticalElements:[0,2]}
+    chillingblast:{scrollTerritoryElements:[1,3],scrollCriticalElements:[0,2]},
+    angrymask:{hp:30},argentkey:{first:true,st:10},burningheart:{st:20,hp:20},gelatinousarmor:{hp:40},
+    necroplasma:{st:50},necroscarab:{},twinspike:{st:20},napalmarrow:{st:30,hp:20},
+    magmaflail:{criticalElements:[1,3]},stormhalberd:{criticalElements:[0,2]},clawofshade:{},shadowblaze:{st:40},
+    topazamulet:{neutralizes:[0,3],instantDeathElements:[0,3]},turquoiseamulet:{neutralizes:[1,2],instantDeathElements:[1,2]},
+    chainsaw:{},ragdoll:{neutralizeScroll:true},warlocksdisk:{},eternalmail:{hp:40},soulray:{st:30},dragonorb:{},spectresrobe:{},
+    volcanicdragon:{first:true,innateScroll:'base'},deepseadragon:{first:true,innateScroll:'base'}
   };
   const beginsCreatures={
     gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},skeleton:{regenerate:true},

@@ -340,6 +340,7 @@ const CepterCreatureText=(()=>{
     if(card.criticalMHP)pieces.push('최대 HP '+card.criticalMHP+' 이하인 상대를 일반 공격하면 강타합니다.');
     if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
+    if(C.edition==='revolt'&&card.innateScroll==='base')pieces.push('장비 없이 공격하면 기본 ST만큼 두루마리 피해를 줍니다.');
     if(C.edition==='begins'&&card.innateScroll)pieces.push('금술. 장비 없이 공격하면 두루마리 피해 '+card.innateScroll+'을 줍니다.');
     if(card.scrollCriticalElements?.length)pieces.push(card.scrollCriticalElements.map(e=>C.elements[e]).join('·')+' 속성 상대에게 두루마리 강타가 적용됩니다.');
     if(card.evo){

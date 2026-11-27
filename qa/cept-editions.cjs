@@ -1302,6 +1302,116 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.match(scroll.strikes[0].notes.join(' '),/45 피해/);
   }
   console.log('Revolt 18 items tested across battle timing, pierce, ward priority, destruction, hand refill and territory effects');
+  const angry=revolt('chainmail','angrymask','fighter','goblin').s;
+  assert.equal(angry.battle.finalHP[0],0);
+  assert.match(angry.battle.lines.join(' '),/상대 기본 HP에 40 피해/);
+  const poisonedMask=revolt(null,'angrymask','fighter','goblin',state=>{
+    Object.assign(state.tiles[1].unit,{hp:20,poisoned:true});
+  }).s;
+  assert.equal(poisonedMask.battle.won,true);
+  assert.doesNotMatch(poisonedMask.battle.lines.join(' '),/상대 기본 HP에/);
+  const portalKey=revolt('argentkey','chainmail','goblin','fighter').s;
+  assert.equal(portalKey.tiles[1].owner,1);
+  assert.ok(portalKey.tiles.some(t=>t.owner===0&&t.unit));
+  assert.match(portalKey.battle.strikes[0].notes.join(' '),/빈 영지로 이동/);
+  const noEscape=revolt('argentkey','chainmail','goblin','fighter',(s,id)=>{
+    s.tiles.forEach((t,i)=>{
+      if(i!==1&&(typeof t.type==='number'||['복합','무속성','모프'].includes(t.type)))Object.assign(t,{owner:1,unit:{id:id('fighter'),hp:40}});
+    });
+  }).s;
+  assert.equal(noEscape.battle.finalHP[0],0);
+  assert.match(noEscape.battle.strikes[0].notes.join(' '),/빈 영지가 없어 격파/);
+  const heart=revolt('burningheart','longsword','goblin','redogre').s;
+  assert.deepEqual(heart.battle.finalHP,[0,0]);
+  assert.equal(heart.tiles[1].unit,null);
+  const plasma=revolt('necroplasma',null,'fighter','goblin');
+  assert.deepEqual([plasma.s.battle.attackST,plasma.s.battle.startHP[0]],[50,40]);
+  for(const [id,form] of [[plasma.s.battle.forms[0],'skeleton'],[plasma.s.tiles[1].unit.id,'fighter']]){
+    assert.equal(plasma.C.combo.key(plasma.C.cards[id]),form);
+  }
+  for(const [defender,form] of [['goblin','skeleton'],['hellgrammite','serpentfly']]){
+    const scarab=revolt('longsword','necroscarab','fighter',defender);
+    assert.equal(scarab.C.combo.key(scarab.C.cards[scarab.s.tiles[1].unit.id]),form);
+  }
+  assert.equal(revolt(null,'gelatinousarmor','fighter','goblin').s.players[1].cash,1150);
+  assert.equal(revolt('sparkball','gelatinousarmor','fighter','goblin').s.players[1].cash,950);
+  const napalm=revolt('napalmarrow','sphereshield','goblin','fighter').s;
+  assert.equal(napalm.battle.won,true);
+  assert.match(napalm.battle.strikes[0].notes.join(' '),/최대 HP −40/);
+  const twin=revolt('twinspike','chainmail','fighter','skeleton');
+  assert.equal(twin.C.combo.key(twin.C.cards[twin.s.tiles[1].unit.id]),'fighter');
+  const populate=(slugs,seat=0)=>(s,id)=>{
+    slugs.forEach((slug,i)=>Object.assign(s.tiles[4+i],{owner:seat,unit:{id:id(slug),hp:40}}));
+  };
+  assert.equal(revolt('clawofshade','chainmail','fighter','redogre',populate(['redogre','minotaur'])).s.battle.attackST,70);
+  assert.equal(revolt('clawofshade','neutralcloak','fighter','redogre',populate(['redogre','fighter'])).s.battle.attackST,50);
+  for(const [gear,guard,slugs] of [['magmaflail','blueogre',['redogre','greenogre']],['stormhalberd','greenogre',['blueogre','yellowogre']]]){
+    const elemental=revolt(gear,'chainmail','fighter',guard,populate(slugs)).s.battle;
+    assert.equal(elemental.attackST,50);
+    assert.match(elemental.strikes[0].notes.join(' '),/75 피해/);
+  }
+  assert.match(revolt('shadowblaze','chainmail','fighter','goblin',populate(['goblin'],1)).s.battle.strikes[0].notes.join(' '),/60 피해/);
+  assert.match(revolt('shadowblaze','chainmail','fighter','goblin',populate(['goblin'],0)).s.battle.strikes[0].notes.join(' '),/40 피해/);
+  for(const [gear,opponent] of [['topazamulet','redogre'],['turquoiseamulet','blueogre']]){
+    try{
+      Math.random=()=>.59;
+      assert.equal(revolt(gear,null,'goblin',opponent).s.battle.won,true);
+      Math.random=()=>.6;
+      assert.equal(revolt(gear,null,'goblin',opponent).s.battle.won,false);
+    }finally{Math.random=random;}
+    assert.equal(revolt(null,gear,opponent,'goblin').s.battle.strikes[0].effect,'block');
+  }
+  console.log('Revolt 14 more items tested in hit priority, temporary forms, weapon failure, defeat and regeneration');
+  assert.equal(revolt(null,'ragdoll','fighter','goblin').s.battle.strikes[0].effect,'block');
+  assert.equal(revolt(null,'ragdoll','fighter','fighter').s.battle.strikes[0].effect,'hit');
+  assert.equal(revolt('sparkball','ragdoll','fighter','fighter').s.battle.strikes[0].effect,'block');
+  const quiet=revolt('warlocksdisk','mirrorhoplon','goblin','redogre',s=>{
+    Object.assign(s.tiles[1],{type:0,level:3});
+  }).s.battle;
+  assert.deepEqual([quiet.attackST,quiet.defendST,quiet.landHP,quiet.startHP[1],quiet.strikes[0].effect],[20,40,30,80,'hit']);
+  assert.match(quiet.lines.join(' '),/워록 디스크/);
+  const quietDragon=revolt('warlocksdisk',null,'goblin','volcanicdragon').s.battle;
+  assert.equal(quietDragon.strikes[0].side,0);
+  assert.equal(quietDragon.defendST,50);
+  const saw=revolt('chainsaw','chainmail','fighter','redogre',(s,id)=>{
+    for(const at of [1,4,5])Object.assign(s.tiles[at],{type:0,owner:1,unit:{id:id('redogre'),hp:50}});
+  }).s.battle;
+  assert.equal(saw.attackST,100);
+  const returnedMail=revolt(null,'eternalmail','fighter','centaur',(s,id)=>{
+    s.players[1].book=[id('fighter')];
+  });
+  assert.equal(returnedMail.s.players[1].book.filter(id=>id===returnedMail.a).length,1);
+  const soul=revolt('soulray',null,'fighter','goblin');
+  assert.ok(soul.s.players[0].hand.includes(soul.w));
+  for(const [index,form] of ['volcanicdragon','deepseadragon','hardrockdragon','lightningdragon'].entries()){
+    try{
+      Math.random=()=>(index+.5)/4;
+      const dragon=revolt('dragonorb',null,'fighter','goblin');
+      assert.equal(dragon.C.combo.key(dragon.C.cards[dragon.s.battle.forms[0]]),form);
+      assert.equal(dragon.C.combo.key(dragon.C.cards[dragon.s.tiles[1].unit.id]),'fighter');
+    }finally{Math.random=random;}
+  }
+  const dragonScroll=revolt(null,null,'volcanicdragon','decoy').s.battle;
+  assert.equal(dragonScroll.strikes[0].effect,'hit');
+  assert.match(dragonScroll.strikes[0].notes.join(' '),/50 피해/);
+  for(const [roll,expected] of [[.00001,50],[.9999,110]]){
+    try{
+      Math.random=()=>roll;
+      const robe=revolt(null,'spectresrobe','fighter','fighter').s.battle;
+      assert.deepEqual([robe.defendST,robe.startHP[1]],[expected,expected]);
+    }finally{Math.random=random;}
+  }
+  try{
+    let mixed=false;
+    const robe=revolt(null,'spectresrobe','fighter','fighter',()=>{
+      Math.random=()=>{mixed=!mixed;return mixed?0:.9999;};
+    });
+    assert.deepEqual([robe.s.battle.defendST,robe.s.battle.startHP[1]],[50,110]);
+    const items=robe.C.cards.filter(c=>!c.unlisted&&c.kind==='item'&&c.catalog);
+    assert.equal(items.length,75);
+    assert.ok(items.every(c=>!c.catalogOnly));
+  }finally{Math.random=random;}
+  console.log('Revolt all 75 items enabled, including four dragons, recycling, independent robe rolls and Warlock Disk');
   console.log('Revolt eight exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   const lv3=type=>state=>Object.assign(state.tiles[1],{type,level:3});

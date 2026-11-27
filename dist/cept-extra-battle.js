@@ -31,7 +31,7 @@ const CepterExtraBattle=(()=>{
     }
     return indices.get(cards);
   }
-  function rules(s,b,t,cards,fx,combo,total,lines){
+  function rules(s,b,t,cards,fx,combo,total,lines,chain){
     const {ids,creatures}=catalog(cards,combo.key);
     function pick(pool){return pool[s.predict?Math.floor(pool.length/2):Math.floor(Math.random()*pool.length)];}
     const chance=n=>!s.predict&&Math.random()<n;
@@ -78,6 +78,11 @@ const CepterExtraBattle=(()=>{
       else if(name==='doppelganger')form=opponentId;
       else if(name==='baldanders')form=pick(creatures);
       else if(s.edition==='saga'&&name==='revenant'&&combo.enchanted(t.unit))form=ids.get('vampire');
+      if(s.edition==='revolt'&&gear==='necroplasma')form=ids.get('skeleton');
+      if(s.edition==='revolt'&&gear==='dragonorb'){
+        form=ids.get(pick(['volcanicdragon','deepseadragon','hardrockdragon','lightningdragon']));
+        consume=true;
+      }
       if(form!=null)transform(a,form,temporary);
       if(!consume&&gear==='metamorphosebelt'){
         transform(a,ids.get('grassstrider'),true);consume=true;
@@ -92,9 +97,17 @@ const CepterExtraBattle=(()=>{
     }
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
-      if(s.edition==='revolt'&&['magmaarmor','stormarmor'].includes(a.g)){
-        const elements=a.g==='magmaarmor'?[0,2]:[1,3];
-        a.hp+=lands.filter(t=>elements.includes(t.type)).length*20;
+      if(s.edition==='revolt'){
+        if(['magmaarmor','stormarmor'].includes(a.g)){
+          const elements=a.g==='magmaarmor'?[0,2]:[1,3];
+          a.hp+=lands.filter(t=>elements.includes(t.type)).length*20;
+        }
+        if(a.g==='chainsaw')a.st+=20*chain(s,t);
+        const affinity={magmaflail:[0,2],stormhalberd:[1,3],clawofshade:[d.element]}[a.g];
+        if(affinity){
+          const count=s.tiles.filter(t=>t.unit&&affinity.some(e=>combo.hasElement(cards[t.unit.id],e))).length;
+          a.st+=count*(a.g==='clawofshade'?10:5);
+        }
       }
       if(s.edition==='saga'){
         if(a.n==='pangolin'){
@@ -160,12 +173,13 @@ const CepterExtraBattle=(()=>{
       }
     }
     function critical(a,d,scroll){
-      if(scroll)return s.edition==='saga'&&a.n==='warlock'||['wizard','efreet','conjurer'].includes(a.n)||a.g==='hellblaze'&&fx.strength(d.u)<=20||a.g==='stonehail'&&d.element===3||a.g==='tearinghalo'&&a.element!==-1;
+      if(scroll)return s.edition==='revolt'&&a.g==='shadowblaze'&&s.tiles.filter(v=>v.owner===d.seat&&v.unit?.id===d.u.id).length>1||
+        s.edition==='saga'&&a.n==='warlock'||['wizard','efreet','conjurer'].includes(a.n)||a.g==='hellblaze'&&fx.strength(d.u)<=20||a.g==='stonehail'&&d.element===3||a.g==='tearinghalo'&&a.element!==-1;
       return a.n==='elf'&&!a.c.criticalRace&&d.element===2||a.g==='earthamulet'&&a.element===2||a.g==='windamulet'&&a.element===3||a.g==='icicle'&&d.element===0||a.g==='vorpalsword'&&fx.max(d.u)>=40;
     }
     function protect(a,d,damage,scroll,penetrates,orb){
       if(scroll){
-        const blocked=d.c.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n);
+        const blocked=d.c.neutralizeScroll||d.gear?.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n);
         const reflected=d.g==='magussmirror'||d.n==='carbunfly'||s.edition==='revolt'&&d.g==='mirrorhoplon'&&!a.gear;
         if(reflected&&!(s.edition==='revolt'&&blocked)){a.hp-=damage;lines.push('두루마리 반사');return 'reflect';}
         if(blocked){lines.push('두루마리 무효');return 'block';}
@@ -183,7 +197,7 @@ const CepterExtraBattle=(()=>{
         if(s.predict&&s.edition==='3ds'){b.magicLoss??=[0,0];b.magicLoss[d.defending?1:0]+=cost;}
         lines.push('피해 무효 · 마력 −'+cost+'G');return 'block';
       }
-      if(d.g==='talisman'||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(fire(a)||fire(d))||
+      if(d.g==='talisman'||s.edition==='revolt'&&d.g==='ragdoll'&&a.st>d.st||d.g==='smoketorch'&&penetrates||d.g==='fireshield'&&(fire(a)||fire(d))||
         ['knightshield','knightsshield'].includes(d.g)&&fx.strength(a.u)>=40||d.n==='grindylow'&&fx.strength(a.u)<=30||
         ['nymph','yeti'].includes(d.n)&&a.element===0||d.n==='dhampir'&&a.element===2||d.n==='kraken'&&a.element===-1){
         lines.push('공격 무효');return 'block';
@@ -192,8 +206,10 @@ const CepterExtraBattle=(()=>{
     function vacant(a){
       const pool=s.tiles.flatMap((v,j)=>j!==b.at&&j!==b.from&&v.owner<0&&combo.territoryType(v.type)?[j]:[]);
       const at=pick(pool);
-      if(at==null)a.hp=0;
-      else{a.away=at;lines.push((at+1)+'번 빈 영지로 이동');}
+      if(at==null){
+        a.hp=0;
+        if(s.edition==='revolt'&&a.g==='argentkey')lines.push(a.gear.name+' · 빈 영지가 없어 격파');
+      }else{a.away=at;lines.push((at+1)+'번 빈 영지로 이동');}
     }
     function onHit(a,d,damage){
       a.hit=true;
@@ -224,7 +240,11 @@ const CepterExtraBattle=(()=>{
         n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||n==='yeti'&&d.element===0&&chance(.6)||n==='dhampir'&&d.element===2&&chance(.6)){
         d.hp=0;lines.push('즉사');
       }
-      if(n==='bard'&&d.hp>0)vacant(a);
+      if(s.edition==='revolt'&&a.gear?.instantDeathElements?.some(e=>combo.hasElement(d,e))&&d.hp>0&&chance(.6)){
+        d.hp=0;lines.push(a.gear.name+' · 즉사');
+      }
+      if(s.edition==='revolt'&&a.g==='twinspike'&&d.hp>0)transform(d,a.u.id);
+      if((n==='bard'||s.edition==='revolt'&&a.g==='argentkey')&&d.hp>0)vacant(a);
     }
     function end(a,d,creatureEnd){
       if(creatureEnd&&a.hp>0){

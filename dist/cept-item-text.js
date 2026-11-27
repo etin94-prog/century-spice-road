@@ -27,6 +27,22 @@ const describeCepterItem=(()=>{
     reactivearmor:'전투 시작 시 상대가 장착한 무기를 파괴합니다.',
     gremlinseye:'전투 시작 시 상대 장비가 N 등급이 아니면 파괴합니다.',
     squidmantle:'상대의 공격 성공 시 효과가 발동하지 않습니다.',
+    angrymask:'생존하면 전투 중 받은 피해만큼 상대의 기본 HP에 피해를 줍니다.',
+    argentkey:'일반 공격으로 피해를 주고 상대가 살아 있으면 무작위 빈 영지로 이동합니다. 빈 영지가 없으면 장착한 크리처가 파괴됩니다.',
+    burningheart:'장착한 크리처가 격파되면 상대도 격파합니다.',
+    gelatinousarmor:'생존하면 일반 공격으로 받은 피해량 × 5G를 얻습니다.',
+    necroplasma:'전투 중 스켈레톤으로 변신하여 두루마리로 공격합니다.',
+    twinspike:'일반 공격으로 피해를 주면 생존한 상대를 장착 크리처와 같은 모습으로 바꿉니다.',
+    napalmarrow:'일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 40 낮춥니다.',
+    magmaflail:'지도에 배치된 화·지 크리처 한 마리당 전투 ST가 5 오릅니다.',
+    stormhalberd:'지도에 배치된 수·풍 크리처 한 마리당 전투 ST가 5 오릅니다.',
+    clawofshade:'상대와 같은 속성으로 지도에 배치된 크리처 한 마리당 전투 ST가 10 오릅니다.',
+    shadowblaze:'상대가 지도에 교전 크리처와 같은 카드를 두 장 이상 배치했으면 두루마리로 강타합니다.',
+    chainsaw:'교전 영지의 연쇄 수 × 20만큼 전투 ST가 오릅니다.',
+    ragdoll:'장착한 크리처보다 전투 ST가 높은 상대의 일반 공격을 무효화합니다.',
+    warlocksdisk:'다른 장비보다 먼저 발동해 전투 중 장비와 특수 능력을 끕니다. 미리 계산된 지형 보너스는 적용됩니다.',
+    dragonorb:'전투 중 볼캐닉 드래곤, 딥시 드래곤, 하드록 드래곤, 라이트닝 드래곤 중 하나로 변신합니다.',
+    spectresrobe:'전투 ST와 HP를 각각 독립적으로 10~70만큼 올립니다.',
     cursedseal:'장착한 크리처가 상대에게 격파되면 상대 크리처의 기본 HP 절반만큼 피해를 줍니다.',
     tombstone:'장착한 크리처가 상대에게 격파되면 손패가 여섯 장이 될 때까지 카드를 뽑습니다.',
     daggerofmite:'현재 순위에 20을 곱한 만큼 전투 ST를 올립니다.',
@@ -118,6 +134,7 @@ const describeCepterItem=(()=>{
     if(card.last)pieces.push('후공');
     if(card.effect==='reflect'||card.reflectNormal)pieces.push('일반 공격을 반사합니다.');
     if(card.effect==='nullify'||card.neutralizeNormal)pieces.push('일반 공격을 무효화합니다.');
+    if(card.neutralizeScroll)pieces.push('두루마리 공격을 무효화합니다.');
     if(card.doubleAttack)pieces.push('일반 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
     if(card.criticalOwnElements?.length)pieces.push('장착한 크리처가 '+list(card.criticalOwnElements)+'이면 일반 공격이 강타합니다.');
     if(card.criticalElements?.length)pieces.push(list(card.criticalElements)+' 상대에게 강타합니다.');
@@ -131,11 +148,12 @@ const describeCepterItem=(()=>{
     if(card.pierceElements?.length)pieces.push(list(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(list(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(list(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');
+    if(card.instantDeathElements?.length)pieces.push('일반 공격으로 피해를 준 '+list(card.instantDeathElements)+' 상대를 60% 확률로 즉사시킵니다.');
     if(Object.hasOwn(shields,name)){
       const el=list([shields[name]]);
       pieces.push(el+' 상대의 일반 공격을 무효화합니다. 장착한 크리처가 '+el+'이면 모든 일반 공격을 무효화합니다.');
     }
-    if(name==='necroscarab'&&C.edition==='saga')pieces.push('장착한 크리처가 상대에게 격파되면 스켈레톤으로 변합니다.');
+    if(name==='necroscarab'&&['saga','revolt'].includes(C.edition))pieces.push('장착한 크리처가 상대에게 격파되면 스켈레톤으로 변합니다.');
     if(name==='boomerang'&&!firstEdition)pieces.push(C.edition==='begins'?'장착한 크리처가 생존하면 전투 후 이 장비가 돌아옵니다.':
       C.edition==='saga'?'생존하고 손패에 자리가 있으면 전투 후 이 장비가 돌아옵니다.':'전투 후 손패에 빈자리가 있으면 이 장비가 돌아옵니다.');
     if(name==='goldengoose')pieces.push('장착한 크리처가 격파되면 최대 HP 1당 '+(['begins','revolt'].includes(C.edition)?7:firstEdition?5:10)+'G를 얻습니다.');
@@ -144,7 +162,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='revolt'&&name==='silverplow')pieces.push('장착한 크리처가 생존하면 교전 영지 레벨이 1 오릅니다.');
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(C.edition==='begins'&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
-    else if(!(C.edition==='3ds'&&key==='holygrail'||C.edition==='saga'&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
+    else if(!(C.edition==='3ds'&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };
