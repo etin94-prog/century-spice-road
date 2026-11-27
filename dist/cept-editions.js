@@ -202,6 +202,11 @@ const CepterEditions=(()=>{
         ninja:2,amazon:2,gianteel:2,kingtortoise:1,lizardman:3,scylla:2,wallofice:2,dryad:3,greattusker:2,greenogre:2,
         squirrine:2,woodfolk:3,bindingwhip:2,scalearmor:2,sparkball:2,trident:2,wondercharm:2,blackout:2,earthshift:1,fatbody:2,
         fly:2,gift:2,holyword6:2,shatter:2,watershift:1
+      },
+      revoltSomniaSerenity:{
+        borgess:4,creepingcoin:2,halfling:1,steamgear:1,trojanhorse:2,aqualing:2,blueogre:2,gelatinouswall:3,kingtortoise:2,megalodon:2,
+        undine:4,yeti:2,forceanklet:2,ringofthesuccubus:2,stormshield:2,stormspear:2,trident:2,fly:2,foresight:2,freezecyclone:1,
+        holyword3:2,reincarnation:3,squeeze:2,watershift:1
       }
     });
     if(edition!=='saga'&&edition!=='begins')return presets;
@@ -365,10 +370,12 @@ const CepterEditions=(()=>{
     statue:{stationary:true},trojanhorse:{support:true},
     phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},phoenix:{},
     scylla:{blocksAttackAbilities:true},greattusker:{blocksFirst:true},
+    cactuswall:{stationary:true,regenerate:true},tigerweta:{},mummy:{stationary:true},
+    creepingcoin:{},halfling:{spellWard:true,anyTerrain:true},gelatinouswall:{stationary:true},undine:{},yeti:{},
     centaur:{first:true},wyvern:{first:true,remoteVacantElements:[3]},dryad:{support:true,supportElements:[-1,0,2],remoteVacantElements:[2]},
     sparkball:{st:40},magmahammer:{st:20,criticalOwnElements:[0,2]},stormspear:{st:20,criticalOwnElements:[1,3]},
-    bindingwhip:{st:30},drilllance:{st:20,pierceAll:true},batteringram:{st:30},boomerang:{st:20,hp:10},buckler:{},magicshield:{hp:30},magussmirror:{hp:20},
-    petrifystone:{},prismaticwand:{},tearinghalo:{st:30,protectItem:true},wondercharm:{}
+    bindingwhip:{st:30},moonscimitar:{st:30},forceanklet:{},stormshield:{},drilllance:{st:20,pierceAll:true},batteringram:{st:30},boomerang:{st:20,hp:10},buckler:{},magicshield:{hp:30},magussmirror:{hp:20},
+    petrifystone:{},prismaticwand:{},ringofthesuccubus:{first:true},tearinghalo:{st:30,protectItem:true},wondercharm:{}
   };
   const beginsCreatures={
     gascloud:{half:true},bandit:{support:true},borgess:{},decoy:{},goldentotem:{stationary:true},hornedchameleon:{},

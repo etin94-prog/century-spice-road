@@ -142,9 +142,10 @@ const CepterExtraBattle=(()=>{
         const count=e=>s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],e)).length;
         if(a.g==='magmaarmor'){a.st+=count(0)*10;a.hp+=count(2)*10;}
         if(a.g==='stormarmor'){a.st+=count(3)*10;a.hp+=count(1)*10;}
-        if(a.g==='forceanklet')a.hp+=s.players[a.seat].hand.length*10;
+
         if(a.g==='forcebracelet')a.st+=s.players[a.seat].hand.length*10;
       }
+      if(['saga','revolt'].includes(s.edition)&&a.g==='forceanklet')a.hp+=s.players[a.seat].hand.length*10;
       switch(a.g){
         case 'aurablade':a.st+=fx.max(a.u);break;
         case 'chameleonarmor':a.hp=t.level*20;break;
