@@ -252,6 +252,8 @@ const spellText={plague:'선택한 지역의 모든 크리처에게 독 부여',
 const gearText={freeze:'두루마리 · 화 속성에 강타',reflect:'ST 0 · 일반 공격 반사',nullify:'ST 0 · 일반 공격 무효',orb:'무효·반사 무시',pierceEarth:'지 속성 지형 보너스 관통'};
 function localAbility(c){
   const original=C.combo.key(c);
+  if(c.magicPerLap)return '(완료한 주회 + 1) × '+c.magicPerLap+'G 획득';
+  if(C.edition==='revolt'&&c.effect==='fly')return '다음 이동에 주사위 3개를 굴립니다.';
   if(C.spellDescriptions?.[original])return C.spellDescriptions[original];
   if(C.edition==='ps2'){
     const text={

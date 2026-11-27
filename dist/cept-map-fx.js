@@ -39,7 +39,7 @@ function presentMapEffect(event){
       let tick=0;
       spin=setInterval(()=>{
         tick++;
-        faces.forEach((face,i)=>{face.textContent=tick<9?1+(tick+i)%event.sides:event.faces[i];});
+        faces.forEach((face,i)=>{face.textContent=tick<9?(event.zeroBased?0:1)+(tick+i)%event.sides:event.faces[i];});
         if(tick===9){clearInterval(spin);layer.classList.add('settled');}
       },65);
     }else layer.classList.add('settled');

@@ -55,13 +55,30 @@ const CepterEditions=(()=>{
     }
     return result;
   }
+  const sharedModernSpells='foresight incineration influence prophecy rayoflaw windofhope'.split(' ');
+  const modernSpellEffects={
+    saga:{magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone'},
+    revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
+      shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
+      fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
+      freezecyclone:'freezecyclone',insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation'},
+    begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
+      shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
+      fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
+      insectswarm:'globalinsectswarm',lifestream:'lifestream',reincarnation:'reincarnation',find:'find',evilblast:'evilblast'}
+  };
   function modernBooks(cards){
     const pool=cards.flatMap((c,id)=>!c.catalogOnly&&!c.generatedOnly?[id]:[]);
-    function build(creatures,items,attackWeight){
+    function build(creatures,items,attackWeight,spells){
+      const favored=spells.split(' ');
       const groups={creature:[],item:[],spell:[]};
       for(const id of pool)groups[cards[id].kind].push(id);
       const score=id=>{
         const c=cards[id],requirements=(c.catalog?.additionalCost||'').split(',').filter(Boolean).length;
+        if(c.kind==='spell'){
+          const index=favored.indexOf(c.effect);
+          return index<0?-c.cost:100-index;
+        }
         return (c.st||0)*attackWeight+(c.hp||0)*(1-attackWeight)+(c.first?8:0)-c.cost*.4-requirements*18;
       };
       for(const group of Object.values(groups))group.sort((a,b)=>score(b)-score(a)||a-b);
@@ -83,7 +100,11 @@ const CepterEditions=(()=>{
       add(groups.spell,50-deck.length);
       return deck;
     }
-    return {intro:build(28,10,.5),fire:build(30,12,.78),stronghold:build(26,14,.25)};
+    return {
+      intro:build(28,10,.5,'manna windofhope relief word6 foresight fly'),
+      fire:build(30,12,.78,'bolt shatter drainmagic windofhope manna'),
+      stronghold:build(26,14,.25,'barrier lifestream heal windofhope manna')
+    };
   }
   function configure(edition,cards,presets){
     const index=new Map(cards.flatMap((c,i)=>c.catalog?[[c.catalog.path.split('/').pop(),i]]:[]));
@@ -107,6 +128,11 @@ const CepterEditions=(()=>{
       const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
         ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
       const c={...(compatible?base:{}),name,catalog,element,kind,category,cost:r.cost,ban:r.ban.map(k=>equipment[k].toLowerCase()),catalogOnly:!(compatible||variant||simple),unlisted:false,hasArt:!!base,...(modernSets[edition]?{editionArt:r.image}:{firstArt:r.image})};
+      if(kind==='spell'&&modernSets[edition]){
+        const effect=modernSpellEffects[edition][slug]||(sharedModernSpells.includes(slug)?slug:null);
+        if(effect){c.effect=effect;c.catalogOnly=false;}
+        if(edition==='begins'&&slug==='manna')c.magicPerLap=100;
+      }
       if(kind==='creature'){c.st=r.st;c.hp=r.hp;delete c.landBan;}
       if(kind==='creature')for(const clause of clauses)if(traits[clause])c[traits[clause]]=true;
       if(basicGear){

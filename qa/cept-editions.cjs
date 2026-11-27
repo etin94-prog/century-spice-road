@@ -60,6 +60,93 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
 }
 
 {
+  const revolt=ps2.createEdition('revolt'),begins=ps2.createEdition('begins');
+  function card(C,name){
+    const id=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+    assert.ok(id>=0,name+' is available in '+C.edition);
+    return id;
+  }
+  function scenario(C,spell){
+    const s=C.start(2,2,5000,C.edition+'-1');
+    s.players[0].cash=500;
+    s.players[0].hand=[card(C,spell)];
+    return s;
+  }
+  function cast(C,s){
+    assert.ok(C.play(s,['cast',0]));
+  }
+  function place(C,s,at,owner,element,hp){
+    const id=C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&c.kind==='creature'&&c.element===element&&c.hp>=30);
+    assert.ok(id>=0,C.edition+' has an eligible creature of element '+element);
+    Object.assign(s.tiles[at],{type:element,owner,unit:{id,hp}});
+  }
+  const shift=scenario(revolt,'watershift');
+  place(revolt,shift,1,0,0,20);place(revolt,shift,2,1,0,20);place(revolt,shift,3,0,1,20);
+  cast(revolt,shift);
+  assert.ok(!revolt.choices(shift).some(([,at])=>at===2));
+  assert.ok(revolt.play(shift,['targetLand',1]));
+  assert.equal(shift.tiles[1].type,1);
+  assert.equal(revolt.chain(shift,shift.tiles[1]),2);
+
+  const hail=scenario(revolt,'burninghail');
+  place(revolt,hail,1,1,1,20);place(revolt,hail,2,1,3,30);place(revolt,hail,3,0,0,30);
+  assert.deepEqual(revolt.ai(hail),['cast',0]);
+  cast(revolt,hail);
+  assert.equal(hail.tiles[1].unit,null);
+  assert.equal(hail.tiles[2].unit.hp,10);
+  assert.equal(hail.tiles[3].unit.hp,30);
+  assert.deepEqual(hail.mapEffect.hits.map(h=>[h.at,h.damage,h.defeated]),[[1,20,true],[2,20,false]]);
+
+  const swarm=scenario(revolt,'insectswarm');
+  place(revolt,swarm,1,1,1,25);place(revolt,swarm,2,1,3,25);
+  swarm.tiles[2].area=1;swarm.tiles[2].unit.hp=revolt.cards[swarm.tiles[2].unit.id].hp;
+  cast(revolt,swarm);
+  assert.equal(swarm.tiles[1].unit.hp,5);
+  assert.equal(swarm.tiles[2].unit.hp,revolt.cards[swarm.tiles[2].unit.id].hp);
+
+  const reincarnation=scenario(revolt,'reincarnation');
+  const backup=card(revolt,'manna'),bolt=card(revolt,'magicbolt');
+  reincarnation.players[0].hand.push(backup);
+  reincarnation.players[0].book=[bolt,bolt];
+  cast(revolt,reincarnation);
+  assert.deepEqual(reincarnation.players[0].hand,[bolt,bolt]);
+
+  const mana=scenario(begins,'manna');
+  mana.players[0].lap=2;
+  cast(begins,mana);
+  assert.equal(mana.players[0].cash,800);
+  const prophecy=scenario(begins,'prophecy');
+  prophecy.players[0].book=[card(begins,'manna'),card(begins,'fly')];
+  cast(begins,prophecy);
+  assert.deepEqual(begins.choices(prophecy),[['prophecyKind','spell']]);
+
+  function roll(C,s,random,faces,total){
+    const oldRandom=Math.random;
+    let cursor=0;
+    try{
+      Math.random=()=>random[cursor++]??.5;
+      assert.ok(C.play(s,['roll']));
+    }finally{Math.random=oldRandom;}
+    assert.deepEqual(s.mapEffect.faces,faces);
+    assert.equal(s.die,total);
+    assert.equal(s.mapEffect.label,String(total));
+  }
+  roll(revolt,scenario(revolt,'fly'),[0,0],[0,0],12);
+  roll(revolt,scenario(revolt,'fly'),[0,.2],[0,1],1);
+  const fly=scenario(revolt,'fly');cast(revolt,fly);
+  roll(revolt,JSON.parse(JSON.stringify(fly)),[.2,.4,.9],[1,2,5],8);
+  const fixedFly=scenario(revolt,'fly');fixedFly.players[0].word=6;cast(revolt,fixedFly);
+  roll(revolt,fixedFly,[.5],[6,3],9);
+  const holy=scenario(revolt,'holyword8');cast(revolt,holy);
+  assert.ok(revolt.play(holy,['targetPlayer',0]));
+  roll(revolt,holy,[],[8],8);
+  assert.equal(holy.players[0].word,undefined);
+  const beginsFly=scenario(begins,'fly');cast(begins,beginsFly);
+  roll(begins,beginsFly,[0,0],[1,1],2);
+  console.log('Modern spell targets, AI, damage, redraw, economy and edition dice OK');
+}
+
+{
   const data=require('../dist/cept-edition-data-modern');
   const map={section:'arena',slug:'qa-portal',name:'QA portal',loc:[[0,0],[0,1],[2,8],[2,9]],
     types:['castle','teleport','teleport','fort-north'],transit:{1:2,2:1}};

@@ -89,8 +89,10 @@ function createCepter(edition="ps2"){
     gear.kind==='creature'&&(unit.support||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
   if(editions)editions.configure(edition,cards,presets);
-  const extraSpells=edition==='ps2'?(typeof module==='undefined'?CepterExtraSpells:require('./cept-extra-spells.js')):null;
-  for(const c of cards)if(extraSpells?.type[key(c)]){c.effect=key(c);c.catalogOnly=false;}
+  const modern=!!presets.stronghold;
+  const extraSpells=edition==='ps2'||modern?(typeof module==='undefined'?CepterExtraSpells:require('./cept-extra-spells.js')):null;
+  const extraTypes=edition==='ps2'?extraSpells.type:extraSpells?.modernType;
+  if(edition==='ps2')for(const c of cards)if(extraTypes[key(c)]){c.effect=key(c);c.catalogOnly=false;}
   function validBook(book){
     return Array.isArray(book)&&book.length===50&&book.every(id=>Number.isInteger(id)&&!!cards[id]&&!cards[id].catalogOnly&&!cards[id].generatedOnly&&book.filter(n=>n===id).length<=4);
   }
@@ -384,7 +386,7 @@ function createCepter(edition="ps2"){
       case 'spell':if(p.status!=='lifeforce'&&p.status!=='bind')hand('spell','cast');options.push(['roll']);break;
       case 'spellTarget':{
         const effect=s.spellEffect;
-        if(extraSpells?.type[effect]||combo.type[effect]){const targets=(extraSpells?.type[effect]?extra:fx).targets(s,effect).filter(([k,j])=>k!=='targetPlayer'||effect==='dispelmagic'||s.players[j].status!=='barrier');return targets.length?targets:[['fizzle']];}
+        if(extraTypes?.[effect]||combo.type[effect]){const targets=(extraTypes?.[effect]?extra:fx).targets(s,effect).filter(([k,j])=>k!=='targetPlayer'||effect==='dispelmagic'||s.players[j].status!=='barrier');return targets.length?targets:[['fizzle']];}
         if(effect==='shatter'&&s.tiles.some(t=>fx.name(t.unit)==='graniteidol'))return [['fizzle']];
         if(effect==='plague')return [...new Set(s.tiles.map(t=>t.area))].map(area=>['plagueArea',area]);
         if(effect==='heal'||effect==='bolt'){
@@ -706,6 +708,22 @@ function createCepter(edition="ps2"){
     if(s.deadlineAt&&!renew)return false;
     s.deadlineAt=now+s.inputSeconds*1000;return true;
   }
+  function movementRoll(s,p){
+    const fixed=p.status==='bind'?0:p.word??(s.fixed||null);
+    if(edition==='revolt'){
+      // OmiyaSoft's six-sided dice show 0–5. An all-zero roll moves 12 spaces.
+      const die=()=>Math.floor(Math.random()*6);
+      const faces=fixed!=null?p.word!=null&&s.fly&&p.status!=='bind'?[fixed,die()]:[fixed]
+        :Array.from({length:s.fly?3:2},die);
+      const sum=faces.reduce((a,b)=>a+b,0);
+      return {faces,total:fixed==null&&sum===0?12:sum,sides:6,zeroBased:true};
+    }
+    const sides=board(s).die;
+    const die=()=>fx.idol(s,'ironidol')?4+Math.floor(Math.random()*3):1+Math.floor(Math.random()*sides);
+    const roll=()=>p.status==='haste'?6+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
+    const faces=fixed!=null?[fixed]:s.fly?[roll(),roll()]:[roll()];
+    return {faces,total:faces.reduce((a,b)=>a+b,0),sides};
+  }
   function play(s,a,now=Date.now()){
     if(s.deadlineAt&&now>=s.deadlineAt)return false;
     return recordAction(s,a,now,false);
@@ -793,10 +811,10 @@ function createCepter(edition="ps2"){
         const id=k==='mesmerCard'?s.players[s.spellTarget].hand.splice(x,1)[0]:paid(s,p,x);
         const c=cards[id],cash=p.cash;s.phase='roll';p.lastCast={name:key(c),round:s.round};
         delete p.invisible;
-        const spellType=extraSpells?.type[c.effect]||combo.type[c.effect];
+        const spellType=extraTypes?.[c.effect]||combo.type[c.effect];
         if(spellType){
           const global=spellType==='global',beforeHP=combo.damageSpells.has(c.effect)||extraSpells?.damageSpells.has(c.effect)?s.tiles.map(t=>t.unit?.hp):[];
-          s.spellEffect=c.effect;s.phase=global?(extraSpells?.type[c.effect]?extra:fx).apply(s,c.effect):'spellTarget';
+          s.spellEffect=c.effect;s.phase=global?(extraTypes?.[c.effect]?extra:fx).apply(s,c.effect):'spellTarget';
           const hits=beforeHP.flatMap((hp,at)=>{
             const damage=hp-(s.tiles[at].unit?.hp??0);
             return damage>0?[{at,damage,defeated:!s.tiles[at].unit}]:[];
@@ -809,13 +827,13 @@ function createCepter(edition="ps2"){
           break;
         }
         if(c.effect==='cash')p.cash+=100;
-        else if(c.effect==='manna')p.cash+=50*(p.lap+1);
+        else if(c.effect==='manna')p.cash+=(c.magicPerLap||50)*(p.lap+1);
         else if(c.effect==='fly')s.fly=true;
         else if(c.effect==='six'||c.effect==='one')p.word=c.effect==='one'?1:6;
         else{s.spellEffect=c.effect;s.phase='spellTarget';}
         if(s.phase==='roll'){
           const word=c.effect==='one'||c.effect==='six';
-          const label=word?'이동 '+p.word:c.effect==='fly'?'주사위 ×2':'+'+(p.cash-cash)+' G';
+          const label=word?'이동 '+p.word:c.effect==='fly'?'주사위 ×'+(edition==='revolt'?3:2):'+'+(p.cash-cash)+' G';
           mapEffect(word?'word':c.effect==='fly'?'fly':'gain',label,p.pos,{title:c.name});
         }else mapEffect('cast',c.name);
         note(s,p.name+' · '+c.name);break;
@@ -825,7 +843,7 @@ function createCepter(edition="ps2"){
         mapEffect('cast',(x+1)+'지역 · 독');s.phase='roll';break;
       }
       case 'comboArea':case 'targetLand':{
-        if(extraSpells?.type[s.spellEffect]){const prior=s.tiles[x].unit?.hp;s.phase=extra.apply(s,s.spellEffect,x);const damage=prior-(s.tiles[x].unit?.hp??0);mapEffect('cast',damage>0?'−'+damage+' HP':s.spellEffect,x);break;}
+        if(extraTypes?.[s.spellEffect]){const prior=s.tiles[x].unit?.hp;s.phase=extra.apply(s,s.spellEffect,x);const damage=prior-(s.tiles[x].unit?.hp??0);mapEffect('cast',damage>0?'−'+damage+' HP':s.spellEffect,x);break;}
         if(combo.type[s.spellEffect]){s.phase=fx.apply(s,s.spellEffect,x);mapEffect('cast',s.spellEffect,k==='comboArea'?p.pos:x);break;}
         const unit=s.tiles[x].unit,prior=unit.hp;
         if(s.spellEffect==='heal')unit.hp=spellHP(s,s.tiles[x],'heal');
@@ -836,7 +854,7 @@ function createCepter(edition="ps2"){
         break;
       }
       case 'targetPlayer':if(s.players[x].antiMagic&&s.spellEffect!=='dispelmagic'){delete s.players[x].antiMagic;s.phase='roll';mapEffect('cast','안티 매직',s.players[x].pos);break;}
-        if(extraSpells?.type[s.spellEffect]){s.phase=extra.apply(s,s.spellEffect,x);mapEffect('cast',s.spellEffect,s.players[x].pos);break;}
+        if(extraTypes?.[s.spellEffect]){s.phase=extra.apply(s,s.spellEffect,x);mapEffect('cast',s.spellEffect,s.players[x].pos);break;}
         if(combo.type[s.spellEffect]){s.phase=fx.apply(s,s.spellEffect,x);mapEffect('cast',s.spellEffect,s.players[x].pos);break;}if(s.spellEffect==='shatter'){s.spellTarget=x;s.phase='shatter';}
         else{fx.clearCepter(s.players[x]);s.players[x].word=s.spellEffect==='word1'?1:6;mapEffect('word','이동 '+s.players[x].word,s.players[x].pos,{title:s.players[x].name});s.phase='roll';}break;
       case 'suppressCard':{
@@ -846,7 +864,7 @@ function createCepter(edition="ps2"){
       }
       case 'breakCard':if(s.phase==='squeeze')s.players[s.spellTarget].cash+=150;mapEffect('shatter','카드 파괴',s.players[s.spellTarget].pos,{title:s.players[s.spellTarget].name});s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
       case 'fizzle':delete s.reliefFrom;mapEffect('cast','대상 없음');s.phase='roll';break;
-      case 'roll':{const die=()=>fx.idol(s,'ironidol')?4+Math.floor(Math.random()*3):1+Math.floor(Math.random()*board(s).die);const fixed=p.status==='bind'?0:p.word??(s.fixed||null),roll=()=>p.status==='haste'?6+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die(),faces=fixed!=null?[fixed]:s.fly?[roll(),roll()]:[roll()];s.die=faces.reduce((a,b)=>a+b,0);if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides:board(s).die});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
+      case 'roll':{const {faces,total,sides,zeroBased}=movementRoll(s,p);s.die=total;if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe')q.cash+=50;mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{} )});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
       case 'totem':p.cash+=300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
       case 'summon':case 'exchange':{
@@ -955,7 +973,7 @@ function createCepter(edition="ps2"){
       return bonus+(territoryType(t.type)&&traveler===seat&&p.hand.some(id=>cards[id].kind==='creature'&&price(p,cards[id],s)<=p.cash)?65:0);
     }
     function alliedWordTarget(j,steps){
-      if(!allied(s,seat,j)||s.players[j].antiMagic)return -100;
+      if(!allied(s,seat,j)||s.players[j].antiMagic||modern&&s.players[j].status==='barrier')return -100;
       const q=s.players[j],links=board(s).links[q.pos];
       const exits=links.filter(n=>links.length===1||n!==q.previous);
       return Math.max(-100,...exits.map(n=>landing(n,q.pos,steps,j)))/12;
@@ -1008,15 +1026,15 @@ function createCepter(edition="ps2"){
       const c=cards[p.hand[x]];
       const n=key(c);
       if(k==='invade'&&allied(s,seat,s.tiles[p.pos].owner)||k==='transfer'&&allied(s,seat,s.tiles[y].owner))return -10000;
-      const targetWord={word6:6,holyword3:3,holywordx:10}[k==='cast'?c?.effect:s.spellEffect];
-      if(s.teams&&targetWord&&(k==='cast'||k==='targetPlayer')){
+      const targetWord=(modern?{word1:1,holyword2:2,holyword3:3,word6:6,holyword8:8}:{word6:6,holyword3:3,holywordx:10})[k==='cast'?c?.effect:s.spellEffect];
+      if((s.teams||modern)&&targetWord&&(k==='cast'||k==='targetPlayer')){
         if(k==='targetPlayer')return alliedWordTarget(x,targetWord);
         return Math.max(...s.players.map((_,j)=>alliedWordTarget(j,targetWord)))-c.cost/35;
       }
-      if(k==='cast'&&extraSpells?.type[n])return extra.scoreCast(s,n)-price(p,c,s)/35;
-      if(['targetLand','targetPlayer'].includes(k)&&extraSpells?.type[s.spellEffect])return extra.scoreTarget(s,s.spellEffect,x);
+      if(k==='cast'&&extraTypes?.[c.effect])return extra.scoreCast(s,c.effect)-price(p,c,s)/35;
+      if(['targetLand','targetPlayer'].includes(k)&&extraTypes?.[s.spellEffect])return extra.scoreTarget(s,s.spellEffect,x);
       if(extraSpells?.actions[k])return extra.scoreChoice(s,k,x,y);
-      if(k==='cast'&&combo.type[n])return plan.cast(n)+plan.sequence(n)-c.cost/35;
+      if(k==='cast'&&combo.type[c.effect])return plan.cast(c.effect)+plan.sequence(c.effect)-c.cost/35;
       if(['targetLand','comboArea','targetPlayer'].includes(k)&&combo.type[s.spellEffect])return plan.scoreTarget(s.spellEffect,x);
       if(k==='totem')return 130+(s.tiles[x].unit.enchant==='soulhunt'?50:0);
       if(k==='ability'){
@@ -1130,7 +1148,7 @@ function createCepter(edition="ps2"){
     for(const id of presets.fire)if(book.length<50&&book.filter(v=>v===id).length<4)book.push(id);
     return book;
   }
-  return {edition,price,spellHP,isComputer,owedToll,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
+  return {edition,price,spellHP,isComputer,owedToll,spellDescriptions:edition==='ps2'?extraSpells.descriptions:undefined,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,routePreview,shopStock,battleGround,combo,storyAlliances,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,levelCost,chain,chainRate,sameChain,cards,elements,maps,board,presets,validBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.
