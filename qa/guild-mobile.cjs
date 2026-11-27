@@ -26,6 +26,23 @@ async function run(){
       await h.evaluate(()=>{stopAI();g.turn=0;g.players[0].bonus=[9,9,9,9,9];render();});
       await h.locator('[data-card]').first().tap();await h.locator('#buy').tap();while(await h.locator('[data-choice]').count())await h.locator('[data-choice]').first().tap();await h.locator('#confirm').tap();
       assert(await h.evaluate(()=>Object.keys(g.forts).length>0));
+      assert.equal(await h.locator('#passTurn').isVisible(),false);
+      await h.evaluate(()=>{
+        stopAI();
+        g=newGame(['Medium','Medium','Medium'],()=>.4,'forts');
+        g.players[0].held=[g.decks[0].pop(),g.decks[0].pop(),g.decks[0].pop()];
+        for(let color=0;color<5;color++){
+          for(let seat=1;seat<=3;seat++)g.players[seat].tokens[color]=2;
+          g.players[color%3+1].tokens[color]++;
+          g.bank[color]=0;
+        }
+        render();
+      });
+      await h.locator('#passTurn').tap();
+      assert.match(await h.locator('#body').innerText(),/가능한 행동 없음/);
+      await h.locator('#confirm').tap();
+      assert.equal(await h.locator('#passTurn').isVisible(),false);
+      assert.match(await h.evaluate(()=>g.log[0].msg),/턴 넘김/);
     }
    }
    assert.deepEqual(errors,[]);await h.close();console.log(mode,rooms?'invite + restore':'touch + restore');

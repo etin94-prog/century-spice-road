@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const src=['data','engine','expansions'].map(n=>fs.readFileSync(path.join(__dirname,'../dist/splendor-'+n+'.js'),'utf8')).join('\n');
-const {newGame,chooseMove,apply,rankings,catalog,guildTurn,cityEligible,guildBills}=Function(src+';return {newGame,chooseMove,apply,rankings,catalog,guildTurn,cityEligible,guildBills}')();
+const {newGame,chooseMove,apply,rankings,catalog,guildTurn,cityEligible,guildBills,canGuildPass}=Function(src+';return {newGame,chooseMove,apply,rankings,catalog,guildTurn,cityEligible,guildBills,canGuildPass}')();
 assert.equal(catalog.length,120);
 for(const mode of ['cities','posts','orient','forts'])for(const seats of [2,3,4]){
  let seed=411+seats;const rand=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
@@ -16,6 +16,37 @@ for(const mode of ['cities','posts','orient','forts'])for(const seats of [2,3,4]
  assert(g.over,mode+' unfinished');assert.equal(g.turn,0);if(g.cities)assert(rankings(g)[0].city);
  console.log(mode,seats,n);
 }
+
+const passAction={kind:'take',i:0,take:[]};
+const decisionRandom=Math.random;
+try{
+  let seed=37,boardSeed=415;
+  const next=value=>(Math.imul(value,1664525)+1013904223)>>>0;
+  Math.random=()=>((seed=next(seed))/4294967296);
+  const game=newGame(['Medium','Medium','Medium'],()=>((boardSeed=next(boardSeed))/4294967296),'forts');
+  const replay=structuredClone(game);
+  assert.equal(guildTurn(game,passAction,true),null);
+  let passed=false;
+  for(let turn=0;turn<600&&!game.over;turn++){
+    const move=chooseMove(game,['Medium','Hard','Hell','Easy'][game.turn]);
+    assert(move,'four-seat fort replay must keep moving');
+    if(!move.take?.length&&move.kind==='take'){
+      passed=true;
+      assert(canGuildPass(game));
+      const probe=structuredClone(game);
+      probe.players[probe.turn].held.pop();
+      assert.equal(guildTurn(probe,passAction,true),null,'reserving a card is still possible');
+      probe.players[probe.turn].bonus.fill(10);
+      assert.equal(guildTurn(probe,passAction,true),null,'buying a card is still possible');
+      assert.equal(guildTurn(game,move,true).board.log[0].msg,'가능한 행동 없음 · 턴 넘김');
+    }
+    assert(apply(game,move));
+    assert(apply(replay,move));
+    assert.deepEqual(replay,game);
+  }
+  assert(passed,'the original stalled position must exercise the forced pass');
+  assert(game.over);
+}finally{Math.random=decisionRandom;}
 
 // Exercise expansion decisions independently of which cards a random match exposes.
 const city=newGame(['Medium'],()=>.4,'cities'),p=city.players[0];

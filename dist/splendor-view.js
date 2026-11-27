@@ -63,6 +63,9 @@ function render(){
   document.body.classList.toggle('orient',g.mode==='orient');
   document.querySelector('.objectives').setAttribute('aria-label',g.cities?'도시 승리 조건':'귀족 방문 조건');
   el('bank').innerHTML=g.bank.map((v,i)=>'<button data-bank="'+i+'" aria-label="'+gemNames[i]+' '+v+'개">'+gem(i,v)+'</button>').join('');
+  const pass=el('passTurn');
+  pass.hidden=!(g.mode&&myTurn()&&canGuildPass(g));
+  pass.onclick=()=>prepare({kind:'take',i:0,take:[]});
   el('reserved').textContent='내 예약 카드 · '+g.players[mySeat()]?.held.length+'장';
   el('latestMove').textContent=g.log.length?name(g.log[0].actor)+' · '+g.log[0].msg:'대국 기록';
   if(!online)el('save').textContent=saveStatus;
