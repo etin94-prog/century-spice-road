@@ -47,7 +47,7 @@ function seats(){
 }
 const modernBookNames=C.edition==='3ds'?
   {intro:'지속성 영지 확장 북',fire:'설욕·이동 침략 북',stronghold:'수속성 방어·견제 북'}:
-  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
+  {intro:'균형 북',fire:'공격 북',stronghold:'방어 북',...(C.edition==='saga'?{sagaStarterWater:'수·풍 초기 북',sagaStarterFire:'화·지 초기 북',sagaRilaraPlunder:'리라라 · 약탈',sagaRilaraRobbery:'리라라 · 습격',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북'}:{})};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){

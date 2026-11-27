@@ -187,6 +187,17 @@ const CepterEditions=(()=>{
         ...starterShared,creepingflame:2,gascloud:2,minotaur:2,phlogiston:2,redogre:2,
         dwarf:2,greenogre:2,squirrine:2,wallofstone:2,woodfolk:2,firestone:1
       },
+      // Xbox 360 Rilara deck records: 98-cs360-aidecks-rilara.
+      sagaRilaraPlunder:{
+        bandit:4,fighter:2,goblin:4,thief:4,gascloud:2,redogre:2,blueogre:2,giantamoeba:2,
+        dwarf:2,greenogre:2,harpy:2,yellowogre:2,chainmail:2,leatherarmor:2,longsword:3,mace:2,
+        ringofthesuccubus:2,drainmagic:1,holyword1:2,holyword6:2,manna:2,slow:2
+      },
+      sagaRilaraRobbery:{
+        fighter:4,giantrat:4,goblin:4,phlogiston:2,redogre:4,aqualing:2,blueogre:4,greenogre:4,
+        squirrine:2,blitzraven:2,yellowogre:4,leatherarmor:2,mace:2,sling:2,haste:2,magicbolt:2,
+        manna:2,slow:2
+      },
       sagaImmediate:{
         barbarian:4,tokebi:3,fay:2,lichenoid:2,sakuya:3,wolverine:2,rockshell:2,goblin:4,
         ...gear,zap:3,crusher:3,cleanse:2,reincarnation:2,revelation:2,holyword8:3,windofhope:3,fame:2

@@ -73,7 +73,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   if(modern){
     assert.ok(catalog.filter(c=>!c.catalogOnly).length>=30,edition+' playable cards');
     assert.ok(catalog.every(c=>c.editionArt&&c.catalog.source.includes('culdceptcentral.com')));
-    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaImmediate','sagaAffinity']:[])]);
+    assert.deepEqual(Object.keys(C.presets),['intro','fire','stronghold',...(edition==='saga'?['sagaStarterWater','sagaStarterFire','sagaRilaraPlunder','sagaRilaraRobbery','sagaImmediate','sagaAffinity']:[])]);
     assert.equal(new Set(Object.values(C.presets).map(deck=>[...deck].sort((a,b)=>a-b).join(','))).size,Object.keys(C.presets).length);
     for(const deck of Object.values(C.presets)){
       assert.ok(deck.every(id=>!C.cards[id].unlisted));
@@ -1767,6 +1767,17 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
     assert.deepEqual(actual,expected);
     assert.deepEqual(counts,{creature:28,item:9,spell:13});
+  }
+  const reportedRilaraBooks={
+    sagaRilaraPlunder:'bandit:4 fighter:2 goblin:4 thief:4 gascloud:2 redogre:2 blueogre:2 giantamoeba:2 dwarf:2 greenogre:2 harpy:2 yellowogre:2 chainmail:2 leatherarmor:2 longsword:3 mace:2 ringofthesuccubus:2 drainmagic:1 holyword1:2 holyword6:2 manna:2 slow:2',
+    sagaRilaraRobbery:'fighter:4 giantrat:4 goblin:4 phlogiston:2 redogre:4 aqualing:2 blueogre:4 greenogre:4 squirrine:2 blitzraven:2 yellowogre:4 leatherarmor:2 mace:2 sling:2 haste:2 magicbolt:2 manna:2 slow:2'
+  };
+  for(const [name,cards] of Object.entries(reportedRilaraBooks)){
+    assert.ok(C.validBook(C.presets[name]));
+    const expected=Object.fromEntries(cards.split(' ').map(entry=>{const [slug,count]=entry.split(':');return [id(slug),Number(count)];}));
+    const actual={};
+    for(const index of C.presets[name])actual[index]=(actual[index]||0)+1;
+    assert.deepEqual(actual,expected);
   }
   const idolMatch=()=>C.start(2,2,5000,'saga-original-crosswind');
   const place=(s,at,name,owner,type,level=1)=>{
