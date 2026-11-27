@@ -536,7 +536,7 @@ function map(){
   const exits=new Set(s.phase==='fork'?(room?room.choices:C.choices(s)).filter(a=>a[0]==='route').map(a=>a[1]):[]);
   s.tiles.forEach((t,n)=>{
     const name=m.gateNames?.[m.gates[n]]||({light:'빛의 성소',dark:'어둠의 성소'}[m.shrineKinds?.[n]])||C.elements[t.type]||t.type,owner=t.owner>=0?s.players[t.owner].name:'미점유';
-    const b=btn('',e=>{if(e?.target.closest('.pawn-action')){launchPawnActions();return;}if(s.phase==='fork'&&canTarget&&exits.has(n)){act(['route',n]);return;}if(s.phase==='towerTarget'&&targets.has(n)){act(targets.get(n));return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect||n===s.towerAt?' chosen':''));
+    const b=btn('',e=>{if(e?.target.closest('.pawn-action')&&!targets.has(n)){launchPawnActions();return;}if(s.phase==='fork'&&canTarget&&exits.has(n)){act(['route',n]);return;}if(s.phase==='towerTarget'&&targets.has(n)){act(targets.get(n));return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect||n===s.towerAt?' chosen':''));
     const [r,c]=m.position[n];b.style.left=((m.rows+c-r+.3)*half)+'%';
     b.style.top=(11+(r+c-2)*half*.5)+'cqw';
     if(m.stage){
@@ -572,7 +572,10 @@ function map(){
     }
     if(n===standing)b.classList.add('current-step');
     if(exits.has(n))b.classList.add('exit');
-    if(targets.has(n))b.classList.add('targetable');
+    if(targets.has(n)){
+      b.classList.add('targetable');
+      b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+labels[targets.get(n)[0]]);
+    }
     if(t.unit){const miniature=creatureFigure(t.unit.id);miniature.classList.add('summoned');b.append(miniature);}
     if(t.unit){
       b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+C.toll(s,t)+'G'+(t.unit.fatigued?' · 피로':'')));
@@ -584,7 +587,8 @@ function map(){
       if(p.pos!==n)return;
       const mark=el('span',null,'pawn');const [fx,fy]=pawnFoot(n,i,occupants);
       if(canTarget&&i===C.actor(s)&&!s.battle&&s.phase!=='over'){
-        mark.classList.add('pawn-action');mark.title=p.name+' 행동';
+        mark.classList.add('pawn-action');
+        mark.title=targets.has(n)?labels[targets.get(n)[0]]:p.name+' 행동';
         b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+p.name+' 위치');
       }
       mark.style.left=fx*100+'%';mark.style.top=fy*100+'%';
