@@ -901,7 +901,7 @@ function createCepter(edition="ps2"){
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||weapon?.pierceAll||matches(weapon?.pierceElements,d));
-      const elementalCritical=!scroll&&!muted&&(matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||matches(weapon?.criticalOwnElements,a));
+      const elementalCritical=!scroll&&!muted&&(matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
@@ -956,6 +956,7 @@ function createCepter(edition="ps2"){
           lines.push('데스키토 · 상대 손패 1장 파괴');
         }
         if(handheld&&attacker==='mystic'&&fx.max(d.u)>=60&&!s.predict&&Math.random()<.7){d.hp=0;lines.push('미스틱 · 즉사');}
+        if(revolt&&a.g==='goldenhammer'&&d.n!=='scylla'&&d.hp>0){s.players[a.seat].cash+=200;lines.push('골든 해머 · 200G 획득');}
         if(revolt&&a.g==='moonscimitar'&&d.n!=='scylla'){combo.clear(d.u);d.u.enchant='sleep';}
         if(attacker==='berserker'){combo.clear(a.u);a.u.confused=true;}
         if(attacker==='samurai'&&(firstEdition?d.c.catalog?.race==='rh':fx.max(d.u)<=30)&&!s.predict&&Math.random()<(firstEdition ? .3 : .6))d.hp=0;
@@ -1159,6 +1160,7 @@ function createCepter(edition="ps2"){
         const owner=s.players[a.seat];
         if(edition==='saga'&&a.n==='centaur'&&a.item!=null)owner.book.unshift(a.item);
         if(revolt&&a.n==='creepingcoin')owner.cash+=100;
+        if(revolt&&a.n==='triton'&&a.gear?.kind==='item')draw(owner,s);
         if(a.n==='gelatinouswall'&&a.ordinaryDamage>0){
           const gain=a.ordinaryDamage*5;
           owner.cash+=gain;lines.push('젤라티너스 월 · '+gain+'G 획득');
@@ -1198,7 +1200,14 @@ function createCepter(edition="ps2"){
     else if(won){
       (b.from==null?claimFromHand:claim)(t,A.seat,A.u);fatigue(t.unit);
     }
-    else{t.unit=D.u;if(attackerReturns)s.players[A.seat].hand.push(A.u.id);else if(onLand(A))s.tiles[b.from].unit=A.u;}
+    else{
+      t.unit=D.u;
+      if(attackerReturns){
+        const owner=s.players[A.seat];
+        if(!revolt||hasHandSpace(owner))owner.hand.push(A.u.id);
+        else b.lines.splice(-1,0,A.c.name+' · 손패가 가득 차 돌아갈 수 없음');
+      }else if(onLand(A))s.tiles[b.from].unit=A.u;
+    }
     if(t.unit&&sides.some(a=>a.g==='rainbowpiece'&&a.hp>0))combo.clear(t.unit);
     if(b.from!=null&&(won||!onLand(A))&&fx.name(s.tiles[b.from].unit)!=='powdereater')vacate(s.tiles[b.from]);
     s.phase='result';note(s,b.lines.at(-1));

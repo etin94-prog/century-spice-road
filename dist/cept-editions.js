@@ -371,9 +371,11 @@ const CepterEditions=(()=>{
     phlogiston:{criticalMHP:40},aqualing:{blocksSmall:true},squirrine:{support:true},cornfolk:{},amazon:{},phoenix:{},
     scylla:{blocksAttackAbilities:true},greattusker:{blocksFirst:true},
     cactuswall:{stationary:true,regenerate:true},tigerweta:{},mummy:{stationary:true},
+    triton:{scrollCritical:true},dhampir:{},knight:{},gremlin:{},breezespirit:{remoteVacantElements:[1,3]},
     creepingcoin:{},halfling:{spellWard:true,anyTerrain:true},gelatinouswall:{stationary:true},undine:{},yeti:{},
     centaur:{first:true},wyvern:{first:true,remoteVacantElements:[3]},dryad:{support:true,supportElements:[-1,0,2],remoteVacantElements:[2]},
     sparkball:{st:40},magmahammer:{st:20,criticalOwnElements:[0,2]},stormspear:{st:20,criticalOwnElements:[1,3]},
+    angelcape:{hp:40,protectItem:true},spikedshield:{},goldenhammer:{st:40},swordofpluck:{st:40,criticalRarity:'N'},
     bindingwhip:{st:30},moonscimitar:{st:30},forceanklet:{},stormshield:{},drilllance:{st:20,pierceAll:true},batteringram:{st:30},boomerang:{st:20,hp:10},buckler:{},magicshield:{hp:30},magussmirror:{hp:20},
     petrifystone:{},prismaticwand:{},ringofthesuccubus:{first:true},tearinghalo:{st:30,protectItem:true},wondercharm:{}
   };

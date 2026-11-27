@@ -288,7 +288,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(C.play(fatBody,['targetLand',1]));
   assert.deepEqual([fatBody.tiles[1].unit.mhp,fatBody.tiles[1].unit.hp,fatBody.tiles[1].unit.st],[100,84,15]);
 
-  for(const [name,type] of [['wyvern',3],['dryad',2]]){
+  for(const [name,type] of [['wyvern',3],['dryad',2],['breezespirit',1],['breezespirit',3]]){
     const flight=C.start(4,4,5000,'revolt-original-lantern-market');
     const from=1,destination=15,occupied=14,unit=card(C,name);
     Object.assign(flight.tiles[from],{owner:0,type:(type+1)%4,unit:{id:unit,hp:C.cards[unit].hp}});
@@ -1099,6 +1099,27 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.match(ring.s.battle.strikes[1].notes.join(' '),/30 피해/);
   const scrollRing=revolt('sparkball','ringofthesuccubus','blueogre','goblin');
   assert.match(scrollRing.s.battle.strikes[1].notes.join(' '),/40 피해/);
+  assert.equal(dealt(revolt(null,'diamondarmor','knight','greenogre')),75);
+  assert.equal(dealt(revolt(null,'diamondarmor','knight','fighter')),50);
+  const triton=revolt('sparkball',null,'triton','cactuswall');
+  assert.equal(dealt(triton),60);
+  assert.equal(triton.s.players[0].book.length,44);
+  assert.equal(revolt(null,null,'triton','cactuswall').s.players[0].book.length,45);
+  const filled=revolt('boomerang',null,'triton','cactuswall',(state,id)=>{
+    state.players[0].hand.push(...Array(8).fill(id('manna')));
+  }).s;
+  assert.equal(filled.players[0].hand.length,10);
+  assert.match(filled.battle.lines.join(' '),/손패가 가득 차 돌아갈 수 없음/);
+  assert.equal(revolt(null,null,'greenogre','dhampir').s.battle.strikes[0].effect,'block');
+  assert.equal(dealt(revolt('swordofpluck','diamondarmor','fighter','greenogre')),110);
+  assert.equal(dealt(revolt('swordofpluck','diamondarmor','scylla','greenogre')),70);
+  assert.equal(revolt(null,'angelcape','gremlin','fighter').s.battle.startHP[1],80);
+  assert.equal(revolt(null,'chainmail','gremlin','fighter').s.battle.startHP[1],40);
+  const revoltSpike=revolt(null,'spikedshield','fighter','fighter').s.battle;
+  assert.deepEqual(revoltSpike.strikes[0].hp,[20,20]);
+  assert.equal(dealt(revolt('sparkball','spikedshield','fighter','fighter')),40);
+  assert.equal(revolt('goldenhammer','diamondarmor','fighter','fighter').s.players[0].cash,1150);
+  assert.equal(revolt('goldenhammer',null,'fighter','fighter').s.players[0].cash,950);
   console.log('Revolt six exact AI books, terrain defenses, battle payouts, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   for(const [attacker,elementalGuard] of [['flameacolyte','pillarofflame'],['aquaacolyte','kingtortoise'],['terraacolyte','dwarf'],['aeroacolyte','griffon']]){

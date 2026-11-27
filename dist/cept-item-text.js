@@ -114,6 +114,8 @@ const describeCepterItem=(()=>{
     if(card.doubleAttack)pieces.push('일반 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
     if(card.criticalOwnElements?.length)pieces.push('장착한 크리처가 '+list(card.criticalOwnElements)+'이면 일반 공격이 강타합니다.');
     if(card.criticalElements?.length)pieces.push(list(card.criticalElements)+' 상대에게 강타합니다.');
+    if(card.criticalRarity==='N')pieces.push('N 등급 크리처가 장착하면 일반 공격이 강타합니다.');
+    if(C.edition==='revolt'&&name==='goldenhammer')pieces.push('일반 공격으로 피해를 주고 상대가 살아남으면 200G를 얻습니다.');
     if(card.pierceAll)pieces.push('일반 공격이 지형 HP 보너스를 관통합니다.');
     if(C.edition==='revolt'&&name==='stormshield')pieces.push('수·풍 크리처가 장착하면 일반 공격을 무효화합니다.');
     if(C.edition==='revolt'&&name==='moonscimitar')pieces.push('일반 공격으로 피해를 주면 상대의 영지 통행료를 무효화합니다.');
