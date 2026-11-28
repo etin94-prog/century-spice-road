@@ -110,6 +110,8 @@ function setupMatchInfo(){
 setupMatchInfo();
 // The action menu opens beside the active cepter. The choice to fold it lasts for the current decision.
 const actionMenu=$('buttons').closest('aside'),actionToggle=$('matchActionsToggle');
+const handPeek=el('div',null,'hand-peek');handPeek.id='handPeek';handPeek.setAttribute('aria-label','손패 미리보기');
+$('mapViewport').append(handPeek);
 let menuState={game:null,key:'',open:false};
 function setActionMenu(open){
   menuState.open=open;
@@ -447,7 +449,8 @@ function placeMapRoll(root,x,y,zoom){
   const left=Math.max(4,Math.min(width-stackWidth-4,away?(wideView?tools.offsetLeft-stackWidth-6:(width-stackWidth)/2):side>0?right:side<0?before:(groupStart+groupEnd-stackWidth)/2));
   const status=$('center'),underStatus=status.offsetHeight&&left<status.offsetLeft+status.offsetWidth+4?status.offsetTop+status.offsetHeight+4:0;
   const minTop=Math.max(underStatus,left+stackWidth+4>tools.offsetLeft?tools.offsetTop+toolsHeight+4:matchHud.offsetHeight+5);
-  const floor=handPanel.parentElement===viewport&&(handPanel.open||left+stackWidth+4>handPanel.offsetLeft)?handPanel.offsetTop-6:height-4;
+  const peekTop=handPeek.offsetHeight&&left+stackWidth+4>handPeek.offsetLeft?handPeek.offsetTop-6:height-4;
+  const floor=Math.min(peekTop,handPanel.parentElement===viewport&&(handPanel.open||left+stackWidth+4>handPanel.offsetLeft)?handPanel.offsetTop-6:height-4);
   const bubble=$('detail'),underBubble=bubble.classList.contains('card-popup')&&bubble.offsetHeight&&left<bubble.offsetLeft+bubble.offsetWidth&&left+stackWidth>bubble.offsetLeft;
   const maxTop=Math.max(minTop,(underBubble?Math.min(floor,bubble.offsetTop-6):floor)-stackHeight);
   const body=feetY-Math.min(45,pawnHeight*.55);
@@ -546,7 +549,7 @@ document.addEventListener('click',e=>{
   }
   for(const menu of [$('matchMenu'),$('mapViews')])if(menu.open&&!menu.contains(target))menu.open=false;
   const bubble=$('detail');
-  if(bubble.classList.contains('card-popup')&&bubble.childElementCount&&!target.closest?.('#detail,#hand .card,dialog'))closeCardPopup();
+  if(bubble.classList.contains('card-popup')&&bubble.childElementCount&&!target.closest?.('#detail,#hand .card,.peek-card,dialog'))closeCardPopup();
 });
 // The screen stays on while a match is open.
 let wakeLock=null;
@@ -811,6 +814,14 @@ function map(){
     return;
   }
   const p=s.players[s.turn];center.append(figure(s.turn,p.name),el('small',s.phase==='over'?'대전 종료':p.name+' · '+p.lap+'주 완주'),el('b',s.phase==='over'?winLabel():s.die?'주사위 '+s.die:m.name),el('span',(m.gates?'게이트 ':'요새 ')+p.flags.length+'/'+(m.checkpoints||m.forts).length+(s.remaining?' · 남은 이동 '+s.remaining:'')));
+  // Where the turn stands: spell, move, land, and battle when one is under way.
+  if(s.phase!=='over'){
+    const stage=s.battle?3:['land','territoryTarget','teleMove','shop','temple','fortune','sell','discard'].includes(s.phase)?2:s.die||['direction','fork'].includes(s.phase)?1:0;
+    const track=el('i',null,'turn-phases');
+    ['주문','이동','영지'].forEach((label,k)=>{const step=el('span',label);if(k===stage)step.className='now';else if(k<stage)step.className='done';track.append(step);});
+    track.setAttribute('aria-label','차례 단계 · '+['주문','이동','영지','전투'][stage]);
+    center.prepend(el('em',p.name,'turn-who'),track);
+  }
   if(C.edition==='begins'&&s.phase==='spellTarget'&&s.spellEffect==='relief')
     center.lastElementChild.textContent=s.reliefFrom==null?'교환할 첫 영지를 누르세요.':'교환할 두 번째 영지를 누르세요.';
   if(C.edition==='begins'&&s.phase==='teleMove'&&s.spellEffect==='chariot')
@@ -893,7 +904,7 @@ function render(){
   if(pending||C.isComputer(s,C.actor(s))||room&&room.seat!==C.actor(s)){
     $('buttons').replaceChildren();$('hint').textContent='';
     if(reader==null){
-      $('hand').replaceChildren();$('detail').replaceChildren();$('handTitle').textContent='손패';
+      $('hand').replaceChildren();$('detail').replaceChildren();$('handTitle').textContent='손패';handPeek.replaceChildren();
       if($('cardDialog').open)$('cardDialog').close();
     }
   }
@@ -1068,6 +1079,14 @@ function render(){
     showHandSelection(owner,choices);hand.scrollLeft=handScroll;
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
   if(owner&&typeof showHandCombos==='function')showHandCombos(hand,owner.hand);
+  // The closed hand still shows the top of every card along the bottom edge; a tap opens the tray on that card.
+  handPeek.replaceChildren();
+  if(owner&&!s.battle)owner.hand.forEach((id,j)=>{
+    const ready=choices.find(([kind,index])=>index===j&&['cast','equip','summon','invade'].includes(kind));
+    const card=btn('',()=>{focusCard=j;handPanel.open=true;render();},'peek-card'+(ready?' ready':''));
+    card.setAttribute('aria-label',C.cards[id].name+(ready?' · '+({cast:'주문 사용 가능',equip:'장비 가능',summon:'소환 가능',invade:'침략 가능'})[ready[0]]:''));
+    const face=cardSeal(id);face.alt='';card.append(face);handPeek.append(card);
+  });
   $('log').replaceChildren(...(s.log.length?s.log:['아직 진행 기록이 없습니다.']).map(t=>el('li',t)));
   if(!s.battle)focusMapTile(cameraTile);
   if(local&&s.players.some(v=>v.ai)){

@@ -401,7 +401,7 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 #game #mapViewport{touch-action:none}
 
 /* Turn cue: a brief banner when the game starts waiting for the player. */
-.turn-cue{position:absolute;z-index:20;left:50%;top:calc(var(--hud-height) + 14%);translate:-50% 0;padding:7px 26px;border:1px solid #ffe2a4;border-radius:999px;
+.turn-cue{position:absolute;z-index:20;left:50%;top:calc(var(--hud-height) + 6px);translate:-50% 0;padding:7px 26px;border:1px solid #ffe2a4;border-radius:999px;
   background:#141a24eb;color:#ffe7a6;font:800 18px/1.2 system-ui;letter-spacing:.08em;pointer-events:none;box-shadow:0 6px 22px #000b;animation:turn-cue 1.5s ease-out both}
 @keyframes turn-cue{0%{opacity:0;transform:scale(.8)}12%{opacity:1;transform:scale(1.06)}22%{transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
 @media(prefers-reduced-motion:reduce){.turn-cue{animation-timing-function:step-end}}
@@ -419,3 +419,23 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
   #game .battle-stats{position:absolute;z-index:3;bottom:9px;left:50%;translate:-50% 0;padding:1px 12px;border-radius:99px;background:#0c0f15d9;white-space:nowrap}
   #game .battle-hp{position:absolute;z-index:3;bottom:0;left:50%;translate:-50% 0;width:min(86%,13rem)}
 }
+
+/* Closed hand: the top of each card peeks from the bottom edge, beside the hand button. */
+#game .hand-peek{position:absolute;z-index:4;right:calc(var(--side-right) + 56px);bottom:0;display:flex;align-items:flex-start;height:calc(70px + env(safe-area-inset-bottom));padding:8px 6px 0 16px;overflow:hidden;pointer-events:none}
+#game .hand-peek:empty,#game #mapViewport:has(#handPanel[open]) .hand-peek,#game #mapViewport:not(:has(#handPanel)) .hand-peek,.showing-map-effect .hand-peek{display:none}
+#game .hand-peek .peek-card{flex:0 0 auto;width:62px;min-width:0;min-height:0;height:78px;margin-left:-12px;padding:0;border:0;border-radius:5px;background:none;pointer-events:auto;
+  translate:0 6px;transition:translate .12s ease-out;filter:drop-shadow(0 -2px 5px #000b)}
+#game .hand-peek .peek-card img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:5px;box-shadow:0 0 0 1px #cdb07a}
+#game .hand-peek .peek-card.ready{translate:0 0}
+#game .hand-peek .peek-card.ready img{box-shadow:0 0 0 2px #a6dd83,0 0 10px #a6dd83aa}
+#game .hand-peek .peek-card:active{translate:0 -4px}
+@container(max-width:400px){#game .hand-peek{height:calc(62px + env(safe-area-inset-bottom))}#game .hand-peek .peek-card{width:50px;height:64px;margin-left:-13px}}
+
+/* Turn stage tracker inside the status pill. */
+#game #center.turn-status .turn-who{font-style:normal;font-weight:700;color:#ffe2a4;max-width:7.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#game #center.turn-status .turn-phases{display:flex;align-items:center;gap:3px;font-style:normal;white-space:nowrap}
+#game #center.turn-status .turn-phases span{padding:0 6px;border-radius:99px;color:#9aa3ad;font-size:10.5px}
+#game #center.turn-status .turn-phases span+span::before{content:"\203A";margin-right:6px;margin-left:-5px;color:#6e7680}
+#game #center.turn-status .turn-phases span.done{color:#c9c0aa}
+#game #center.turn-status .turn-phases span.now{background:#e0bc76;color:#201d21;font-weight:800}
+#game #center:not(.turn-status) :is(.turn-who,.turn-phases){display:none}
