@@ -163,40 +163,38 @@ export function sport(id, rules, setup) {
       const game = setup(A);
       function point(e) {
         const r = canvas.getBoundingClientRect();
-        if (
-          document.documentElement.classList.contains('card-landscape') &&
-          matchMedia('(orientation: portrait)').matches
-        )
-          return {
-            x: clamp(((e.clientY - r.top) / r.height) * W, 0, W),
-            y: clamp(((r.right - e.clientX) / r.width) * H, 0, H),
-          };
+        const rotated = document.documentElement.classList.contains('card-landscape') &&
+          matchMedia('(orientation: portrait)').matches;
+        const across = rotated ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;
+        const down = rotated ? (r.right - e.clientX) / r.width : (e.clientY - r.top) / r.height;
+        // The bitmap fills the content box. The bounding rectangle includes the wooden rim.
         return {
-          x: clamp(((e.clientX - r.left) / r.width) * W, 0, W),
-          y: clamp(((e.clientY - r.top) / r.height) * H, 0, H),
+          x: clamp((across * canvas.offsetWidth - canvas.clientLeft) / canvas.clientWidth * W, 0, W),
+          y: clamp((down * canvas.offsetHeight - canvas.clientTop) / canvas.clientHeight * H, 0, H),
         };
       }
       canvas.onpointerdown = (e) => {
-        if (ui.ended) return;
+        if (ui.ended || e.isPrimary === false) return;
         canvas.setPointerCapture(e.pointerId);
         pressed = point(e);
         A.aim = pressed;
         game.down?.(pressed);
       };
       canvas.onpointermove = (e) => {
-        if (!pressed || ui.ended) return;
+        if (!pressed || ui.ended || e.isPrimary === false) return;
         A.aim = point(e);
         game.move?.(A.aim);
       };
       canvas.onpointerup = (e) => {
-        if (!pressed || ui.ended) return;
+        if (!pressed || ui.ended || e.isPrimary === false) return;
         const end = point(e);
         A.aim = end;
         if (typeof cardAudio !== 'undefined') cardAudio.cue('chip');
         game.tap?.(end, pressed);
         pressed = null;
       };
-      canvas.onpointercancel = () => {
+      canvas.onpointercancel = (e) => {
+        if (e.isPrimary === false) return;
         pressed = null;
         game.cancel?.();
       };

@@ -68,3 +68,14 @@ body.poker #boardCards .cardPile+.card{margin-left:4px}
 .fanBacks{display:inline-flex;align-items:flex-end;margin:3px 8px 0 0;padding-left:14px;vertical-align:middle}
 .fanBacks .card{--card:20px;margin-left:-14px;transform-origin:50% 130%;rotate:calc(var(--o,0) * 5deg)}
 @media(prefers-reduced-motion:reduce){.handBtn{transition:none}}
+
+html.card-expanded body.poker main {container:poker-table / size;}
+@media (orientation:portrait) {
+  html.card-landscape body.poker main {container:poker-table / size;}
+}
+@container poker-table (min-aspect-ratio: 1/1) and (max-height: 480px) {
+  body.poker .felt {display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-content:space-evenly;align-items:center;}
+  body.poker #opponents {grid-column:1/-1;}
+  body.poker .centerBoard {min-width:0;}
+  body.poker .localSeat {justify-self:center;}
+}

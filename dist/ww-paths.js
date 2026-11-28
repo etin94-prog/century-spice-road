@@ -61,7 +61,7 @@ export function moveBoard(ui, cells, w, moves, chosen, setChosen, apply, style =
         setChosen(chosen === i ? null : i);
         ui.paint();
       };
-    ui.button(
+    const slot = ui.button(
       grid,
       cell || '',
       act,
@@ -73,6 +73,11 @@ export function moveBoard(ui, cells, w, moves, chosen, setChosen, apply, style =
       weight,
       '칸 ' + (i + 1) + (cell ? ' ' + cell : ''),
     );
+    if (style === 'star') {
+      // Positions are stored on half-columns in the staggered star lattice.
+      slot.style.gridColumn = (i % w + 1) + ' / span 2';
+      slot.style.gridRow = Math.floor(i / w) + 1;
+    }
   });
 }
 register(

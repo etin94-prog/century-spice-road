@@ -149,3 +149,84 @@ body[data-game="19"] .flower { border:2px solid #41291b;box-shadow:0 1px #e0b36d
 .stack .card-back:not(:last-child) { background-size:100% auto;background-position:top center; }
 .mahjong-stack .layer-1 {transform:translate(-9%,-14%);box-shadow:inset 1px 1px #fff,0 3px #dac29c,0 7px #aec1a4,0 10px #446c58,3px 13px 6px #342d277d;}
 .mahjong-stack span.engraved-tile {filter:brightness(.91);}
+
+/* Measure the playable viewport after the optional quarter-turn. */
+html.card-expanded[data-table="world"] main { container: phone-table / size; }
+@media (orientation:portrait) {
+  html.card-landscape[data-table="world"] main { container: phone-table / size; }
+}
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  main > header { flex-wrap:nowrap;gap:4px;padding-bottom:3px; }
+  main > header h1 {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(16px,2.7cqw,22px);}
+  main > header .tools {flex-wrap:nowrap;gap:3px;}
+  main > header :is(button,a) {padding-inline:7px;white-space:nowrap;}
+  .desk { margin-top:4px;padding:5px 8px; --play-height:calc(100cqh - 92px); }
+  .rail { min-height:23px;margin-bottom:5px;padding:0; }
+  #surface {gap:5px;}
+  #surface > .board-grid { width:min(100%,var(--play-height)); }
+  #surface > .board-grid.hex { width:min(100%,calc(var(--play-height) * 1.47)); }
+  #surface > .board-grid.hound {width:min(80%,calc(var(--play-height) * 1.55));}
+  #surface > .board-grid.drop {width:min(100%,calc(var(--play-height) * 1.12));}
+  #surface > .board-grid.star {width:min(100%,calc(var(--play-height) * 1.3));height:var(--play-height);min-height:0;}
+  #surface > .dots {width:min(100%,var(--play-height));}
+  .dots .piece {min-height:26px;}
+  #surface > .pipe-board {width:min(100%,var(--play-height));}
+  .zoom-frame {max-height:var(--play-height);scroll-padding:8px;}
+  body[data-group='스포츠·액션'] #surface {
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,25%);
+    align-items:center;column-gap:8px;
+  }
+  #surface>.arena {width:min(100%,calc(var(--play-height) * 1.64));justify-self:center;}
+  .arena+.row {flex-direction:column;gap:5px;}
+  .mancala.tiles {grid-template-columns:.8fr repeat(6,minmax(0,1fr)) .8fr;}
+  .mancala .mancala-store {display:flex;grid-row:1 / span 2;}
+  .mancala-store.theirs {grid-column:1;} .mancala-store.mine {grid-column:8;}
+  body:is([data-game="13"],[data-game="14"]) #surface {display:grid;grid-template-columns:minmax(0,2fr) minmax(120px,1fr);align-items:center;}
+  #surface>.ludo-board {width:min(100%,var(--play-height));justify-self:center;}
+  body[data-game="20"] #surface {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;}
+  body[data-game="20"] #surface>:nth-child(n+5) {grid-column:1/-1;}
+  body[data-game="20"] .row {gap:3px;}
+  body[data-game="26"] #surface {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;}
+  body[data-game="26"] #surface>:nth-child(-n+3) {grid-column:1;}
+  body[data-game="26"] #surface>:nth-child(n+4):nth-child(-n+6) {grid-column:2;}
+  body[data-game="26"] #surface>:is(:nth-child(1),:nth-child(4)) {grid-row:1;}
+  body[data-game="26"] #surface>:is(:nth-child(2),:nth-child(5)) {grid-row:2;text-align:center;}
+  body[data-game="26"] #surface>:is(:nth-child(3),:nth-child(6)) {grid-row:3;}
+  body[data-game="26"] #surface>:nth-child(7) {grid-column:1/-1;}
+  body[data-game="26"] .illustrated .card {--card:clamp(42px,13cqh,58px);}
+  body[data-game="27"] #surface>.tiles {grid-template-columns:repeat(10,minmax(0,1fr));width:min(100%,690px);}
+  body[data-game="29"] #surface {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+  body[data-game="29"] #surface>.section-label {text-align:center;grid-row:1;}
+  body[data-game="29"] #surface>.tiles {grid-row:2; width:min(100%,calc(var(--play-height)*1.5));}
+  body[data-game="29"] #surface>.row {grid-column:1/-1;}
+  body[data-game="30"] .ring-cards.tiles {width:min(100%,570px);grid-template-rows:repeat(8,minmax(25px,1fr));gap:2px;}
+  body[data-game="30"] .ring-cards button.card-back {min-height:clamp(25px,7.1cqh,38px);}
+  body[data-game="47"] #surface {display:grid;grid-template-columns:minmax(95px,1fr) minmax(190px,1.65fr);align-items:center;}
+  body[data-game="47"] .mini-well {grid-area:1/1;justify-self:center;}
+  body[data-game="47"] .mini-well+.row {grid-area:2/1;}
+  body[data-game="47"] .ballwell, body[data-game="47"] .zoom-frame {grid-area:1/2;justify-self:center;}
+  body[data-game="47"] #surface>.ballwell {width:min(100%,calc((var(--play-height) - 49px)*.69));}
+  body[data-game="47"] #surface>.tiles:last-child {grid-area:2/2;}
+  body[data-game="49"] .mahjong-stack {width:min(100%,calc(var(--play-height) * 1.47));}
+  .solitaire .stack .whole-card {max-height:clamp(55px,20cqh,85px);}
+}
+
+/* Each star node owns the full gap between neighbouring marbles. */
+.board-grid.star {
+  grid-template-columns:repeat(26,minmax(0,1fr));
+  grid-template-rows:repeat(17,minmax(0,1fr));
+  aspect-ratio:1.3;
+}
+.star .void {display:none;}
+.star .cell {width:100%;height:100%;aspect-ratio:auto;}
+.star .cell:is(.black-stone,.white-stone)::before {width:auto;height:90%;max-width:95%;}
+.zoom-frame > .board-grid {width:calc(var(--zoom-cols) * 48px + 16px);max-width:none;}
+.zoom-frame > .board-grid.hex {width:650px;}
+.zoom-frame > .board-grid.star {width:1010px;}
+
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  body[data-game="50"] #surface {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);align-items:start;}
+  body[data-game="50"] .solitaire {grid-column:1/-1;justify-self:center;}
+  body[data-game="50"] .solitaire+.row {grid-column:1/-1;}
+  #surface > .board-grid.mill {width:min(100%,calc(var(--play-height) - 16px));}
+}

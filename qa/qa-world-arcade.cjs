@@ -72,8 +72,8 @@ const ids = process.argv.slice(2).length
           function tap(x, y) {
             const r = canvas.getBoundingClientRect(),
               e = {
-                clientX: r.left + (r.width * x) / 600,
-                clientY: r.top + (r.height * y) / 360,
+                clientX: r.left + (canvas.clientLeft + canvas.clientWidth * x / 600) * r.width / canvas.offsetWidth,
+                clientY: r.top + (canvas.clientTop + canvas.clientHeight * y / 360) * r.height / canvas.offsetHeight,
                 pointerId: 1,
               };
             // Synthetic DOM events have no active native pointer to capture.
