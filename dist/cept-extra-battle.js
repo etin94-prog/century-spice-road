@@ -35,7 +35,7 @@ const CepterExtraBattle=(()=>{
     const {ids,creatures}=catalog(cards,combo.key);
     function pick(pool){return pool[s.predict?Math.floor(pool.length/2):Math.floor(Math.random()*pool.length)];}
     function randomForm(excluded){
-      if(s.edition==='saga')return pick(fx.sagaFormChoices(excluded));
+      if(s.edition==='saga'||s.edition==='dc')return pick(fx.standardFormChoices(excluded));
       return pick(creatures.filter(id=>id!==excluded&&(s.edition!=='begins'||cards[id].catalog.rarity!=='E')));
     }
     const chance=n=>!s.predict&&Math.random()<n;
@@ -92,7 +92,10 @@ const CepterExtraBattle=(()=>{
         form=ids.get('bundlegear');consume=true;temporary=false;
       }else if(name==='ambermosquito')form=ids.get(pick(['giantrat','tyrannosaurus']));
       else if(name==='doppelganger')form=opponentId;
-      else if(name==='baldanders')form=['begins','saga'].includes(s.edition)?randomForm(a.u.id):pick(creatures);
+      else if(name==='baldanders'){
+        if(s.edition==='dc')form=randomForm();
+        else form=['begins','saga'].includes(s.edition)?randomForm(a.u.id):pick(creatures);
+      }
       else if(s.edition==='saga'&&name==='revenant'&&combo.enchanted(t.unit))form=ids.get('vampire');
       if(s.edition==='revolt'&&gear==='necroplasma')form=ids.get('skeleton');
       if(s.edition==='revolt'&&gear==='dragonorb'){

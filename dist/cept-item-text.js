@@ -208,7 +208,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='3ds'&&name==='heartfibula')pieces.push('적을 격파하면 최대 HP가 최대 100까지 20 오릅니다.');
     else if(C.edition==='3ds'&&name==='wateramulet')pieces.push(ability[name]+' 적을 격파하면 기본 ST가 최대 100까지 10 오릅니다.');
     else if(C.edition==='3ds'&&name==='windamulet')pieces.push('풍 속성 크리처가 장착하면 일반 공격이 강타합니다. 적을 격파하면 최대 HP가 최대 100까지 10 오릅니다.');
-    else if(['begins','saga'].includes(C.edition)&&name==='proteanring')pieces.push('전투에서 E 등급을 제외한 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.');
+    else if(['begins','saga','dc'].includes(C.edition)&&name==='proteanring')pieces.push('전투에서 E 등급을 제외한 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.');
     else if(C.edition==='begins'&&name==='coinofpiety')pieces.push('장착한 크리처가 생존하면 내가 가장 많이 가진 호부 수량이 10% 증가합니다.');
     else if(C.edition==='begins'&&name==='offeringdoll')pieces.push('생존하면 장착 크리처와 같은 속성의 호부 가치가 30% 오릅니다.');
     else if(!(firstEdition&&name==='wingedboots')&&!(C.edition==='dc'&&name==='windamulet')&&!card.firstEquipment&&!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);

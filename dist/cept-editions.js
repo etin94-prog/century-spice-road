@@ -141,7 +141,7 @@ const CepterEditions=(()=>{
       selenear:'selenear',simulacrum:'simulacrum',sink:'sink',soulhunt:'soulhunt',subsidence:'subsidence',
       upheaval:'upheaval',weathering:'weathering',wildgrowth:'wildgrowth',wing:'wing',wizardseye:'wizardeye',
       aports:'aports',babble:'babble',haunt:'haunt',judgement:'judgment',lightcraft:'lightcraft',
-      magicfountain:'magicfountain',mesmerize:'mesmerize',torture:'torture',walltransform:'dcWallTransform'
+      magicfountain:'magicfountain',mesmerize:'mesmerize',torture:'torture',walltransform:'dcWallTransform',polymorph:'polymorph'
     },
     ps1:{...firstSpellEffects,antielement:'antielement',corruption:'corruption',lifeforce:'lifeforce',revival:'revival'},
     saturn:{...firstSpellEffects,alchemy:'alchemy',dimensiondoor:'dimensiondoor',evilblast:'evilblast',landtax:'landtax',meteorstorm:'meteorstorm',recover:'firstRecover'}
@@ -693,7 +693,7 @@ const CepterEditions=(()=>{
     return {[elementalTraits[parts[1]]]:elements};
   }
   const dreamcastCreatures={
-    ambermosquito:{},archbishop:{protectGear:true},basaltidol:{stationary:true},battlegearalpha:{support:true,spellWard:true},
+    ambermosquito:{},archbishop:{protectGear:true},baldanders:{},basaltidol:{stationary:true},battlegearalpha:{support:true,spellWard:true},
     battlegearbeta:{support:true,neutralizeScroll:true},bundlegear:{spellWard:true,neutralizeScroll:true,generatedOnly:true},
     clockworkowl:{},doppelganger:{},ebonyidol:{stationary:true},goldidol:{stationary:true},ironidol:{stationary:true},ivoryidol:{stationary:true},
     clayidol:{stationary:true},leoknight:{},littlegray:{},livingspear:{itemCreature:true},livingsword:{itemCreature:true},sanctumguard:{first:true},
@@ -714,7 +714,7 @@ const CepterEditions=(()=>{
     heartfibula:{st:20},hellblaze:{st:40},holygrail:{},icicle:{st:20,criticalElements:[0]},iksear:{},kris:{st:30,protectItem:true},
     magicshield:{hp:20,neutralizeScroll:true},magussmirror:{hp:20},markerflag:{},offeringdoll:{},
     rainbowpiece:{hp:40,neutralizeScroll:true},sapphirering:{st:20,pierceElements:[1]},shadowarmor:{},sleep:{},smoketorch:{},
-    stinkbottle:{},stonehail:{st:30,scrollCriticalElements:[3]},terrair:{},trapezon:{},venom:{},vorpalsword:{st:30},
+    proteanring:{},stinkbottle:{},stonehail:{st:30,scrollCriticalElements:[3]},terrair:{},trapezon:{},venom:{},vorpalsword:{st:30},
     windamulet:{st:10,hp:20,criticalOwnElements:[3]},wingedboots:{first:true},goulsclaw:{},spikedshield:{},knightsshield:{}
   };
   const firstRace={人:'rh',獣:'rb',不死:'ru',植物:'rp',竜:'rd'};
@@ -1210,6 +1210,11 @@ const CepterEditions=(()=>{
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]
         .map(([from,to])=>[lookup.get(from),lookup.get(to)]));
       presets.legacyFusion=presets.legacyControl.map(id=>fusion.get(id)??id);
+      const shapes=presets.legacyControl.slice();
+      for(const [from,to] of [['wolf','baldanders'],['mace','proteanring'],['aports','polymorph']]){
+        shapes[shapes.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyShape=shapes;
     }
     if(edition==='saturn'||edition==='ps1')for(const [name,counts] of Object.entries(data.books)){
       const ids=Object.entries(counts).flatMap(([key,n])=>Array(n).fill(lookup.get(key)));

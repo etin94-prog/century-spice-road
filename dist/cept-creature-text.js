@@ -606,6 +606,7 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='mycoron'?'생존하면 HP를 회복합니다. 상대가 피해를 주었다면 무작위 빈 영지에 마이코론을 배치합니다.':
       C.edition==='revolt'&&key==='coatlicue'?'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 20씩 오릅니다.':
       ['begins','revolt','3ds'].includes(C.edition)&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
+      C.edition==='dc'&&key==='baldanders'?'전투에서 N·S·R 등급 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
       ['begins','saga'].includes(C.edition)&&key==='baldanders'?'전투 중 다른 크리처로 무작위 변신합니다. E 등급은 제외되며 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':

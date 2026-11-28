@@ -2185,6 +2185,10 @@ function createCepter(edition="ps2"){
             const title=cards.find(c=>c.effect===effect)?.name||effect;
             mapEffect('cast',title,hits[0]?.at??s.tiles.findIndex(t=>t.area===x),hits.length?{hits,title}:{});break;
           }
+          if(edition==='dc'&&effect==='polymorph'&&tile.unit&&tile.unit.id!==unit?.id){
+            const label=cards[tile.unit.id].name+' 변신';
+            mapEffect('cast',label,x);note(s,label);break;
+          }
           const damage=prior-(tile.unit?.hp??0),showDamage=extraSpells.landDamage[effect];
           const label=effect==='magicalleap'?'매지컬 리프':effect==='shadowleap'?'섀도 리프':revivalLabel(unit,tile.unit)??(damage>0?'−'+damage+' HP'+(showDamage&&!tile.unit?' · 격파':''):showDamage?'피해 없음':effect);
           mapEffect('cast',label,x);break;

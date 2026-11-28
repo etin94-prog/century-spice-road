@@ -59,7 +59,7 @@ if(C.edition==='revolt')for(const [character,name,source] of CepterRevoltBookArc
   const id='revolt-'+source;
   if(C.presets[id])modernBookNames[id]=character+' · '+name;
 }
-const classicBookNames={legacyControl:'이동·마력 제어 북',legacyFusion:'배틀 기어 합체 북',legacyGear:'전투 장비 북',legacyGuard:'크리처 방어 북',legacyCourt:'화·지 전투 지원 북',legacyEvolution:'반사·변신 북',legacyTides:'수 영지 공략 북'};
+const classicBookNames={legacyControl:'이동·마력 제어 북',legacyFusion:'배틀 기어 합체 북',legacyGear:'전투 장비 북',legacyGuard:'크리처 방어 북',legacyCourt:'화·지 전투 지원 북',legacyEvolution:'반사·변신 북',legacyTides:'수 영지 공략 북',legacyShape:'변신 전술 북'};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){
@@ -473,6 +473,7 @@ function setMapCamera(root,x,y,zoom){
 function selectingSpellMapTarget(){
   if(C.edition==='begins'&&s?.spellEffect==='telekinesis'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
+  if(C.edition==='dc'&&s?.phase==='spellTarget'&&s.spellEffect==='polymorph')return true;
   if(C.edition==='saga'&&s?.phase==='spellTarget'&&['trade','intrusion','reflection','replace','holyasylum','lunaticlight','sagapolymorph','sagaliquidform','walltransform'].includes(s.spellEffect))return true;
   if(C.edition==='revolt'&&['outrage','thrustblow'].includes(s?.spellEffect)&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(C.edition==='revolt'&&s?.phase==='spellTarget'&&['asteroid','asteroidStrong','diselement','dominantgrowth','hyperactive','bountyhunt','revoltExchange','revoltTemptation'].includes(s.spellEffect))return true;
@@ -832,7 +833,7 @@ function map(){
   if(s.phase==='towerTarget')center.lastElementChild.textContent='사령탑 · 목표 영지를 터치하세요';
   if(s.phase==='towerDeploy')center.lastElementChild.textContent='사령탑 · '+(s.towerAt+1)+'번 영지 · 하단 손패에서 선택';
   if(selectingSpellMapTarget()&&targets.size){
-    const prompt={dcWallTransform:'방어형으로 바꿀 크리처를 선택하세요',intrusion:'인트루드로 침략할 적 영지를 선택하세요',reflection:'반사를 걸 크리처를 선택하세요',replace:'교체할 크리처가 있는 영지를 선택하세요',trade:s.tradeFrom==null?'교환할 내 영지를 선택하세요':'같은 레벨의 적 영지를 선택하세요',remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',magicshelter:'방마벽을 걸 영지를 선택하세요',metalform:'금속화할 크리처를 선택하세요',temptation:'영지 능력을 빌릴 크리처를 선택하세요',beginspolymorph:'변신시킬 크리처를 선택하세요',debility:'기본 ST를 낮출 크리처를 선택하세요',debilitystrong:'기본 ST와 최대 HP를 낮출 크리처를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요',telekinesis:s.phase==='teleMove'?'인접한 도착 영지를 선택하세요':'강제로 이동시킬 크리처를 선택하세요'};
+    const prompt={dcWallTransform:'방어형으로 바꿀 크리처를 선택하세요',polymorph:'변신시킬 크리처를 선택하세요',intrusion:'인트루드로 침략할 적 영지를 선택하세요',reflection:'반사를 걸 크리처를 선택하세요',replace:'교체할 크리처가 있는 영지를 선택하세요',trade:s.tradeFrom==null?'교환할 내 영지를 선택하세요':'같은 레벨의 적 영지를 선택하세요',remission:'경유할 게이트를 선택하세요',magicalleap:'이동할 칸을 선택하세요',blasttrap:'함정을 놓을 영지를 선택하세요',energyfield:'결계를 걸 영지를 선택하세요',magicshelter:'방마벽을 걸 영지를 선택하세요',metalform:'금속화할 크리처를 선택하세요',temptation:'영지 능력을 빌릴 크리처를 선택하세요',beginspolymorph:'변신시킬 크리처를 선택하세요',debility:'기본 ST를 낮출 크리처를 선택하세요',debilitystrong:'기본 ST와 최대 HP를 낮출 크리처를 선택하세요',chariot:s.phase==='teleMove'?'도착 영지를 선택하세요':'이동할 크리처를 선택하세요',telekinesis:s.phase==='teleMove'?'인접한 도착 영지를 선택하세요':'강제로 이동시킬 크리처를 선택하세요'};
     center.lastElementChild.textContent=prompt[s.spellEffect]||'비술을 새길 크리처를 선택하세요';
   }
   center.dataset.rolled=String(!!s.die||s.phase==='over');
@@ -1018,7 +1019,7 @@ function render(){
   if(local&&s.phase==='shop')shopMenu(controls,choices,p);
   const roll=choices.find(([kind])=>kind==='roll');
   // A decision that must be made opens the menu; beside a roll it waits folded until asked for.
-  const mapOnly=s.phase==='spellTarget'&&s.spellEffect==='dcWallTransform'&&choices.some(([kind])=>kind==='targetLand');
+  const mapOnly=C.edition==='dc'&&s.phase==='spellTarget'&&['dcWallTransform','polymorph'].includes(s.spellEffect)&&choices.some(([kind])=>kind==='targetLand');
   const optional=!!roll&&choices.some(([kind])=>kind!=='roll'),anchored=choices.length>0&&!s.battle&&!mapOnly;
   actionMenu.hidden=mapOnly;
   actionMenu.classList.toggle('action-menu',anchored);

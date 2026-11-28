@@ -39,9 +39,9 @@ const CepterCombos = (() => {
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
   function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace=p=>p.hand.length<6,returnToBook}){
     const names=cards.map(key);
-    const sagaForms=cards.flatMap((card,id)=>card.kind==='creature'&&!card.unlisted&&!card.catalogOnly&&
+    const standardForms=cards.flatMap((card,id)=>card.kind==='creature'&&!card.unlisted&&!card.catalogOnly&&
       !card.generatedOnly&&['N','S','R'].includes(card.catalog?.rarity)?[id]:[]);
-    const sagaFormChoices=id=>sagaForms.filter(form=>form!==id);
+    const standardFormChoices=id=>standardForms.filter(form=>form!==id);
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
     const strength=u=>u.st??cards[u.id].st;
@@ -326,7 +326,7 @@ const CepterCombos = (() => {
           const forms=quicksilverForms(s);
           return forms.some(id=>id!==tile.unit.id)&&forms.every(id=>!cards[id].catalogOnly)?[['abilitySelf',from]]:[];
         }
-        if(n==='shapeshifter')return sagaFormChoices(tile.unit.id).length?[['abilitySelf',from]]:[];
+        if(n==='shapeshifter')return standardFormChoices(tile.unit.id).length?[['abilitySelf',from]]:[];
         if(n==='nil'||n==='peluda')return [['abilitySelf',from]];
         if(n==='hivequeen')return hasHandSpace(s.players[s.turn])?[['abilitySelf',from]]:[];
         if(n==='cloudgizmo')return idol(s,'graniteidol')?[]:s.players.flatMap((q,j)=>q.hand.length&&q.status!=='barrier'?[['abilityPlayer',j]]:[]);
@@ -425,7 +425,7 @@ const CepterCombos = (() => {
           src.unit={id,hp:cards[id].hp};return;
         }
         if(n==='shapeshifter'){
-          const pool=sagaFormChoices(src.unit.id),id=pool[Math.floor(Math.random()*pool.length)];
+          const pool=standardFormChoices(src.unit.id),id=pool[Math.floor(Math.random()*pool.length)];
           src.unit={id,hp:cards[id].hp};return;
         }
         if(n==='nil'){
@@ -854,7 +854,7 @@ const CepterCombos = (() => {
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,shrinkHealth,isDefensive,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,sagaFormChoices,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,secretMoveExits,secretHandChoices,applySecret,secretValue};
+      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,standardFormChoices,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,secretMoveExits,secretHandChoices,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],

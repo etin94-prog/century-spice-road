@@ -8700,3 +8700,68 @@ for(const edition of ['ps1','saturn']){
   if(saturn)assert.match(fight('giantrat','stranglevine').b.strikes.at(-1).notes.join(' '),/60 피해/);
 }
 console.log('PS1 and Saturn race and elemental instant kills, scrolls, battle cost, recoil, zombie decay and water terrain checked.');
+
+{
+  const C=ps2.createEdition('dc'),map=Object.keys(C.maps)[0];
+  const id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+  const eligible=C.cards.flatMap((c,cardId)=>c.kind==='creature'&&!c.unlisted&&!c.catalogOnly&&!c.generatedOnly&&
+    ['N','S','R'].includes(c.catalog?.rarity)?[cardId]:[]);
+  const seedFor=(name,exclude)=>{const pool=eligible.filter(cardId=>cardId!==id(exclude));return (pool.indexOf(id(name))+.5)/pool.length;};
+  function fixed(seed,play){
+    const rand=Math.random;
+    try{Math.random=()=>seed;play();}finally{Math.random=rand;}
+  }
+  function fixture(guard='goblin'){
+    const s=C.start(2,2,7000,map),at=s.tiles.findIndex(t=>C.territoryType(t.type)),tile=s.tiles[at];
+    Object.assign(tile,{owner:1,type:2,level:2,unit:{id:id(guard),hp:5}});
+    s.players.forEach(p=>{p.cash=500;p.hand=[];});
+    return {s,at,tile};
+  }
+  assert.ok(C.validBook(C.presets.legacyShape));
+  for(const n of ['baldanders','proteanring','polymorph'])assert.ok(C.presets.legacyShape.includes(id(n)));
+  function battle(attacker,guard,seed,ring=false){
+    const {s,at,tile}=fixture(guard);
+    s.phase='attack';s.battle={at,inv:id(attacker),invHP:3,atkItem:null,defItem:null};
+    if(ring)s.players[0].hand=[id('proteanring')];
+    fixed(seed,()=>{
+      assert.ok(C.play(s,ring?['equip',0]:['bare']));
+      assert.ok(C.play(s,['bare']));
+    });
+    return {s,tile,b:s.battle};
+  }
+  const shape=battle('baldanders','goblin',seedFor('tyrannosaurus'));
+  assert.equal(shape.b.forms[0],id('tyrannosaurus'));
+  assert.equal(shape.b.startHP[0],C.cards[id('tyrannosaurus')].hp);
+  assert.deepEqual([shape.tile.owner,shape.tile.unit.id],[0,id('baldanders')]);
+  const rolledSelf=battle('baldanders','goblin',seedFor('baldanders'));
+  assert.equal(rolledSelf.b.forms[0],id('baldanders'));
+  assert.equal(rolledSelf.b.lines.filter(l=>l.includes('변신')).length,1);
+  const ring=battle('fighter','goblin',seedFor('tyrannosaurus','fighter'),true);
+  assert.equal(ring.b.forms[0],id('tyrannosaurus'));
+  assert.deepEqual([ring.s.players[0].cash,ring.tile.unit.id],[500,id('fighter')]);
+  const shattered=battle('fighter','gremlin',seedFor('tyrannosaurus','fighter'),true);
+  assert.equal(shattered.b.forms[0],id('fighter'));
+  for(const seed of [0,.5,.999999]){
+    const {s,at,tile}=fixture();
+    s.phase='spell';tile.unit.enchant='poison';tile.unit.mhp=70;tile.unit.st=50;
+    s.players[0].hand=[id('polymorph'),id('fighter'),id('wolf')];
+    assert.ok(C.play(s,['cast',0]));
+    assert.ok(C.play(s,['sacrifice',1]));
+    assert.ok(C.choices(s).some(([k,x])=>k==='targetLand'&&x===at));
+    fixed(seed,()=>assert.ok(C.play(s,['targetLand',at])));
+    assert.equal(s.players[0].cash,420);
+    assert.deepEqual(s.players[0].hand,[id('wolf')]);
+    assert.ok(eligible.includes(tile.unit.id)&&tile.unit.id!==id('goblin'));
+    assert.deepEqual(tile.unit,{id:tile.unit.id,hp:C.cards[tile.unit.id].hp});
+    assert.equal(s.mapEffect.label,C.cards[tile.unit.id].name+' 변신');
+    assert.deepEqual([tile.owner,tile.type,tile.level],[1,2,2]);
+  }
+  const warded=fixture('battlegearalpha');
+  warded.s.phase='spell';warded.s.players[0].hand=[id('polymorph'),id('fighter')];
+  const other=warded.s.tiles.findIndex((tile,i)=>i!==warded.at&&C.territoryType(tile.type));
+  Object.assign(warded.s.tiles[other],{owner:1,unit:{id:id('goblin'),hp:30}});
+  assert.ok(C.play(warded.s,['cast',0])&&C.play(warded.s,['sacrifice',1]));
+  assert.ok(!C.choices(warded.s).some(([k,x])=>k==='targetLand'&&x===warded.at));
+  assert.ok(C.choices(warded.s).some(([k,x])=>k==='targetLand'&&x===other));
+}
+console.log('Dreamcast Baldanders, Protean Ring and Polymorph: form selection, survival, item destruction, spell ward and sacrifice verified.');
