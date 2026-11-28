@@ -10,7 +10,7 @@ const describeCepterItem=(()=>{
     bladeofculdra:'일반 공격으로 피해를 주면 상대 셉터가 손패를 전부 버리고 북에서 여섯 장을 새로 뽑습니다.',
     batteringram:'방어 전용 상대에게 일반 공격이 명중하면 즉사시킵니다.',
     bellofchaos:'전투가 시작되면 상대 장비와 같은 카드를 모두의 손패와 현재 북에서 제거합니다.',
-    belloflaw:'전투가 시작되면 상대 손패에서 비용이 가장 높은 카드 한 장을 파괴합니다. 이 장비는 전투 후 북으로 돌아갑니다.',
+    belloflaw:'전투가 시작되면 상대 손패에서 비용이 가장 높은 카드 한 장을 파괴합니다. 전투 후 이 장비는 북의 무작위 위치로 돌아갑니다.',
     buckler:'기본 ST가 30 이하인 상대의 일반 공격을 무효화합니다.',
     chameleonarmor:'지형 보너스 적용 전 전투 HP를 교전 영지 레벨 × 20으로 맞춥니다.',
     changingsalve:'전투가 시작되면 장착한 크리처의 ST와 HP를 서로 바꿉니다.',
@@ -82,7 +82,7 @@ const describeCepterItem=(()=>{
     markerflag:'일반 침략 전투를 마친 뒤 현재 영지의 행동 선택으로 돌아갑니다.',
     mujinamask:'상대 셉터의 손패 한 장당 전투 HP가 10 오릅니다.',
     necroscarab:'장착한 크리처가 격파되면 좀비로 변합니다.',
-    neutralamulet:'장착한 크리처가 전투 중 무속성이 됩니다. 전투 후 이 장비는 북으로 돌아갑니다.',
+    neutralamulet:'장착한 크리처가 전투 중 무속성이 됩니다. 전투 후 이 장비는 북의 무작위 위치로 돌아갑니다.',
     offeringdoll:'상대를 격파하고 생존하면 교전 지역에서 장착한 크리처와 같은 속성의 호부 가격이 30% 오릅니다.',
     petrifystone:'전투 ST를 0으로 맞추고 지형 보너스 적용 전 전투 HP를 80으로 맞춥니다.',
     phoenixamulet:'장착한 크리처가 격파되면 주인의 손패로 돌아옵니다.',
@@ -112,7 +112,7 @@ const describeCepterItem=(()=>{
     vorpalsword:'최대 HP가 40 이상인 상대에게 강타합니다.',
     wateramulet:'장착한 크리처가 수 속성이면 일반 공격이 강타합니다.',
     windamulet:'장착한 크리처가 풍 속성이면 일반 공격이 강타합니다. 상대를 격파하고 생존하면 최대 HP가 최대 10 증가합니다. 상한은 80입니다.',
-    wingedboots:'전투 후 이 장비는 북으로 돌아갑니다.'
+    wingedboots:'전투 후 이 장비는 북의 무작위 위치로 돌아갑니다.'
   };
   const {protectedItem}=typeof module==='undefined'?CepterExtraBattle:require('./cept-extra-battle.js');
   const shields={fireshield:0,watershield:1,earthshield:2,windshield:3};
@@ -194,6 +194,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(['begins','3ds'].includes(C.edition)&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(C.edition==='3ds'&&name==='chameleonarmor')pieces.push('교전 영지 레벨에 1을 더해 10을 곱한 만큼 전투 HP가 오릅니다.');
+    else if(C.edition==='dc'&&name==='belloflaw')pieces.push('전투 종료 시 상대 손패에서 마력 비용이 가장 높은 카드 한 장을 파괴합니다. 이 장비는 북의 무작위 위치로 돌아갑니다.');
     else if(firstEdition&&name==='belloflaw')pieces.push('장착한 크리처가 생존하면 전투 종료 시 상대 손패에서 마력 비용이 가장 높은 카드 한 장을 파괴합니다.');
     else if(firstEdition&&name==='neutralamulet')pieces.push('장착한 크리처가 전투 중 무속성이 됩니다.');
     else if(firstEdition&&name==='ringofthesuccubus')pieces.push('일반 공격이 명중하면 상대의 기본 ST를 절반으로 줄입니다.');
@@ -210,7 +211,7 @@ const describeCepterItem=(()=>{
     else if(['begins','saga'].includes(C.edition)&&name==='proteanring')pieces.push('전투에서 E 등급을 제외한 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.');
     else if(C.edition==='begins'&&name==='coinofpiety')pieces.push('장착한 크리처가 생존하면 내가 가장 많이 가진 호부 수량이 10% 증가합니다.');
     else if(C.edition==='begins'&&name==='offeringdoll')pieces.push('생존하면 장착 크리처와 같은 속성의 호부 가치가 30% 오릅니다.');
-    else if(!(C.edition==='dc'&&name==='windamulet')&&!card.firstEquipment&&!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
+    else if(!(firstEdition&&name==='wingedboots')&&!(C.edition==='dc'&&name==='windamulet')&&!card.firstEquipment&&!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name)&&!((C.edition==='dc'||firstEdition)&&['iksear','terrair'].includes(key)))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };

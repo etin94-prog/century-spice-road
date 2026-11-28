@@ -8469,3 +8469,53 @@ for(const edition of ['ps1','saturn']){
   assert.equal(!!dragon.tile.unit.poisoned,edition==='ps1');
 }
 console.log('PS1 and Saturn race changes, absorption, paralysis, poison, recoil and post-battle gear checked.');
+
+{
+  const run=(edition,{attacker='goblin',guard='fighter',weapon,armor,otherHand=[],seed=.5}={})=>{
+    const C=edition==='ps2'?ps2:ps2.createEdition(edition);
+    const id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+    const s=C.start(2,2,5000),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    s.phase='attack';s.battle={at,inv:id(attacker),atkItem:null,defItem:null};
+    Object.assign(s.tiles[at],{owner:1,type:'무속성',unit:{id:id(guard),hp:C.cards[id(guard)].hp}});
+    for(const p of s.players){p.cash=1000;p.hand=[];p.book=[id('goblin'),id('fighter')];}
+    if(weapon)s.players[0].hand=[id(weapon)];
+    s.players[1].hand=[...(armor?[id(armor)]:[]),...otherHand.map(id)];
+    s.players[0].peek={seat:1,ids:[id('fighter')]};
+    s.players[1].peek={seat:0,ids:[id('fighter')]};
+    const random=Math.random;
+    try{
+      Math.random=()=>seed;
+      assert.ok(C.play(s,weapon?['equip',0]:['bare']));
+      assert.ok(C.play(s,armor?['equip',0]:['bare']));
+    }finally{Math.random=random;}
+    assert.equal(s.phase,'result');return {s,id,C};
+  };
+  const late=run('dc',{weapon:'belloflaw',armor:'boomerang',otherHand:['goblin']});
+  assert.deepEqual(late.s.players[1].hand,[late.id('goblin')]);
+  assert.deepEqual(late.s.players[0].book,['goblin','belloflaw','fighter'].map(late.id));
+  assert.equal(late.s.players[1].peek,undefined);
+  assert.deepEqual(late.s.players[0].peek,{seat:1,ids:[late.id('fighter')]});
+  const local=run('ps2',{weapon:'belloflaw',armor:'boomerang',otherHand:['goblin']});
+  assert.deepEqual(local.s.players[1].hand,[local.id('boomerang')]);
+  assert.deepEqual(local.s.players[0].book,['goblin','belloflaw','fighter'].map(local.id));
+  for(const edition of ['ps2','dc']){
+    for(const seed of [.01,.5,.99]){
+      const {s,id}=run(edition,{attacker:edition==='ps2'?'centaur':'fighter',weapon:'neutralamulet',seed});
+      const expected=[id('goblin'),id('fighter')];
+      expected.splice(Math.floor(seed*3),0,id('neutralamulet'));
+      assert.deepEqual(s.players[0].book,expected);
+    }
+  }
+  const chaos=run('ps2',{weapon:'bellofchaos',armor:'mace',otherHand:['mace','goblin']});
+  assert.deepEqual(chaos.s.players[1].hand,[chaos.id('goblin')]);
+  assert.equal(chaos.s.battle.defendST,chaos.C.cards[chaos.id('fighter')].st+20);
+  for(const edition of ['ps1','saturn']){
+    const classic=run(edition,{armor:'wingedboots'});
+    assert.equal(classic.s.battle.strikes[0].side,1);
+    assert.ok(!classic.s.players[1].book.includes(classic.id('wingedboots')));
+  }
+  const portable=run('3ds',{attacker:'gremlin',armor:'wingedboots'});
+  assert.equal(portable.s.battle.strikes[0].side,1);
+  assert.deepEqual(portable.s.players[1].book,['goblin','wingedboots','fighter'].map(portable.id));
+}
+console.log('DC late hand removal, PS2 edition timing, book placement, first-edition boots, and 3DS gear ward checked.');

@@ -1088,6 +1088,7 @@ const CepterEditions=(()=>{
       if(edition==='revolt'&&slug==='tornado')Object.assign(c,{catalogOnly:false,stationary:true,first:true,battleST:20,battleHP:-10});
       if(edition==='3ds'&&slug==='pyromancer')Object.assign(c,{catalogOnly:false,innateScroll:30});
       if(edition==='3ds'&&slug==='countershield')Object.assign(c,{catalogOnly:false,effect:'reflect',st:0,hp:0});
+      if(edition==='3ds'&&slug==='wingedboots')c.protectItem=true;
       if(edition==='3ds'&&Object.hasOwn(handheldSpecial,slug))Object.assign(c,{catalogOnly:false},handheldSpecial[slug]);
       if(edition==='saga'&&['clockworkowl','barbarian','fay','tokebi','hypnosloth','lichenoid','rockshell','sakuya','wolverine'].includes(slug)){
         Object.assign(c,{catalogOnly:false,immediate:true});

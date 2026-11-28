@@ -67,6 +67,11 @@ const CepterExtraBattle=(()=>{
       transform(target,ids.get(name));
       target.u.hp=target.hp=Math.min(target.hp,remaining);
     }
+    function recyclesToBook(a){
+      if(a.item==null)return false;
+      if(a.g==='stinkbottle'||a.g==='wingedboots'&&!firstEdition)return true;
+      return ['ps2','dc'].includes(s.edition)&&['neutralamulet','belloflaw'].includes(a.g);
+    }
     function itemStart(a,d){
       if(a.g!=='bellofchaos'||d.item==null||s.predict)return;
       for(const p of s.players){
@@ -410,7 +415,7 @@ const CepterExtraBattle=(()=>{
         const i=t.area*4+a.element;
         if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
-      if(itemEnd&&(a.g==='wingedboots'||a.g==='stinkbottle')){
+      if(itemEnd&&recyclesToBook(a)){
         const book=s.players[a.seat].book;
         book.splice(s.predict?0:Math.floor(Math.random()*(book.length+1)),0,a.item);
         for(const player of s.players)if(player.peek?.seat===a.seat)delete player.peek;
@@ -475,7 +480,7 @@ const CepterExtraBattle=(()=>{
         const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*(firstEdition?1.2:1.3));
       }
     }
-    return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,gearDeath,end,victory,transform,convert,vacant,ids,boost,grow};
+    return {protectedGear,recyclesToBook,itemStart,forms,baseStats,critical,protect,onHit,gearDeath,end,victory,transform,convert,vacant,ids,boost,grow};
   }
   return {rules,protectedItem};
 })();

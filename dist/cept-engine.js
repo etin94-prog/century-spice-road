@@ -1030,7 +1030,7 @@ function createCepter(edition="ps2"){
         const max=fx.max(a.u),gain=Math.max(0,Math.min(begins||revolt||edition==='saga'?100:80,max+a.gear.hp)-max);
         a.u.mhp=max+gain;a.u.hp+=gain;
       }
-      if(!firstEdition&&a.g==='belloflaw')destroyHighestCostHandCard(other);
+      if(edition==='ps2'&&a.g==='belloflaw')destroyHighestCostHandCard(other);
       if((handheld||begins)&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
       if((handheld||begins)&&a.n==='camazotz')a.st+=baseStrength[a===A?1:0];
       if((begins||edition==='saga')&&a.n==='avenger'){
@@ -1512,7 +1512,9 @@ function createCepter(edition="ps2"){
         t.level=Math.min(5,t.level+(a.n==='leshy')+plow);
         if((revolt||begins)&&previous!==t.level)lines.push((plow?a.gear.name:a.c.name)+' · 영지 Lv.'+t.level);
       }
-      if(a.item!=null&&(a.n==='centaur'&&edition!=='saga'&&!begins&&(!revolt||a.hp>0)||!firstEdition&&['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
+      if(a.item!=null&&a.n==='centaur'&&edition!=='saga'&&!begins&&(!revolt||a.hp>0)&&!(itemEnd&&extra.recyclesToBook(a))){
+        s.players[a.seat].book.unshift(a.item);
+      }
       a.n=originalName;
     }
     if(itemEnd){
@@ -1751,9 +1753,8 @@ function createCepter(edition="ps2"){
       }
     }
     if(itemEnd)for(const a of sides){
-      if(a.hp<=0)continue;
-      if(a.gear?.finalHP!=null){a.hp=a.gear.finalHP;lines.push(a.gear.name+' · 전투 종료 HP '+a.hp);}
-      if(firstEdition&&a.g==='belloflaw'){
+      if(a.hp>0&&a.gear?.finalHP!=null){a.hp=a.gear.finalHP;lines.push(a.gear.name+' · 전투 종료 HP '+a.hp);}
+      if(a.g==='belloflaw'&&(edition==='dc'||firstEdition&&a.hp>0)){
         const rival=s.players[(a===A?D:A).seat],before=rival.hand.length;
         destroyHighestCostHandCard(rival);
         if(rival.hand.length<before)lines.push(a.gear.name+' · 상대의 고비용 카드 파괴');
