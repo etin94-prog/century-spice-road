@@ -8519,3 +8519,64 @@ console.log('PS1 and Saturn race changes, absorption, paralysis, poison, recoil 
   assert.deepEqual(portable.s.players[1].book,['goblin','wingedboots','fighter'].map(portable.id));
 }
 console.log('DC late hand removal, PS2 edition timing, book placement, first-edition boots, and 3DS gear ward checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+  const run=({attacker='fighter',guard='goblin',others=[],life,invHP,guardST,seed=.5}={})=>{
+    const s=C.start(2,2,7000,edition+'-original-marsh-paths'),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    Object.assign(s.tiles[at],{owner:1,type:0,unit:{id:id(guard),hp:life??C.cards[id(guard)].hp,...(guardST==null?{}:{st:guardST})}});
+    const available=s.tiles.flatMap((t,n)=>n!==at&&!C.board(s).links[at].includes(n)&&C.territoryType(t.type)?[n]:[]);
+    for(const [i,[owner,creature]] of others.entries()){
+      const card=C.cards[id(creature)];
+      Object.assign(s.tiles[available[i]],{owner,unit:{id:id(creature),hp:card.hp}});
+    }
+    s.phase='attack';s.battle={at,inv:id(attacker),atkItem:null,defItem:null,invHP};
+    s.players.forEach(p=>{p.cash=1000;p.hand=[];});
+    const random=Math.random;
+    try{Math.random=()=>seed;assert.ok(C.play(s,['bare']));assert.ok(C.play(s,['bare']));}
+    finally{Math.random=random;}
+    return {s,b:s.battle,t:s.tiles[at]};
+  };
+  assert.ok(C.validBook(C.presets.legacyCourt));
+  for(const creature of ['ambermosquito','doppelganger','flamelord','darkmaster'])assert.ok(C.presets.legacyCourt.includes(id(creature)));
+  const copy=run({attacker:'doppelganger',guard:'goblin',life:5,invHP:3});
+  assert.equal(copy.b.forms[0],id('goblin'));
+  assert.equal(copy.b.startHP[0],C.cards[id('goblin')].hp);
+  assert.deepEqual([copy.t.unit.id,copy.t.unit.hp],[id('doppelganger'),C.cards[id('doppelganger')].hp]);
+  assert.equal(run({attacker:'ambermosquito',guard:'wallofstone',seed:.01}).b.forms[0],id('giantrat'));
+  assert.equal(run({attacker:'ambermosquito',guard:'wallofstone',seed:.99}).b.forms[0],id('tyrannosaurus'));
+  const baseline=run().b;
+  const clown=run({others:[[0,'madclown'],[0,'madclown']]});
+  assert.deepEqual(clown.b.startHP,[baseline.startHP[0]+10,baseline.startHP[1]]);
+  const nue=run({others:[[1,'nue'],[1,'nue']]});
+  assert.deepEqual([nue.b.attackST,nue.b.defendST],[baseline.attackST-10,baseline.defendST]);
+  for(const [creature,lord] of [['minotaur','flamelord'],['marfolk','dagon'],['dwarf','darkmaster'],['harpy','beelzebub']]){
+    const base=run({attacker:creature,guard:'wallofstone'});
+    const aura=run({attacker:creature,guard:'wallofstone',others:[[1,lord]]});
+    assert.equal(aura.b.attackST,base.b.attackST+10,lord);
+    assert.deepEqual(aura.b.startHP,base.b.startHP);
+    assert.equal(aura.s.players[1].cash,1000);
+    const cost=run({guard:lord,life:1});
+    assert.equal(cost.s.players[1].cash,edition==='ps1'?900:800);
+  }
+  const dragon=run({attacker:'dragon',guard:'wallofstone'}).b;
+  const elder=run({attacker:'dragon',guard:'wallofstone',others:[[1,'elderdragon']]}).b;
+  assert.equal(elder.attackST,dragon.attackST+10);
+  assert.equal(run({guard:'elderdragon',life:1}).s.players[1].cash,900);
+  const revived=run({guard:'myrmecoleo'});
+  assert.equal(revived.t.unit.id,id('dragonfly'));
+  assert.equal(revived.t.unit.hp,C.cards[id('dragonfly')].hp);
+  const juggernaut=run({attacker:'juggernaut',guard:'wallofstone',guardST:40});
+  assert.match(juggernaut.b.strikes[0].notes.join(' '),new RegExp(Math.floor(C.cards[id('juggernaut')].st*1.5)+' 피해'));
+  const normal=run({attacker:'juggernaut',guard:'wallofstone',guardST:39});
+  assert.match(normal.b.strikes[0].notes.join(' '),new RegExp(C.cards[id('juggernaut')].st+' 피해'));
+  const lap=C.start(2,2,7000,edition+'-original-marsh-paths'),m=C.board(lap),p=lap.players[0],from=m.links[0][0];
+  const sites=lap.tiles.flatMap((t,n)=>n!==from&&C.territoryType(t.type)?[n]:[]);
+  Object.assign(lap.tiles[sites[0]],{owner:0,unit:{id:id('juggernaut'),hp:15}});
+  Object.assign(lap.tiles[sites[1]],{owner:0,unit:{id:id('fighter'),hp:15}});
+  Object.assign(p,{pos:from,previous:m.links[from].find(n=>n!==0),dir:1,word:1,flags:m.checkpoints.slice()});
+  lap.phase='roll';assert.ok(C.play(lap,['roll']));
+  assert.equal(p.lap,1);
+  assert.deepEqual([lap.tiles[sites[0]].unit.hp,lap.tiles[sites[1]].unit.hp],[15,23]);
+}
+console.log('Classic transformations, revival, boost scope, lord battle fees, critical threshold and lap immunity checked.');

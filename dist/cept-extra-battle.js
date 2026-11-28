@@ -228,9 +228,10 @@ const CepterExtraBattle=(()=>{
         if(a.n==='goblin'&&boost('redcap',a))a.st+=20;
       }
       if(a.element>=0&&boost(lord[a.element],a)){
-        if(s.edition==='begins'&&a.element>=2)a.st+=10;
+        if(firstEdition||s.edition==='begins'&&a.element>=2)a.st+=10;
         else a.hp+=10;
       }
+      if(firstEdition&&a.c.catalog?.race==='rd'&&boost('elderdragon',a))a.st+=10;
       if(boost('madclown',a,true))a.hp+=10;
       if(!a.defending&&boost('ares',a))a.st+=20;
       if(s.edition==='saga'&&[1,3].some(e=>combo.hasElement(a,e))){
@@ -377,6 +378,10 @@ const CepterExtraBattle=(()=>{
         s.players[a.seat].cash+=100;
         if(s.predict){b.magicLoss??=[0,0];b.magicLoss[0]-=100;}
         lines.push(a.c.name+' · 침략 마력 100G 획득');
+      }
+      if(creatureEnd&&a.c.battleFee){
+        s.players[a.seat].cash-=a.c.battleFee;
+        lines.push(a.c.name+' · 전투 대가 '+a.c.battleFee+'G');
       }
       if(creatureEnd&&a.hp>0){
         if(s.edition==='saga'&&a.n==='flammefleur'&&!a.dealtDamage&&d.hp>0){d.hp=0;lines.push('전투 종료 · 피해를 주지 못해 상대 격파');}

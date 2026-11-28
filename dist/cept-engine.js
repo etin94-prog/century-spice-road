@@ -671,7 +671,7 @@ function createCepter(edition="ps2"){
             p.cash+=Math.floor(bonus/10);
           }if(p.sagaFeast){p.cash+=Math.floor((p.cash-cashBeforeLap)/2);delete p.sagaFeast;}if(p.status==='triumph'){p.cash+=Math.floor((p.cash-cashBeforeLap)*(begins?3:5)/10);extraSpells.clearCepter(p);}
           for(const v of s.tiles){
-            if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit))||begins&&cards[v.unit.id]?.noLapHeal)continue;
+            if(v.owner!==s.turn||['statue','colossus'].includes(fx.name(v.unit))||cards[v.unit.id]?.noLapHeal)continue;
             const max=fx.max(v.unit);v.unit.hp=Math.min(max,v.unit.hp+(begins?10:Math.floor(max/5)));
             if(fx.name(v.unit)==='chimera'){
               const st=fx.strength(v.unit);v.unit.st=Math.max(st,Math.min(handheld||begins||edition==='saga'?100:80,st+10));
@@ -982,7 +982,8 @@ function createCepter(edition="ps2"){
       for(const a of sides)if(a.u.enchant==='paralysis'){
         a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,blocksFirst:false,criticalMHP:0,battleHP:0,invadeST:0,doubleAttack:false,
           criticalElements:[],criticalRaces:[],pierceElements:[],pierceAll:false,reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false,neutralizeRaces:[],
-          firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false};
+          firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
+          criticalBaseSTAtLeast:null,battleFee:0,reviveForm:null};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1161,7 +1162,7 @@ function createCepter(edition="ps2"){
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||a.c.pierceBaseSTAtLeast&&fx.strength(d.u)>=a.c.pierceBaseSTAtLeast||weapon?.pierceAll||matches(weapon?.pierceElements,d));
       const beastCritical=revolt&&a.n==='lonebeast'&&board(s).links[b.at].some(at=>at!==b.from&&s.tiles[at].owner===a.seat);
-      const elementalCritical=!scroll&&!muted&&(beastCritical||weapon?.criticalNormal||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||a.c.criticalRaces?.includes(d.c.catalog?.race)||weapon?.criticalRaces?.includes(d.c.catalog?.race)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
+      const elementalCritical=!scroll&&!muted&&(beastCritical||weapon?.criticalNormal||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||a.c.criticalRaces?.includes(d.c.catalog?.race)||a.c.criticalBaseSTAtLeast!=null&&fx.strength(d.u)>=a.c.criticalBaseSTAtLeast||weapon?.criticalRaces?.includes(d.c.catalog?.race)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;

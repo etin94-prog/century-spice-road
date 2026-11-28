@@ -59,7 +59,7 @@ if(C.edition==='revolt')for(const [character,name,source] of CepterRevoltBookArc
   const id='revolt-'+source;
   if(C.presets[id])modernBookNames[id]=character+' · '+name;
 }
-const classicBookNames={legacyControl:'이동·마력 제어 북',legacyFusion:'배틀 기어 합체 북',legacyGear:'전투 장비 북',legacyGuard:'크리처 방어 북'};
+const classicBookNames={legacyControl:'이동·마력 제어 북',legacyFusion:'배틀 기어 합체 북',legacyGear:'전투 장비 북',legacyGuard:'크리처 방어 북',legacyCourt:'화·지 전투 지원 북'};
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){

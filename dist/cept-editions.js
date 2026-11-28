@@ -729,7 +729,11 @@ const CepterEditions=(()=>{
     selenear:{first:true,tollFactor:1.5},siren:{first:true,support:true,neutralizeRaces:['rh']},
     dragonoid:{support:true},gargoyle:{first:true,entryST:50},salamander:{absorbElements:[0]},icesalamander:{absorbElements:[0]},
     shade:{first:true,halveSTOnHit:true},succubus:{halveSTOnHit:true},
-    chupacabra:{hpDrain:true},drainroper:{stationary:true,hpDrain:true},vampire:{first:true,hpDrain:true}
+    chupacabra:{hpDrain:true},drainroper:{stationary:true,hpDrain:true},vampire:{first:true,hpDrain:true},
+    ambermosquito:{basicBattle:false},doppelganger:{basicBattle:false},madclown:{basicBattle:false},nue:{basicBattle:false},
+    elderdragon:{battleFee:100},flamelord:{scrollCritical:true,battleFee:200},dagon:{scrollCritical:true,battleFee:200},
+    darkmaster:{scrollCritical:true,battleFee:200},beelzebub:{scrollCritical:true,battleFee:200},
+    juggernaut:{criticalBaseSTAtLeast:40,noLapHeal:true},myrmecoleo:{last:true,reviveForm:'dragonfly'}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1109,6 +1113,7 @@ const CepterEditions=(()=>{
       if(first&&slug==='sorcerer')c.support=true;
       if(first&&kind==='creature'&&Object.hasOwn(firstBattleCreatures,slug)){
         Object.assign(c,{catalogOnly:false,basicBattle:true},firstBattleCreatures[slug]);
+        if(edition==='ps1'&&c.battleFee===200)c.battleFee=100;
       }
       if(first&&['knight','darkelf','elf'].includes(slug))c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
       if(first&&['pan','hornet'].includes(slug))c.statusRaces=['rh','rb','rd'];
@@ -1168,6 +1173,11 @@ const CepterEditions=(()=>{
         ['wallofstone','deadlyfungus'],['woodfolk','paladin'],['wereboar','gargoyle'],['dwarf','ooze']
       ].map(([from,to])=>[lookup.get(from),lookup.get(to)]));
       presets.legacyGuard=presets.fire.map(id=>native.get(id)??id);
+      const court=presets.fire.slice();
+      for(const [from,to] of [['wolf','ambermosquito'],['fighter','doppelganger'],['minotaur','flamelord'],['dwarf','darkmaster']]){
+        court[court.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyCourt=court;
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

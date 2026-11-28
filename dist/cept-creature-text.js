@@ -517,6 +517,13 @@ const CepterCreatureText=(()=>{
     if(card.battleST)pieces.push('전투 ST '+(card.battleST>0?'+':'')+card.battleST);
     if(card.battleHP)pieces.push('전투 HP '+(card.battleHP>0?'+':'')+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');
+    if(card.battleFee){
+      const target=key==='elderdragon'?'용 종족':targets([card.element]);
+      pieces.push('지도에 배치되어 전투에 참여하지 않으면 '+target+' 크리처의 전투 ST를 10 올립니다. 자신이 전투에 참가하면 '+card.battleFee+'G를 지불합니다.');
+    }
+    if(card.criticalBaseSTAtLeast!=null)pieces.push('기본 ST가 '+card.criticalBaseSTAtLeast+' 이상인 상대에게 일반 공격이 강타합니다.');
+    if(firstEdition&&card.noLapHeal)pieces.push('주회 보상으로 HP가 회복되지 않습니다.');
+    if(firstEdition&&card.reviveForm==='dragonfly')pieces.push('전투에서 격파되면 드래곤플라이로 변해 부활합니다.');
     if(card.entryST!=null)pieces.push('손패에서 영지에 배치되면 기본 ST가 '+card.entryST+'이 됩니다.');
     if(card.battleGrowth)pieces.push('전투 종료 시 생존하면 최대 HP가 '+card.battleGrowth+' 증가합니다. 상한은 80입니다.');
     if(firstEdition&&card.tollFactor)pieces.push('이 영지의 통행료는 '+card.tollFactor+'배입니다.');
