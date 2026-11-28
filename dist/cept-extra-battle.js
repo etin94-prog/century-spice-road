@@ -86,6 +86,11 @@ const CepterExtraBattle=(()=>{
         form=ids.get(pick(['volcanicdragon','deepseadragon','hardrockdragon','lightningdragon']));
         consume=true;
       }
+      if(s.edition==='saga'&&a.gear?.kind==='creature'){
+        if(name==='groundgear'&&gear==='skygear'||name==='skygear'&&gear==='groundgear')form=ids.get('androgear');
+        if(name==='androgear'&&gear==='beastgear')form=ids.get('gearion');
+        if(form!=null){consume=true;temporary=false;}
+      }
       if(form!=null){
         transform(a,form,temporary);
         if(s.edition==='begins'&&a.mimicked)consume=true;
@@ -191,12 +196,19 @@ const CepterExtraBattle=(()=>{
       }
       if(s.edition==='saga'&&a.defending&&boost('poseidon',a))a.hp+=20;
       if(!a.defending&&boost('nue',a))a.st-=10;
-      if(a.element===3&&boost(['begins','3ds'].includes(s.edition)?'humbaba':'hunbaba',a))a.st-=10;
+      if(a.element===3&&boost(['begins','3ds','saga'].includes(s.edition)?'humbaba':'hunbaba',a))a.st-=10;
+      if(s.edition==='saga'&&fx.strength(a.u)>=60&&boost('dragonlord',a))a.st+=10;
       if(a.c.first&&boost('quetzalcoatl',a))a.st+=10;
       if(a.u.enchant==='wing')a.st+=20;
       if(s.edition==='saga'){
         const count=e=>s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],e)).length;
         if(a.n==='brancharmy')a.st+=count(2)*5;
+        if(a.n==='metalshambler'&&s.players[a.seat].cash<s.players[d.seat].cash){a.st+=30;a.hp-=30;}
+        if(a.n==='ogrelord'){
+          if(onBoard('redogre')||onBoard('yellowogre'))a.st+=30;
+          if(onBoard('blueogre')||onBoard('greenogre'))a.hp+=30;
+        }
+        if(a.n==='lukoie'&&!combo.enchanted(t.unit))a.hp+=20;
         if(a.n==='mothman')a.st=a.hp=count(-1)*10;
         if(a.n==='redcap')a.st=a.hp=20*s.tiles.filter(v=>fx.name(v.unit)==='goblin').length;
         if(a.n==='goblin'&&boost('redcap',a)){a.st+=20;a.hp+=20;}
@@ -321,7 +333,7 @@ const CepterExtraBattle=(()=>{
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(a.n==='fungonoid')grow(a,10);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
-        const leveller=['begins','3ds'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
+        const leveller=['begins','3ds','saga'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
         if((a.n==='basilisk'||leveller&&t.type!==3)&&t.level>1&&!fx.blockedLevel(s,t)){
           t.level--;
           if(['begins','3ds'].includes(s.edition))lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
@@ -368,9 +380,9 @@ const CepterExtraBattle=(()=>{
           if(camazotz)lines.push(a.c.name+' · 상대 호부 '+loss+'개 파괴');
         }
       }
-      if(a.n==='taotieh'){
+      if(a.n==='taotieh'&&(s.edition!=='saga'||d.defeatedByOpponent)){
         const st=fx.strength(a.u),native=s.edition==='begins',gain=native?20:10;
-        a.u.st=Math.max(st,Math.min(native?100:80,st+gain));
+        a.u.st=Math.max(st,Math.min(native||s.edition==='saga'?100:80,st+gain));
         if(native){
           const max=Math.min(100,fx.max(a.u)+gain);
           a.u.mhp=max;a.u.hp=Math.min(max,a.u.hp+gain);a.hp+=gain;a.heal=true;
@@ -385,7 +397,7 @@ const CepterExtraBattle=(()=>{
         const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
       }
     }
-    return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,end,victory,transform,convert,vacant,ids,boost};
+    return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,end,victory,transform,convert,vacant,ids,boost,grow};
   }
   return {rules,protectedItem};
 })();

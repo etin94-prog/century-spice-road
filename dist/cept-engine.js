@@ -1363,7 +1363,8 @@ function createCepter(edition="ps2"){
     function revive(a){
       const scarab=a.g==='necroscarab'&&(edition!=='saga'||itemEnd&&a.defeatedByOpponent);
       const kudz=begins&&a.n==='kudzufolk'&&s.tiles.filter(v=>v.owner===a.seat).length<=4?'greenmold':null;
-      const creatureForm=creatureEnd&&(kudz||a.c.reviveForm||({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld||begins?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]);
+      const fossil=edition==='saga'&&['greatfossil','littlefossil'].includes(a.n);
+      const creatureForm=creatureEnd&&(!fossil||a.defeatedByOpponent)&&(kudz||a.c.reviveForm||({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld||begins?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]);
       const itemForm=scarab?(edition==='saga'||revolt?'skeleton':'zombie'):null;
       const form=revolt?creatureForm||itemForm:itemForm||creatureForm;
       if(!form||a.revived)return false;
@@ -1497,6 +1498,11 @@ function createCepter(edition="ps2"){
       if((edition==='saga'||revolt)&&creatureEnd&&a.hp>0){
         const owner=s.players[a.seat];
         if(edition==='saga'&&a.n==='centaur'&&a.item!=null)owner.book.unshift(a.item);
+        if(edition==='saga'&&a.n==='dragonlord')extra.transform(a,extra.ids.get('dragonewt'));
+        if(edition==='saga'&&a.n==='pulgasari'&&opponent.gear){
+          a.u.st=Math.min(100,fx.strength(a.u)+10);extra.grow(a,10);
+          lines.push(a.c.name+' · 기본 ST와 최대 HP 증가');
+        }
         if(revolt&&a.n==='creepingcoin')owner.cash+=100;
         if(revolt&&a.n==='devastator'&&!a.defending&&t.level>1&&!fx.blockedLevel(s,t)){
           t.level--;lines.push(a.c.name+' · 영지 Lv.'+t.level);
@@ -2172,7 +2178,7 @@ function createCepter(edition="ps2"){
           const trial={...s,tiles:s.tiles.map(v=>v===t?{...v,type:1}:v)};
           return total(trial,seat)-total(s,seat)+(combo.hasElement(cards[u.id],1)?20:0);
         }
-        if(edition==='saga'&&n==='armoreddragon')return damageValue(t,30);
+        if(edition==='saga'&&['armoreddragon','hardrockdragon','lightningdragon'].includes(n))return damageValue(t,30);
         if(edition==='saga'&&n==='bonegolem')return sign(t)*(8+t.level*8);
         if(edition==='saga'&&n==='possession')return (value(s,t)-value(s,src))/4+(fx.max(u)-fx.max(src.unit))/2;
         if(edition==='saga'&&n==='venomouspore')return s.tiles.reduce((sum,v)=>sum+(v.area===t.area&&v.unit&&!v.unit.poisoned?-sign(v)*(5+v.level*3):0),0);
@@ -2203,6 +2209,9 @@ function createCepter(edition="ps2"){
       if(n==='algasphere')return !fx.immuneHP(src)&&fx.max(src.unit)<(handheld||begins?100:80)?handheld||begins?40:20:0;
       if(n==='beacontower')return p.status!=='enlightenment'&&p.cash>=150&&s.tiles.some((t,at)=>at!==from&&t.owner===seat&&t.level<5&&!fx.blockedLevel(s,t))?28:-20;
       if(n==='fate')return p.hand.length<5?30:0;
+      if(edition==='saga'&&n==='dragonsegg')return p.cash>220?46:15;
+      if(edition==='saga'&&n==='dragonewt')return p.cash>230?75:22;
+      if(edition==='saga'&&n==='spriggan')return fx.strength(src.unit)<40?24:-8;
       if(edition==='saga'&&n==='heraldspirit')return p.status!=='enlightenment'&&s.tiles.some((t,i)=>t.owner===seat&&!territory(s).includes(i))?16:-20;
       if(edition==='saga'&&n==='nobleshaman')return s.tiles.reduce((sum,t)=>sum+(t.unit&&combo.enchanted(t.unit)?sign(t)*(['paralysis','disease','senility','fog'].includes(t.unit.enchant)||t.unit.poisoned?12:-8):0),0);
       if(n==='quicksilver'){

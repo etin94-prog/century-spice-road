@@ -769,12 +769,18 @@ const CepterEditions=(()=>{
   const sagaBattleCreatures={
     livingclaw:{itemCreature:true},livingmirror:{itemCreature:true},livingrapier:{itemCreature:true,first:true},
     livingscroll:{itemCreature:true,innateScroll:20,scrollAsItem:20},bloodypudding:{support:true},behemoth:{last:true},
-    cockatrice:{},medusa:{},deathscythe:{},raksas:{},ares:{},poseidon:{},baal:{first:true},grassstrider:{first:true},triton:{},
+    cockatrice:{},medusa:{},deathscythe:{},raksas:{},ares:{},poseidon:{},baal:{first:true},grassstrider:{first:true,generatedOnly:true},triton:{},
     tengu:{first:true,scrollCritical:true},wyvern:{first:true},blynx:{spellWard:true},
     yeti:{neutralizes:[0]},dhampir:{neutralizes:[2]},saint:{neutralizes:[-1]},angostura:{stationary:true},
     trampleweed:{stationary:true},avenger:{},barrowwight:{},fungonoid:{},chimera:{first:true},doppelganger:{},
-    trapspider:{entryEnchant:'camouflage',paralyze:true},armedprincess:{first:true,support:true,immutableHP:true},
+    trapspider:{entryEnchant:'camouflage',paralyze:true},armedprincess:{first:true,support:true,immutableHP:true,generatedOnly:true},
     redcap:{},ukobach:{},mothman:{first:true},rahab:{blocksLarge:true},
+    volcanicdragon:{first:true,neutralizes:[0],innateScroll:'base'},deepseadragon:{first:true,neutralizes:[1],innateScroll:'base'},dragonlord:{first:true,generatedOnly:true},
+    livingspear:{itemCreature:true},groundgear:{support:true,neutralizeScroll:true},skygear:{first:true,support:true},
+    androgear:{first:true,support:true,neutralizeScroll:true,generatedOnly:true},gearion:{first:true,spellWard:true,neutralizeScroll:true,generatedOnly:true},
+    greatfossil:{stationary:true,freeToll:true,reviveForm:'tyrannosaurus'},littlefossil:{stationary:true,freeToll:true,reviveForm:'giantrat'},
+    humbaba:{poison:true},metalshambler:{},ogrelord:{scrollCritical:true},taotieh:{},leveller:{},lukoie:{entryEnchant:'landprotection'},
+    doodlebeetle:{stationary:true,entryEnchant:'quicksand'},mirage:{entryEnchant:'simulacrum'},mutitan:{entryEnchant:'senility'},pulgasari:{},
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
@@ -786,6 +792,8 @@ const CepterEditions=(()=>{
     armoreddragon:{first:true,neutralizes:[-1]},heraldspirit:{immediate:true},swampspawn:{stationary:true},
     venomouspore:{stationary:true,regenerate:true},swordprincess:{entryEnchant:'phantasm',first:true},
     possession:{},lordofbane:{},bonegolem:{regenerate:true},ahuizotl:{},nobleshaman:{scrollCritical:true},
+    dragonsegg:{},dragonewt:{neutralizeScroll:true},hardrockdragon:{first:true,neutralizes:[2]},lightningdragon:{first:true,neutralizes:[3]},
+    aquahorn:{neutralizes:[2,3]},mistwing:{neutralizes:[0,1]},spriggan:{},
     lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},spinyagama:{},seismodon:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['basaltidol','graniteidol','clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);

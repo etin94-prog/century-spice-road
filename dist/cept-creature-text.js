@@ -18,6 +18,18 @@ const CepterCreatureText=(()=>{
     brancharmy:'지도에 배치된 지 속성 크리처 한 마리당 전투 ST가 5 오릅니다.',
     grassstrider:'전투에서 상대 손패 한 장당 ST가 10 오릅니다.',
     avenger:'내 총마력 순위에 10을 곱한 만큼 전투 ST와 HP가 오릅니다.',
+    mirage:'배치 시 시뮬라크럼을 얻습니다. 일반 공격 피해를 막고 막은 피해의 3배만큼 소유자가 마력을 잃습니다.',
+    mutitan:'배치 시 노쇠를 얻습니다. 전투가 끝나면 파괴됩니다.',
+    doodlebeetle:'배치 시 퀵샌드가 생깁니다. 지나가는 셉터 한 명을 이 영지에 멈추게 한 뒤 사라집니다.',
+    dragonlord:'교전에 참여하지 않고 지도에 있으면 기본 ST가 60 이상인 크리처의 전투 ST를 10 올립니다. 전투에서 생존하면 드래고뉴트로 돌아갑니다.',
+    groundgear:'스카이 기어를 지원으로 쓰면 안드로기어로 합체합니다.',
+    skygear:'그라운드 기어를 지원으로 쓰면 안드로기어로 합체합니다.',
+    androgear:'비스트 기어를 지원으로 쓰면 기어리온으로 합체합니다.',
+    littlefossil:'전투에서 상대에게 격파되면 자이언트 랫으로 변합니다.',
+    metalshambler:'내 보유 마력이 상대보다 적으면 전투 ST가 30 오르고 전투 HP가 30 내립니다.',
+    ogrelord:'지도에 레드·옐로 오거가 하나라도 있으면 전투 ST가 30 오릅니다. 블루·그린 오거가 하나라도 있으면 전투 HP가 30 오릅니다.',
+    taotieh:'적을 격파해 이기면 기본 ST와 최대 HP가 각각 10 오릅니다. 상한은 100입니다.',
+    lukoie:'교전 영지에 인챈트가 없으면 전투 HP가 20 오릅니다.',
     rahab:'최대 HP가 50 이상인 상대의 일반 공격을 무효화합니다. 교전에 참여하지 않고 지도에 있으면 수·풍 속성 크리처의 전투 HP를 10 올립니다.',
     ukobach:'내 보유 마력이 상대보다 적으면 전투 ST와 HP가 20씩 오릅니다.',
     lordofbane:'교전에 참여하지 않고 지도에 있으면 수·풍 속성 크리처의 전투 ST를 10 올립니다.',
@@ -344,6 +356,11 @@ const CepterCreatureText=(()=>{
     if(art)return '비술 '+art.cost+'G · '+art.label+'. 주사위를 굴리기 전에 사용합니다.';
     if(C.edition==='revolt')return;
     const key=C.combo.key(card),saga={
+      dragonsegg:'아머드, 볼케닉, 딥시, 하드록, 라이트닝 드래곤 중 하나로 진화합니다.',
+      dragonewt:'드래곤 로드로 진화합니다.',
+      hardrockdragon:'고른 화·풍 속성 크리처에게 30 피해를 줍니다.',
+      lightningdragon:'고른 수·지 속성 크리처에게 30 피해를 줍니다.',
+      aquahorn:'미스트윙으로 진화합니다.',mistwing:'아쿠아혼으로 진화합니다.',spriggan:'그렌델로 진화합니다.',
       heraldspirit:'다음 차례까지 위치에 관계없이 내 모든 영지에 명령할 수 있습니다.',
       swampspawn:'고른 셉터의 다음 주사위 눈을 0으로 고정합니다.',
       armoreddragon:'고른 무속성 크리처에게 30 피해를 줍니다.',
@@ -472,6 +489,8 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':
       C.edition==='saga'&&key==='saint'?'무속성 상대에게 일반 공격으로 피해를 주면 80% 확률로 즉사시킵니다.':
+      C.edition==='saga'&&key==='leveller'?beginsBattle.leveller:
+      C.edition==='saga'&&key==='pulgasari'?'상대가 장비를 쓴 전투에서 살아남으면 기본 ST와 최대 HP가 10씩 오릅니다. 상한은 100입니다.':
       C.edition==='saga'&&key==='fungonoid'?'전투에서 생존하면 최대 HP가 10 오릅니다. 상한은 100입니다.':
       ['begins','saga'].includes(C.edition)&&key==='chimera'?'완주 보상을 받을 때마다 기본 ST를 10 올립니다. 최대 100까지 오릅니다.':
       C.edition==='begins'&&key==='powdereater'?'영지 명령으로 이동하면 원래 영지에도 복제본을 남깁니다. 주문에 의한 이동에는 발동하지 않습니다.':

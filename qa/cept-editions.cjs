@@ -584,7 +584,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.equal(saved.tiles[source].owner,-1);
     }
   }
-  assert.equal(C.battleCombos.length,19);
+  assert.equal(C.battleCombos.length,21);
   for(const [index,recipe] of C.battleCombos.entries()){
     const book=C.practiceBook(index);
     assert.ok(C.validBook(book),recipe.hint);
@@ -836,6 +836,61 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(rahab.battle.strikes[0].effect,'block');
   assert.equal(fight('fighter','rahab','무속성').battle.strikes[0].effect,'hit');
   console.log('Saga new territory abilities, area poison, land seizure, evolution, ward clearing and Goblin boosts checked');
+  const dragons=['armoreddragon','volcanicdragon','deepseadragon','hardrockdragon','lightningdragon'];
+  for(const [i,name] of dragons.entries()){
+    const egg=fromTerritory('dragonsegg');
+    const random=Math.random;
+    try{Math.random=()=>(i+.4)/dragons.length;assert.ok(C.play(egg,['ability',2]));}finally{Math.random=random;}
+    assert.deepEqual([egg.players[0].cash,egg.tiles[2].unit.id],[500,id(name)]);
+  }
+  for(const [before,after] of [['dragonewt','dragonlord'],['mistwing','aquahorn'],['aquahorn','mistwing'],['spriggan','grendel']]){
+    const s=fromTerritory(before);
+    assert.ok(C.play(s,['ability',2]));
+    assert.equal(s.tiles[2].unit.id,id(after));
+  }
+  for(const [dragon,prey,immune] of [['hardrockdragon','crimsonvine','blueogre'],['lightningdragon','crimsonvine','redogre']]){
+    const s=fromTerritory(dragon);
+    unit(s,4,prey,1,0);unit(s,5,immune,1,0);
+    assert.ok(C.play(s,['ability',2]));
+    assert.ok(!C.choices(s).some(([action,at])=>action==='abilityLand'&&at===5));
+    assert.ok(C.play(s,['abilityLand',4]));
+    assert.equal(s.tiles[4].unit.hp,C.cards[id(prey)].hp-30);
+  }
+  for(const name of ['volcanicdragon','deepseadragon']){
+    const naturally=fight(name,'dwarf',2);
+    assert.equal(naturally.battle.attackST,C.cards[id(name)].st);
+    assert.match(naturally.battle.strikes[0].notes.join(' '),/지형 보너스 관통/);
+    const equipped=fight(name,'dwarf',2,'forceanklet');
+    assert.ok(equipped.battle.strikes.every(hit=>!hit.notes.includes('지형 보너스 관통')));
+  }
+  const ponder=fight('tengu','dwarf',2,'nuclearfusion');
+  assert.match(ponder.battle.strikes[0].notes.join(' '),/75 피해/);
+  assert.equal(ponder.battle.strikes[0].side,0);
+  const recurring=fight('tengu','dwarf',2,'soulray');
+  assert.match(recurring.battle.strikes[0].notes.join(' '),/45 피해/);
+  assert.ok(recurring.players[0].hand.includes(id('soulray')));
+  const reversion=fight('dragonlord','dwarf');
+  assert.equal(reversion.tiles[1].unit.id,id('dragonewt'));
+  const blockedReversion=fight('dragonlord','dwarf','무속성',null,s=>unit(s,8,'basaltidol',0,'무속성'));
+  assert.equal(blockedReversion.tiles[1].unit.id,id('dragonlord'));
+  for(const [creature,support,form] of [['groundgear','skygear','androgear'],['skygear','groundgear','androgear'],['androgear','beastgear','gearion']]){
+    const fusion=fight(creature,'goblin','무속성',support);
+    assert.equal(fusion.battle.forms[0],id(form));
+    assert.equal(fusion.tiles[1].unit.id,id(form));
+    assert.equal(fusion.battle.attackST,C.cards[id(form)].st);
+  }
+  for(const [fossil,form] of [['greatfossil','tyrannosaurus'],['littlefossil','giantrat']]){
+    const fossilBattle=fight('tyrannosaurus',fossil);
+    assert.equal(fossilBattle.tiles[1].unit.id,id(form));
+    assert.equal(fossilBattle.battle.won,false);
+  }
+  const tao=fight('taotieh','goblin','무속성','longsword');
+  assert.equal(tao.tiles[1].unit.st,C.cards[id('taotieh')].st+10);
+  assert.equal(tao.tiles[1].unit.mhp,C.cards[id('taotieh')].hp+10);
+  const pulgasari=fight('pulgasari','dwarf','무속성',null,s=>{s.tiles[1].unit.st=0;},'chainmail');
+  assert.ok(pulgasari.players[0].hand.includes(id('pulgasari')));
+  assert.match(pulgasari.battle.lines.join(' '),/기본 ST와 최대 HP 증가/);
+  console.log('Saga dragon evolutions, natural scrolls, gear fusion, fossil revival and battle growth verified');
   const boosts=fight('fighter','dwarf','무속성',null,s=>{
     unit(s,4,'ares',1,0);unit(s,5,'poseidon',0,1);
   });
@@ -1070,7 +1125,10 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.equal(fight('weretiger','dwarf','무속성',null,s=>{s.round=24;}).battle.attackST,60);
   assert.equal(fight('weretiger','dwarf','무속성',null,s=>{s.round=25;}).battle.attackST,40);
   assert.deepEqual(fight('tetrarm','dwarf','무속성','tonfa').battle.strikes.map(v=>v.side),[0,0,1]);
-  assert.equal(id('gearion'),-1,'fusion-only creature is not a collectible card');
+  for(const form of ['gearion','androgear','armedprincess','dragonlord','grassstrider']){
+    assert.ok(C.cards[id(form)].generatedOnly,form);
+    assert.ok(!C.validBook([id(form),...C.presets.sagaStarterWater.slice(1)]),form);
+  }
   const resetHand=s=>{s.players[1].hand=[id('mace')];s.players[1].book=Array(7).fill(id('goblin'));};
   const blade=fight('fighter','dwarf','무속성','bladeofculdra',resetHand);
   assert.deepEqual(blade.players[1].hand,Array(6).fill(id('goblin')));
@@ -1101,7 +1159,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual([belt.battle.attackST,belt.battle.startHP[0],belt.battle.won],[60,40,true]);
   assert.equal(belt.tiles[1].unit.id,id('goblin'));
   assert.equal(id('grassstrider'),strider);
-  assert.equal(C.validBook([strider,...C.presets.sagaStarterWater.slice(1)]),true);
+  assert.equal(C.validBook([strider,...C.presets.sagaStarterWater.slice(1)]),false);
   const defensiveBelt=fight('fighter','goblin','무속성',null,null,'metamorphosebelt');
   assert.equal(defensiveBelt.battle.strikes[0].side,1);
   assert.equal(defensiveBelt.tiles[1].unit.id,id('goblin'));

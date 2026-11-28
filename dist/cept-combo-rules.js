@@ -272,7 +272,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
+    const sagaTerritory={dragonsegg:100,dragonewt:120,hardrockdragon:80,lightningdragon:80,aquahorn:30,mistwing:30,spriggan:80,armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
       possession:80,lordofbane:60,bonegolem:60,ahuizotl:80,nobleshaman:50,brancharmy:50,quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
@@ -287,7 +287,9 @@ const CepterCombos = (() => {
       const highest=Math.max(0,...units.map(max));
       return units.filter(u=>max(u)===highest).map(u=>u.id);
     }
-    const sagaEvolution={swordprincess:'armedprincess',brancharmy:'mudman',sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides',deathscythe:'mummy'};
+    const sagaDragons='armoreddragon volcanicdragon deepseadragon hardrockdragon lightningdragon'.split(' ');
+    const sagaDragonTargets={armoreddragon:[-1],hardrockdragon:[0,3],lightningdragon:[1,2]};
+    const sagaEvolution={dragonewt:'dragonlord',aquahorn:'mistwing',mistwing:'aquahorn',spriggan:'grendel',swordprincess:'armedprincess',brancharmy:'mudman',sylph:'garuda',spinyagama:'seismodon',seismodon:'brontides',deathscythe:'mummy'};
     const cepterAbilities=new Set(['heatimp','windimp','witch','bookworm','holyllama','clockworkowl','swampspawn']);
     const enchantAbilities=new Set(['domovikha','domovoi','spittingcobra','hyde','holyllama','clockworkowl','burnacle','swampspawn','landurchin']);
     function canUseAbility(s,t){return !!t.unit&&t.unit.enchant!=='paralysis'&&!idol(s,'ebonyidol');}
@@ -310,13 +312,13 @@ const CepterCombos = (() => {
           const forms=quicksilverForms(s);
           return forms.some(id=>id!==tile.unit.id)&&forms.every(id=>!cards[id].catalogOnly)?[['abilitySelf',from]]:[];
         }
-        if(n==='heraldspirit'||n==='nobleshaman')return [['abilitySelf',from]];
+        if(n==='heraldspirit'||n==='nobleshaman'||n==='dragonsegg')return [['abilitySelf',from]];
         if(n==='lordofbane')return idol(s,'graniteidol')?[]:s.players.flatMap((q,j)=>!allied(s,j,s.turn)&&q.status!=='barrier'?[['abilityPlayer',j]]:[]);
         if(n==='swampspawn')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
         if(n==='venomouspore')return s.tiles.flatMap((v,j)=>v.unit?[['abilityLand',j]]:[]);
-        if(n==='armoreddragon'||n==='bonegolem'||n==='possession'||n==='ahuizotl')return s.tiles.flatMap((v,j)=>{
+        if(sagaDragonTargets[n]||n==='bonegolem'||n==='possession'||n==='ahuizotl')return s.tiles.flatMap((v,j)=>{
           if(!targetable(s,v))return [];
-          const legal=n==='armoreddragon'?cards[v.unit.id].element===-1:
+          const legal=sagaDragonTargets[n]?sagaDragonTargets[n].some(e=>hasElement(cards[v.unit.id],e)):
             n==='bonegolem'?name(v.unit)==='skeleton':
             n==='possession'?v.level===1&&!allied(s,s.turn,v.owner):v.owner===s.turn&&v.type!==1&&!idol(s,'jadeidol');
           return legal?[['abilityLand',j]]:[];
@@ -421,7 +423,8 @@ const CepterCombos = (() => {
           for(const t of s.tiles)if(t.area===v.area&&t.unit){clear(t.unit);t.unit.poisoned=true;}
           return;
         }
-        if(n==='armoreddragon'){damage(s,v,30);return;}
+        if(sagaDragonTargets[n]){damage(s,v,30);return;}
+        if(n==='dragonsegg'){src.unit=morph(src.unit,sagaDragons[Math.floor(Math.random()*sagaDragons.length)]);return;}
         if(n==='bonegolem'){v.unit=morph(v.unit,'bonegolem');return;}
         if(n==='possession'){v.owner=s.turn;destroy(s,src);return;}
         if(n==='ahuizotl'){v.type=1;return;}
@@ -987,7 +990,9 @@ const CepterCombos = (() => {
       {groups:[['leshy'],['silverplow']],hint:'전투 후 크리처와 장비의 영지 성장 효과가 각각 적용됩니다. 영지는 최대 5레벨입니다.'},
       {groups:[['lunatichare'],['abyssaltome']],hint:'적중한 상대를 기본 ST 0인 스태추로 바꿉니다. 루나틱 헤어가 전투 종료에 적의 ST와 HP를 바꾼 뒤 스태추로 남습니다.'},
       {groups:[['raksas'],['godlesspike']],hint:'전투에서 이기면 상대가 가장 많이 가진 호부 수량을 30% 줄이고, 상대 크리처 속성의 호부 가격도 절반으로 내립니다.'},
-      {groups:[['tetrarm'],['nuclearfusion']],hint:'짧은 전투에서 두루마리 공격 50을 최대 두 번 사용합니다.'}
+      {groups:[['tetrarm'],['nuclearfusion']],hint:'짧은 전투에서 두루마리 공격 50을 최대 두 번 사용합니다.'},
+      {groups:[['tengu'],['nuclearfusion']],hint:'텐구가 선제 두루마리 강타로 지형 HP를 건너뛰고 75 피해를 줍니다.'},
+      {groups:[['tengu'],['soulray']],hint:'텐구가 선제 두루마리 강타로 45 피해를 줍니다. 생존하고 손패에 빈자리가 있으면 소울 레이가 돌아옵니다.'}
     ];
   }
   const revoltCombos=[
