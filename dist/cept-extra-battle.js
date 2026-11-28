@@ -172,7 +172,7 @@ const CepterExtraBattle=(()=>{
           if(sources.some(v=>fx.name(v.unit)==='brontides'&&v.unit.enchant!=='paralysis'))a.hp+=10;
         }
       }
-      if(['saga','begins','3ds'].includes(s.edition)&&a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
+      if(['dc','saga','begins','3ds'].includes(s.edition)&&a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
       if(s.edition==='saga'&&a.elements){
         const owned=lands.filter(v=>a.elements.includes(v.type)).length;
         if(a.n==='flammefleur')a.st=owned*10;
@@ -366,7 +366,7 @@ const CepterExtraBattle=(()=>{
         if(s.edition==='saga'&&a.n==='nil'){s.players[a.seat].cash-=100;lines.push('닐 · 전투 종료 100G 상실');}
         if(a.n==='fungonoid')grow(a,10);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
-        const leveller=['begins','3ds','saga'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
+        const leveller=['dc','begins','3ds','saga'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
         if((a.n==='basilisk'||leveller&&t.type!==3)&&t.level>1&&!fx.blockedLevel(s,t)){
           t.level--;
           if(['begins','3ds'].includes(s.edition))lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);

@@ -93,7 +93,7 @@ const CepterCombos = (() => {
       owner.hand.push(t.unit.id);vacate(t);
     }
     function damageAmount(s,t,n){
-      return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,['saga','3ds'].includes(s.edition)?'clayidol':'crayidol')?10:0)));
+      return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,['dc','saga','3ds'].includes(s.edition)?'clayidol':'crayidol')?10:0)));
     }
     function damage(s,t,n,caster=s.turn,fromSpell=false){
       t.unit.hp-=damageAmount(s,t,n);
@@ -284,6 +284,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
+    const dreamcastTerritory={domovikha:60,bookworm:30,fate:10};
     const sagaTerritory={shapeshifter:50,nil:100,hivequeen:20,peluda:100,assassin:80,cloudgizmo:20,sleipnir:60,dragonsegg:100,dragonewt:120,hardrockdragon:80,lightningdragon:80,aquahorn:30,mistwing:30,spriggan:80,armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
       possession:80,lordofbane:60,bonegolem:60,ahuizotl:80,nobleshaman:50,brancharmy:50,quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
@@ -369,6 +370,7 @@ const CepterCombos = (() => {
         if(n==='metalbug')return s.tiles.flatMap((v,j)=>j!==from&&targetable(s,v)&&v.unit.hp<max(v.unit)?[['abilityLand',j]]:[]);
         if(n==='sakuya')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&v.unit&&territoryType(v.type)&&v.type!==2&&v.level<=3&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
       }
+      if(s.edition==='dc'&&n==='fate')return idol(s,'graniteidol')?[]:s.players.flatMap((q,j)=>(q.book?.length??q.bookCount)&&q.status!=='barrier'?[['abilityPlayer',j]]:[]);
       if(selfAbilities.has(n))return [['abilitySelf',from]];
       if(cepterAbilities.has(n)){
         if(!enchantAbilities.has(n)&&idol(s,'graniteidol'))return [];
@@ -383,7 +385,7 @@ const CepterCombos = (() => {
       });
     }
     const territoryCost=(s,n)=>s.edition==='3ds'?handheldTerritory[n]:
-      (s.edition==='begins'?beginsTerritory[n]:s.edition==='saga'?sagaTerritory[n]:undefined)??territoryCosts[n];
+      (s.edition==='begins'?beginsTerritory[n]:s.edition==='saga'?sagaTerritory[n]:s.edition==='dc'?dreamcastTerritory[n]:undefined)??territoryCosts[n];
     function territoryEffect(s,from,x,borrowed=false){
       const src=s.tiles[from],n=name(src.unit),p=s.players[s.turn],q=s.players[x],v=s.tiles[x];
       if(!borrowed)p.cash-=territoryCost(s,n);
@@ -503,7 +505,7 @@ const CepterCombos = (() => {
           return;
         }
       }
-      if(cepterAbilities.has(n)&&q.antiMagic){delete q.antiMagic;}
+      if((cepterAbilities.has(n)||s.edition==='dc'&&n==='fate')&&q.antiMagic){delete q.antiMagic;}
       else if(n==='archbishop')clear(v.unit);
       else if(n==='astralqueen'){for(const t of s.tiles)if(t.unit){clear(t.unit);t.unit.enchant='camouflage';}}
       else if(n==='clockworkowl'){if(s.edition==='saga')clearCepter(q);q.chooseDirection=true;}
@@ -516,16 +518,25 @@ const CepterCombos = (() => {
         src.unit.mhp=max(src.unit)+gain;src.unit.hp+=gain;
       }
       else if(n==='banshee'){for(const t of s.tiles)if(t.unit)damage(s,t,Math.floor(max(t.unit)/4));}
-      else if(n==='bookworm'){s.spellTarget=x;return 'bookWorm';}
-      else if(n==='fate')draw(p,s);
+      else if(n==='bookworm'){
+        if(s.edition==='dc')q.hand.splice(Math.floor(Math.random()*q.hand.length),1);
+        else{s.spellTarget=x;return 'bookWorm';}
+      }
+      else if(n==='fate'){
+        if(s.edition==='dc'){
+          p.peek={seat:x,ids:q.book.slice(-3).reverse(),source:'fate'};
+          return 'fatePeek';
+        }
+        draw(p,s);
+      }
       else if(n==='barometz')p.cash+=(p.lap+1)*30;
       else if(n==='healer'){if(!immuneHP(v))v.unit.hp=Math.min(max(v.unit),v.unit.hp+30);}
       else if(n==='quakebeast'){for(const j of board(s).links[from]){const t=s.tiles[j];if(!blockedLevel(s,t))t.level=Math.max(1,t.level-1);}destroy(s,src);}
       else if(n==='archer')damage(s,v,10);
       else if(n==='holyllama'){clearCepter(q);q.word=6;}
       else if(n==='windimp')q.cash-=Math.floor(q.cash/2);
-      else if(n==='heatimp'){const j=q.symbols.indexOf(Math.max(...q.symbols));q.symbols[j]-=Math.floor(q.symbols[j]*.4);}
-      else if(n==='witch'){const amount=Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*(['3ds','begins'].includes(s.edition)?30:20));p.cash+=amount;q.cash-=amount;}
+      else if(n==='heatimp'){const j=q.symbols.indexOf(Math.max(...q.symbols));q.symbols[j]-=Math.floor(q.symbols[j]*(s.edition==='dc'?.3:.4));}
+      else if(n==='witch'){const amount=Math.min(q.cash,q.hand.filter(id=>cards[id].kind!=='creature').length*(['3ds','begins'].includes(s.edition)?30:20));if(s.edition!=='dc')p.cash+=amount;q.cash-=amount;}
       else if(n==='domovikha'){clear(v.unit);v.unit.enchant='landprotection';}
       else if(n==='tetramorph')damage(s,v,20);
       else if(n==='spittingcobra'){clear(v.unit);v.unit.poisoned=true;}

@@ -680,6 +680,22 @@ const CepterEditions=(()=>{
     const elements=[...parts[2].matchAll(/\[(\w+)\]/g)].map(([,name])=>battleElements.indexOf(name));
     return {[elementalTraits[parts[1]]]:elements};
   }
+  const dreamcastCreatures={
+    ambermosquito:{},archbishop:{protectGear:true},basaltidol:{stationary:true},battlegearalpha:{support:true,spellWard:true},
+    battlegearbeta:{support:true,neutralizeScroll:true},bundlegear:{spellWard:true,neutralizeScroll:true,generatedOnly:true},
+    clockworkowl:{},doppelganger:{},ebonyidol:{stationary:true},goldidol:{stationary:true},ironidol:{stationary:true},ivoryidol:{stationary:true},
+    clayidol:{stationary:true},leoknight:{},littlegray:{},livingspear:{itemCreature:true},livingsword:{itemCreature:true},sanctumguard:{first:true},
+    squonk:{support:true},trojanhorse:{support:true,pierceAll:true},werewolf:{},ares:{},bard:{},barrowwight:{},catoblepas:{},
+    domovikha:{},efreet:{last:true,scrollCritical:true},fanatic:{},flamelord:{scrollCritical:true},heatimp:{},larvae:{},mephistopheles:{},pyrallis:{},
+    salamander:{},sharazad:{support:true},willothewisp:{last:true},algasphere:{stationary:true},anubias:{},banshee:{},bookworm:{},
+    charon:{},dagon:{scrollCritical:true},fate:{},fungonoid:{},hyde:{},kraken:{},leviathan:{},madclown:{},medusa:{},nymph:{},suiko:{},
+    vodyanoi:{first:true},wizard:{support:true,scrollCritical:true},angostura:{stationary:true},armadillo:{},barometz:{stationary:true},
+    basilisk:{},cockatrice:{},darkmaster:{scrollCritical:true},gargoyle:{first:true},ghoul:{},healer:{regenerate:true},hugespider:{},
+    hunbaba:{},odradek:{support:true,immutableHP:true},quakebeast:{},taotieh:{},vampire:{first:true},carbunfly:{first:true,generatedOnly:true},
+    archer:{},beelzebub:{scrollCritical:true},chonchon:{},elf:{first:true,criticalElements:[2]},giantrattler:{},igneousfatui:{last:true},
+    nue:{},quetzalcoatl:{},soulcollector:{},trampleweed:{stationary:true},witch:{scrollCritical:true},lavawurm:{pierceElements:[1]},
+    trenchwurm:{pierceElements:[3]},garuda:{},myrmecoleo:{last:true,reviveForm:'dragonfly'},leveller:{}
+  };
   const dreamcastGear={
     amberring:{st:20,pierceElements:[3]},aurablade:{},batteringram:{st:20},chameleonarmor:{},coinofpiety:{},daggerofmite:{},
     earthamulet:{st:10,first:true,criticalOwnElements:[2]},fireamulet:{st:20,criticalOwnElements:[0]},fireshield:{},
@@ -991,6 +1007,9 @@ const CepterEditions=(()=>{
       }
       if(simple)for(const effect of effects.values())if(effect)Object.assign(c,effect);
       if(first&&basicGear&&[...effects.values()].some(Boolean))c.firstEquipment=true;
+      if(edition==='dc'&&kind==='creature'&&Object.hasOwn(dreamcastCreatures,slug)){
+        Object.assign(c,{catalogOnly:false},dreamcastCreatures[slug]);
+      }
       if(edition==='dc'&&kind==='item'&&Object.hasOwn(dreamcastGear,slug)){
         Object.assign(c,{st:0,hp:0,catalogOnly:false},dreamcastGear[slug]);
       }
@@ -1093,6 +1112,11 @@ const CepterEditions=(()=>{
         replacements.set(lookup.get('leatherarmor'),lookup.get(edition==='ps1'?'dragonshield':'earthshield'));
       }
       presets.legacyControl=presets.intro.map(id=>replacements.get(id)??id);
+    }
+    if(edition==='dc'){
+      const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]
+        .map(([from,to])=>[lookup.get(from),lookup.get(to)]));
+      presets.legacyFusion=presets.legacyControl.map(id=>fusion.get(id)??id);
     }
     if(edition==='saturn'||edition==='ps1')for(const [name,counts] of Object.entries(data.books)){
       const ids=Object.entries(counts).flatMap(([key,n])=>Array(n).fill(lookup.get(key)));

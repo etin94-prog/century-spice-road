@@ -443,7 +443,13 @@ const CepterCreatureText=(()=>{
       beacontower:'자신에게 모든 내 영지 개발 효과를 겁니다. 다음 차례에 지나지 않은 내 영지에도 명령할 수 있습니다.',
       swampspawn:'고른 셉터가 다음 두 번 굴리는 주사위 눈을 1~3으로 제한합니다.',
       landurchin:'고른 크리처가 영지 명령으로 이동하지 못하게 합니다.'};
-    const effect=(C.edition==='begins'?begins[key]:C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
+    const dreamcast={
+      bookworm:'고른 적의 손패에서 무작위로 한 장을 파괴합니다.',
+      fate:'고른 셉터의 북 맨 위 세 장을 나만 봅니다.',
+      witch:'고른 적이 손패의 주문과 장비 한 장당 20G를 잃습니다.',
+      heatimp:'고른 셉터가 가장 많이 보유한 종류의 호부를 30% 줄이고 자신은 파괴됩니다.'
+    };
+    const effect=(C.edition==='dc'?dreamcast[key]:C.edition==='begins'?begins[key]:C.edition==='3ds'?handheldTerritory[key]:C.edition==='saga'?saga[key]:null)||territory[key],cost=C.territoryAbilityCost(card);
     if(effect&&cost!=null)return '영지 능력 '+cost+'G · '+effect;
   }
   function describe(C,card){
@@ -457,6 +463,7 @@ const CepterCreatureText=(()=>{
     if(card.supportElements?.length)pieces.push('지원. '+card.supportElements.map(e=>C.elements[e]||'무').join('·')+' 속성 크리처를 장비로 사용할 수 있습니다.');
     else if(card.support&&!(firstEdition&&key==='sorcerer'))pieces.push('지원. 장비를 고를 때 크리처를 사용할 수 있습니다.');
     if(card.regenerate&&!['greenmold','healer'].includes(key))pieces.push('생존하면 전투가 끝날 때 HP를 최대치까지 회복합니다.');
+    if(C.edition==='dc'&&key==='larvae')return '내 북에 남은 카드가 상대보다 3장 이상 적으면 전투 ST와 HP가 각각 20 오릅니다.';
     if(C.edition==='3ds'&&key==='shadefolk')pieces.push('전투 ST는 상대 크리처와 같은 속성의 배치 크리처 수 × 10입니다. 설욕 시 상대 셉터의 마력 30%를 빼앗습니다.');
     if(C.edition==='3ds'&&key==='catoblepas')pieces.push('설욕 시 전투 영지의 레벨을 1 내립니다.');
     if(C.edition==='3ds'&&key==='raksas')pieces.push('설욕 시 상대 셉터가 가장 많이 보유한 종류의 호부 30%를 빼앗습니다.');
@@ -565,7 +572,7 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':
       C.edition==='saga'&&key==='saint'?'무속성 상대에게 일반 공격으로 피해를 주면 80% 확률로 즉사시킵니다.':
-      C.edition==='saga'&&key==='leveller'?beginsBattle.leveller:
+      ['dc','saga'].includes(C.edition)&&key==='leveller'?beginsBattle.leveller:
       C.edition==='saga'&&key==='pulgasari'?'상대가 장비를 쓴 전투에서 살아남으면 기본 ST와 최대 HP가 10씩 오릅니다. 상한은 100입니다.':
       C.edition==='saga'&&key==='fungonoid'?'전투에서 생존하면 최대 HP가 10 오릅니다. 상한은 100입니다.':
       ['begins','saga'].includes(C.edition)&&key==='chimera'?'완주 보상을 받을 때마다 기본 ST를 10 올립니다. 최대 100까지 오릅니다.':

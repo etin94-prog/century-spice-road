@@ -830,6 +830,7 @@ function createCepter(edition="ps2"){
       if(usable)options.push([k,j]);
     });
     switch(s.phase){
+      case 'fatePeek':return [['fatePeekDone']];
       case 'shrineChoice':return s.shrineChoices.map(event=>['shrineChoice',event]);
       case 'spell':
         if(!['lifeforce','bind','quietude'].includes(p.status)){
@@ -1029,7 +1030,7 @@ function createCepter(edition="ps2"){
         if(firstEdition){if(a.defending)a.hp+=10;else a.st+=10;}
         else if(!a.defending){a.hp-=20;a.st+=20;}
       }
-      if(a.n==='larvae'&&owner.book.length-other.book.length>=3){a.st+=20;a.hp+=20;}
+      if(a.n==='larvae'&&(edition==='dc'?other.book.length-owner.book.length:owner.book.length-other.book.length)>=3){a.st+=20;a.hp+=20;}
       if(a.n==='mudman'||a.n==='coati'){
         const boost=5*s.tiles.filter((v,j)=>(!revolt||j!==b.from)&&(a.n==='coati'&&firstEdition?cards[v.unit?.id]?.catalog?.race==='rb':cards[v.unit?.id]?.element===2)).length;
         if(a.n==='mudman')a.hp+=boost;else a.st+=boost;
@@ -1916,6 +1917,7 @@ function createCepter(edition="ps2"){
         }else{s.abilityFrom=x;s.phase='territoryTarget';}
         break;
       }
+      case 'fatePeekDone':afterTerritory(s);break;
       case 'abilityLand':case 'abilityPlayer':{
         const from=s.abilityFrom,borrowed=s.borrowedAbility;
         if(!borrowed)fatigue(s.tiles[from].unit);

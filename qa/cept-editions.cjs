@@ -8071,3 +8071,98 @@ for(const edition of ['ps1','saturn']){
   assert.equal(pot.finalHP[0],C.cards[id('fighter')].hp);
 }
 console.log('Dreamcast item effects and five Wall Transform forms, plus first-edition scroll tool, regeneration and heavy weapon checked.');
+
+{
+  const C=ps2.createEdition('dc'),roomState=require('../dist/cept-room-state');
+  const id=n=>C.cards.findIndex(c=>c.catalog&&!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  const fresh=()=>C.start(4,4,12000,'dc-1',C.presets.legacyFusion,C.presets.legacyFusion,0,'teams');
+  const act=(s,...action)=>assert.ok(C.play(s,action),s.phase+' '+JSON.stringify(action));
+  function unit(s,at,name,owner=0){
+    const card=C.cards[id(name)];
+    assert.ok(card,name);
+    return Object.assign(s.tiles[at],{owner,type:'무속성',unit:{id:id(name),hp:card.hp}});
+  }
+  const alpha=id('battlegearalpha'),beta=id('battlegearbeta'),bundle=id('bundlegear');
+  assert.ok(C.validBook(C.presets.legacyFusion));
+  assert.equal(C.presets.legacyFusion.filter(card=>card===alpha).length,2);
+  assert.equal(C.presets.legacyFusion.filter(card=>card===beta).length,2);
+  assert.ok(C.cards[bundle].generatedOnly);
+  for(const [base,support] of [[alpha,beta],[beta,alpha]]){
+    const s=fresh(),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    unit(s,at,'goblin',1);
+    s.players[0].pos=at;s.players[0].cash=1000;
+    s.players[0].hand=[support];s.players[1].hand=[];
+    s.phase='attack';s.battle={at,inv:base,atkItem:null,defItem:null};
+    act(s,'equip',0);act(s,'bare');
+    assert.equal(s.battle.finalForms[0],bundle);
+    assert.equal(s.tiles[at].owner,0);
+    assert.equal(s.tiles[at].unit.id,bundle);
+    assert.deepEqual(s.players[0].hand,[]);
+  }
+  function command(name){
+    const s=fresh(),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    unit(s,at,name);s.players[0].pos=at;s.phase='land';s.players[0].cash=1000;
+    act(s,'ability',at);
+    return {s,at};
+  }
+  {
+    const {s}=command('fate');
+    const expected=[id('fighter'),id('goblin'),id('dwarf')];
+    s.players[1].book=[id('wolf'),...expected.slice().reverse()];
+    const old=s.players[0].hand.slice();
+    act(s,'abilityPlayer',1);
+    assert.equal(s.players[0].cash,990);
+    assert.deepEqual(s.players[0].hand,old);
+    assert.deepEqual(roomState.view(C,s,0).game.players[0].peek,{seat:1,ids:expected,source:'fate'});
+    assert.equal(roomState.view(C,s,1).game.players[0].peek,undefined);
+    assert.equal(roomState.view(C,s,0).game.players[1].book,undefined);
+    assert.deepEqual(C.choices(s),[['fatePeekDone']]);
+    assert.equal(s.turn,0);
+    act(s,'fatePeekDone');
+    assert.equal(s.turn,1);
+  }
+  {
+    const {s}=command('bookworm');
+    s.players[1].hand=[id('fighter'),id('goblin')];
+    s.players[1].book=[id('dwarf')];
+    const random=Math.random;
+    try{Math.random=()=>.75;act(s,'abilityPlayer',1);}
+    finally{Math.random=random;}
+    assert.equal(s.players[0].cash,970);
+    assert.deepEqual(s.players[1].hand,[id('fighter'),id('dwarf')]);
+    assert.equal(roomState.view(C,s,0).game.players[1].hand.length,0);
+  }
+  {
+    const {s}=command('witch');
+    s.players[1].cash=1000;
+    s.players[1].hand=[id('grace'),id('magicshield'),id('goblin')];
+    act(s,'abilityPlayer',1);
+    assert.deepEqual(s.players.slice(0,2).map(q=>q.cash),[970,960]);
+  }
+  {
+    const {s,at}=command('heatimp');
+    s.players[1].symbols[0]=10;s.players[1].symbols[1]=7;
+    act(s,'abilityPlayer',1);
+    assert.deepEqual(s.players[1].symbols.slice(0,2),[7,7]);
+    assert.equal(s.tiles[at].unit,null);
+  }
+  {
+    const s=fresh(),[at,idol]=s.tiles.flatMap((t,i)=>C.territoryType(t.type)?[i]:[]);
+    const target=unit(s,at,'goblin',1);
+    unit(s,idol,'clayidol',3);
+    assert.equal(C.spellHP(s,target,'bolt'),target.unit.hp-10);
+    unit(s,at,'fate');unit(s,idol,'ebonyidol',3);
+    s.players[0].pos=at;s.phase='land';
+    assert.ok(!C.choices(s).some(([action])=>action==='ability'));
+  }
+  {
+    const s=fresh(),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    unit(s,at,'goblin',1);
+    s.players[0].pos=at;s.players[0].book=[id('fighter')];
+    s.players[1].book=Array(4).fill(id('fighter'));
+    s.phase='attack';s.battle={at,inv:id('larvae'),atkItem:null,defItem:null};
+    act(s,'bare');act(s,'bare');
+    assert.equal(s.battle.attackST,C.cards[id('larvae')].st+20);
+  }
+}
+console.log('Dreamcast fusion, idolatry, native book size, private previews, hand destruction and region economy passed.');
