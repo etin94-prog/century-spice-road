@@ -113,6 +113,19 @@ const CepterMaps=(()=>{
   beginsPractice['begins-original-moontrade']={...tradeRoute,areaCount:1,section:'arena',graph:true,startCash:250,
     fortBonus:200,defaultGoal:8000,castles:[0],checkpoints:tradeRoute.forts,
     cardShops:{2:['spear','chainmail','manna','holyword6'],30:['leatherarmor','skeleton','fly','windofhope']}};
+  const marshPaths=map('갈대 둑길 · 창작 지도',[
+    [1,1],[1,2],[1,3],[1,4],[2,4],[3,4],[3,3],[3,2],[3,1],[2,1],
+    ...sanctuaryLoop.map(([row,col])=>[row,col+5]),[1,5],[3,5]
+  ],[
+    '성',2,1,0,'북쪽 요새',3,2,0,'신전',1,
+    1,0,3,2,'동쪽 요새',0,1,'신전',2,3,0,1,
+    3,2
+  ],[4,14],90,6,[
+    ...loop(10),...loop(12).map(([a,b])=>[a+10,b+10]),
+    [3,22],[22,10],[5,23],[23,20]
+  ],[...Array(10).fill(0),...Array(12).fill(1),0,1],220);
+  const firstPractice={...marshPaths,areaCount:2,section:'arena',graph:true,startCash:250,
+    fortBonus:100,defaultGoal:6500,castles:[0],checkpoints:marshPaths.forts};
   const handheldBend=map('솔바람 굽이 · 창작 지도',[...ring,[2,3],[3,3],[3,4],[4,4]],
     ['성',0,1,0,3,1,2,2,1,3,1,0,'남쪽 요새',2,3,0,1,2,3,0],
     [12],100,6,[...loop(16),[2,16],[16,17],[17,18],[18,19],[19,7]],Array(20).fill(0),200);
@@ -178,7 +191,8 @@ const CepterMaps=(()=>{
     sagaPractice:{value:sagaPractice},
     revoltPractice:{value:revoltPractice},
     beginsPractice:{value:beginsPractice},
-    handheldPractice:{value:handheldPractice}
+    handheldPractice:{value:handheldPractice},
+    firstPractice:{value:firstPractice}
   });
   return maps;
 })();

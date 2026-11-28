@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',361,10],['saga',487,19],['revolt',489,41],['begins',400,18]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,37],['saturn',361,11],['saga',487,19],['revolt',489,41],['begins',400,18]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -6750,15 +6750,21 @@ for(const edition of ['dc','ps1','saturn']){
     rain.tiles[rock].owner=1;rain.tiles[rock].unit={id:id('wallofstone'),hp:60};
     cast(rain);assert.deepEqual([rain.tiles[plant].unit.hp,rain.tiles[rock].unit.hp],[10,60]);
 
-    const storm=open('icestorm'),[inside,outside,wrongElement]=land(storm);
+    const marsh=edition+'-original-marsh-paths',storm=C.start(4,4,0,marsh,undefined,undefined,0,'teams');
+    assert.deepEqual([C.board(storm).areaCount,storm.prices.length,storm.target],[2,8,6500]);
+    const route=C.board(storm);
+    assert.equal(new Set(route.position.map(String)).size,24);
+    assert.ok(route.links.every((neighbors,i)=>neighbors.every(j=>Math.abs(route.position[i][0]-route.position[j][0])+Math.abs(route.position[i][1]-route.position[j][1])===1)));
+    Object.assign(storm.players[0],{cash:400,hand:[id('icestorm')]});
+    const [inside,outside,wrongElement]=[1,11,2];
     for(const at of [inside,outside,wrongElement])place(storm,at,1);
     for(const at of [inside,outside])storm.tiles[at].unit={id:id('minotaur'),hp:40,mhp:60};
-    storm.tiles[outside].area=1;storm.prices=Array(8).fill(10);
     cast(storm,'comboArea',0);
     assert.deepEqual([inside,outside,wrongElement].map(at=>storm.tiles[at].unit.hp),[22,40,30]);
     assert.deepEqual(storm.mapEffect.hits,[{at:inside,damage:18,defeated:false}]);
 
-    const pressure=open('pressure');pressure.tiles[rock].area=1;pressure.prices=Array(8).fill(25);
+    const pressure=C.start(2,2,0,marsh);
+    pressure.players[0].cash=400;pressure.players[0].hand=[id('pressure')];pressure.prices=Array(8).fill(25);
     cast(pressure,'comboArea',0);
     assert.deepEqual(pressure.prices,[20,20,20,20,25,25,25,25]);
     const grace=open('grace');grace.players[0].symbols[0]=12;grace.prices[0]=10;

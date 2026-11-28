@@ -95,6 +95,7 @@ const CepterEditions=(()=>{
     if(edition==='saga')Object.assign(result,original.sagaPractice);
     if(edition==='revolt')Object.assign(result,original.revoltPractice);
     if(edition==='begins')Object.assign(result,original.beginsPractice);
+    if(['ps1','saturn'].includes(edition))result[edition+'-original-marsh-paths']=original.firstPractice;
     return result;
   }
   const firstSpellEffects={
