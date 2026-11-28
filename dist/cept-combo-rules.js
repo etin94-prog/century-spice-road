@@ -11,6 +11,8 @@ const CepterCombos = (() => {
     mistyworld:{name:'미스티 월드',description:'셉터는 주문의 대상으로 지정할 수 없습니다.'},
     wasteworld:{name:'웨이스트 월드',description:'카드 비용이 S는 1.5배, R·E는 2배가 됩니다.'}
   };
+  const turnSlot=s=>s.turnOrder?.indexOf(s.turn)??s.turn;
+  const turnTick=s=>(s.round-1)*s.players.length+turnSlot(s);
   const activeWorld=s=>s?.edition==='revolt'&&s.world?.until>s.round?s.world.effect:null;
   const groups = {
     land: 'barricade greed regeneration vitality disease hustle bulimia fatbody peace landprotection mine vortex energyfield magicshelter soulhunt antielement mutation weakness temperance senility fog exile landtransfer relief quicksand telekinesis drought shrink growthbody evilblast camouflage',
@@ -239,7 +241,7 @@ const CepterCombos = (() => {
         if(['silence','haste','despair','slow'].includes(e)){
           q.status=e;
           if(s.edition==='ps2')q.enchantDeadline=(s.round+1)*s.players.length+s.turn;
-          else if(['ps1','saturn'].includes(s.edition))q.enchantDeadline=(s.round+(e==='silence'?1:2))*s.players.length+s.turn;
+          else if(['ps1','saturn'].includes(s.edition))q.enchantDeadline=turnTick(s)+(e==='silence'?2:3)*s.players.length;
           else if(s.edition==='revolt'&&e==='haste')q.hasteRolls=2;
           else if(s.edition==='begins'){
             if(e==='haste'||e==='slow')q.diceLimitRolls=2;
@@ -1158,6 +1160,6 @@ const CepterCombos = (() => {
     {cards:['sulfurousballoon','stormcauser'],hint:'전투 ST를 크게 높입니다. 약해진 벌룬이 격파되면 상대에게 HP 40 피해를 줍니다.'},
     {cards:['caitsith','buckler'],hint:'기본 ST가 40 이상인 상대는 캣 시스가, 30 이하인 상대는 버클러가 일반 공격을 막습니다.'}
   ];
-  return {rules,type,worlds,activeWorld,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,revoltCombos,beginsCombos,sagaCombos,matches,planner};
+  return {rules,type,worlds,activeWorld,turnSlot,turnTick,key,hasElement,sameElements,matchesTerrain,territoryType,damageSpells,allied,clear,enchanted,levelLocked,recipes,revoltCombos,beginsCombos,sagaCombos,matches,planner};
 })();
 if(typeof module!=='undefined')module.exports=CepterCombos;

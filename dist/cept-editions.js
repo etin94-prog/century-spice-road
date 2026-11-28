@@ -144,7 +144,7 @@ const CepterEditions=(()=>{
       magicfountain:'magicfountain',mesmerize:'mesmerize',torture:'torture',walltransform:'dcWallTransform',polymorph:'polymorph'
     },
     ps1:{...firstSpellEffects,antielement:'antielement',corruption:'corruption',lifeforce:'lifeforce',revival:'revival'},
-    saturn:{...firstSpellEffects,alchemy:'alchemy',dimensiondoor:'dimensiondoor',evilblast:'evilblast',landtax:'landtax',meteorstorm:'meteorstorm',recover:'firstRecover'}
+    saturn:{...firstSpellEffects,alchemy:'alchemy',chaosstream:'chaosstream',dimensiondoor:'dimensiondoor',evilblast:'evilblast',landtax:'landtax',meteorstorm:'meteorstorm',recover:'firstRecover'}
   };
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');
   const modernSpellEffects={
@@ -1226,6 +1226,7 @@ const CepterEditions=(()=>{
         replacements.set(lookup.get('magicbolt'),lookup.get('walltransform'));
       }else{
         replacements.set(lookup.get('holyword6'),lookup.get('timebomb'));
+        if(edition==='saturn')replacements.set(lookup.get('manna'),lookup.get('chaosstream'));
         replacements.set(lookup.get('leatherarmor'),lookup.get(edition==='ps1'?'dragonshield':'earthshield'));
       }
       presets.legacyControl=presets.intro.map(id=>replacements.get(id)??id);

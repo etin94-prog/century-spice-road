@@ -1,6 +1,7 @@
 /* Edition-specific spells. Decisions are serializable, including the extra card,
    destination or Soltis effect selected after paying the spell's cost. */
 const CepterExtraSpells=(()=>{
+  const {turnTick:time,turnSlot}=typeof module==='undefined'?CepterCombos:require('./cept-combo-rules.js');
   const groups={
     land:'banishingray bindingmist bistair chariot dullness influence locust magicfountain meteor parasite phantasm polymorph quintessence removecurse replace simulacrum sink spiritwalk thornfetter turntothewall upheaval weathering wildgrowth wing',
     player:'babble backward barrier bind blackout corruption dispelmagic eclipse fairylight haunt holyword2 judgment lifeforce mesmerize revival ruin rust subsidence torture',
@@ -32,7 +33,7 @@ const CepterExtraSpells=(()=>{
     aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',firstBarricade:'area',firstHolyblight:'global',
     firstMindseeker:'player',mindblast:'player',magicdie:'player',snatch:'player',swapspell:'player',
     solitude:'land',poisonmist:'land',unsummon:'land',firstRecover:'land',dcWallTransform:'land',jump:'global',landtax:'global',meteorstorm:'global',
-    timebomb:'global',balance:'global',alchemy:'global',armorsmith:'global',weaponsmith:'global',
+    timebomb:'global',chaosstream:'global',balance:'global',alchemy:'global',armorsmith:'global',weaponsmith:'global',
     ...Object.fromEntries(Object.keys(firstStorms).map(e=>[e,'area'])),
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
@@ -89,10 +90,9 @@ const CepterExtraSpells=(()=>{
     for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete p[field];
   }
   const judgmentOdds={ps1:3/4,saturn:5/6};
-  const time=s=>(s.round-1)*s.players.length+s.turn;
   function setStatus(s,q,name,rounds=duration[name]){
     clearCepter(q);q.status=name;
-    if(rounds)q.enchantDeadline=time(s)+rounds*s.players.length;
+    if(rounds&&!(s.edition==='saturn'&&name==='bind'))q.enchantDeadline=time(s)+rounds*s.players.length;
   }
   function startTurn(s,cards){
     for(const q of s.players)if(q.enchantDeadline!=null&&q.enchantDeadline<=time(s))clearCepter(q);
@@ -807,6 +807,8 @@ const CepterExtraSpells=(()=>{
             break;
           case 'landtax':for(const [seat,player] of s.players.entries())player.cash-=owning(s,seat).length*20;break;
           case 'timebomb':s.tiles[p.pos].timeBombUntil=time(s)+3*s.players.length;break;
+          case 'chaosstream':
+            s.shuffleNextRound=true;note(s,'카오스 스트림 · 다음 라운드부터 진행 순서 변경');break;
           case 'balance':{
             const awards=s.players.map((q,seat)=>30*(q.lap+1)*personalRank(s,seat));
             for(const [seat,player] of s.players.entries())player.cash+=awards[seat];
@@ -1109,6 +1111,8 @@ const CepterExtraSpells=(()=>{
       },0);
       if(e==='firstHolyblight')return s.tiles.reduce((score,t)=>score+(t.unit&&cards[t.unit.id].catalog?.race==='ru'?(enemy(s,t.owner)?1:-1)*fx.damageAmount(s,t,20)/3:0),0);
       if(e==='landtax'||e==='meteorstorm')return land.reduce((score,t)=>score+(enemy(s,t.owner)?1:-1)*(e==='landtax'?2:(t.level-1)*3),0);
+      if(e==='chaosstream')return s.shuffleNextRound||s.roundLimit&&s.round>=s.roundLimit&&!s.suddenDeath?-20:
+        4*(turnSlot(s)-(s.players.length-1)/2)-1;
       if(e==='balance')return 3*(p.lap+1)*personalRank(s)-Math.max(...s.players.flatMap((q,seat)=>enemy(s,seat)?[3*(q.lap+1)*personalRank(s,seat)]:[0]));
       if(e==='alchemy')return s.players.some((q,seat)=>seat!==s.turn&&q.hand.length)?3:-40;
       if(e==='timebomb'){

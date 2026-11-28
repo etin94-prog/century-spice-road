@@ -314,6 +314,7 @@ const describeCepterSpell=(()=>{
       if(e==='balance')return '모든 셉터가 시전 시점의 개인 순위 × 현재 주회 × 30G를 얻습니다.';
       if(e==='alchemy')return '다른 셉터의 손패 전체에서 무작위로 고른 카드 한 장의 복사본을 얻습니다.';
       if(e==='dimensiondoor'&&edition==='saturn')return '고른 적을 무작위로 다른 영지 칸에 이동시키고 이번 차례의 주사위를 건너뜁니다.';
+      if(e==='chaosstream')return '다음 라운드부터 모든 셉터의 진행 순서를 무작위로 바꿉니다.';
       if(e==='landtax')return '모든 셉터가 자신이 보유한 영지 한 곳당 20G를 잃습니다.';
       if(e==='meteorstorm')return '무작위로 고른 땅 다섯 곳의 영지 레벨을 1로 낮춥니다.';
       if(e==='evilblast'&&edition==='saturn')return '고른 크리처에게 30 피해를 줍니다.';

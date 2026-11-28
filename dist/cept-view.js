@@ -958,6 +958,7 @@ function render(){
   const i=C.actor(s),p=s.players[i],over=s.phase==='over',local=!C.isComputer(s,i)&&!pending&&!over&&(!room||room.seat===i&&!room.busy);
   $('mapViews').hidden=!!s.battle;
   $('mapName').textContent=C.board(s).name;
+  $('round').title=s.shuffleNextRound?'다음 라운드부터 진행 순서가 바뀝니다.':s.turnOrder?.map(seat=>s.players[seat].name).join(' → ')||'';
   $('round').textContent=(s.overtime||s.suddenDeathArmed?'서든데스 · ':'')+(s.roundLimit&&!s.overtime?s.round+'/'+s.roundLimit:s.round)+'라운드 · 목표 '+s.target+'G';
   $('gameTitle').textContent=$('editionChoice').selectedOptions[0].textContent;
   const handSeat=over?null:reader??(local?i:null);
@@ -966,8 +967,8 @@ function render(){
   const openSeat=j=>{seatSummary(j);$('seatDialog').dataset.seat=j;$('seatDialog').showModal();};
   $('handSeatInfo').hidden=handSeat==null;
   $('handSeatInfo').onclick=()=>openSeat(handSeat);
-  $('seats').replaceChildren(...s.players.map((v,j)=>{
-    const ownHand=j===handSeat;
+  $('seats').replaceChildren(...Array.from(s.turnOrder||s.players.keys(),j=>{
+    const v=s.players[j],ownHand=j===handSeat;
     const box=btn('',()=>{if(ownHand)handPanel.open=!handPanel.open;else openSeat(j);},'seat'+(i===j?' active':'')),wealth=C.total(s,j);
     if(ownHand){
       box.setAttribute('aria-controls','handPanel');

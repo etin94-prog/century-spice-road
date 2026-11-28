@@ -359,7 +359,7 @@ function seatSummary(seat){
     sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지',bind:'바인드 · 행동 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
     p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':p.sagaClemency?'다음 이동 통행료 면제':p.sagaService?'다음 요새 보너스 +50%':p.sagaFeast?'다음 주회 보너스 +50%':null;
   if(effect){
-    const turns=p.enchantDeadline-(s.round-1)*s.players.length-s.turn;
+    const turns=p.enchantDeadline-C.combo.turnTick(s);
     const rolls=p.diceLimitRolls??p.hasteRolls;
     const remaining=p.status==='bind'?'':rolls>0?' · '+rolls+'회 굴림 남음':turns>0?' · '+Math.ceil(turns/s.players.length)+'라운드 남음':'';
     rows.push(['셉터 인챈트',effect+remaining]);

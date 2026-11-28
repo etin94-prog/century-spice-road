@@ -9579,3 +9579,89 @@ for(const edition of ['ps1','saturn']){
   assert.equal(raid.battle.won,true);
 }
 console.log('PS1 and Saturn Hoodlum and Dee Dum: threshold, half rounding, weapons, scrolls, odd tens, shield order and AI checked.');
+
+{
+  const C=ps2.createEdition('saturn'),book=C.presets.legacyControl;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const chaos=id('chaosstream'),bind=id('bind');
+  assert.ok(book.includes(chaos)&&C.validBook(book));
+  assert.equal(C.cards[chaos].cost,10);
+  assert.match(describeSpell(C,C.cards[chaos]),/다음 라운드부터 모든 셉터의 진행 순서/);
+  assert.ok(ps2.createEdition('ps1').cards.every(c=>c.catalogOnly||c.effect!=='chaosstream'));
+  const fixture=(count=4,limit=0,humans=count)=>C.start(count,humans,7000,'saturn-original-marsh-paths',book,book,3,count===4?'teams':'duel',limit);
+  const land=s=>{s.players[s.turn].pos=0;s.phase='land';};
+  const play=(s,action)=>assert.ok(C.play(s,action,1000));
+  const withRoll=(roll,fn)=>{
+    const random=Math.random;try{Math.random=()=>roll;fn();}finally{Math.random=random;}
+  };
+
+  for(const count of [2,3,4]){
+    let s=fixture(count,20);
+    s.round=19;
+    C.configureMatch(s,{inputSeconds:15,recordReplay:true});
+    s.players[0].hand=[chaos];
+    const cash=s.players[0].cash;
+    play(s,['cast',0]);
+    assert.equal(s.players[0].cash,cash-10);
+    assert.equal(s.shuffleNextRound,true);
+    assert.equal(s.turnOrder,undefined);
+    assert.match(s.replay.steps.at(-1).notes.join(' '),/다음 라운드/);
+    s=JSON.parse(JSON.stringify(s));
+    for(let i=0;i<count-1;i++){
+      assert.deepEqual([s.round,s.turn,C.combo.turnSlot(s)],[19,i,i]);
+      land(s);play(s,['pass']);
+    }
+    assert.equal(s.turn,count-1);
+    s.players[s.turn].hand=[bind];
+    play(s,['cast',0]);play(s,['targetPlayer',0]);
+    const teams=s.teams;
+    const deadline=C.combo.turnTick(s)+count;
+    s.tiles[1].timeBombUntil=deadline;
+    land(s);withRoll(0,()=>play(s,['pass']));
+    const order=[...Array.from({length:count-1},(_,i)=>i+1),0];
+    assert.deepEqual(s.turnOrder,order);
+    assert.equal(s.shuffleNextRound,undefined);
+    assert.deepEqual([s.round,s.turn,C.combo.turnSlot(s),s.deadlineAt],[20,1,0,16000]);
+    assert.equal(s.teams,teams);
+    assert.deepEqual(s.replay.steps.at(-1).turnOrder,order);
+    assert.match(s.replay.steps.at(-1).notes.join(' '),/진행 순서/);
+    for(let slot=0;slot<count-1;slot++){
+      assert.equal(s.turn,order[slot]);
+      assert.equal(C.combo.turnTick(s),deadline-count+1+slot);
+      assert.equal(s.tiles[1].timeBombUntil,deadline);
+      land(s);assert.ok(C.expire(s,16000+15000*slot));
+      assert.equal(s.replay.steps.at(-1).timeout,true);
+    }
+    assert.equal(s.round,20);
+    assert.equal(s.turn,0);
+    assert.equal(s.tiles[1].timeBombUntil,undefined);
+    assert.equal(s.players[0].status,'bind');
+    assert.deepEqual(C.choices(s),[['roll']]);
+    assert.ok(C.expire(s,s.deadlineAt));
+    assert.equal(s.die,0);
+    assert.equal(s.players[0].status,undefined);
+    assert.equal(s.phase,'over');
+    assert.equal(s.endReason,'roundLimit');
+  }
+
+  const tied=fixture(4,20);
+  tied.turnOrder=[1,3,0,2];tied.turn=2;tied.round=20;
+  for(const p of tied.players)p.cash=500;
+  C.configureMatch(tied,{suddenDeath:true,recordReplay:true});
+  tied.players[2].cash+=C.cards[chaos].cost;
+  tied.players[2].hand=[chaos];
+  play(tied,['cast',0]);land(tied);
+  withRoll(.999,()=>play(tied,['pass']));
+  assert.equal(tied.overtime,true);
+  assert.deepEqual([tied.round,tied.turn,tied.turnOrder],[21,0,[0,1,2,3]]);
+
+  const ai=fixture(4,0,0);
+  ai.turn=3;ai.players[3].hand=[chaos];
+  assert.deepEqual(C.ai(ai),['cast',0]);
+  play(ai,C.ai(ai));
+  assert.equal(ai.shuffleNextRound,true);
+  const early=fixture(4,0,0);
+  early.players[0].hand=[chaos];
+  assert.deepEqual(C.ai(early),['roll']);
+}
+console.log('Saturn Chaos Stream: round boundary, reordering, seat indexes, Bind, bomb, input clock, replay, round limit, overtime and AI checked.');

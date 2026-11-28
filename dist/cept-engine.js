@@ -437,20 +437,37 @@ function createCepter(edition="ps2"){
     if(s.shrineClemencyUsed){delete s.players[s.turn].sagaClemency;delete s.shrineClemencyUsed;}
     if(s.players[s.turn].status==='magicbooster')fx.clearCepter(s.players[s.turn]);
     delete s.spellArrival;
-    if(s.roundLimit&&s.round>=s.roundLimit&&s.turn===s.players.length-1){
+    if(s.roundLimit&&s.round>=s.roundLimit&&combo.turnSlot(s)===s.players.length-1){
       s.phase='over';s.endReason='roundLimit';return;
     }
     nextTurn(s);
   }
   function nextTurn(s){
     delete s.doublecast;
-    s.turn=(s.turn+1)%s.players.length;
-    if(s.turn===0){s.round++;if(s.world?.until<=s.round)delete s.world;for(const t of s.tiles)if(t.unit?.expires<=s.round)combo.clear(t.unit);for(const q of s.players)if(q.statusUntil<=s.round&&q.status!=='waste')delete q.status;if(s.shineUntil<=s.round){s.prices=s.prices.map(v=>Math.max(1,Math.round(v/1.5)));delete s.shineUntil;}}
-    if(s.turn===0&&board(s).pathSwitches&&s.round>=(s.switchRound??5))flipPaths(s,'자동 전환');
+    const slot=(combo.turnSlot(s)+1)%s.players.length,newRound=slot===0;
+    if(newRound){
+      s.round++;
+      if(s.shuffleNextRound){
+        const order=s.players.map((_,seat)=>seat);
+        for(let i=order.length-1;i>0;i--){
+          const j=Math.floor(Math.random()*(i+1));
+          [order[i],order[j]]=[order[j],order[i]];
+        }
+        s.turnOrder=order;
+        delete s.shuffleNextRound;
+        note(s,'진행 순서 · '+order.map(seat=>s.players[seat].name).join(' → '));
+      }
+      if(s.world?.until<=s.round)delete s.world;
+      for(const t of s.tiles)if(t.unit?.expires<=s.round)combo.clear(t.unit);
+      for(const q of s.players)if(q.statusUntil<=s.round&&q.status!=='waste')delete q.status;
+      if(s.shineUntil<=s.round){s.prices=s.prices.map(v=>Math.max(1,Math.round(v/1.5)));delete s.shineUntil;}
+    }
+    s.turn=s.turnOrder?.[slot]??slot;
+    if(newRound&&board(s).pathSwitches&&s.round>=(s.switchRound??5))flipPaths(s,'자동 전환');
     const p=s.players[s.turn];
     if(revolt){
       p.cash+=roundGain(s);
-      const now=(s.round-1)*s.players.length+s.turn;
+      const now=combo.turnTick(s);
       for(const tile of s.tiles)if(tile.unit?.enchantDeadline<=now)combo.clear(tile.unit);
     }
     if(firstEdition)detonateTimeBombs(s);
@@ -459,11 +476,11 @@ function createCepter(edition="ps2"){
     s.phase=!discardAtEnd&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
   }
   function timeBombRounds(s,t){
-    const turns=t.timeBombUntil-((s.round-1)*s.players.length+s.turn);
+    const turns=t.timeBombUntil-combo.turnTick(s);
     return turns>0?Math.ceil(turns/s.players.length):0;
   }
   function detonateTimeBombs(s){
-    const links=board(s).links,now=(s.round-1)*s.players.length+s.turn;
+    const links=board(s).links,now=combo.turnTick(s);
     for(const [at,tile] of s.tiles.entries()){
       if(!(tile.timeBombUntil<=now))continue;
       delete tile.timeBombUntil;
@@ -742,8 +759,10 @@ function createCepter(edition="ps2"){
   }
   function settleDebts(s,resume){
     armBeginsSuddenDeath(s);
+    const firstSlot=combo.turnSlot(s);
     for(let offset=0;offset<s.players.length;offset++){
-      const seat=(s.turn+offset)%s.players.length,p=s.players[seat];
+      const slot=(firstSlot+offset)%s.players.length;
+      const seat=s.turnOrder?.[slot]??slot,p=s.players[seat];
       if(p.cash>=0)continue;
       if(p.symbols.some(Boolean)||s.tiles.some(t=>t.owner===seat)){
         s.debtor=seat;s.debtResume=resume;s.phase='sell';return true;
@@ -1859,7 +1878,7 @@ function createCepter(edition="ps2"){
       if(curse==='bind'){
         extraSpells.setStatus(s,rival,'bind');
         // The invader has already moved this turn. Keep Bind until that player's next turn.
-        if(d.seat===s.turn)rival.enchantDeadline++;
+        if(d.seat===s.turn&&rival.enchantDeadline!=null)rival.enchantDeadline++;
       }else{
         extraSpells.clearCepter(rival);
         rival.reverse=true;
@@ -2313,7 +2332,14 @@ function createCepter(edition="ps2"){
       }
       case 'breakCard':if(s.phase==='squeeze')s.players[s.spellTarget].cash+=150;mapEffect('shatter','카드 파괴',s.players[s.spellTarget].pos,{title:s.players[s.spellTarget].name});s.players[s.spellTarget].hand.splice(x,1);s.phase='roll';break;
       case 'fizzle':delete s.reliefFrom;mapEffect('cast','대상 없음');s.phase='roll';break;
-      case 'roll':{const {faces,total,sides,zeroBased,haste,charging,limited}=movementRoll(s,p);if(charging){p.hasteRolls--;p.cash+=50;note(s,p.name+' · 마력 보행 +50G');}if((haste&&!--p.hasteRolls)||(limited&&!--p.diceLimitRolls))fx.clearCepter(p);s.die=total;if(revolt){s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(total>0&&total<=3&&combo.activeWorld(s)!=='naturalworld')growDoomDevourers(s);}if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe'){const magic=s.edition==='dc'?100:50;q.cash+=magic;note(s,q.name+' · 미스틀토 +'+magic+'G');}mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){s.remaining=0;if(p.status==='bind')finish(s);else arrived(s);break;}if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(pathSwitch(s,p.pos,p.previous)){delete p.reverse;move(s,p.dir||1);break;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
+      case 'roll':{const {faces,total,sides,zeroBased,haste,charging,limited}=movementRoll(s,p);if(charging){p.hasteRolls--;p.cash+=50;note(s,p.name+' · 마력 보행 +50G');}if((haste&&!--p.hasteRolls)||(limited&&!--p.diceLimitRolls))fx.clearCepter(p);s.die=total;if(revolt){s.rollSum=faces.reduce((sum,face)=>sum+face,0);if(total>0&&total<=3&&combo.activeWorld(s)!=='naturalworld')growDoomDevourers(s);}if(s.die>=5&&s.die<=7)for(const q of s.players)if(q.status==='mistletoe'){const magic=s.edition==='dc'?100:50;q.cash+=magic;note(s,q.name+' · 미스틀토 +'+magic+'G');}mapEffect('roll',String(s.die),p.pos,{faces,sides,...(zeroBased?{zeroBased}:{})});if(p.word!=null){delete p.word;if(p.status==='die')delete p.status;}s.fly=false;}note(s,p.name+' · 주사위 '+s.die);if(!s.die){
+        s.remaining=0;
+        if(p.status==='bind'){
+          if(edition==='saturn')fx.clearCepter(p);
+          finish(s);
+        }else arrived(s);
+        break;
+      }if(p.chooseDirection){delete p.chooseDirection;p.dir=0;p.previous=null;}if(pathSwitch(s,p.pos,p.previous)){delete p.reverse;move(s,p.dir||1);break;}if(p.reverse){const back=p.previous;delete p.reverse;p.dir=-(p.dir||1);if(board(s).links[p.pos].includes(back)){s.remaining=s.die;s.visited=[];advance(s,back);break;}p.previous=null;}if(p.dir){if(p.previous==null&&!board(s).stage&&!board(s).graph)p.previous=(p.pos-p.dir+s.tiles.length)%s.tiles.length;move(s,p.dir);}else if((board(s).stage||board(s).graph)&&board(s).links[p.pos].length!==2)move(s,1);else s.phase='direction';break;
       case 'direction':move(s,x);break;
       case 'totem':p.cash+=handheld?200:edition==='begins'?400:300;fx.destroy(s,s.tiles[x]);afterTerritory(s);break;
       case 'switchFlip':flipPaths(s,'방향 변경');s.phase='land';break;
