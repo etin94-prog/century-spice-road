@@ -344,7 +344,9 @@ const CepterExtraBattle=(()=>{
     }
     function onHit(a,d,damage){
       a.hit=true;
-      const n=d.c.blocksAttackAbilities||d.gear?.blocksCreatureHits?null:a.n;
+      const blocked=d.c.blocksAttackAbilities||d.gear?.blocksCreatureHits;
+      const n=blocked?null:a.n;
+      if(!blocked&&a.c.regenerateHitRatio&&damage>=fx.max(d.u)*a.c.regenerateHitRatio)a.regenerateOnHit=true;
       if(n==='vampire'||s.edition==='saga'&&n==='crimsonvine'||a.c.hpDrain&&!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits){a.hp+=damage;a.absorbed=true;}
       if(s.edition==='saga'&&n==='jackolantern'){
         const amount=Math.min(Math.max(0,s.players[d.seat].cash),Math.max(0,Math.min(a.u.hp,a.hp))*2);
@@ -353,7 +355,7 @@ const CepterExtraBattle=(()=>{
       }
       if(d.hp<=0)return;
       const shape=a.c.hitTransform;
-      if(shape&&!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits&&
+      if(shape&&!blocked&&
         (!shape.races||shape.races.includes(d.c.catalog?.race))&&chance(shape.rate))convert(d,shape.form);
       if(s.edition==='begins'){
         const alteredForm={werewolf:'wolf',medusa:'statue',cockatrice:'wallofstone'}[n];

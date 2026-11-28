@@ -494,6 +494,7 @@ const CepterCreatureText=(()=>{
     if(C.edition==='3ds'&&key==='myrmecoleo')pieces.push('전투에서 격파되면 드래곤플라이로 변해 부활합니다.');
     if(C.edition==='3ds'&&key==='generalguan')pieces.push('배치된 최대 HP 50 이상 크리처 한 마리마다 전투 ST +5.');
     if(card.invadeST)pieces.push('침략할 때 전투 ST +'+card.invadeST);
+    if(firstEdition&&key==='roadrunner')pieces.push('영지 이동 명령으로 두 칸 떨어진 영지로 이동합니다.');
     if(card.blocksLarge)pieces.push('최대 HP가 40 이상인 상대의 일반 공격을 무효화합니다.');
     if(C.edition==='revolt'&&card.innateScroll==='base')pieces.push('장비 없이 공격하면 기본 ST만큼 두루마리 피해를 줍니다.');
     if(C.edition==='begins'&&card.innateScroll)pieces.push('금술. 장비 없이 공격하면 두루마리 피해 '+card.innateScroll+'을 줍니다.');
@@ -579,6 +580,7 @@ const CepterCreatureText=(()=>{
       pieces.push('일반 공격으로 피해를 준 '+scope+'상대가 생존하면 '+Math.round(shape.rate*100)+'% 확률로 스톤 월로 바꿉니다.');
     }
     if(card.regenerateOnDefeat)pieces.push('전투에서 상대를 격파하고 생존하면 HP를 모두 회복합니다.');
+    if(card.regenerateHitRatio)pieces.push('상대 최대 HP의 '+Math.round(card.regenerateHitRatio*100)+'% 이상을 일반 공격으로 피해 입히고 생존하면 HP를 모두 회복합니다.');
     const special=C.edition==='3ds'&&key==='powdereater'?'영지 이동 명령으로 이동할 때 원래 영지에도 분신을 남깁니다. 주문으로 이동하면 분신이 생기지 않습니다.':
       (C.edition==='revolt'||C.edition==='3ds'&&['chimera','pyromancer','sulfurousballoon'].includes(key))&&revoltBattle[key]?revoltBattle[key]:
       (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba','golem','leveller'].includes(key))&&beginsBattle[key]?beginsBattle[key]:

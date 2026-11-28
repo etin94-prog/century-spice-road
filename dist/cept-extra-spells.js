@@ -32,7 +32,7 @@ const CepterExtraSpells=(()=>{
     aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',firstBarricade:'area',firstHolyblight:'global',
     firstMindseeker:'player',mindblast:'player',magicdie:'player',snatch:'player',swapspell:'player',
     solitude:'land',poisonmist:'land',unsummon:'land',firstRecover:'land',dcWallTransform:'land',jump:'global',landtax:'global',meteorstorm:'global',
-    timebomb:'global',balance:'global',alchemy:'global',
+    timebomb:'global',balance:'global',alchemy:'global',armorsmith:'global',weaponsmith:'global',
     ...Object.fromEntries(Object.keys(firstStorms).map(e=>[e,'area'])),
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
@@ -44,6 +44,7 @@ const CepterExtraSpells=(()=>{
   const wallForms={[-1]:'wonderwall',0:'creepingflame',1:'wallofice',2:'wallofstone',3:'tornado'};
   const dcWallForms={[-1]:'statue',0:'pillarofflame',1:'wallofice',2:'wallofstone',3:'hurricane'};
   const stolenKind={capture:'item',theft:'spell',sneakhand:'item'};
+  const forgeKind={armorsmith:'armor',weaponsmith:'weapon'};
   const enemyOnly=new Set(['capture','theft','sneakhand','metamorphosis','fluxion','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind','firstMindseeker','mindblast','snatch']);
   const duration={release:4,uniformity:3,mesozoicsong:3,sinkingsong:3,bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,holdcurse:8,sagaStrut:3,sagaMagicEra:3,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,magicdie:3,soulsteal:3,goodluck:2};
   const soltis={
@@ -65,6 +66,8 @@ const CepterExtraSpells=(()=>{
     mesmerize:'적 손패의 주문 하나를 골라 사용한다. 메스머라이즈는 고를 수 없다.',
     teleport:'가장 가까운 특수 칸으로 이동한다. 이번 차례의 주사위는 생략한다.',
     chaospanic:'모든 셉터의 다음 이동 방향을 한 번 뒤집습니다.',
+    armorsmith:'내 손패 한 장을 골라 무작위 방어구로 바꿉니다.',
+    weaponsmith:'내 손패 한 장을 골라 무작위 무기로 바꿉니다.',
     revoltPlague:'지도에 배치된 모든 크리처에 독을 겁니다. 전투가 끝날 때 최대 HP의 절반만큼 피해를 받습니다.',
     philosophy:'손패에 합성 능력이 있는 카드가 있으면 북에서 3장, 없으면 2장 뽑습니다.',
     chargingstep:'대상 셉터의 다음 두 번 이동은 2~4칸으로 제한됩니다. 대상은 굴릴 때마다 50G를 받습니다.',
@@ -104,6 +107,7 @@ const CepterExtraSpells=(()=>{
     const matchesLand=(card,land)=>combo.matchesTerrain(card,land)||land==='무속성'&&combo.hasElement(card,-1);
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
     const forgePool=cards.flatMap((c,id)=>!c.unlisted&&!c.catalogOnly&&['weapon','armor'].includes(c.category)?[id]:[]);
+    const forgePools={armor:forgePool.filter(id=>cards[id].category==='armor'),weapon:forgePool.filter(id=>cards[id].category==='weapon')};
     const sample=a=>a.length?a[Math.floor(Math.random()*a.length)]:undefined;
     const isMesmerSpell=id=>cards[id]?.kind==='spell'&&combo.key(cards[id])!=='mesmerize';
     const enemy=(s,i)=>!combo.allied(s,s.turn,i);
@@ -579,6 +583,9 @@ const CepterExtraSpells=(()=>{
         const land=s.tiles.filter(t=>t.unit);
         switch(e){
           case 'firstGrace':p.cash+=Math.floor(p.symbols.reduce((sum,count,index)=>sum+count*s.prices[index],0)/10);break;
+          case 'armorsmith':case 'weaponsmith':
+            if(p.hand.length&&forgePools[forgeKind[e]].length){s.spellTarget=s.turn;return 'forgeCard';}
+            break;
           case 'aetherflash':
             for(const q of s.players)setStatus(s,q,e,6);
             break;
@@ -894,7 +901,8 @@ const CepterExtraSpells=(()=>{
         }
         case 'stealCard':p.hand.push(...s.players[s.spellTarget].hand.splice(x,1));delete s.spellTarget;break;
         case 'forgeCard':{
-          s.players[s.spellTarget].hand[x]=sample(forgePool);
+          const pool=forgePools[forgeKind[s.spellEffect]]??forgePool;
+          s.players[s.spellTarget].hand[x]=sample(pool);
           delete s.spellTarget;
           break;
         }
@@ -1110,6 +1118,12 @@ const CepterExtraSpells=(()=>{
       }
       if(e==='jump')return mine.some(t=>t!==s.tiles[p.pos])?7:-10;
       if(e==='firstGrace')return p.symbols.reduce((sum,count,index)=>sum+count*s.prices[index],0)/100;
+      if(forgeKind[e]){
+        if(p.hand.length<2||!forgePools[forgeKind[e]].length)return -40;
+        const equipped=p.hand.some(id=>cards[id].category===forgeKind[e]);
+        const duplicate=p.hand.some((id,index)=>id!==ids.get(e)&&p.hand.indexOf(id)!==index);
+        return (equipped?2:7)+(duplicate?5:0);
+      }
       if(e==='aetherflash'){
         return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*q.hand.reduce((benefit,id)=>{
           const card=cards[id];

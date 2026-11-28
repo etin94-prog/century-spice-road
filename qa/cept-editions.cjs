@@ -9166,3 +9166,79 @@ for(const edition of ['ps1','saturn']){
   assert.equal(fight('dwarf','toxicflower',{defEnchant:'paralysis'}).b.strikes[0].side,0);
 }
 console.log('PS1 and Saturn fusion, warps, battle scaling, petrification and edition-specific curses checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),roomView=require('../dist/cept-room-state').view;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const start=()=>C.start(4,4,7000,edition+'-original-marsh-paths',C.presets.legacyWorkshop,C.presets.legacyWorkshop,1,'teams');
+  assert.ok(C.validBook(C.presets.legacyWorkshop));
+  const goblin=id('goblin'),fighter=id('fighter'),runner=id('roadrunner');
+  assert.ok(C.presets.legacyWorkshop.includes(runner));
+  assert.ok(!C.cards[runner].first);
+
+  for(const [spell,category] of [['armorsmith','armor'],['weaponsmith','weapon']]){
+    const s=start(),owner=s.players[0],card=id(spell),pool=C.cards.flatMap((c,i)=>!c.unlisted&&!c.catalogOnly&&c.category===category?[i]:[]);
+    assert.equal(C.cards[card].cost,30);
+    assert.ok(C.presets.legacyWorkshop.includes(card));
+    s.phase='spell';
+    Object.assign(owner,{hand:[goblin,card,fighter],cash:500});
+    s.players[1].hand=[fighter];
+    const otherHands=s.players.slice(1).map(p=>p.hand.slice());
+    const books=s.players.map(p=>p.book.slice());
+    assert.ok(C.play(s,['cast',1]));
+    assert.deepEqual([s.phase,s.spellTarget,owner.cash],['forgeCard',0,470]);
+    assert.deepEqual(roomView(C,s,0).choices,[['forgeCard',0,goblin],['forgeCard',1,fighter]]);
+    for(const seat of [1,2,3]){
+      assert.deepEqual(roomView(C,s,seat).choices,[]);
+      assert.deepEqual(roomView(C,s,seat).game.players[0].hand,[]);
+    }
+    assert.ok(!C.play(s,['forgeCard',9,goblin]));
+    for(const [index,random] of [[0,0],[pool.length-1,.999999]]){
+      const restored=JSON.parse(JSON.stringify(s));
+      const original=Math.random;
+      try{
+        Math.random=()=>random;
+        assert.ok(C.play(restored,['forgeCard',0,goblin]));
+      }finally{Math.random=original;}
+      assert.equal(restored.phase,'roll');
+      assert.equal(restored.spellTarget,undefined);
+      assert.deepEqual(restored.players[0].hand,[pool[index],fighter]);
+      assert.equal(restored.players[0].cash,470);
+      assert.deepEqual(restored.players.slice(1).map(p=>p.hand),otherHands);
+      assert.deepEqual(restored.players.map(p=>p.book),books);
+    }
+    assert.deepEqual(C.ai(s),['forgeCard',0,goblin]);
+    const empty=start();
+    empty.phase='spell';empty.players[0].hand=[card];empty.players[0].cash=500;
+    assert.equal(C.ai(empty)[0],'roll');
+    assert.ok(C.play(empty,['cast',0]));
+    assert.equal(empty.phase,'roll');
+    assert.deepEqual(empty.players[0].hand,[]);
+  }
+  const road=start();
+  Object.assign(road.tiles[3],{owner:0,unit:{id:runner,hp:30}});
+  road.players[0].pos=3;road.phase='land';
+  const destinations=C.choices(road).filter(([kind,from])=>kind==='transfer'&&from===3).map(([, ,to])=>to);
+  assert.ok(destinations.includes(1)&&destinations.includes(5));
+  assert.ok(!destinations.includes(2));
+  assert.ok(C.play(road,['transfer',3,1]));
+  assert.equal(road.tiles[3].unit,null);
+  assert.deepEqual([road.tiles[1].owner,road.tiles[1].unit.id],[0,runner]);
+
+  if(edition==='saturn'){
+    const leech=id('giantleech'),wall=id('wallofstone');
+    assert.ok(C.presets.legacyWorkshop.includes(leech));
+    function fight(guard,defMax,attackerHP=10){
+      const s=start(),t=s.tiles[1];
+      Object.assign(t,{type:2,owner:1,unit:{id:guard,hp:defMax,mhp:defMax}});
+      s.phase='attack';s.battle={at:1,inv:leech,invHP:attackerHP,atkItem:null,defItem:null};
+      assert.ok(C.play(s,['bare'])&&C.play(s,['bare']));
+      return s.battle;
+    }
+    assert.equal(fight(wall,80).finalHP[0],40);
+    assert.equal(fight(wall,81).finalHP[0],10);
+    assert.ok(!fight(id('unseenstalker'),60).lines.includes('재생 · HP 회복'));
+    assert.equal(fight(fighter,80).finalHP[0],0);
+  }
+}
+console.log('PS1 and Saturn own-hand forging, privacy, replayed selection, AI and two-link Roadrunner; Saturn Giant Leech recovery threshold checked.');

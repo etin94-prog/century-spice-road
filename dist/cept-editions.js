@@ -121,7 +121,7 @@ const CepterEditions=(()=>{
     raisedead:'raisedead',reincarnation:'reincarnation',silence:'silence',sink:'sink',upheaval:'upheaval',
     waste:'waste',weakness:'weakness',weathering:'weathering',wildgrowth:'wildgrowth',wizardseye:'wizardeye',
     babble:'babble',haunt:'haunt',judgement:'judgment',jump:'jump',magicdie:'magicdie',meteor:'meteor',
-    mindblast:'mindblast',mindseeker:'firstMindseeker',poisonmist:'poisonmist',snatch:'snatch',solitude:'solitude',
+    mindblast:'mindblast',mindseeker:'firstMindseeker',armorsmith:'armorsmith',weaponsmith:'weaponsmith',poisonmist:'poisonmist',snatch:'snatch',solitude:'solitude',
     swapspell:'swapspell',timebomb:'timebomb',balance:'balance',unsummon:'unsummon',
     icestorm:'firstIceStorm',fireexplosion:'firstFireExplosion',thunderstorm:'firstThunderstorm',deathcloud:'firstDeathCloud'
   };
@@ -766,7 +766,8 @@ const CepterEditions=(()=>{
     etherealqueen:{firstStat:'enemyLandHP',enemyLandHP:5},flameweevil:{firstStat:'flameWeevilST'},kungfumonk:{first:true,firstStat:'hpToST'},ghost:{basicBattle:false},
     medusa:{hitTransform:{form:'wallofstone',rate:.6}},cockatrice:{hitTransform:{form:'wallofstone',rate:.6}},
     ghoul:{paralyze:true,statusRaces:['rh','rb','rd'],regenerateOnDefeat:true},barrowwight:{sleepOnHit:true},
-    thunderbeak:{first:true,paralyze:true,statusElements:[1]},toxicflower:{stationary:true,first:true,poison:true,statusRaces:['rh','rb','rd']}
+    thunderbeak:{first:true,paralyze:true,statusElements:[1]},toxicflower:{stationary:true,first:true,poison:true,statusRaces:['rh','rb','rd']},
+    roadrunner:{},giantleech:{regenerateHitRatio:.25}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1259,6 +1260,10 @@ const CepterEditions=(()=>{
         curses[curses.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyCurses=curses;
+      const workshop=new Map([['harpy','roadrunner'],['manna','armorsmith'],['cure','weaponsmith']]
+        .map(([from,to])=>[lookup.get(from),lookup.get(to)]));
+      if(edition==='saturn')workshop.set(lookup.get('giantamoeba'),lookup.get('giantleech'));
+      presets.legacyWorkshop=presets.intro.map(id=>workshop.get(id)??id);
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

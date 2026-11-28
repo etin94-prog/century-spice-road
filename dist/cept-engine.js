@@ -990,7 +990,7 @@ function createCepter(edition="ps2"){
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
           criticalBaseSTAtLeast:null,battleFee:0,reviveForm:null,splitReflect:false,instantKill:null,
           selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
-          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateOnDefeat:false,sleepOnHit:false};
+          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1486,7 +1486,8 @@ function createCepter(edition="ps2"){
         if(edition==='saga'&&opponentAlive&&d.hp<=0)d.defeatedByOpponent=true;
       }
       if(!revolt&&!muted)applyPoison(a);
-      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||a.c.regenerateOnDefeat&&d.hp<=0&&d.defeatedByOpponent||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||(edition!=='saga'||!basalt)&&a.u.enchant==='regeneration'||itemEnd&&(a.g==='fireamulet'||a.gear?.regenerateItem))){
+      const earnedRegeneration=a.regenerateOnHit||a.c.regenerateOnDefeat&&d.hp<=0&&d.defeatedByOpponent;
+      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||earnedRegeneration||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||(edition!=='saga'||!basalt)&&a.u.enchant==='regeneration'||itemEnd&&(a.g==='fireamulet'||a.gear?.regenerateItem))){
         a.regenerated=a.heal=true;a.hp=fx.max(a.u);lines.push('재생 · HP 회복');
       }
       if(revolt&&a.hp>0&&d.hp>0&&a.n==='samhain'){
