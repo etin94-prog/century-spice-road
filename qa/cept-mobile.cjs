@@ -110,10 +110,10 @@ const {chromium}=require('playwright');
       assert.ok(metrics.width<=width,edition+' overflow '+JSON.stringify(metrics));
       assert.ok(metrics.hand<=height&&metrics.roll<=height,edition+' controls '+JSON.stringify(metrics));
       await page.setViewportSize({width:height,height:width});
-      await page.waitForFunction(()=>document.querySelector('#mapViewport').getBoundingClientRect().height>0);
-      const rotated=await page.locator('[data-action=roll]').boundingBox();
-      assert.ok(rotated.y+rotated.height<=width,edition+' rotated controls');
-      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      await page.waitForFunction(expected=>{
+        const roll=document.querySelector('#mapRoll').getBoundingClientRect();
+        return innerHeight===expected&&roll.height>0&&roll.top>=0&&roll.bottom<=innerHeight&&document.documentElement.scrollWidth<=innerWidth;
+      },width,{timeout:3000});
       await page.setViewportSize({width,height});
       await hand.tap();
       await page.locator('#mapRoll').tap({trial:true});
