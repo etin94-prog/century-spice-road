@@ -9790,3 +9790,52 @@ console.log('PS1 and Saturn Deadly Thorn: true scroll effect, permanent form, ba
   assert.deepEqual(C.ai(tactical),['pay']);
 }
 console.log('Saturn Bandersnatch: exact odds, current hand limit, attack and defense return, neutralization, native book and AI checked.');
+
+{
+  const C=ps2.createEdition('saturn'),earth=C.presets.legacyEarthDefense,workshop=C.presets.legacyWorkshop;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const mimic=id('mimic'),energy=id('energyfist'),manna=id('manna'),fly=id('fly'),cure=id('cure');
+  assert.ok(C.validBook(earth)&&earth.includes(mimic));
+  assert.ok(C.validBook(workshop)&&workshop.includes(energy));
+  assert.match(creatureText.describe(C,C.cards[mimic]),/격파.*무작위로 상대 셉터에게/);
+  assert.match(describeItem(C,C.cards[energy]),/두루마리 공격력 30.*무 속성.*강타/);
+  assert.ok(ps2.createEdition('ps1').cards.every(c=>c.catalogOnly||!['mimic','energyfist'].includes(C.combo.key(c))));
+  function setup(attacker,guard,{hp,atk=[],def=[],level=1}={}){
+    const s=C.start(2,0,7000,'saturn-original-marsh-paths',earth,workshop,3),at=3;
+    Object.assign(s.players[0],{pos:at,hand:atk,cash:1000});
+    Object.assign(s.players[1],{hand:def,cash:1000});
+    Object.assign(s.tiles[at],{type:1,owner:1,level,unit:{id:id(guard),hp:hp??C.cards[id(guard)].hp}});
+    s.phase='attack';s.battle={at,inv:id(attacker),atkItem:null,defItem:null};
+    return s;
+  }
+  function fight(s,left=['bare'],right=['bare']){
+    const original=Math.random;
+    try{
+      Math.random=()=>.51;
+      assert.ok(C.play(s,left)&&C.play(s,right));
+    }finally{Math.random=original;}
+    return s;
+  }
+  const defeated=fight(setup('fighter','mimic',{hp:20,def:[manna,fly,cure]}));
+  assert.deepEqual(defeated.players.map(p=>p.hand),[[fly],[manna,cure]]);
+  assert.equal(defeated.tiles[3].owner,0);
+  assert.match(defeated.battle.lines.join(' '),/손패 한 장 전달/);
+  assert.ok(!defeated.battle.lines.some(line=>line.includes(C.cards[fly].name)));
+  const failed=fight(setup('mimic','cyclops',{atk:[manna,fly,cure],def:Array(6).fill(manna),level:3}));
+  assert.equal(failed.battle.finalHP[0],0);
+  assert.deepEqual(failed.players.map(p=>p.hand),[[manna,cure],[...Array(6).fill(manna),fly]]);
+  for(const battle of [fight(setup('fighter','mimic',{def:[manna]})),fight(setup('fighter','mimic',{hp:1}))]){
+    assert.doesNotMatch(battle.battle.lines.join(' '),/손패 한 장 전달/);
+  }
+  const bareState=setup('fighter','mimic',{hp:10,def:[id('mace'),cure]});
+  const armed=fight(bareState,['bare'],['equip',0]);
+  assert.deepEqual(armed.players.map(p=>p.hand),[[cure],[]]);
+  const neutral=fight(setup('fighter','goblin',{atk:[energy]}),['equip',0]);
+  assert.equal(neutral.players[0].cash,990);
+  assert.ok(neutral.battle.strikes[0].scroll&&neutral.battle.strikes[0].critical);
+  assert.match(neutral.battle.strikes[0].notes.join(' '),/45/);
+  const elemental=fight(setup('fighter','dwarf',{atk:[energy]}),['equip',0]);
+  assert.equal(elemental.battle.strikes[0].critical,undefined);
+  assert.match(elemental.battle.strikes[0].notes.join(' '),/30/);
+}
+console.log('Saturn Mimic and Energy Fist: defeat, survival, empty and full hands, equipment payment, hidden transfer, native decks and neutral scroll critical checked.');

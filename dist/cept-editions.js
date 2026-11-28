@@ -1185,6 +1185,7 @@ const CepterEditions=(()=>{
         }
       }
       if(edition==='ps1'&&slug==='werewolf')Object.assign(c,{catalogOnly:false,basicBattle:false});
+      if(edition==='saturn'&&slug==='mimic')Object.assign(c,{catalogOnly:false,basicBattle:true,givesHandCardOnDefeat:true});
       if(edition==='saturn'&&slug==='bandersnatch')Object.assign(c,{catalogOnly:false,basicBattle:true,hitReturnChance:.3});
       if(edition==='ps1'&&slug==='ashura')Object.assign(c,{catalogOnly:false,basicBattle:true,battleCepterCurse:'reverse'});
       if(first&&['knight','darkelf','elf'].includes(slug))c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
@@ -1276,7 +1277,10 @@ const CepterEditions=(()=>{
       presets.legacyCurses=curses;
       const workshop=new Map([['harpy','roadrunner'],['manna','armorsmith'],['cure','weaponsmith']]
         .map(([from,to])=>[lookup.get(from),lookup.get(to)]));
-      if(edition==='saturn')workshop.set(lookup.get('giantamoeba'),lookup.get('giantleech'));
+      if(edition==='saturn'){
+        workshop.set(lookup.get('giantamoeba'),lookup.get('giantleech'));
+        workshop.set(lookup.get('freeze'),lookup.get('energyfist'));
+      }
       presets.legacyWorkshop=presets.intro.map(id=>workshop.get(id)??id);
       const tribute=presets.fire.slice();
       for(const [from,to] of [['fighter','bistair'],['kobold','willothewisp'],['minotaur','efreet']]){
@@ -1288,6 +1292,7 @@ const CepterEditions=(()=>{
       for(const [from,to] of [['paladin','taotieh'],['ooze','ormechead'],['fighter','hoodlum'],['gargoyle','deedum']]){
         earth[earth.indexOf(lookup.get(from))]=lookup.get(to);
       }
+      if(edition==='saturn')earth[earth.indexOf(lookup.get('gargoyle'))]=lookup.get('mimic');
       presets.legacyEarthDefense=earth;
       const siege=new Map([
         ['wolf','basilisk'],['marfolk','lionsmane'],['wallofice','wallofstone'],['giantamoeba','dwarf'],['lizardman','wereboar'],['hurricane','leveller']

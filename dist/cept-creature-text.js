@@ -537,6 +537,7 @@ const CepterCreatureText=(()=>{
     if(firstEdition&&card.reviveForm==='dragonfly')pieces.push('전투에서 격파되면 드래곤플라이로 변해 부활합니다.');
     if(card.splitReflect)pieces.push('일반 공격 피해의 절반을 반사하고 나머지를 받습니다.');
     if(card.randomHandBreak)pieces.push('전투에서 살아남으면 상대 손패 한 장을 무작위로 파괴합니다.');
+    if(card.givesHandCardOnDefeat)pieces.push('상대에게 격파되면 내 손패 한 장을 무작위로 상대 셉터에게 넘깁니다.');
     if(card.battleEvolution)pieces.push('세 번의 전투에서 살아남으면 플레임 로드로 변신합니다.');
     if(card.instantKill){
       const {minimumBaseST,races:raceFilter,elements}=card.instantKill;

@@ -1695,6 +1695,11 @@ function createCepter(edition="ps2"){
         }
       }
       const victor=a===A?D:A;
+      if(creatureEnd&&a.c.givesHandCardOnDefeat&&a.defeatedByOpponent&&p.hand.length&&!s.predict){
+        const [gift]=p.hand.splice(Math.floor(Math.random()*p.hand.length),1);
+        s.players[victor.seat].hand.push(gift);
+        lines.push(a.c.name+' · 상대 셉터에게 손패 한 장 전달');
+      }
       if(victor.hp>0&&victor.n==='deathgaze'&&(!handheld||creatureEnd&&a.defeatedByOpponent)&&!s.predict&&Math.random()<(firstEdition ? .6 : .8)){
         const enemy=s.players[a.seat],id=a.u.id;
         enemy.book=enemy.book.filter(card=>card!==id);
