@@ -9525,3 +9525,57 @@ for(const edition of ['ps1','saturn']){
   assert.ok(!C.choices(invasion).some(([action])=>action==='invade'));
 }
 console.log('PS1 and Saturn siege: exact 60% and 30% boundaries, ST and race together, successful defense, land locks and AI equipment checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),book=C.presets.legacyEarthDefense;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  assert.ok(C.validBook(book));
+  for(const name of ['hoodlum','deedum'])assert.ok(book.includes(id(name)),edition+' '+name);
+  function setup(attacker,guard,{atkST,defST,gear,defGear,enchant,type=2,level=3}={}){
+    const s=C.start(2,0,7000,edition+'-original-marsh-paths',book,book,3),at=3,inv=id(attacker);
+    Object.assign(s.players[0],{pos:at,hand:gear?[id(gear)]:[],cash:1000});
+    Object.assign(s.players[1],{hand:defGear?[id(defGear)]:[],cash:1000});
+    Object.assign(s.tiles[at],{type,owner:1,level,unit:{id:id(guard),hp:C.cards[id(guard)].hp,st:defST,enchant}});
+    s.phase='attack';
+    s.battle={at,inv,invUnit:{id:inv,hp:C.cards[inv].hp,st:atkST},atkItem:null,defItem:null};
+    return s;
+  }
+  function strike(attacker,guard,options={}){
+    const s=setup(attacker,guard,options);
+    assert.ok(C.play(s,options.gear?['equip',0]:['bare'])&&C.play(s,options.defGear?['equip',0]:['bare']));
+    return s.battle.strikes[0];
+  }
+  assert.match(strike('hoodlum','fighter').notes.join(' '),/약타 20 피해/);
+  assert.match(strike('hoodlum','fighter',{atkST:45}).notes.join(' '),/약타 22 피해/);
+  assert.match(strike('hoodlum','fighter',{gear:'mace'}).notes.join(' '),/약타 30 피해/);
+  assert.match(strike('hoodlum','fighter',{defST:39,defGear:'mace'}).notes.join(' '),/→ 40 피해/);
+  const scroll=strike('hoodlum','fighter',{gear:'firebolt'});
+  assert.match(scroll.notes.join(' '),/→ 30 피해/);
+  assert.doesNotMatch(scroll.notes.join(' '),/약타/);
+  const critical=strike('hoodlum','fighter',{gear:'maneater'});
+  const criticalDamage=Math.floor((40+C.cards[id('maneater')].st)*.75);
+  assert.match(critical.notes.join(' '),new RegExp('약타 '+criticalDamage+' 피해'));
+
+  for(const damage of [10,19,30,35,50,70,115]){
+    const blocked=strike('fighter','deedum',{atkST:damage});
+    assert.equal(blocked.effect,'block',edition+' '+damage);
+    assert.match(blocked.notes.join(' '),new RegExp(damage+' 피해 무효'));
+  }
+  for(const damage of [9,20,29,40,65,109])assert.equal(strike('fighter','deedum',{atkST:damage}).effect,'hit',edition+' '+damage);
+  const piercing=strike('nightmare','deedum');
+  assert.equal(piercing.effect,'block');
+  assert.doesNotMatch(piercing.notes.join(' '),/지형 보너스 관통/);
+  assert.equal(strike('fighter','deedum',{gear:'firebolt'}).effect,'hit');
+  assert.equal(strike('fighter','deedum',{atkST:30,enchant:'paralysis'}).effect,'hit');
+  assert.equal(strike('fighter','deedum',{atkST:30,enchant:'vortex'}).effect,'hit');
+  assert.equal(strike('fighter','deedum',{atkST:30,defGear:'towershield'}).effect,'block');
+  assert.match(strike('fighter','deedum',{atkST:40,defGear:'towershield'}).notes.join(' '),/→ 20 피해/);
+
+  const raid=setup('wereboar','deedum',{type:'무속성',gear:'longsword',level:1});
+  const before=JSON.stringify(raid);
+  assert.deepEqual(C.ai(raid),['bare']);
+  assert.equal(JSON.stringify(raid),before);
+  assert.ok(C.play(raid,C.ai(raid))&&C.play(raid,['bare']));
+  assert.equal(raid.battle.won,true);
+}
+console.log('PS1 and Saturn Hoodlum and Dee Dum: threshold, half rounding, weapons, scrolls, odd tens, shield order and AI checked.');

@@ -988,7 +988,7 @@ function createCepter(edition="ps2"){
         a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,blocksFirst:false,criticalMHP:0,battleHP:0,invadeST:0,doubleAttack:false,
           criticalElements:[],criticalRaces:[],pierceElements:[],pierceAll:false,reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false,neutralizeRaces:[],
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
-          criticalBaseSTAtLeast:null,battleFee:0,battleFeePerHP:0,hitMagicPerHP:0,hitMagicPerLap:0,reviveForm:null,splitReflect:false,instantKill:null,
+          criticalBaseSTAtLeast:null,weakBaseSTAtLeast:null,blocksOddTens:false,battleFee:0,battleFeePerHP:0,hitMagicPerHP:0,hitMagicPerLap:0,reviveForm:null,splitReflect:false,instantKill:null,
           selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
           battleEndHPLoss:0,landLevelLossRate:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false,battleCepterCurse:null};
         useGear(a);
@@ -1180,6 +1180,10 @@ function createCepter(edition="ps2"){
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
         !muted&&(a.c.criticalMHP&&fx.max(d.u)<=a.c.criticalMHP||a.c.criticalLargeMHP&&fx.max(d.u)>=a.c.criticalLargeMHP)||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
       if(!muted&&a.u.enchant!=='paralysis'&&s.players[a.seat].status==='sinkingsong')damage=Math.floor(damage/2);
+      if(!scroll&&!muted&&a.c.weakBaseSTAtLeast!=null&&fx.strength(d.u)>=a.c.weakBaseSTAtLeast){
+        damage=Math.floor(damage/2);
+        lines.push(a.c.name+' · 약타 '+damage+' 피해');
+      }
       const ward=muted?null:extra.protect(a,d,damage,scroll,penetrates,orb);
       if(ward==='block'||ward==='heal')return ward;
       const reflected=ward==='reflect'||scroll&&d.n==='carbuncle';
@@ -1210,7 +1214,8 @@ function createCepter(edition="ps2"){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
         const reflects=d.c.reflectNormal||matches(d.c.reflectElements,a)||guard?.reflectNormal||matches(guard?.reflectElements,a)||
           d.gear?.effect==='reflect'||d.u.enchant==='reflection'||d.n==='decoy'||revolt&&d.g==='mirrorhoplon'&&!a.gear;
-        const blocks=revolt&&d.u.enchant==='energyfield'||(begins||revolt)&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||guard?.neutralizeRaces?.includes(a.c.catalog?.race)||
+        const oddTens=d.c.blocksOddTens&&Math.floor(damage/10)%2===1;
+        const blocks=oddTens||revolt&&d.u.enchant==='energyfield'||(begins||revolt)&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||guard?.neutralizeRaces?.includes(a.c.catalog?.race)||
           d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||!guard?.firstEquipment&&d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           !guard?.firstEquipment&&(d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3))||d.g==='dragonhelm'&&[1,2].includes(a.element)||
@@ -1218,7 +1223,7 @@ function createCepter(edition="ps2"){
           d.c.blocksBaseSTAtLeast!=null&&fx.strength(a.u)>=d.c.blocksBaseSTAtLeast||d.c.blocksLarge&&fx.max(a.u)>=(edition==='saga'&&d.n==='rahab'?50:40)||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
           d.n==='caitsith'&&fx.strength(a.u)>=40||d.c.blocksWithArmor&&d.gear?.category==='armor'||(revolt||begins||handheld)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
-        if(!orb&&blocks){lines.push('공격 무효');return 'block';}
+        if(!orb&&blocks){lines.push(oddTens?d.c.name+' · '+damage+' 피해 무효':'공격 무효');return 'block';}
         if(!orb&&d.c.partialReflect){
           const reflected=Math.floor(damage*d.c.partialReflect);
           reflectNormal(a,reflected);lines.push('반사 '+reflected);return 'reflect';

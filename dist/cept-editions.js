@@ -773,7 +773,8 @@ const CepterEditions=(()=>{
     ormechead:{neutralizeNormal:true,neutralizeScroll:true,battleEndHPLoss:10,battleEndLossIgnoresBonus:true},
     taotieh:{basicBattle:false},
     basilisk:{instantKill:{races:['rh','rb','rd'],rate:.6},landLevelLossRate:1},
-    leveller:{landLevelLossRate:.3},lionsmane:{stationary:true,instantKill:{minimumBaseST:40,races:['rh','rb','rd'],rate:1}}
+    leveller:{landLevelLossRate:.3},lionsmane:{stationary:true,instantKill:{minimumBaseST:40,races:['rh','rb','rd'],rate:1}},
+    hoodlum:{weakBaseSTAtLeast:40},deedum:{blocksOddTens:true}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1279,7 +1280,7 @@ const CepterEditions=(()=>{
       }
       presets.legacyFireTribute=tribute;
       const earth=presets.legacyGuard.slice();
-      for(const [from,to] of [['paladin','taotieh'],['ooze','ormechead']]){
+      for(const [from,to] of [['paladin','taotieh'],['ooze','ormechead'],['fighter','hoodlum'],['gargoyle','deedum']]){
         earth[earth.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyEarthDefense=earth;

@@ -531,6 +531,7 @@ const CepterCreatureText=(()=>{
       }
       pieces.push('자신이 전투에 참가하면 '+card.battleFee+'G를 지불합니다.');
     }
+    if(card.weakBaseSTAtLeast!=null)pieces.push('기본 ST가 '+card.weakBaseSTAtLeast+' 이상인 상대에게 일반 공격 피해가 절반이 됩니다.');
     if(card.criticalBaseSTAtLeast!=null)pieces.push('기본 ST가 '+card.criticalBaseSTAtLeast+' 이상인 상대에게 일반 공격이 강타합니다.');
     if(firstEdition&&card.noLapHeal)pieces.push('주회 보상으로 HP가 회복되지 않습니다.');
     if(firstEdition&&card.reviveForm==='dragonfly')pieces.push('전투에서 격파되면 드래곤플라이로 변해 부활합니다.');
@@ -573,6 +574,7 @@ const CepterCreatureText=(()=>{
     if(card.reflectElements?.length)pieces.push(targets(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(targets(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');
     if(card.reflectNormal)pieces.push('일반 공격을 상대에게 반사합니다.');
+    if(card.blocksOddTens)pieces.push('일반 공격 피해의 십의 자리가 홀수일 때 그 공격을 무효화합니다.');
     if(card.neutralizeNormal)pieces.push('일반 공격을 무효화합니다.');
     const status=card.poison?'독':card.confuse?'혼란':card.paralyze?'마비':null;
     if(status||card.sleepOnHit){
