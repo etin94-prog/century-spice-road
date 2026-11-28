@@ -292,6 +292,8 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 .symbol-amount{color:#ffe1a0;font-weight:700}
 .symbol-result{font-size:.825rem}
 .symbol-picker button:focus-visible{outline:2px solid #fff0ce;outline-offset:2px}
+.symbol-map-button{width:100%;margin-top:8px}
+#game #symbolMapReturn{position:absolute;bottom:var(--foot);left:var(--side-left);z-index:6;min-height:44px}
 
 /* Battle: the stage fills the screen under the top bar; the choices float at the bottom. */
 #game .atlas.in-battle #center{inset:var(--hud-height) 0 0;padding:0;border:0;border-radius:0;background:#0d1016}
@@ -430,7 +432,7 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 
 /* Closed hand: the top of each card peeks from the bottom edge, beside the hand button. */
 #game .hand-peek{position:absolute;z-index:4;right:calc(var(--side-right) + 56px);bottom:0;display:flex;align-items:flex-start;height:calc(70px + env(safe-area-inset-bottom));padding:8px 6px 0 16px;overflow:hidden;pointer-events:none}
-#game .hand-peek:empty,#game #mapViewport:has(#handPanel[open]) .hand-peek,#game #mapViewport:not(:has(#handPanel)) .hand-peek,.showing-map-effect .hand-peek{display:none}
+#game .hand-peek:empty,#game #mapViewport:has(#handPanel[open]) .hand-peek,#game #mapViewport:not(:has(#handPanel)) .hand-peek,#game #mapViewport:has(#symbolMapReturn:not([hidden])) .hand-peek,.showing-map-effect .hand-peek{display:none}
 #game .hand-peek .peek-card{flex:0 0 auto;width:62px;min-width:0;min-height:0;height:78px;margin-left:-12px;padding:0;border:0;border-radius:5px;background:none;pointer-events:auto;
   translate:0 6px;transition:translate .12s ease-out;filter:drop-shadow(0 -2px 5px #000b)}
 #game .hand-peek .peek-card img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:5px;box-shadow:0 0 0 1px #cdb07a}

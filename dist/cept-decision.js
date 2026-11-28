@@ -118,15 +118,16 @@ function cardSummary(card){
 
 function turnPicker(title){
   document.querySelector('#turnPicker')?.remove();
-  const openedState=s,openedRevision=room?.revision,openedPhase=s.phase,openedTurn=s.turn;
+  const openedState=s,openedRevision=room?.revision,openedPhase=s.phase,openedTurn=s.turn,openedRound=s.round;
   const dialog=el('dialog',null,'turn-picker');dialog.id='turnPicker';
   const heading=el('h2',title);heading.id='turnPickerTitle';
   dialog.setAttribute('aria-labelledby',heading.id);
   dialog.append(heading,btn('닫기',()=>dialog.close()));
-  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  dialog.addEventListener('close',()=>{if(!dialog.open)dialog.remove();});
+  const current=()=>s===openedState&&s.phase===openedPhase&&s.turn===openedTurn&&s.round===openedRound&&room?.revision===openedRevision&&
+    !pending&&!C.isComputer(s,C.actor(s))&&(!room||!room.busy&&room.seat===C.actor(s));
   const commit=action=>{
-    if(!action||s!==openedState||s.phase!==openedPhase||s.turn!==openedTurn||room?.revision!==openedRevision||
-        pending||C.isComputer(s,C.actor(s))||room&&(room.busy||room.seat!==C.actor(s))){dialog.close();return;}
+    if(!action||!current()){dialog.close();return;}
     const choices=room?room.choices:C.choices(s);
     dialog.close();
     if(choices.some(a=>a.length===action.length&&a.every((v,i)=>v===action[i])))act(action);
@@ -134,7 +135,7 @@ function turnPicker(title){
   const show=()=>{
     document.querySelector('main').append(dialog);dialog.showModal();
   };
-  return {dialog,commit,show};
+  return {dialog,commit,show,current};
 }
 
 // Entries are {action,id,label} plus optional blocked (why it cannot be chosen), confirm (button text) and note.
@@ -187,6 +188,11 @@ function symbolLabel(id){
   const area=Math.floor(id/4),legacy=['classic','market'].includes(s.mapId);
   return (legacy?(area===0?'서부':'동부'):(area+1)+'지역')+' '+C.elements[id%4];
 }
+let symbolMapTrade=null;
+function currentSymbolMapTrade(){
+  if(symbolMapTrade&&!symbolMapTrade.current())symbolMapTrade=null;
+  return symbolMapTrade;
+}
 function symbolTrade(group,p,controls){
   const kind=group[0][0],assets=new Map(),gems=C.board(s).gemStore;
   const gemTrade=['buyGem','sellGem','stealGem'].includes(kind);
@@ -198,7 +204,7 @@ function symbolTrade(group,p,controls){
   }
   const box=el('div',null,'command');box.dataset.kind=kind;
   box.append(openerButton(kind,title,assets.size,()=>{
-    const {dialog,commit,show}=turnPicker(title);
+    const {dialog,commit,show,current}=turnPicker(title);
     dialog.classList.add('symbol-picker');
     const buy=['buySymbol','buyGem','stealGem'].includes(kind),options=el('div',null,'symbol-options');
     options.setAttribute('role','group');options.setAttribute('aria-label',gems?'속성석 종류':'호부 종류');
@@ -236,7 +242,20 @@ function symbolTrade(group,p,controls){
     choose(assets.keys().next().value);
     const details=el('div',null,'symbol-details');
     details.setAttribute('role','status');details.append(amount,result);
-    dialog.append(options,quantity,details,confirm);show();
+    dialog.append(options,quantity,details);
+    if(kind==='buySymbol'||kind==='sellSymbol')dialog.append(btn('지도 보기',()=>{
+      if(!current()){dialog.close();return;}
+      symbolMapTrade={current,resume:()=>{
+        symbolMapTrade=null;
+        render();
+        if(current())show();
+      }};
+      dialog.close();
+      handPanel.open=false;
+      render();
+      $('symbolMapReturn')?.focus({preventScroll:true});
+    },'symbol-map-button'));
+    dialog.append(confirm);show();
   }));
   controls.append(box);
 }

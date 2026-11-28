@@ -439,6 +439,40 @@ const {chromium}=require('playwright');
       assert.deepEqual(await page.evaluate(()=>[s.roundLimit,s.suddenDeath,s.players[0].cash]),[25,true,800]);
       assert.match(await page.locator('#center').innerText(),/성소 · 작은 행운 · \+200G/);
       console.log('begins',width+'x'+height,'25 rounds and reachable shrine direction arrow by touch OK');
+      const enterTemple=()=>page.evaluate(()=>{
+        cancelMapEffect();stopWalk();clearTimeout(timer);pending=false;inspect=-1;
+        s=C.start(2,2,5000,'begins-original-ford');
+        Object.assign(s,{phase:'fork',remaining:1,visited:[]});
+        Object.assign(s.players[0],{pos:16,previous:0,cash:100});
+        C.play(s,['route',17]);render();
+      });
+      const trade=page.locator('#turnPicker');
+      await enterTemple();
+      await page.locator('#buttons [data-open=buySymbol]').tap();
+      await trade.getByRole('button',{name:/1지역 풍/}).tap();
+      await trade.getByRole('button',{name:'수량 1장 늘리기'}).tap();
+      assert.equal(await trade.locator('.symbol-count').innerText(),'2장');
+      await trade.getByRole('button',{name:'지도 보기',exact:true}).tap();
+      await trade.waitFor({state:'detached'});
+      assert.deepEqual(await page.evaluate(()=>[s.phase,s.players[0].cash]),['temple',100]);
+      await page.locator('#mapViews summary').tap();
+      await page.locator('#mapViews [data-zoom="1"]').tap();
+      await page.getByRole('button',{name:/^18번 신전/}).tap();
+      assert.match(await page.locator('#center').innerText(),/18번 칸.*신전/s);
+      await page.locator('#symbolMapReturn').tap();
+      assert.equal(await trade.locator('.symbol-options [aria-pressed=true]').innerText(),'1지역 풍\n장당 10G');
+      assert.equal(await trade.locator('.symbol-count').innerText(),'2장');
+      await trade.locator(':scope > .primary').tap();
+      assert.deepEqual(await page.evaluate(()=>[s.phase,s.players[0].cash,s.players[0].symbols[3]]),['land',80,2]);
+
+      await enterTemple();
+      await page.locator('#buttons [data-open=buySymbol]').tap();
+      await trade.getByRole('button',{name:'지도 보기',exact:true}).tap();
+      await page.locator('#symbolMapReturn').waitFor();
+      await page.evaluate(()=>{s.phase='land';render();});
+      await page.locator('#symbolMapReturn').waitFor({state:'hidden'});
+      assert.deepEqual(await page.evaluate(()=>[s.players[0].cash,s.players[0].symbols[3]]),[100,0]);
+      console.log('begins',width+'x'+height,'temple trade survives map inspection and rejects a stale turn');
       await page.close();
     }
     for(const [width,height] of [[320,568],[375,812],[844,390]]){
@@ -480,6 +514,9 @@ const {chromium}=require('playwright');
       await temple();await page.locator('[data-open=sellSymbol]').tap();
       await trades.getByRole('button',{name:'수량 1장 늘리기'}).tap();
       assert.equal(await trades.locator('.symbol-amount').innerText(),'수령 24G');
+      await trades.getByRole('button',{name:'지도 보기',exact:true}).tap();
+      await page.locator('#symbolMapReturn').tap();
+      assert.equal(await trades.locator('.symbol-count').innerText(),'2장');
       await confirm.tap();
       assert.deepEqual(await page.evaluate(()=>[s.players[0].cash,s.players[0].symbols[2]]),[99,2]);
       await page.evaluate(()=>{

@@ -371,6 +371,9 @@ function pawnFoot(tileId,seat,occupants){
   return [s.tiles[tileId].unit ? .60+x*.32 : x,y];
 }
 const viewport=$('mapViewport'),mapRoll=$('mapRoll'),matchHud=$('matchHud');
+const symbolMapReturn=btn('호부 거래로 돌아가기',()=>currentSymbolMapTrade()?.resume(),'primary');
+symbolMapReturn.id='symbolMapReturn';symbolMapReturn.hidden=true;
+viewport.append(symbolMapReturn);
 function placeHandPanel(){
   if(!s?.battle){
     if(handPanel.parentElement!==viewport)viewport.append(handPanel);
@@ -685,7 +688,7 @@ function map(){
   root.style.setProperty('--half-tile',half+'cqw');
   root.style.aspectRatio=m.stage?'3 / 2':'100 / '+(18+.5*(m.rows+m.cols)*half);
   root.closest('.atlas').classList.toggle('in-battle',!!s.battle);root.inert=!!s.battle;
-  const standing=s.phase==='over'?-1:s.players[s.turn].pos;
+  const standing=s.phase==='over'?-1:s.players[s.turn].pos,reviewingSymbols=!!currentSymbolMapTrade();
   const canTarget=!pending&&!C.isComputer(s,C.actor(s))&&(!room||room.seat===C.actor(s)&&!room.busy);
   const targets=new Map(canTarget&&['spellTarget','secretTarget','territoryTarget','teleMove','towerTarget'].includes(s.phase)?
     (room?room.choices:C.choices(s)).filter(a=>['targetLand','secretLand','abilityLand','teleTo','towerTo'].includes(a[0])).map(a=>[a[1],a]):[]);
@@ -695,7 +698,7 @@ function map(){
     const name=m.gateNames?.[m.gates[n]]||({light:'빛의 성소',dark:'어둠의 성소'}[m.shrineKinds?.[n]])||C.elements[t.type]||t.type,owner=t.owner>=0?s.players[t.owner].name:'미점유';
     const b=btn('',e=>{
       // The whole tile under the active cepter answers for it, so a crowded tile is still easy to hit.
-      const mine=canTarget&&n===s.players[C.actor(s)]?.pos&&!['fork','direction'].includes(s.phase)&&!s.battle&&s.phase!=='over';
+      const mine=!reviewingSymbols&&canTarget&&n===s.players[C.actor(s)]?.pos&&!['fork','direction'].includes(s.phase)&&!s.battle&&s.phase!=='over';
       if((e?.target.closest('.pawn-action')||mine)&&!targets.has(n)){launchPawnActions();return;}if(s.phase==='fork'&&canTarget&&exits.has(n)){act(['route',n]);return;}if(s.phase==='towerTarget'&&targets.has(n)){act(targets.get(n));return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect||n===s.towerAt?' chosen':''));
     const [r,c]=m.position[n];b.style.left=((m.rows+c-r+.3)*half)+'%';
     b.style.top=(11+(r+c-2)*half*.5)+'cqw';
@@ -767,7 +770,7 @@ function map(){
     s.players.forEach((p,i)=>{
       if(p.pos!==n)return;
       const mark=el('span',null,'pawn');const [fx,fy]=pawnFoot(n,i,occupants);
-      if(canTarget&&i===C.actor(s)&&!s.battle&&s.phase!=='over'){
+      if(!reviewingSymbols&&canTarget&&i===C.actor(s)&&!s.battle&&s.phase!=='over'){
         mark.classList.add('pawn-action');
         mark.title=targets.has(n)?labels[targets.get(n)[0]]:p.name+' 행동';
         b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+p.name+' 위치');
@@ -928,6 +931,8 @@ function winLabel(){
 function render(){
   clearTimeout(timer);
   mapRoll.hidden=true;
+  const symbolPreview=currentSymbolMapTrade();
+  symbolMapReturn.hidden=!symbolPreview;
   // Only a dedicated screen can keep its own hand visible during another seat's turn.
   const reader=room?room.seat:s.players.filter(q=>!q.ai).length===1?s.players.findIndex(q=>!q.ai):null;
   if(pending||C.isComputer(s,C.actor(s))||room&&room.seat!==C.actor(s)){
@@ -1047,7 +1052,7 @@ function render(){
   if(local&&s.phase==='shop')shopMenu(controls,choices,p);
   const roll=choices.find(([kind])=>kind==='roll');
   // A decision that must be made opens the menu; beside a roll it waits folded until asked for.
-  const mapOnly=C.edition==='dc'&&s.phase==='spellTarget'&&['dcWallTransform','polymorph'].includes(s.spellEffect)&&choices.some(([kind])=>kind==='targetLand');
+  const mapOnly=!!symbolPreview||C.edition==='dc'&&s.phase==='spellTarget'&&['dcWallTransform','polymorph'].includes(s.spellEffect)&&choices.some(([kind])=>kind==='targetLand');
   const optional=!!roll&&choices.some(([kind])=>kind!=='roll'),anchored=choices.length>0&&!s.battle&&!mapOnly;
   actionMenu.hidden=mapOnly;
   actionMenu.classList.toggle('action-menu',anchored);
