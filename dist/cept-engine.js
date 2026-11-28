@@ -440,9 +440,30 @@ function createCepter(edition="ps2"){
       const now=(s.round-1)*s.players.length+s.turn;
       for(const tile of s.tiles)if(tile.unit?.enchantDeadline<=now)combo.clear(tile.unit);
     }
+    if(firstEdition)detonateTimeBombs(s);
     extraSpells?.startTurn(s,cards);
     for(let j=0;j<(fx.idol(s,'brassidol')?2:1);j++){draw(p,s);if(p.status==='despair')p.hand.pop();}
     s.phase=!discardAtEnd&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
+  }
+  function timeBombRounds(s,t){
+    const turns=t.timeBombUntil-((s.round-1)*s.players.length+s.turn);
+    return turns>0?Math.ceil(turns/s.players.length):0;
+  }
+  function detonateTimeBombs(s){
+    const links=board(s).links,now=(s.round-1)*s.players.length+s.turn;
+    for(const [at,tile] of s.tiles.entries()){
+      if(!(tile.timeBombUntil<=now))continue;
+      delete tile.timeBombUntil;
+      const nearby=new Set([at,...links[at]]),losses=[];
+      for(const player of s.players)if(nearby.has(player.pos)){
+        const loss=Math.floor(Math.max(0,player.cash)/2);
+        player.cash-=loss;
+        if(loss)losses.push(player.name+' −'+loss+'G');
+      }
+      const label='시한폭탄 폭발';
+      s.mapEffect={sequence:(s.mapEffect?.sequence||0)+1,type:'cast',label,tile:at,source:at};
+      note(s,label+' · '+(at+1)+'번'+(losses.length?' · '+losses.join(' · '):''));
+    }
   }
   function price(p,c,s,summoning=true){
     if(p.status==='aetherflash'&&c.kind==='creature'&&summoning)return 90;
@@ -1118,12 +1139,12 @@ function createCepter(edition="ps2"){
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||a.c.pierceBaseSTAtLeast&&fx.strength(d.u)>=a.c.pierceBaseSTAtLeast||weapon?.pierceAll||matches(weapon?.pierceElements,d));
       const beastCritical=revolt&&a.n==='lonebeast'&&board(s).links[b.at].some(at=>at!==b.from&&s.tiles[at].owner===a.seat);
-      const elementalCritical=!scroll&&!muted&&(beastCritical||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
+      const elementalCritical=!scroll&&!muted&&(beastCritical||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||weapon?.criticalRaces?.includes(d.c.catalog?.race)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
       if(scroll&&['deathgaze','pegasus'].includes(d.n))return 'block';
-      if(elementalCritical||!scroll&&begins&&a.n==='juggernaut'&&fx.strength(d.u)>=40||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||!muted&&(matches(a.gear?.scrollCriticalElements,d)||matches(a.c.scrollCriticalElements,d))||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
+      if(elementalCritical||!scroll&&begins&&a.n==='juggernaut'&&fx.strength(d.u)>=40||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||!muted&&(matches(a.gear?.scrollCriticalElements,d)||weapon?.scrollCriticalRaces?.includes(d.c.catalog?.race)||matches(a.c.scrollCriticalElements,d))||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
         !muted&&(a.c.criticalMHP&&fx.max(d.u)<=a.c.criticalMHP||a.c.criticalLargeMHP&&fx.max(d.u)>=a.c.criticalLargeMHP)||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
@@ -1153,10 +1174,10 @@ function createCepter(edition="ps2"){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
         const reflects=d.c.reflectNormal||matches(d.c.reflectElements,a)||guard?.reflectNormal||matches(guard?.reflectElements,a)||
           d.gear?.effect==='reflect'||d.u.enchant==='reflection'||d.n==='decoy'||revolt&&d.g==='mirrorhoplon'&&!a.gear;
-        const blocks=revolt&&d.u.enchant==='energyfield'||(begins||revolt)&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
-          d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
+        const blocks=revolt&&d.u.enchant==='energyfield'||(begins||revolt)&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||guard?.neutralizeRaces?.includes(a.c.catalog?.race)||
+          d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||!guard?.firstEquipment&&d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
-          d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||
+          !guard?.firstEquipment&&(d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3))||d.g==='dragonhelm'&&[1,2].includes(a.element)||
           matches(d.c.neutralizes,a)||d.c.blocksBaseSTAtMost!=null&&fx.strength(a.u)<=d.c.blocksBaseSTAtMost||
           d.c.blocksBaseSTAtLeast!=null&&fx.strength(a.u)>=d.c.blocksBaseSTAtLeast||d.c.blocksLarge&&fx.max(a.u)>=(edition==='saga'&&d.n==='rahab'?50:40)||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
           d.n==='caitsith'&&fx.strength(a.u)>=40||d.c.blocksWithArmor&&d.gear?.category==='armor'||(revolt||begins)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
@@ -2713,7 +2734,7 @@ function createCepter(edition="ps2"){
     return book;
   }
   const territoryAbilityCost=card=>revolt?undefined:key(card)==='goldentotem'?0:fx.territoryCost({edition},key(card));
-  return {edition,bookSize,copyLimit,evo,synthesizedCreature,synthesizedUnit,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,hasLandDamage,spellRevival,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,tollRange,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,zeromnOptions:extraSpells?.zeromn,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,battleCombos,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
+  return {edition,bookSize,copyLimit,evo,synthesizedCreature,synthesizedUnit,secretArt:fx.secretArt,limitAllianceEvos,territoryType,claimTerrain,territoryAbilityCost,hasLandDamage,spellRevival,timeBombRounds,shrineNames:shrineModule?.names,shrineDetails:shrineModule?.details,price,spellHP,isComputer,owedToll,tollRange,spellDescriptions:extraSpells?.descriptions,spellActions:extraSpells?.actions,spellHints:extraSpells?.hints,soltisOptions:extraSpells?.soltis,zeromnOptions:extraSpells?.zeromn,routePreview,pathSwitch,gemQuote,gemUnitPrice,shopStock,shopCost,battleGround,combo,storyAlliances,battleCombos,practiceBook,start,setOpeningBook,configureMatch,armClock,expire,choices,play,ai,actor,allied,outcome,personalTotal,total,toll,value,debtSaleValue,levelCost,elementCost,chain,chainRate,chainName,sameChain,cards,elements,maps,board,presets,validBook,validLegacyBook,forts:maps.classic?.forts||[]};
  }
 const editionParam=typeof location==='undefined'?null:new URLSearchParams(location.search).get('edition');
 // The newer editions start only when their data file is on the page; otherwise the PS2 game opens.

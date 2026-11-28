@@ -7901,3 +7901,88 @@ for(const edition of ['dc','ps1','saturn']){
   }
 }
 console.log('Legacy spell variants checked for odds, movement, local effects, spell copying and hidden books.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),roomState=require('../dist/cept-room-state');
+  const map=edition+'-original-marsh-paths';
+  const id=name=>C.cards.findIndex(c=>c.catalog&&!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const fresh=()=>C.start(4,4,12000,map,undefined,undefined,0,'teams');
+  function act(s,...action){assert.ok(C.play(s,action),edition+' '+s.phase+' '+JSON.stringify(action));}
+  function advanceTurn(s){
+    const turn=s.turn;
+    s.players[turn].word=0;
+    if(s.phase==='discard')act(s,'discard',0);
+    act(s,'roll');
+    act(s,'pass');
+  }
+  {
+    const s=fresh(),at=C.board(s).links.findIndex((links,i)=>C.territoryType(s.tiles[i].type)&&links.every(n=>C.territoryType(s.tiles[n].type)));
+    const neighbors=C.board(s).links[at],far=s.tiles.findIndex((tile,i)=>C.territoryType(tile.type)&&i!==at&&!neighbors.includes(i));
+    C.configureMatch(s,{recordReplay:true});
+    [at,neighbors[0],far,far].forEach((pos,i)=>Object.assign(s.players[i],{pos,cash:1000,hand:[],book:Array(12).fill(id('fighter'))}));
+    s.players[0].hand=[id('timebomb')];
+    act(s,'cast',0);
+    assert.equal(C.timeBombRounds(s,s.tiles[at]),3);
+    assert.equal(roomState.view(C,s,2).game.tiles[at].timeBombUntil,12);
+    assert.equal(s.replay.steps.at(-1).tiles.find(([i])=>i===at)[1][8],12);
+    const restored=JSON.parse(JSON.stringify(s));
+    for(let index=0;index<11;index++)advanceTurn(restored);
+    assert.equal(C.timeBombRounds(restored,restored.tiles[at]),1);
+    assert.deepEqual(restored.players.map(q=>q.cash),[980,1000,1000,1000]);
+    advanceTurn(restored);
+    assert.deepEqual(restored.players.map(q=>q.cash),[490,500,1000,1000]);
+    assert.equal(restored.tiles[at].timeBombUntil,undefined);
+    assert.equal(restored.replay.steps.at(-1).effect[0],at);
+    assert.match(restored.log[0],/시한폭탄 폭발/);
+    assert.equal(restored.replay.steps.at(-1).tiles.find(([i])=>i===at)[1].length,8);
+    const replayCheck=createContext({C,replay:restored.replay});
+    runInContext(readFileSync(resolve(__dirname,'../dist/cept-replay-view.js'),'utf8'),replayCheck);
+    assert.ok(runInContext('validateReplay(replay)',replayCheck));
+
+    s.turn=1;s.phase='spell';s.players[1].hand=[id('removecurse')];
+    act(s,'cast',0);act(s,'targetLand',at);
+    assert.equal(s.tiles[at].timeBombUntil,undefined);
+  }
+  {
+    const s=fresh();
+    [1200,900,900,600].forEach((cash,i)=>Object.assign(s.players[i],{cash,lap:i,hand:[]}));
+    s.players[0].hand=[id('balance')];act(s,'cast',0);
+    assert.deepEqual(s.players.map(q=>q.cash),[1210,1020,1080,1080]);
+  }
+  if(edition==='saturn'){
+    {
+      const s=fresh(),[p,q]=s.players;
+      s.players.forEach(other=>{other.hand=[];});
+      p.hand=[id('alchemy')];q.hand=[id('fighter')];
+      act(s,'cast',0);
+      assert.deepEqual([p.hand,q.hand],[[id('fighter')],[id('fighter')]]);
+    }
+    {
+      const s=fresh(),[p,q]=s.players,prior=q.pos,host=p.pos;
+      p.cash=1000;p.hand=[id('dimensiondoor')];
+      act(s,'cast',0);
+      assert.deepEqual(C.choices(s),[['targetPlayer',1],['targetPlayer',3]]);
+      act(s,'targetPlayer',1);
+      assert.notEqual(q.pos,prior);assert.equal(p.pos,host);
+      assert.equal(s.phase,'land');
+    }
+  }
+  function firstStrike(attacker,defender,attackItem,defendItem){
+    const s=fresh(),at=s.tiles.findIndex(t=>C.territoryType(t.type)),card=id(defender);
+    Object.assign(s.tiles[at],{owner:1,type:'무속성',unit:{id:card,hp:C.cards[card].hp}});
+    s.phase='attack';s.battle={at,inv:id(attacker),atkItem:null,defItem:null};s.players[0].pos=at;
+    s.players[0].hand=attackItem?[id(attackItem)]:[];s.players[1].hand=defendItem?[id(defendItem)]:[];
+    s.players[0].cash=s.players[1].cash=1000;
+    if(attackItem)act(s,'equip',0);else act(s,'bare');
+    if(defendItem)act(s,'equip',0);else act(s,'bare');
+    return s.battle.strikes[0];
+  }
+  assert.equal(firstStrike('dwarf','goblin',null,'earthshield').effect,'block');
+  assert.equal(firstStrike('fighter','dwarf',null,'earthshield').effect,'hit');
+  assert.equal(firstStrike('dragon','goblin',null,'dragonshield').effect,'block');
+  assert.equal(firstStrike('fighter','goblin',null,'dragonshield').effect,'hit');
+  assert.match(firstStrike('fighter','goblin','hellblaze',null).notes.join(' '),/60 피해/);
+  assert.match(firstStrike('fighter','wolf','hellblaze',null).notes.join(' '),/40 피해/);
+  assert.equal(firstStrike('fighter','goblin','hellblaze','magicshield').effect,'block');
+}
+console.log('Legacy delayed curses, simultaneous ranking, random card copy, relocation and native gear battle effects checked.');

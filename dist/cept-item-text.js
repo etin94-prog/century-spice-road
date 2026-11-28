@@ -119,6 +119,7 @@ const describeCepterItem=(()=>{
   const scrollCritical={freeze:0,firebolt:1,windcutter:2,stonehail:3};
   const aliases={knightsshield:'knightshield',spikedshield:'spikeshield'};
   const elements=['화','수','지','풍'];
+  const raceNames={rh:'인간',rb:'야수',ru:'불사',rp:'식물',rd:'용'};
   const list=ids=>ids.map(i=>elements[i]||'무').join('·')+' 속성';
   return (C,card)=>{
     if(card.kind!=='item'||card.catalogOnly)return;
@@ -138,8 +139,11 @@ const describeCepterItem=(()=>{
     if(!scroll&&(card.st||card.hp))pieces.push('전투 중 '+[card.st&&signed('ST',card.st),card.hp&&signed('HP',card.hp)].filter(Boolean).join(' · '));
     if(scroll&&card.st)pieces.push('두루마리 공격력 '+card.st);
     if(card.scrollTerritoryElements)pieces.push('내 '+list(card.scrollTerritoryElements)+' 영지 수 × 10만큼 두루마리 피해를 줍니다.');
+    if(card.scrollCriticalRaces?.length)pieces.push(card.scrollCriticalRaces.map(r=>raceNames[r]).join('·')+' 종족 상대에게 두루마리 강타가 적용됩니다.');
+    if(card.criticalRaces?.length)pieces.push(card.criticalRaces.map(r=>raceNames[r]).join('·')+' 종족 상대에게 강타합니다.');
+    if(card.neutralizeRaces?.length)pieces.push(card.neutralizeRaces.map(r=>raceNames[r]).join('·')+' 종족의 일반 공격을 무효화합니다.');
     if(card.scrollCriticalElements?.length)pieces.push(list(card.scrollCriticalElements)+' 상대에게 두루마리 강타가 적용됩니다.');
-    if(Object.hasOwn(scrollCritical,name))pieces.push(list([scrollCritical[name]])+' 상대에게 두루마리 강타가 적용됩니다.');
+    if(!card.firstEquipment&&Object.hasOwn(scrollCritical,name))pieces.push(list([scrollCritical[name]])+' 상대에게 두루마리 강타가 적용됩니다.');
     if(card.first&&name!=='hourglass')pieces.push('선제');
     if(card.last)pieces.push('후공');
     if(card.effect==='reflect'||card.reflectNormal)pieces.push('일반 공격을 반사합니다.');
@@ -161,7 +165,7 @@ const describeCepterItem=(()=>{
     if(card.reflectElements?.length)pieces.push(list(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(list(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');
     if(card.instantDeathElements?.length)pieces.push('일반 공격으로 피해를 준 '+list(card.instantDeathElements)+' 상대를 60% 확률로 즉사시킵니다.');
-    if(Object.hasOwn(shields,name)){
+    if(!card.firstEquipment&&Object.hasOwn(shields,name)){
       const el=list([shields[name]]);
       pieces.push(el+' 상대의 일반 공격을 무효화합니다. 장착한 크리처가 '+el+'이면 모든 일반 공격을 무효화합니다.');
     }
@@ -181,7 +185,7 @@ const describeCepterItem=(()=>{
     else if(['begins','saga'].includes(C.edition)&&name==='proteanring')pieces.push('전투에서 E 등급을 제외한 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.');
     else if(C.edition==='begins'&&name==='coinofpiety')pieces.push('장착한 크리처가 생존하면 내가 가장 많이 가진 호부 수량이 10% 증가합니다.');
     else if(C.edition==='begins'&&name==='offeringdoll')pieces.push('생존하면 장착 크리처와 같은 속성의 호부 가치가 30% 오릅니다.');
-    else if(!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
+    else if(!card.firstEquipment&&!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
     if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };

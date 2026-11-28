@@ -307,6 +307,10 @@ const describeCepterSpell=(()=>{
       if(e==='jump')return '가장 가까운 내 영지로 이동하고 이번 차례의 주사위를 건너뜁니다.';
       if(e==='lifeforce'&&edition==='ps1')return '고른 셉터가 성을 지날 때까지 크리처 사용 마력이 절반이 되고 주문은 사용할 수 없습니다.';
       if(e==='firstRecover')return '고른 크리처의 현재 HP를 최대 HP까지 회복합니다.';
+      if(e==='timebomb')return '현재 칸에 시한폭탄을 설치합니다. 3라운드 뒤 이 칸과 인접 칸의 셉터는 보유 마력의 절반을 잃습니다.';
+      if(e==='balance')return '모든 셉터가 시전 시점의 개인 순위 × 현재 주회 × 30G를 얻습니다.';
+      if(e==='alchemy')return '다른 셉터의 손패 전체에서 무작위로 고른 카드 한 장의 복사본을 얻습니다.';
+      if(e==='dimensiondoor'&&edition==='saturn')return '고른 적을 무작위로 다른 영지 칸에 이동시키고 이번 차례의 주사위를 건너뜁니다.';
       if(e==='landtax')return '모든 셉터가 자신이 보유한 영지 한 곳당 20G를 잃습니다.';
       if(e==='meteorstorm')return '무작위로 고른 땅 다섯 곳의 영지 레벨을 1로 낮춥니다.';
       if(e==='evilblast'&&edition==='saturn')return '고른 크리처에게 30 피해를 줍니다.';

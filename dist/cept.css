@@ -172,6 +172,7 @@
 #audioStatus:empty{display:none}
 
 .tile .chain-mark{position:absolute;z-index:6;top:52%;right:0;pointer-events:none;white-space:nowrap;padding:1px 3px;border:1px solid #e1bd7c;border-radius:3px;background:#201a12;color:#ffeac5;font:700 clamp(8px,1cqw,12px)/1.15 sans-serif}
+.tile .time-bomb-mark{position:absolute;z-index:6;left:0;top:52%;padding:1px 3px;border:1px solid #efac84;border-radius:3px;background:#3a1c18;color:#ffe4d4;font:700 clamp(8px,1cqw,12px)/1.15 sans-serif;white-space:nowrap}
 .tile.chain-peer .chain-mark{background:#ffe3a5;color:#30220d;box-shadow:0 0 5px #ffe3a5}
 #center .chain-notice{flex-basis:100%;color:#ffdc96;font-weight:700}
 

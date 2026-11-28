@@ -19,7 +19,7 @@ function validateReplay(replay){
   if(replay?.version!==1||replay.edition!==C.edition||typeof replay.map!=='string'||
       !Object.hasOwn(C.maps,replay.map)||typeof replay.title!=='string')return false;
   const board=replayBoard(replay),count=board?.types.length;
-  const validTile=t=>Array.isArray(t)&&t.length===8&&Number.isInteger(t[1])&&Number.isInteger(t[2]);
+  const validTile=t=>Array.isArray(t)&&(t.length===8||t.length===9&&Number.isSafeInteger(t[8])&&t[8]>0)&&Number.isInteger(t[1])&&Number.isInteger(t[2]);
   if(!Array.isArray(replay.names)||replay.names.length<2||replay.names.length>4||replay.names.some(name=>typeof name!=='string')||
       !Array.isArray(replay.initial)||replay.initial.length!==count||!replay.initial.every(validTile)||!Array.isArray(replay.steps))return false;
   const validFrame=f=>f&&Array.isArray(f.players)&&f.players.length===replay.names.length&&
@@ -81,7 +81,7 @@ function showReplay(replay){
       combat.append(cell);
     });
     const movement={mapId:replay.map,round:f.round,switchRound:f.switchRound,switchSide:f.switchSide};
-    stage.replaceChildren(...tiles.map(([type,owner,level,id,hp],at)=>{
+    stage.replaceChildren(...tiles.map(([type,owner,level,id,hp,,,,timeBombUntil],at)=>{
       const tile=el('div',String(at+1),'replay-tile '+(['fire','water','earth','wind'][type]||'special'));
       const [r,c]=board.position[at],span=board.rows+board.cols;
       tile.style.left=(board.stage?r:50+(c-r)*78/span)+'%';
@@ -89,7 +89,8 @@ function showReplay(replay){
       if(Array.isArray(f.path)&&f.path.includes(at))tile.classList.add('on-route');
       if(owner>=0&&owner<colors.length)tile.style.borderColor=colors[owner];
       const arrow=C.pathSwitch(movement,at);
-      tile.title=[C.elements[type]||type,arrow?(arrow.to+1)+'번 방향 · '+arrow.rounds+'라운드 후 자동 전환':'Lv. '+level,C.cards[id]?.name,hp==null?'':hp+' HP'].filter(Boolean).join(' · ');
+      const bombRounds=C.timeBombRounds({round:f.round,turn:f.turn,players:f.players},{timeBombUntil});
+      tile.title=[C.elements[type]||type,bombRounds?'시한폭탄 '+bombRounds+'라운드 남음':'',arrow?(arrow.to+1)+'번 방향 · '+arrow.rounds+'라운드 후 자동 전환':'Lv. '+level,C.cards[id]?.name,hp==null?'':hp+' HP'].filter(Boolean).join(' · ');
       const occupants=f.players.flatMap((p,i)=>p[0]===at?[i+1]:[]);
       if(occupants.length)tile.append(el('span',occupants.join('/'),'replay-pawns'));
       return tile;

@@ -1,6 +1,10 @@
 // A replay contains public observations. It does not store inputs into hidden hands.
 const CepterMatchRecord=(()=>{
-  const tileState=t=>[t.type,t.owner,t.level,t.unit?.id??null,t.unit?.hp??null,t.unit?.mhp??null,t.unit?.st??null,t.unit?.enchant??null];
+  function tileState(t){
+    const row=[t.type,t.owner,t.level,t.unit?.id??null,t.unit?.hp??null,t.unit?.mhp??null,t.unit?.st??null,t.unit?.enchant??null];
+    if(t.timeBombUntil!=null)row.push(t.timeBombUntil);
+    return row;
+  }
   function frame(s,total){
     const f={
       round:s.round,turn:s.turn,phase:s.phase,die:s.die||0,winner:s.winner,
@@ -27,7 +31,8 @@ const CepterMatchRecord=(()=>{
   function append(s,prior,action,seat,timedOut,total){
     if(!prior)return;
     const tiles=s.tiles.flatMap((t,i)=>{
-      const next=tileState(t);return next.some((v,j)=>v!==prior.tiles[i][j])?[[i,next]]:[];
+      const next=tileState(t),previous=prior.tiles[i];
+      return next.length!==previous.length||next.some((v,j)=>v!==previous[j])?[[i,next]]:[];
     });
     const step={...frame(s,total),seat,action,tiles};
     if(timedOut)step.timeout=true;

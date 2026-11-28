@@ -262,7 +262,7 @@ const CepterExtraBattle=(()=>{
     }
     function critical(a,d,scroll){
       if(scroll)return s.edition==='revolt'&&a.g==='shadowblaze'&&s.tiles.filter(v=>v.owner===d.seat&&v.unit?.id===d.u.id).length>1||
-        s.edition==='saga'&&a.n==='warlock'||['wizard','efreet','conjurer'].includes(a.n)||a.g==='hellblaze'&&fx.strength(d.u)<=20||a.g==='stonehail'&&d.element===3||a.g==='tearinghalo'&&a.element!==-1;
+        s.edition==='saga'&&a.n==='warlock'||['wizard','efreet','conjurer'].includes(a.n)||a.g==='hellblaze'&&!a.gear?.firstEquipment&&fx.strength(d.u)<=20||a.g==='stonehail'&&d.element===3||a.g==='tearinghalo'&&a.element!==-1;
       if(s.edition==='revolt'&&(a.n==='flameduke'&&a.gear?.category==='weapon'||a.n==='nebiros'&&!d.gear||
         a.n==='blackknight'&&fx.strength(d.u)<=30))return true;
       return a.n==='elf'&&!a.c.criticalRace&&d.element===2||a.g==='earthamulet'&&a.element===2||a.g==='windamulet'&&a.element===3||a.g==='icicle'&&d.element===0||a.g==='vorpalsword'&&fx.max(d.u)>=40;

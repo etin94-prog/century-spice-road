@@ -32,6 +32,7 @@ const CepterExtraSpells=(()=>{
     aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',firstBarricade:'area',firstHolyblight:'global',
     firstMindseeker:'player',mindblast:'player',magicdie:'player',snatch:'player',swapspell:'player',
     solitude:'land',poisonmist:'land',unsummon:'land',firstRecover:'land',jump:'global',landtax:'global',meteorstorm:'global',
+    timebomb:'global',balance:'global',alchemy:'global',
     ...Object.fromEntries(Object.keys(firstStorms).map(e=>[e,'area'])),
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
@@ -263,6 +264,7 @@ const CepterExtraSpells=(()=>{
         });
       }
       return s.tiles.flatMap((t,i)=>{
+        if(e==='removecurse'&&t.timeBombUntil!=null&&!t.unit)return [['targetLand',i]];
         if(!territoryType(t.type))return [];
         const empty=!t.unit,hasTerrain=Object.hasOwn(terrain,e)||Object.hasOwn(hybridShifts,e);
         if(empty||(Object.hasOwn(shifts,e)||e==='revoltlandtransfer')&&t.owner!==s.turn)return [];
@@ -473,7 +475,7 @@ const CepterExtraSpells=(()=>{
           }
           case 'removecurse':
             if(u)combo.clear(u);
-            delete t.enchant;
+            delete t.enchant;delete t.timeBombUntil;
             if(['begins','3ds'].includes(s.edition))returnToBook(s,s.turn,ids.get(e));
             break;
           case 'temptation':{
@@ -789,6 +791,17 @@ const CepterExtraSpells=(()=>{
             }else s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});
             break;
           case 'landtax':for(const [seat,player] of s.players.entries())player.cash-=owning(s,seat).length*20;break;
+          case 'timebomb':s.tiles[p.pos].timeBombUntil=time(s)+3*s.players.length;break;
+          case 'balance':{
+            const awards=s.players.map((q,seat)=>30*(q.lap+1)*personalRank(s,seat));
+            for(const [seat,player] of s.players.entries())player.cash+=awards[seat];
+            break;
+          }
+          case 'alchemy':{
+            const id=sample(s.players.flatMap((q,seat)=>seat===s.turn?[]:q.hand));
+            if(id!=null)p.hand.push(id);
+            break;
+          }
           case 'meteorstorm':{
             const lands=s.tiles.filter(t=>territoryType(t.type));
             for(let n=0;n<5&&lands.length;n++){
@@ -1046,7 +1059,8 @@ const CepterExtraSpells=(()=>{
         case 'thornfetter':case 'parasite':case 'bindingmist':return -sign*weight*3;
         case 'wing':case 'phantasm':case 'simulacrum':return sign*(t.unit.enchant===e?0:weight*3);
         case 'sagapolymorph':case 'beginspolymorph':case 'polymorph':case 'turntothewall':case 'walltransform':return -sign*(cards[t.unit.id].cost/12+weight-4);
-        case 'removecurse':return (['paralysis','thornfetter','parasite','senility','antielement','disease'].includes(t.unit.enchant)||t.unit.poisoned?sign:-sign)*(combo.enchanted(t.unit)?9:0);
+        case 'removecurse':if(!t.unit)return t.timeBombUntil!=null&&s.players.some((q,seat)=>!enemy(s,seat)&&(q.pos===x||board(s).links[x].includes(q.pos)))?5:0;
+          return (['paralysis','thornfetter','parasite','senility','antielement','disease'].includes(t.unit.enchant)||t.unit.poisoned?sign:-sign)*(combo.enchanted(t.unit)?9:0);
         case 'replace':case 'revoltExchange':return Math.max(0,...replacement(s,t).map(a=>sign*(cards[a[2]].hp+cards[a[2]].st-t.unit.hp-fx.strength(t.unit))/5));
         case 'chariot':return chariotExits(s,x).some(i=>s.tiles[i].owner<0&&combo.matchesTerrain(cards[t.unit.id],s.tiles[i].type))?4:1;
         case 'magicfountain':return p.pos===x?0:1;
@@ -1079,6 +1093,13 @@ const CepterExtraSpells=(()=>{
       },0);
       if(e==='firstHolyblight')return s.tiles.reduce((score,t)=>score+(t.unit&&cards[t.unit.id].catalog?.race==='ru'?(enemy(s,t.owner)?1:-1)*fx.damageAmount(s,t,20)/3:0),0);
       if(e==='landtax'||e==='meteorstorm')return land.reduce((score,t)=>score+(enemy(s,t.owner)?1:-1)*(e==='landtax'?2:(t.level-1)*3),0);
+      if(e==='balance')return 3*(p.lap+1)*personalRank(s)-Math.max(...s.players.flatMap((q,seat)=>enemy(s,seat)?[3*(q.lap+1)*personalRank(s,seat)]:[0]));
+      if(e==='alchemy')return s.players.some((q,seat)=>seat!==s.turn&&q.hand.length)?3:-40;
+      if(e==='timebomb'){
+        if(s.tiles[p.pos].timeBombUntil!=null)return -20;
+        const nearby=new Set([p.pos,...board(s).links[p.pos]]);
+        return s.players.reduce((score,q,seat)=>score+(nearby.has(q.pos)?(enemy(s,seat)?1:-1)*Math.max(0,q.cash)/32:0),0)-4;
+      }
       if(e==='jump')return mine.some(t=>t!==s.tiles[p.pos])?7:-10;
       if(e==='firstGrace')return p.symbols.reduce((sum,count,index)=>sum+count*s.prices[index],0)/100;
       if(e==='aetherflash'){

@@ -427,7 +427,7 @@ function placeMapRoll(root,x,y,zoom){
   const right=groupEnd+10,before=groupStart-stackWidth-10;
   // While another tile is inspected, or route arrows surround the cepter, the stack waits at the edge.
   const routeOnMap=['fork','direction'].includes(s.phase);
-  const away=cameraTile!==s.players[s.turn].pos||routeOnMap,wideView=width>height*1.1;
+  const away=cameraTile!==s.players[s.turn].pos||routeOnMap||!!tile.querySelector('.time-bomb-mark'),wideView=width>height*1.1;
   const side=away?0:right+stackWidth+4<=width?1:before>=4?-1:0;
   const tools=$('mapViews'),toolsHeight=tools.querySelector('summary').offsetHeight;
   const left=Math.max(4,Math.min(width-stackWidth-4,away?(wideView?tools.offsetLeft-stackWidth-6:(width-stackWidth)/2):side>0?right:side<0?before:(groupStart+groupEnd-stackWidth)/2));
@@ -618,6 +618,12 @@ function map(){
       b.append(el('small',arrow+' '+(switchInfo.to+1)+'번 · '+switchInfo.rounds+'R'));
       b.setAttribute('aria-label',(n+1)+'번 '+name+' · '+(switchInfo.to+1)+'번 방향 · '+switchInfo.rounds+'라운드 후 자동 전환');
     }
+    const bombRounds=C.timeBombRounds(s,t);
+    if(bombRounds){
+      const label='시한폭탄 '+bombRounds+'R';
+      b.append(el('small',label,'time-bomb-mark'));
+      b.setAttribute('aria-label',b.getAttribute('aria-label')+' · 시한폭탄 '+bombRounds+'라운드 남음');
+    }
     if(t.type==='마력 트랩'){
       const stored='적립 '+(t.trapMagic??0)+'G';
       b.append(el('small',stored));
@@ -668,6 +674,8 @@ function map(){
     const t=s.tiles[inspect],u=t.unit;
     const closeInspect=btn('✕',()=>{inspect=-1;render();},'inspect-close');closeInspect.setAttribute('aria-label','칸 정보 닫기');
     center.append(closeInspect,el('small',(inspect+1)+'번 칸'+(m.areaCount>1?' · '+(t.area+1)+'지역':'')),el('b',m.gateNames?.[m.gates[inspect]]||({light:'빛의 성소',dark:'어둠의 성소'}[m.shrineKinds?.[inspect]])||C.elements[t.type]||t.type));
+    const bombRounds=C.timeBombRounds(s,t);
+    if(bombRounds)center.append(el('span','시한폭탄 · '+bombRounds+'라운드 뒤 이 칸과 인접 칸의 셉터는 마력 절반을 잃습니다.','chain-notice'));
     if(u){
       const c=C.cards[u.id],effect=C.cards.find(card=>u.enchant&&C.combo.key(card)===u.enchant);
       const status=u.poisoned?'독':u.confused?'혼란':u.enchant==='paralysis'?'마비':u.enchant==='phantasm'?'판타즘':effect?.name;

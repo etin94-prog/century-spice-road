@@ -122,7 +122,7 @@ const CepterCombos = (() => {
       if(type[e]==='player'){
         if(idol(s,'graniteidol')&&['pain','grace','wordofrecall','changeling','wizardeye','mindseeker','suppression','drainmagic','echo','dimensiondoor','squeeze'].includes(e))return [];
         if(e==='squeeze')return s.players.flatMap((q,n)=>q.hand.length?[['targetPlayer',n]]:[]);
-        return s.players.flatMap((q,n)=>allied(s,i,n)&&['pain','silence','despair','changeling','mindseeker','waste','drainmagic','echo'].includes(e)||e==='mindseeker'&&!(q.book?.length??q.bookCount)?[]:[['targetPlayer',n]]);
+        return s.players.flatMap((q,n)=>allied(s,i,n)&&(['pain','silence','despair','changeling','mindseeker','waste','drainmagic','echo'].includes(e)||s.edition==='saturn'&&e==='dimensiondoor')||e==='mindseeker'&&!(q.book?.length??q.bookCount)?[]:[['targetPlayer',n]]);
       }
       return s.tiles.flatMap((t,n)=>{
         if(!targetable(s,t,cards[ids.get(e)]?.catalog?.category))return [];

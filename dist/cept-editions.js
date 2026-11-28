@@ -110,7 +110,7 @@ const CepterEditions=(()=>{
     waste:'waste',weakness:'weakness',weathering:'weathering',wildgrowth:'wildgrowth',wizardseye:'wizardeye',
     babble:'babble',haunt:'haunt',judgement:'judgment',jump:'jump',magicdie:'magicdie',meteor:'meteor',
     mindblast:'mindblast',mindseeker:'firstMindseeker',poisonmist:'poisonmist',snatch:'snatch',solitude:'solitude',
-    swapspell:'swapspell',unsummon:'unsummon',
+    swapspell:'swapspell',timebomb:'timebomb',balance:'balance',unsummon:'unsummon',
     icestorm:'firstIceStorm',fireexplosion:'firstFireExplosion',thunderstorm:'firstThunderstorm',deathcloud:'firstDeathCloud'
   };
   const legacySpellEffects={
@@ -132,7 +132,7 @@ const CepterEditions=(()=>{
       magicfountain:'magicfountain',mesmerize:'mesmerize',torture:'torture'
     },
     ps1:{...firstSpellEffects,antielement:'antielement',corruption:'corruption',lifeforce:'lifeforce',revival:'revival'},
-    saturn:{...firstSpellEffects,evilblast:'evilblast',landtax:'landtax',meteorstorm:'meteorstorm',recover:'firstRecover'}
+    saturn:{...firstSpellEffects,alchemy:'alchemy',dimensiondoor:'dimensiondoor',evilblast:'evilblast',landtax:'landtax',meteorstorm:'meteorstorm',recover:'firstRecover'}
   };
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');
   const modernSpellEffects={
@@ -680,6 +680,24 @@ const CepterEditions=(()=>{
     const elements=[...parts[2].matchAll(/\[(\w+)\]/g)].map(([,name])=>battleElements.indexOf(name));
     return {[elementalTraits[parts[1]]]:elements};
   }
+  const firstRace={人:'rh',獣:'rb',不死:'ru',植物:'rp',竜:'rd'};
+  const firstAffinity={無:-1,火:0,水:1,地:2,風:3};
+  function firstEquipmentTrait(clause,category){
+    const scrollPower=clause.match(/^巻物攻撃\[ST(\d+)\]$/);
+    if(scrollPower&&category==='scroll')return {st:Number(scrollPower[1])};
+    const parts=clause.match(/^(強打|巻物強打|無効化)\[([^\]]+)\]$/);
+    if(!parts)return null;
+    const [,effect,targets]=parts;
+    if(effect==='無効化'&&targets==='通常攻撃')return {neutralizeNormal:true};
+    if(effect==='無効化'&&targets==='巻物')return {neutralizeScroll:true};
+    const values=targets.trim().split(/\s+/);
+    const property={強打:'critical',巻物強打:'scrollCritical',無効化:'neutralize'}[effect];
+    if(values.every(v=>Object.hasOwn(firstAffinity,v))){
+      return {[effect==='無効化'?'neutralizes':property+'Elements']:values.map(v=>firstAffinity[v])};
+    }
+    if(values.every(v=>Object.hasOwn(firstRace,v)))return {[property+'Races']:values.map(v=>firstRace[v])};
+    return null;
+  }
   const revoltBattleCards={
     sharazad:{support:true,supportElements:[0,2]},nilvana:{support:true,supportElements:[-1],first:true},
     shapeshifter:{},stonejizo:{stationary:true,spellWard:true},birdmaiden:{vigorous:true},hippocampus:{neutralizes:[-1]},
@@ -916,12 +934,13 @@ const CepterEditions=(()=>{
       const path=base?.catalog.path||((kind==='creature'?category:kind+'s')+'/'+slug);
       const traits={'援護':'support','再生':'regenerate','先制':'first','後手':'last','防御型':'stationary',...(edition==='revolt'?{Vigorous:'vigorous'}:{})};
       const clauses=r.ability.split(' ; ');
-      const effects=modernSets[edition]&&category!=='scroll'&&kind!=='spell'?new Map(clauses.map(v=>[v,elementalTrait(v)])):new Map();
+      const first=edition==='saturn'||edition==='ps1';
+      const effects=modernSets[edition]&&category!=='scroll'&&kind!=='spell'?new Map(clauses.map(v=>[v,elementalTrait(v)])):
+        first&&kind==='item'?new Map(clauses.map(v=>[v,firstEquipmentTrait(v,category)])):new Map();
       const basicCreature=kind==='creature'&&clauses.every(v=>v==='-'||traits[v]||effects.get(v));
       const gearClauses=modernSets[edition]?clauses.map(v=>v.replace(/^AT(?=[+-]\d+$)/,'ST')):clauses;
       const basicGear=kind==='item'&&gearClauses.every(v=>/^(ST|HP)[+-]\d+$/.test(v)||v==='先制'||!!modernSets[edition]&&v==='後手'||effects.get(v));
       const simple=basicCreature||basicGear;
-      const first=edition==='saturn'||edition==='ps1';
       const variant=first&&['dragon','pan','hornet','holyword1','holyword6','magicbolt','steamgear','golem','sorcerer','manticore','armadillo','coati','darkelf','elf','knight','samurai','deathgaze','goldengoose','wallofice','giantspider','giantsnake','stonehail','cure'].includes(slug);
       const compatible=!!base&&!base.catalogOnly&&(r.shared||variant);
       const name=base?.name||r.name.replace(/([a-z])([A-Z])/g,'$1 $2');
@@ -954,7 +973,6 @@ const CepterEditions=(()=>{
       }
       if(pair){c.elements=pair;c.catalogOnly=false;}
       if(edition==='saga'&&slug==='prismaticwand'){c.st=0;c.hp=0;c.catalogOnly=false;}
-      if(simple)for(const effect of effects.values())if(effect)Object.assign(c,effect);
       if(kind==='creature'){c.st=r.st;c.hp=r.hp;delete c.landBan;}
       if(kind==='creature')for(const clause of clauses)if(traits[clause])c[traits[clause]]=true;
       if(basicGear){
@@ -962,6 +980,8 @@ const CepterEditions=(()=>{
         c.hp=Number(gearClauses.find(v=>v.startsWith('HP'))?.slice(2)||0);
         c.first=gearClauses.includes('先制');c.last=gearClauses.includes('後手');
       }
+      if(simple)for(const effect of effects.values())if(effect)Object.assign(c,effect);
+      if(first&&basicGear&&[...effects.values()].some(Boolean))c.firstEquipment=true;
       if(edition==='begins'&&kind==='creature'&&Object.hasOwn(beginsCreatures,slug))Object.assign(c,{catalogOnly:false},beginsCreatures[slug]);
       if(edition==='begins'&&kind==='item'&&Object.hasOwn(beginsGear,slug)){
         Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
@@ -1047,6 +1067,10 @@ const CepterEditions=(()=>{
     }[edition];
     if(controlSpells){
       const replacements=new Map(['fly','holyword1','shatter','magicbolt'].map((name,i)=>[lookup.get(name),lookup.get(controlSpells[i])]));
+      if(edition!=='dc'){
+        replacements.set(lookup.get('holyword6'),lookup.get('timebomb'));
+        replacements.set(lookup.get('leatherarmor'),lookup.get(edition==='ps1'?'dragonshield':'earthshield'));
+      }
       presets.legacyControl=presets.intro.map(id=>replacements.get(id)??id);
     }
     if(edition==='saturn'||edition==='ps1')for(const [name,counts] of Object.entries(data.books)){
