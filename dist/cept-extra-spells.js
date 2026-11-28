@@ -112,7 +112,7 @@ const CepterExtraSpells=(()=>{
       const land=owning(s,seat),max=Math.max(1,...land.map(t=>t.level));
       if(max===1)return;
       const target=sample(land.filter(t=>t.level===max));
-      if(target&&!fx.blockedLevel(s,target))target.level--;
+      if(target&&!fx.blockedLevel(s,target)&&!fx.terrainLocked(s,target,true))target.level--;
     }
     function longLine(s,seat){
       const links=board(s).links,owned=new Set(s.tiles.flatMap((t,at)=>t.owner===seat&&t.unit?[at]:[]));
@@ -263,8 +263,9 @@ const CepterExtraSpells=(()=>{
         if(e==='revoltTemptation'&&!fx.secretTargets(s,i,true).length)return [];
         if(e==='temptation'&&!fx.territoryTargets(s,i,true).length)return [];
         if(secretSigils.has(e)&&(t.owner!==s.turn||fx.secretArt(cards[t.unit.id])||t.unit.enchant===e))return [];
-        if((hasTerrain||e==='influence')&&(fx.terrainLocked(s,t)||fx.idol(s,'jadeidol')||combo.activeWorld(s)==='solidworld'))return [];
-        if(['meteor','locust','comet','sagaterrair','elevation','suddenimpact','asteroid','asteroidStrong'].includes(e)&&fx.blockedLevel(s,t,e!=='elevation'))return [];
+        if((hasTerrain||e==='influence'||e==='quintessence')&&(fx.terrainLocked(s,t,true)||fx.idol(s,'jadeidol')||combo.activeWorld(s)==='solidworld'))return [];
+        if(['meteor','locust','comet','sagaterrair','elevation','suddenimpact','asteroid','asteroidStrong'].includes(e)&&
+          (fx.blockedLevel(s,t,e!=='elevation')||e!=='elevation'&&fx.terrainLocked(s,t,true)))return [];
         if(e==='comet'&&(!enemy(s,t.owner)||t.level<2)||e==='elevation'&&t.level!==1||e==='suddenimpact'&&t.level!==4)return [];
         if(e==='thunderclap'&&!cards[t.unit.id].catalog?.additionalCost)return [];
         if(e==='frostneedle'&&![0,2].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
@@ -541,7 +542,7 @@ const CepterExtraSpells=(()=>{
             if(lands.length<4)returnToBook(s,s.turn,ids.get(e));
             else if(combo.activeWorld(s)!=='solidworld')for(const tile of lands){
               const element=cards[tile.unit.id].element;
-              if(!fx.terrainLocked(s,tile))tile.type=element<0?'무속성':element;
+              if(!fx.terrainLocked(s,tile,true))tile.type=element<0?'무속성':element;
             }
             break;
           }

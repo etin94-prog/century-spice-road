@@ -1909,7 +1909,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,32);
+  assert.equal(ready.length,38);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
   {
     const shot=mode=>revolt('battleaxe',null,'goblin',mode).s.battle.strikes[0].effect;
@@ -2167,6 +2167,84 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       ['roll',afterPrice,bySlug.get('manna'),true]);
     assert.equal(R.cards.filter(card=>!card.unlisted&&card.kind==='spell'&&card.catalogOnly).length,0);
     console.log('All 133 Revolt spells have engine effects, including Bounty, Release, selective private reveals and forced transfers');
+    const levers=revoltCast('asteroid',s=>{revoltUnit(s,1,'barong',1,2,3);});
+    assert.deepEqual(R.choices(levers),[['fizzle']]);
+    const alchemy=revoltCast('manna',s=>{revoltUnit(s,1,'archchemic',0);});
+    assert.equal(R.elementCost(alchemy.tiles[1]),50);
+    alchemy.tiles[1].unit.enchant='paralysis';
+    assert.equal(R.elementCost(alchemy.tiles[1]),300);
+    const armor=revolt(null,'chainmail','redogre','aquaduke').s.battle;
+    assert.equal(armor.strikes[0].effect,'block');
+    const sludge=revolt(null,'catapult','redogre','sludgetitan',s=>{s.tiles[1].unit.hp--;}).s.battle;
+    assert.ok(sludge.lines.some(line=>line.includes('최대 HP 상태가 아니어서 파괴')));
+    const shock=revolt(null,null,'shocker','blueogre').s;
+    assert.equal(shock.tiles[1].unit.fatigued,true);
+    const growthWithDuke=revolt('mace',null,'flameduke','goblin').s;
+    assert.ok(growthWithDuke.players[0].book.includes(bySlug.get('mace')));
+    const duchess=revolt(null,'petrifystone','sylvanduchess','blueogre').s.battle;
+    assert.ok(duchess.lines.some(line=>line.includes('파괴')));
+    const tracer=revolt(null,null,'nebiros','goblin',(s,id)=>{
+      s.players[0].book=Array(5).fill(id('manna'));
+    }).s;
+    assert.equal(tracer.players[0].hand.length,5);
+    const onHitRandom=Math.random;
+    try{
+      Math.random=()=>0;
+      const slayer=revolt(null,null,'unnameable','goblin',(s,id)=>{
+        Object.assign(s.tiles[1].unit,{st:0,hp:100,mhp:100});
+        s.players[1].book=[id('redogre'),id('goblin')];
+      }).s;
+      assert.equal(slayer.battle.won,true);
+      assert.deepEqual(slayer.players[1].book,[bySlug.get('redogre')]);
+    }finally{Math.random=onHitRandom;}
+    const normalMove=R.start(2,2,5000,'revolt-original-watchpost');
+    revoltUnit(normalMove,1,'powdereater',0,3);
+    normalMove.players[0].pos=1;normalMove.phase='land';
+    assert.ok(R.play(normalMove,['transfer',1,2]));
+    assert.equal(normalMove.tiles[1].owner,0);
+    const forcedMove=revoltCast('thrustblow',s=>{revoltUnit(s,1,'powdereater',1,3);revoltUnit(s,16,'goblin',0);});
+    assert.ok(R.play(forcedMove,['targetLand',1])&&R.play(forcedMove,['teleTo',2]));
+    assert.equal(forcedMove.tiles[1].owner,-1);
+    function actSecret(name,configure){
+      const s=R.start(2,2,5000,'revolt-original-watchpost');
+      revoltUnit(s,1,name,0,2);Object.assign(s.players[0],{pos:1,cash:500,hand:[]});
+      if(configure)configure(s);
+      assert.ok(R.play(s,['secretArt',1]),name);
+      return s;
+    }
+    const clearAll=actSecret('sharazad',s=>{s.players[0].status='release';s.players[1].status='uniformity';});
+    assert.ok(clearAll.players.every(p=>!p.status));
+    const cursed=actSecret('nilvana',s=>{
+      revoltUnit(s,2,'blueogre',1,1);s.tiles[2].unit.enchant='greed';
+      revoltUnit(s,3,'greenogre',1,2);
+    });
+    assert.deepEqual([cursed.tiles[2].unit.hp,cursed.tiles[3].unit.hp],[CForRevolt('blueogre').hp-20,CForRevolt('greenogre').hp]);
+    const mimic=actSecret('shapeshifter',s=>{revoltUnit(s,2,'goblin',1);s.tiles[1].level=3;});
+    assert.ok(R.play(mimic,['secretLand',2]));
+    assert.deepEqual([mimic.tiles[1].owner,mimic.tiles[1].level,mimic.tiles[1].unit.id],[0,3,bySlug.get('goblin')]);
+    const stone=actSecret('stonejizo',s=>revoltUnit(s,2,'goblin',1,3,3));
+    assert.ok(R.play(stone,['secretLand',2]));
+    assert.deepEqual([stone.tiles[1].unit,stone.tiles[2].type,stone.tiles[2].level],[null,'복합',3]);
+    const vanish=actSecret('aeroduchess',s=>revoltUnit(s,2,'greenogre',1,2,1,22));
+    assert.ok(R.play(vanish,['secretLand',2]));
+    assert.deepEqual([vanish.tiles[2].unit.hp,vanish.tiles[2].unit.mhp],[12,CForRevolt('greenogre').hp-10]);
+    const handShift=actSecret('cloudgizmo',s=>{
+      s.players[1].hand=[bySlug.get('mace'),bySlug.get('goblin')];s.players[1].book=[bySlug.get('manna')];
+    });
+    assert.ok(R.play(handShift,['secretPlayer',1]));
+    assert.equal(engineRoom.view(R,handShift,0).choices.length,2);
+    assert.deepEqual(engineRoom.view(R,handShift,1).choices,[]);
+    assert.ok(R.play(handShift,['wormDiscard',0]));
+    assert.deepEqual([handShift.phase,handShift.turn,handShift.players[0].cash,handShift.players[1].hand],['roll',0,480,[bySlug.get('goblin'),bySlug.get('manna')]]);
+    for(const [name,next] of [['hippocampus','kelpie'],['swordprincess','armedprincess'],['sylph','garuda'],['brancharmy','mudman']]){
+      const evolved=actSecret(name);
+      assert.equal(evolved.tiles[1].unit.id,bySlug.get(next),name);
+      assert.equal(evolved.phase,'roll');
+    }
+    const makara=actSecret('makara');
+    assert.deepEqual([makara.tiles[1].type,makara.tiles[1].unit.fatigued],[1,undefined]);
+    console.log('Revolt new creature reactions, gear wards, placement commands, evolution and private Cloud Gizmo checked');
+
 
 
     console.log('Revolt book archive unlocked five decks, gear fusion, dragon land shifts, neutralization thresholds and eleven spells checked');

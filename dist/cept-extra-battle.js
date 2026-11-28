@@ -133,6 +133,7 @@ const CepterExtraBattle=(()=>{
           if(boost('lordofbane',a))a.st+=10;
           if(boost('rahab',a))a.hp+=10;
         }
+        if(a.n==='brancharmy')a.st+=5*s.tiles.filter(t=>t.unit&&combo.hasElement(cards[t.unit.id],2)).length;
         if(a.n==='ogrelord'){
           if(onBoard('redogre')||onBoard('yellowogre'))a.st+=20;
           if(onBoard('blueogre')||onBoard('greenogre'))a.hp+=20;
@@ -262,6 +263,8 @@ const CepterExtraBattle=(()=>{
     function critical(a,d,scroll){
       if(scroll)return s.edition==='revolt'&&a.g==='shadowblaze'&&s.tiles.filter(v=>v.owner===d.seat&&v.unit?.id===d.u.id).length>1||
         s.edition==='saga'&&a.n==='warlock'||['wizard','efreet','conjurer'].includes(a.n)||a.g==='hellblaze'&&fx.strength(d.u)<=20||a.g==='stonehail'&&d.element===3||a.g==='tearinghalo'&&a.element!==-1;
+      if(s.edition==='revolt'&&(a.n==='flameduke'&&a.gear?.category==='weapon'||a.n==='nebiros'&&!d.gear||
+        a.n==='blackknight'&&fx.strength(d.u)<=30))return true;
       return a.n==='elf'&&!a.c.criticalRace&&d.element===2||a.g==='earthamulet'&&a.element===2||a.g==='windamulet'&&a.element===3||a.g==='icicle'&&d.element===0||a.g==='vorpalsword'&&fx.max(d.u)>=40;
     }
     function protect(a,d,damage,scroll,penetrates,orb){
@@ -392,7 +395,8 @@ const CepterExtraBattle=(()=>{
         if(a.n==='mattocktail'&&t.level<5&&!fx.levelLocked(t)){t.level++;lines.push(a.c.name+' · 영지 Lv.'+t.level);}
       }
       const p=s.players[a.seat],other=s.players[d.seat],symbol=t.area*4+t.type;
-      if(s.edition==='saga'&&a.n==='unnameable'&&d.defeatedByOpponent&&!s.predict){
+      if(['saga','revolt'].includes(s.edition)&&a.n==='unnameable'&&d.defeatedByOpponent&&!s.predict&&
+        (s.edition==='saga'||chance(.8))){
         const removed=other.hand.length+other.book.length;
         other.hand=other.hand.filter(id=>id!==d.u.id);other.book=other.book.filter(id=>id!==d.u.id);
         for(const player of s.players)if(player.peek?.seat===d.seat)delete player.peek;

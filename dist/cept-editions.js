@@ -652,6 +652,16 @@ const CepterEditions=(()=>{
     return {[elementalTraits[parts[1]]]:elements};
   }
   const revoltBattleCards={
+    sharazad:{support:true,supportElements:[0,2]},nilvana:{support:true,supportElements:[-1],first:true},
+    shapeshifter:{},stonejizo:{stationary:true,spellWard:true},birdmaiden:{vigorous:true},hippocampus:{neutralizes:[-1]},
+    makara:{stationary:true,vigorous:true},aeroduchess:{first:true,scrollCritical:true},cloudgizmo:{},patronus:{spellWard:true},
+    swordprincess:{first:true,immutableHP:true},armedprincess:{first:true,support:true,supportElements:[1,3],spellWard:true,generatedOnly:true},
+    sylph:{blocksLarge:true},brancharmy:{},
+    archchemic:{neutralizeScroll:true,changeElementCost:50},aquaduke:{support:true,supportElements:[1],immutableHP:true,blocksWithArmor:true},
+    chironex:{},shocker:{first:true,vigorous:true},sigurd:{blocksLarge:true},nebiros:{},flameduke:{first:true},
+    sludgetitan:{regenerate:true},tentacles:{regenerate:true},blackknight:{blocksAttackAbilities:true},
+    sylvanduchess:{support:true,supportElements:[2],regenerate:true},unnameable:{last:true},barong:{},
+    glueyslug:{moveInvasionWard:true},landurchin:{stationary:true,moveInvasionWard:true},powdereater:{},
     valkyria:{first:true,support:true,supportElements:[-1,0,2]},bloodypudding:{support:true,supportElements:[1,2,3]},
     seabonze:{stationary:true},leshy:{stationary:true},odradek:{support:true,immutableHP:true},nike:{first:true},
     beastgear:{spellWard:true,neutralizeScroll:true},groundgear:{support:true,neutralizeScroll:true},skygear:{first:true,support:true},
@@ -912,6 +922,9 @@ const CepterEditions=(()=>{
           Object.assign(c,{catalogOnly:false},revoltBattleCards[slug]);
         }
         const art={
+          sharazad:'purgeCepters',nilvana:'damageEnchanted',shapeshifter:'copyForm',stonejizo:'landToMulti',birdmaiden:'distantMove',
+          hippocampus:'toKelpie',makara:'ownWaterShift',aeroduchess:'shrinkBoth',cloudgizmo:'replaceHand',patronus:'playerBarrier',
+          swordprincess:'toArmedPrincess',sylph:'toGaruda',brancharmy:'toMudman',
           archbishop:'dispel',goldentotem:'offering',fate:'draw',healer:'heal',elvenarcher:'arrow',
           dwarvenminer:'lapGain',holyllama:'dice6',armoreddragon:'neutralBlast',
           hardrockdragon:'fireAirBlast',lightningdragon:'waterEarthBlast',fay:'strength',burnacle:'blind',caladrius:'boost',uriel:'worldDispel',

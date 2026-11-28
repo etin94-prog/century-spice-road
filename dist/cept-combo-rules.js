@@ -49,7 +49,7 @@ const CepterCombos = (() => {
     const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n&&(s.edition!=='saga'||t.unit.enchant!=='paralysis'));
     const immuneHP=t=>['phantasm','holyasylum'].includes(t.unit?.enchant)||name(t.unit)==='odradek'||!!cards[t.unit?.id]?.immutableHP;
     const landLevelLocked=(t,s)=>levelLocked(t)||name(t.unit)==='trampleweed'||s?.players[t.owner]?.status==='sagadrought';
-    const terrainLocked=(s,t)=>s.edition==='begins'&&name(t.unit)==='barong'&&t.unit.enchant!=='paralysis';
+    const terrainLocked=(s,t,fromSpell=false)=>(s.edition==='begins'||s.edition==='revolt'&&fromSpell)&&name(t.unit)==='barong'&&t.unit.enchant!=='paralysis';
     const blockedLevel=(s,t,lower=true)=>lower&&t.unit?.enchant==='holyasylum'||landLevelLocked(t,s)||terrainLocked(s,t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
     const isDefensive=u=>cards[u.id].stationary||u.enchant==='magicshelter';
     function targetable(s,t,category='sflash',dispel=false){
@@ -525,6 +525,19 @@ const CepterCombos = (() => {
       if(['conjurer','heatimp','windimp'].includes(n))destroy(s,src);
     }
     const arts={
+      purgeCepters:{cost:30,label:'모든 셉터 인챈트 해제',self:true},
+      damageEnchanted:{cost:100,label:'인챈트가 있는 모든 크리처에게 피해 20',self:true},
+      copyForm:{cost:70,label:'자신을 고른 크리처와 같은 종류로 변신'},
+      landToMulti:{cost:100,label:'고른 영지를 복합 속성으로 바꾸고 자신 파괴'},
+      distantMove:{cost:50,label:'내 크리처에게 원거리 이동 부여',enchant:'spiritwalk',own:true,beneficial:true},
+      toKelpie:{cost:60,label:'켈피로 진화',form:'kelpie',self:true},
+      ownWaterShift:{cost:100,label:'자신의 영지를 수 속성으로 바꿈',self:true},
+      shrinkBoth:{cost:50,label:'적 크리처의 HP와 최대 HP −10',shrink:10,subtractHP:true,enemy:true},
+      replaceHand:{cost:20,label:'고른 셉터의 손패 한 장 교체',player:true},
+      playerBarrier:{cost:50,label:'고른 셉터에게 안티 스펠 부여',player:true},
+      toArmedPrincess:{cost:60,label:'아머드 프린세스로 진화',form:'armedprincess',self:true},
+      toGaruda:{cost:60,label:'가루다로 진화',form:'garuda',self:true},
+      toMudman:{cost:50,label:'머드맨으로 진화',form:'mudman',self:true},
       dispel:{cost:30,label:'크리처 저주 제거'},
       offering:{cost:0,label:'토템 파괴 · 200G'},
       draw:{cost:40,label:'카드 1장 뽑기'},
@@ -580,7 +593,9 @@ const CepterCombos = (() => {
       const key=secretKey(cards[src?.unit?.id],src?.unit),p=s.players[s.turn],art=arts[key];
       if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.enchant==='paralysis'||!borrowed&&(src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost))return [];
       if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
-        (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'&&(!art.chooseDirection||!q.chooseDirection)?[['secretPlayer',i]]:[]);
+        (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'&&(!art.chooseDirection||!q.chooseDirection)&&
+        (key!=='replaceHand'||q.hand.length)?[['secretPlayer',i]]:[]);
+      if(key==='ownWaterShift')return src.type!==1&&activeWorld(s)!=='solidworld'?[['secretSelf',from]]:[];
       if(key==='drawItem')return p.book.some(id=>cards[id].kind==='item')?[['secretSelf',from]]:[];
       if(art.move)return territoryMoveExits(s,from,true).map(at=>['secretLand',at]);
       if(art.summon)return s.tiles.flatMap((t,at)=>vacantLand(t)?[['secretLand',at]]:[]);
@@ -596,7 +611,9 @@ const CepterCombos = (() => {
         if(key==='heal'&&t.owner===s.turn&&!immuneHP(t)&&t.unit.hp<max(t.unit))return [['secretLand',at]];
         if(key==='strength'&&strength(t.unit)<100)return [['secretLand',at]];
         if(art.grow&&!immuneHP(t)&&max(t.unit)<100)return [['secretLand',at]];
-        if(art.shrink&&!immuneHP(t))return [['secretLand',at]];
+        if(art.shrink&&!immuneHP(t)&&(!art.enemy||!allied(s,t.owner,s.turn)))return [['secretLand',at]];
+        if(key==='copyForm'&&t.unit.id!==src.unit.id)return [['secretLand',at]];
+        if(key==='landToMulti'&&t.type!=='복합'&&activeWorld(s)!=='solidworld'&&!terrainLocked(s,t,true))return [['secretLand',at]];
         if(art.enemy&&allied(s,t.owner,s.turn)||art.own&&t.owner!==s.turn)return [];
         if(key==='poison'&&!t.unit.poisoned)return [['secretLand',at]];
         if(key==='earthShift'&&t.type!==2&&activeWorld(s)!=='solidworld')return [['secretLand',at]];
@@ -619,6 +636,10 @@ const CepterCombos = (() => {
           note(s,q.name+' · 안티 매직으로 비술 방어');
           return '안티 매직';
         }
+        if(key==='replaceHand'){
+          s.spellTarget=at;s.cloudGizmo='secret';return art.label;
+        }
+        if(key==='playerBarrier'){clearCepter(q);q.status='barrier';return art.label;}
         if(art.word||art.chooseDirection){
           clearCepter(q);
           if(art.word)q.word=art.word;else q.chooseDirection=true;
@@ -631,6 +652,18 @@ const CepterCombos = (() => {
         note(s,p.name+' · '+card.name+' 비술 · '+q.name+'에게서 '+amount+'G 탈취');
         return amount+'G 탈취';
       }
+      if(key==='purgeCepters')s.players.forEach(clearCepter);
+      if(key==='damageEnchanted')for(const tile of s.tiles){
+        if(enchanted(tile.unit))spellHarm(s,tile,20);
+      }
+      if(key==='copyForm'){
+        const fatigued=src.unit.fatigued;
+        const id=target.unit.id;
+        src.unit={id,hp:cards[id].hp};
+        if(fatigued)src.unit.fatigued=true;
+      }
+      if(key==='landToMulti'){target.type='복합';destroy(s,src);return art.label;}
+      if(key==='ownWaterShift')src.type=1;
       if(art.summon){claim(target,s.turn,morph(null,art.summon));delete target.enchant;}
       if(art.consume)destroy(s,src);
       if(art.grant)p.hand.push(ids.get(art.grant));
@@ -677,7 +710,10 @@ const CepterCombos = (() => {
       if(art.setFatigue===false)delete target.unit.fatigued;
       if(art.strength<0)target.unit.st=Math.max(0,strength(target.unit)+art.strength);
       if(art.enchant){clear(target.unit);target.unit.enchant=art.enchant;target.unit.caster=s.turn;}
-      if(art.shrink)shrinkHealth(s,target,art.shrink);
+      if(art.shrink&&!immuneHP(target)){
+        if(art.subtractHP)target.unit.hp=Math.max(0,target.unit.hp-art.shrink);
+        shrinkHealth(s,target,art.shrink);
+      }
       if(art.damage)damage(s,target,art.damage);
       note(s,p.name+' · '+card.name+' 비술 · '+art.label);
       return art.label;
@@ -688,6 +724,8 @@ const CepterCombos = (() => {
       if(spec.player){
         const q=s.players[at];
         if(q.antiMagic)return -20;
+        if(art==='replaceHand')return allied(s,at,s.turn)?q.hand.length>2?10:0:Math.max(0,...q.hand.map(id=>cards[id].cost*.2))-(borrowed?0:4);
+        if(art==='playerBarrier')return allied(s,at,s.turn)?16:-20;
         if(spec.word||spec.chooseDirection)return allied(s,at,s.turn)&&q.word==null?5:-20;
         const value=art==='drainSigil'?Math.floor(Math.max(0,q.cash)*.1)/5:
           q.hand.filter(id=>cards[id]?.kind==='spell').length*9;
@@ -703,6 +741,11 @@ const CepterCombos = (() => {
         utility=20+(matchesTerrain(creature,t.type)?12:0)+creature.hp*.3-(spec.consume?value(s,s.tiles[from])/6:0);
       }
       if(spec.grant)utility=p.hand.length<6?14:0;
+      if(art==='purgeCepters')utility=s.players.reduce((sum,q)=>sum+(q.status?10:0),0);
+      if(art==='damageEnchanted')utility=s.tiles.reduce((sum,t)=>sum+(enchanted(t.unit)?(allied(s,t.owner,s.turn)?-1:1)*damageAmount(s,t,20):0),0);
+      if(art==='copyForm')utility=(cards[t.unit.id].hp+strength(t.unit)-card.hp-strength(source))/2;
+      if(art==='landToMulti')utility=!friendly?value(s,t)*.16-value(s,s.tiles[from])*.08:-20;
+      if(art==='ownWaterShift')utility=(1+s.tiles.filter(tile=>tile.owner===t.owner&&tile.area===t.area&&tile.type===1).length)*t.level*12;
       if(spec.grow)utility=(friendly?1:-1)*(12+t.level*4);
       if(spec.shrink)utility=(friendly?-1:1)*(max(t.unit)<=spec.shrink?47+t.level*10:15+t.level*2);
       if(spec.adjacent)utility=vacantNeighbors(s,from).length*22;
