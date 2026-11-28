@@ -455,7 +455,7 @@ const CepterExtraSpells=(()=>{
             combo.clear(u);u.enchant='antielement';draw(p,s);break;
           case 'meteor':t.level=['begins','3ds'].includes(s.edition)&&chain(s,t)>1?Math.max(1,t.level-2):1;break;
           case 'sagapolymorph':case 'beginspolymorph':case 'polymorph':{
-            const id=sample(s.edition==='saga'||s.edition==='dc'?fx.standardFormChoices(u.id):
+            const id=sample(['saga','dc','3ds'].includes(s.edition)?fx.standardFormChoices(u.id):
               creaturePool.filter(id=>id!==u.id&&(s.edition!=='begins'||cards[id].catalog.rarity!=='E')));
             if(id!=null)morph(t,id);
             break;

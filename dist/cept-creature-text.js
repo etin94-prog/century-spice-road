@@ -531,8 +531,10 @@ const CepterCreatureText=(()=>{
     if(card.randomHandBreak)pieces.push('전투에서 살아남으면 상대 손패 한 장을 무작위로 파괴합니다.');
     if(card.battleEvolution)pieces.push('세 번의 전투에서 살아남으면 플레임 로드로 변신합니다.');
     if(card.instantKill){
-      const target=card.instantKill.races?.map(r=>races[r]).join('·')||targets(card.instantKill.elements);
-      pieces.push('일반 공격으로 피해를 준 '+target+' 상대를 '+Math.round(card.instantKill.rate*100)+'% 확률로 즉사시킵니다.');
+      const target=card.instantKill.minimumBaseST!=null?'기본 ST '+card.instantKill.minimumBaseST+' 이상인':
+        card.instantKill.races?.map(r=>races[r]).join('·')||targets(card.instantKill.elements);
+      const chance=card.instantKill.rate===1?'':Math.round(card.instantKill.rate*100)+'% 확률로 ';
+      pieces.push('일반 공격으로 피해를 준 '+target+' 상대를 '+chance+'즉사시킵니다.');
     }
     if(card.selfDestructAfterBattle)pieces.push('전투가 끝날 때 자괴합니다.');
     if(card.battleRecoilPercent)pieces.push('일반 공격으로 준 피해의 '+card.battleRecoilPercent+'%만큼 반동 피해를 받습니다.');
@@ -606,6 +608,10 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='mycoron'?'생존하면 HP를 회복합니다. 상대가 피해를 주었다면 무작위 빈 영지에 마이코론을 배치합니다.':
       C.edition==='revolt'&&key==='coatlicue'?'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 20씩 오릅니다.':
       ['begins','revolt','3ds'].includes(C.edition)&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
+      C.edition==='3ds'&&key==='apsaras'?'레벨 3 이상 영지에서 일반 공격을 무효화합니다.':
+      C.edition==='3ds'&&key==='aspidochelone'?'현재 라운드 수만큼 전투 ST와 HP가 각각 오릅니다.':
+      C.edition==='3ds'&&key==='sludgetitan'?'현재 HP가 최대 HP보다 낮으면 전투 시작 시 자괴합니다. 살아남으면 HP를 회복합니다.':
+      C.edition==='3ds'&&key==='baldanders'?'전투에서 N·S·R 등급의 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='dc'&&key==='baldanders'?'전투에서 N·S·R 등급 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
       ['begins','saga'].includes(C.edition)&&key==='baldanders'?'전투 중 다른 크리처로 무작위 변신합니다. E 등급은 제외되며 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
@@ -639,7 +645,7 @@ const CepterCreatureText=(()=>{
     if(card.remoteVacantElements?.length)pieces.push('어느 지역이든 빈 '+targets(card.remoteVacantElements)+' 영지로 이동할 수 있습니다.');
     if(card.remoteVacant)pieces.push('어느 지역의 빈 영지로든 이동할 수 있습니다.');
     if(!card.basicBattle&&!card.revenge&&special&&!card.remoteVacant&&!card.remoteVacantElements)pieces.push(special);
-    if(!firstEdition&&C.edition!=='begins'&&key==='samurai')pieces.push(C.edition==='revolt'?'일반 공격으로 피해를 준 상대의 기본 ST가 40 이상이면 70% 확률로 즉사시킵니다.':'일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
+    if(!card.instantKill&&!firstEdition&&C.edition!=='begins'&&key==='samurai')pieces.push(C.edition==='revolt'?'일반 공격으로 피해를 준 상대의 기본 ST가 40 이상이면 70% 확률로 즉사시킵니다.':'일반 공격으로 피해를 준 상대의 최대 HP가 30 이하면 60% 확률로 즉사시킵니다.');
     const landAbility=territorySummary(C,card);
     if(landAbility)pieces.push(landAbility);
     return pieces.length?pieces.join(' · '):'기본 ST와 HP로 전투합니다.';

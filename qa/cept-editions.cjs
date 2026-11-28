@@ -8765,3 +8765,95 @@ console.log('PS1 and Saturn race and elemental instant kills, scrolls, battle co
   assert.ok(C.choices(warded.s).some(([k,x])=>k==='targetLand'&&x===other));
 }
 console.log('Dreamcast Baldanders, Protean Ring and Polymorph: form selection, survival, item destruction, spell ward and sacrifice verified.');
+
+{
+  const C=ps2.createEdition('3ds'),map='3ds-original-bend';
+  const id=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  const start=()=>C.start(4,4,7000,map,C.presets.handheldFourElements,C.presets.handheldFourElements,1,'teams');
+  const fields=s=>s.tiles.flatMap((t,n)=>C.territoryType(t.type)?[n]:[]);
+  function cast(s,spell){
+    const p=s.players[0];p.cash=500;p.hand=[id(spell)];s.phase='spell';
+    assert.ok(C.play(s,['cast',0]));
+    return p;
+  }
+  const build=(s,owner,at,type,key,level=3)=>Object.assign(s.tiles[at],{
+    owner,type,level,unit:{id:id(key),hp:C.cards[id(key)].hp}
+  });
+  assert.ok(C.validBook(C.presets.handheldFourElements));
+  const elements=['minotaur','gianteel','dwarf','harpy'];
+  for(const fault of ['none','missing','low','allied','mismatch']){
+    const s=start(),sites=fields(s);
+    elements.forEach((key,e)=>build(s,0,sites[e],e,key));
+    const last=s.tiles[sites[3]];
+    if(fault==='missing'){last.owner=-1;last.unit=null;}
+    if(fault==='low')last.level=2;
+    if(fault==='allied')last.owner=s.teams.findIndex((team,seat)=>seat!==0&&team===s.teams[0]);
+    if(fault==='mismatch')last.unit.id=id('goblin');
+    assert.equal(cast(s,'soltis').cash,fault==='none'?1600:600);
+    assert.equal(s.mapEffect.label,fault==='none'?'+1200G':'+200G');
+    assert.equal(s.phase,'roll');
+  }
+  const forms=['statue','pillarofflame','wallofice','wallofstone','hurricane'];
+  for(const [i,key] of ['goblin',...elements].entries()){
+    const s=start(),at=fields(s)[0],tile=build(s,1,at,2,key,4);
+    assert.equal(cast(s,'turntothewall').cash,420);
+    assert.ok(C.play(s,['targetLand',at]));
+    assert.deepEqual([tile.owner,tile.type,tile.level,tile.unit.id],[1,2,4,id(forms[i])]);
+    assert.equal(s.mapEffect.label,C.cards[tile.unit.id].name+' 변신');
+  }
+  const random=Math.random;
+  try{
+    Math.random=()=>0;
+    const s=start(),at=fields(s)[0],tile=build(s,1,at,2,'goblin',4);
+    tile.unit.poisoned=true;
+    assert.equal(cast(s,'polymorph').cash,420);
+    assert.ok(C.play(s,['targetLand',at]));
+    assert.notEqual(tile.unit.id,id('goblin'));
+    assert.ok(['N','S','R'].includes(C.cards[tile.unit.id].catalog.rarity));
+    assert.ok(!tile.unit.poisoned);
+  }finally{Math.random=random;}
+  function fight(a,d,{life,st,type=2,level=2,seed=1,round=8,atkGear}={}){
+    const s=start(),at=fields(s)[0],tile=build(s,1,at,type,d,level);
+    if(life!=null)tile.unit.hp=life;
+    if(st!=null)tile.unit.st=st;
+    s.round=round;s.phase='attack';s.battle={at,inv:id(a),atkItem:null,defItem:null};
+    s.players.forEach(p=>{p.cash=1000;p.hand=[];});
+    if(atkGear)s.players[0].hand=[id(atkGear)];
+    try{
+      Math.random=()=>seed;
+      assert.ok(C.play(s,atkGear?['equip',0]:['bare']));assert.ok(C.play(s,['bare']));
+    }finally{Math.random=random;}
+    return {s,b:s.battle,tile};
+  }
+  assert.equal(fight('fighter','apsaras',{level:2}).b.strikes[0].effect,'hit');
+  assert.equal(fight('fighter','apsaras',{level:3}).b.strikes[0].effect,'block');
+  assert.equal(fight('fighter','apsaras',{level:3,atkGear:'nuclearfusion'}).b.strikes[0].effect,'hit');
+  assert.equal(fight('goblin','nessie',{type:1,level:3}).b.startHP[1],100);
+  assert.equal(fight('goblin','nessie',{type:2,level:3}).b.startHP[1],40);
+  const transform=fight('baldanders','goblin',{seed:0});
+  assert.notEqual(transform.b.forms[0],id('baldanders'));
+  assert.ok(['N','S','R'].includes(C.cards[transform.b.forms[0]].catalog.rarity));
+  const ring=fight('fighter','goblin',{seed:.5,atkGear:'proteanring'});
+  assert.notEqual(ring.b.forms[0],id('fighter'));
+  assert.ok(['N','S','R'].includes(C.cards[ring.b.forms[0]].catalog.rarity));
+  const pec=fight('aspidochelone','goblin',{round:12}).b;
+  assert.deepEqual([pec.attackST,pec.startHP[0]],[42,42]);
+  assert.equal(fight('goblin','charon').s.players[1].cash,960);
+  assert.equal(fight('goblin','sludgetitan',{life:59}).b.startHP[1],0);
+  assert.equal(fight('goblin','sludgetitan').tile.unit.hp,60);
+  assert.equal(fight('goblin','hydra',{type:0,life:45}).tile.unit.hp,25);
+  assert.equal(fight('goblin','hydra',{type:2,life:45}).tile.unit.hp,50);
+  assert.equal(fight('leviathan','goblin').tile.type,1);
+  assert.equal(fight('fighter','kraken').b.strikes[0].effect,'block');
+  assert.equal(fight('minotaur','yeti').b.strikes[0].effect,'block');
+  assert.match(fight('yeti','minotaur',{seed:.59,type:0,level:3}).b.lines.join(' '),/즉사/);
+  assert.equal(fight('goblin','vampire').b.strikes[0].side,1);
+  assert.ok(fight('goblin','vampire').b.strikes[0].hp[1]>C.cards[id('vampire')].hp);
+  assert.match(fight('cleric','fighter').b.lines.join(' '),/즉사/);
+  assert.doesNotMatch(fight('cleric','gianteel').b.lines.join(' '),/즉사/);
+  for(const [st,seed,trigger] of [[40,.699,true],[39,.699,false],[40,.7,false]]){
+    const result=fight('samurai','wallofstone',{type:2,level:3,st,seed});
+    assert.equal(result.b.lines.some(line=>line.includes('즉사')),trigger);
+  }
+}
+console.log('2012 3DS Soltis ownership and four elements, five wall forms, randomized forms and battle rulings verified.');

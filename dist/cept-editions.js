@@ -170,7 +170,7 @@ const CepterEditions=(()=>{
       replace:'replace',scourge:'scourge',soulsteal:'soulsteal',subsidence:'subsidence',teleport:'teleport',tempest:'beginstempest',
       thornfetter:'thornfetter',blacksmith:'blacksmith',discord:'discord',elementalwrath:'elementalwrath',
       poisonmind:'beginspoisonmind',reflection:'reflection',reform:'reform',tyranny:'tyranny',uniformity:'uniformity',
-      aetherflash:'aetherflash',pilgrim:'pilgrim'
+      aetherflash:'aetherflash',pilgrim:'pilgrim',polymorph:'polymorph',soltis:'handheldSoltis',turntothewall:'turntothewall'
     },
     saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
@@ -645,6 +645,11 @@ const CepterEditions=(()=>{
         watershield:3,magicshield:2,magussmirror:1,spikedshield:2,countershield:2,powercrown:1,holygrail:1,
         manna:3,windofhope:3,sink:2,relief:2,lifestream:2,peace:1,barrier:2,landdrain:1
       },
+      handheldFourElements:{
+        baldanders:2,cleric:2,minotaur:3,pillarofflame:2,apsaras:2,nessie:2,giantamoeba:2,woodfolk:3,wallofstone:2,harpy:3,tengu:2,
+        proteanring:2,chainmail:2,countershield:1,vorpalsword:2,magicshield:2,
+        soltis:1,polymorph:1,turntothewall:2,manna:3,windofhope:3,holyword6:2,relief:2,barrier:2
+      },
       // Four starter books recorded by OmiyaSoft in the 2012 player deck archive.
       handheldStarterFireEarth:{
         cyclops:2,fighter:2,giantrat:1,wolf:2,dragonfly:2,gascloud:2,kobold:2,minotaur:2,
@@ -908,6 +913,9 @@ const CepterEditions=(()=>{
     necroscarab:{},neutralcloak:{hp:40},migoalblessing:{st:20,hp:20,criticalElements:[1,2],neutralizes:[0,3]}
   };
   const handheldSpecial={
+    baldanders:{},proteanring:{st:0,hp:0},apsaras:{},aspidochelone:{},charon:{},hydra:{},kraken:{},leviathan:{},sludgetitan:{regenerate:true},vampire:{first:true},yeti:{},
+    nessie:{terrainLevelHP:{element:1,perLevel:10}},cleric:{support:true,basicBattle:true,instantKill:{elements:[-1],rate:1}},
+    samurai:{basicBattle:true,instantKill:{minimumBaseST:40,rate:.7}},
     yowie:{criticalElements:[-1],randomToll:true},
     basaltidol:{stationary:true},brassidol:{stationary:true},bronzeidol:{stationary:true},clayidol:{stationary:true},ebonyidol:{stationary:true},
     goldidol:{stationary:true},graniteidol:{stationary:true},ironidol:{stationary:true},ivoryidol:{stationary:true},jadeidol:{stationary:true},silveridol:{stationary:true},

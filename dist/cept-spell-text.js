@@ -286,6 +286,8 @@ const describeCepterSpell=(()=>{
     if(C.edition==='revolt'&&card.effect==='exile')return '추가 소환 조건 없이 낼 수 있고 인챈트가 걸린 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     if(C.edition==='revolt'&&card.effect==='holybanishment')return '영지와 속성이 다른 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     const e=card.effect,edition=C.edition;
+    if(e==='handheldSoltis')return '200G를 얻습니다. 속성이 일치하는 크리처를 둔 레벨 3 이상 영지를 화·수·지·풍별로 하나 이상 보유하면 1,000G를 추가로 얻습니다.';
+    if(edition==='3ds'&&e==='polymorph')return '고른 크리처를 N·S·R 등급의 다른 크리처로 무작위 변신시킵니다. 영지 소유자와 속성·레벨은 유지됩니다.';
     if(['dc','ps1','saturn'].includes(edition)){
       if(e==='polymorph'&&edition==='dc')return '고른 크리처를 N·S·R 등급의 다른 크리처로 변신시킵니다. 크리처의 강화와 인챈트는 초기화됩니다. 영지 소유자와 속성·레벨은 유지됩니다.';
       if(e==='reincarnation')return '현재 손패를 모두 버리고 북에서 여섯 장을 뽑습니다.';

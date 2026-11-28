@@ -411,6 +411,11 @@ function createCepter(edition="ps2"){
     if((begins||handheld)&&hasLandDamage(e)&&fx.name(t.unit)==='jackalope'&&spellHP(s,t,e)===0)
       return cards.find(c=>!c.unlisted&&key(c)==='humbaba')?.name;
   }
+  function soltisGain(s,seat){
+    const elements=s.tiles.filter(t=>t.owner===seat&&t.level>=3&&Number.isInteger(t.type)&&t.unit&&
+      combo.hasElement(cards[t.unit.id],t.type)).map(t=>t.type);
+    return 200+(new Set(elements).size===4?1000:0);
+  }
   const revivalLabel=(before,after)=>(begins||handheld)&&fx.name(before)==='jackalope'&&fx.name(after)==='humbaba'?cards[after.id].name+' 부활':null;
   const extra=extraSpells?.rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,chain,canOccupy,deployable,claim,claimFromHand,canInvade});
   const shrineModule=edition==='saga'?(typeof module==='undefined'?CepterSagaShrines:require('./cept-saga-shrines')):null;
@@ -1143,7 +1148,7 @@ function createCepter(edition="ps2"){
       if(!handheld&&!begins&&a.g==='powerbracelet')a.st*=2;
       if(a.g==='petrifystone'){a.st=0;a.hp=80+a.land;}
       a.st=Math.max(0,a.st);
-      if(revolt&&a.n==='sludgetitan'&&a.u.hp<fx.max(a.u)){
+      if((revolt||handheld)&&a.n==='sludgetitan'&&a.u.hp<fx.max(a.u)){
         a.hp=0;lines.push(a.c.name+' · 최대 HP 상태가 아니어서 파괴');
       }
     }
@@ -1210,7 +1215,7 @@ function createCepter(edition="ps2"){
           !guard?.firstEquipment&&(d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3))||d.g==='dragonhelm'&&[1,2].includes(a.element)||
           matches(d.c.neutralizes,a)||d.c.neutralizeRaces?.includes(a.c.catalog?.race)||d.c.blocksBaseSTAtMost!=null&&fx.strength(a.u)<=d.c.blocksBaseSTAtMost||
           d.c.blocksBaseSTAtLeast!=null&&fx.strength(a.u)>=d.c.blocksBaseSTAtLeast||d.c.blocksLarge&&fx.max(a.u)>=(edition==='saga'&&d.n==='rahab'?50:40)||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
-          d.n==='caitsith'&&fx.strength(a.u)>=40||d.c.blocksWithArmor&&d.gear?.category==='armor'||(revolt||begins)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
+          d.n==='caitsith'&&fx.strength(a.u)>=40||d.c.blocksWithArmor&&d.gear?.category==='armor'||(revolt||begins||handheld)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&blocks){lines.push('공격 무효');return 'block';}
         if(!orb&&d.c.partialReflect){
@@ -1256,8 +1261,9 @@ function createCepter(edition="ps2"){
       if(damage>0&&!scroll&&!muted&&!blocksAttackBonus&&(edition!=='ps2'||a.hp>0)){
         const creatureEffects=!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits,attacker=creatureEffects?a.n:null;
         const instant=a.c.instantKill;
-        if(creatureEffects&&d.hp>0&&!s.predict&&instant&&
-          (instant.races?.includes(d.c.catalog?.race)||matches(instant.elements,d))&&Math.random()<instant.rate){
+        const instantTarget=instant&&(instant.minimumBaseST!=null?fx.strength(d.u)>=instant.minimumBaseST:
+          instant.races?.includes(d.c.catalog?.race)||matches(instant.elements,d));
+        if(creatureEffects&&d.hp>0&&instantTarget&&(instant.rate===1||!s.predict&&Math.random()<instant.rate)){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
         if(revolt&&d.hp>0&&(attacker==='saint'&&d.element===-1||attacker==='samurai'&&fx.strength(d.u)>=40&&!s.predict&&Math.random()<.7)){
@@ -2147,6 +2153,10 @@ function createCepter(edition="ps2"){
           if(!board(s).pathSwitches)note(s,p.name+' · '+c.name+' · 카드 1장 뽑음');
           break;
         }
+        if(c.effect==='handheldSoltis'){
+          const gain=soltisGain(s,s.turn);p.cash+=gain;
+          mapEffect('gain','+'+gain+'G',p.pos,{title:c.name});note(s,c.name+' · '+gain+'G 획득');break;
+        }
         if(c.effect==='cash')p.cash+=100;
         else if(c.effect==='manna')p.cash+=(c.magicPerLap||50)*(p.lap+1);
         else if(c.effect==='fly'){
@@ -2185,7 +2195,7 @@ function createCepter(edition="ps2"){
             const title=cards.find(c=>c.effect===effect)?.name||effect;
             mapEffect('cast',title,hits[0]?.at??s.tiles.findIndex(t=>t.area===x),hits.length?{hits,title}:{});break;
           }
-          if(edition==='dc'&&effect==='polymorph'&&tile.unit&&tile.unit.id!==unit?.id){
+          if((edition==='dc'&&effect==='polymorph'||handheld&&['polymorph','turntothewall'].includes(effect))&&tile.unit&&tile.unit.id!==unit?.id){
             const label=cards[tile.unit.id].name+' 변신';
             mapEffect('cast',label,x);note(s,label);break;
           }
@@ -2731,6 +2741,7 @@ function createCepter(edition="ps2"){
           const wantsEvo=!p.hand.some(id=>cards[id]?.evo)&&p.book?.some(id=>cards[id]?.evo);
           return (wantsEvo?34:17)-Math.max(0,p.hand.length-5)*10;
         }
+        if(k==='cast'&&c.effect==='handheldSoltis')return (soltisGain(s,seat)-price(p,c,s))/12;
         if(k==='cast'&&c.effect==='manna')return 20+p.lap;
         if(k==='cast'&&c.effect==='bolt'&&!s.tiles.some(t=>t.unit&&!allied(s,t.owner,seat)))return -10;
         if(skill>=2&&k==='invade'){
