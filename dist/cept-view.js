@@ -748,10 +748,6 @@ function map(){
     }
     if(n===standing)b.classList.add('current-step');
     if(exits.has(n))b.classList.add('exit');
-    if(targets.has(n)){
-      b.classList.add('targetable');
-      b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+labels[targets.get(n)[0]]);
-    }
     if(t.unit){const miniature=creatureFigure(t.unit.id);miniature.classList.add('summoned');b.append(miniature);}
     if(t.unit){
       const toll=tollLabel(t),status=t.unit.fatigued?' · 피로':'';
@@ -760,6 +756,10 @@ function map(){
       compactLabel=toll;
       b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+toll+status));
       b.setAttribute('aria-label',b.getAttribute('aria-label')+' · Lv.'+t.level+' · 통행료 '+toll+status);
+    }
+    if(targets.has(n)){
+      b.classList.add('targetable');
+      b.setAttribute('aria-label',b.getAttribute('aria-label')+' · '+labels[targets.get(n)[0]]);
     }
     title.append(el('span',bombRounds?bombRounds+'R':compactLabel,'tile-compact'));
     const pawns=el('div',null,'pawns');
