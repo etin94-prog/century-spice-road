@@ -12,13 +12,15 @@ const Blackjack=(()=>{
     for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
     return cards;
   }
-  function table(count=1){return {bots:Array.from({length:count-1},()=>({chips:500,hand:null})),phase:'bet',chips:500,stake:10,round:0,shoe:[],hands:[],dealer:[],index:0,insurance:0,net:0};}
+  // limit 0 is an open-ended table: nobody is ranked and broke AI seats buy back in.
+  function table(count=1,chips=500,limit=5){return {bots:Array.from({length:count-1},()=>({chips:500,hand:null})),phase:'bet',chips,base:chips,limit,stake:10,round:0,shoe:[],hands:[],dealer:[],index:0,insurance:0,net:0};}
   function deal(g){
     if(g.phase!=='bet'||!Number.isInteger(g.stake)||g.stake<2||g.stake%2||g.stake>g.chips)return false;
     if(g.shoe.length<65)g.shoe=shuffle();
     g.round++;g.before=g.chips;g.chips-=g.stake;g.index=0;g.insurance=0;
     const cards=[];g.hands=[{cards,bet:g.stake}];g.dealer=[];
     for(const bot of g.bots){
+      if(!g.limit&&bot.chips<2)bot.chips=500;
       const bet=Math.min(10,bot.chips);
       bot.hand=bet>=2?{cards:[],bet}:null;
       if(bot.hand)bot.chips-=bet;
@@ -99,6 +101,9 @@ const Blackjack=(()=>{
     if([...g.hands,...g.bots.filter(b=>b.hand).map(b=>b.hand)].some(h=>score(h.cards).total<=21 && !(h.cards.length===2&&score(h.cards).total===21&&(g.hands.length===1||!g.hands.includes(h))))&&score(g.dealer).total<17)g.dealer.push(g.shoe.pop());
     else settle(g);
   }
-  return {table,score,rank,pip,deal,actions,play,dealerStep};
+  const over=g=>g.limit>0&&g.round>=g.limit;
+  // Winnings since the table opened: seats are ranked by these, not by bankroll.
+  const gains=g=>[g.chips-g.base,...g.bots.map(bot=>bot.chips-500)];
+  return {table,over,gains,score,rank,pip,deal,actions,play,dealerStep};
 })();
 if(typeof module!=='undefined')module.exports=Blackjack;

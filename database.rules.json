@@ -49,6 +49,31 @@
         }
       }
     },
+    "wallets": {
+      "$token": {
+        ".read": "auth != null && $token.matches(/^[a-f0-9]{64}$/)",
+        ".write": "auth != null && $token.matches(/^[a-f0-9]{64}$/) && newData.exists()",
+        ".validate": "newData.hasChildren(['name','chips','at'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 12 && (!data.exists() || data.val() === newData.val())"
+        },
+        "chips": {
+          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 1000000000"
+        },
+        "at": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "walletNames": {
+      "$name": {
+        ".read": "auth != null && $name.matches(/^[a-f0-9]{64}$/)",
+        ".write": "auth != null && $name.matches(/^[a-f0-9]{64}$/) && !data.exists() && newData.val() === true"
+      }
+    },
     "rooms": {
       "$room": {
         ".read": "auth != null && (data.child('host').val() === auth.uid || data.child('guest').val() === auth.uid)",

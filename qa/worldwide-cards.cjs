@@ -10,6 +10,10 @@ const side={phase:'bet',street:3,button:2,turn:2,price:100,raises:1,board:[1,16,
   {cards:[0,13],paid:20,bet:20,chips:0,pending:false},{cards:[12,25],paid:60,bet:60,chips:0,pending:false},{cards:[11,24],paid:90,bet:90,chips:10,pending:true}]};
 A(P.play(side,'call'));A.deepEqual(side.players.map(p=>p.chips),[60,80,40]);
 A(H.meld([6]));A(H.meld([12,0,11]));A(!H.meld([12,0,1]));
+// The wallet seat brings its own stack; an open-ended table reseats a broke AI.
+const open=P.start(3,1000,0);A.deepEqual(open.players.map(p=>p.buyin),[1000,200,200]);A.equal(open.players.reduce((n,p)=>n+p.chips+p.paid,0),1400);
+open.phase='result';open.players[1].chips=0;P.deal(open);A.equal(open.players[1].buyin,400);A(!open.players[1].fold);
+const ranked=P.start(3,1000,5);ranked.phase='result';ranked.players[1].chips=0;P.deal(ranked);A.equal(ranked.players[1].buyin,200);A(ranked.players[1].fold);
 const t=H.start(2);t.discard=[2];t.players[0].cards=[0,1,30];A(!H.play(t,{kind:'thanks',cards:[30]}));A(H.play(t,{kind:'thanks',cards:[0,1]}));A(t.players[0].open);A(H.play(t,{kind:'discard',cards:[30]}));A.equal(t.phase,'result');
 for(const count of [2,3,4])for(let i=0;i<30;i++){
   const poker=P.start(count),hula=H.start(count);

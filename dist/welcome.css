@@ -7,3 +7,8 @@
 [role="tabpanel"] a>div:only-child{margin-top:auto}
 @media(orientation:landscape) and (max-height:510px){[role="tablist"]{padding:2px;margin-bottom:7px}}
 @media(max-width:830px){[role="tablist"]{overflow-x:auto;scrollbar-width:thin}[role="tab"]{flex:1 0 auto;padding-inline:12px;white-space:nowrap}}
+
+#walletBar{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;margin-bottom:10px;padding:8px 14px;border:1px solid #a6956e;border-radius:10px;background:#0c231f;color:inherit;font:600 15px system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+#walletBar b{color:#ffe8b3;font-size:19px;font-variant-numeric:tabular-nums}
+#walletBar span{margin-left:auto;color:#d4d9ca;font-weight:400;font-size:13px}
+#walletBar:focus-visible{outline:3px solid #ffcf67;outline-offset:2px}

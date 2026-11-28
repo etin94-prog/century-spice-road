@@ -16,4 +16,8 @@ for(let count=1;count<=4;count++)for(let run=0;run<40;run++){
     else B.dealerStep(g);
   }assert(g.chips>=0&&g.bots.every(p=>p.chips>=0));g.phase='bet';}
 }
+// Open-ended tables: my chips come from the wallet, nobody is ranked, broke AI seats return.
+g=B.table(3,1000,0);assert.equal(g.chips,1000);assert(!B.over(g));g.bots[0].chips=0;g.round=40;assert(B.deal(g));assert.equal(g.bots[0].chips,490);assert(!B.over(g));
+g=B.table(2,1000,10);g.round=9;assert(!B.over(g));g.bots[0].chips=0;assert(B.deal(g));assert(B.over(g));assert.equal(g.bots[0].hand,null);
+g.chips=1040;g.bots[0].chips=470;assert.deepEqual(B.gains(g),[40,-30]);
 console.log('Payouts, split aces, soft 17, insurance, doubles and 160 five-round tables OK');

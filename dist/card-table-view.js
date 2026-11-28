@@ -2,8 +2,42 @@
 const $=id=>document.getElementById(id);
 const poker=new URLSearchParams(location.search).get('game')!=='hula';
 const engine=poker?Poker:Hula,title=poker?'Texas Hold’em':'훌라',key='worldwide-'+(poker?'holdem':'hula')+'-v1';
-let game,timer,selected=[];
+let game,timer,selected=[],seen=0;
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved?.players?.length>=2&&saved.players.length<=4&&saved.round>=1)game=saved;}catch{}
+// Tables saved before the round setting ran five hands on 200 table chips each.
+// A hold'em hand from then is dropped: its pot was never taken from the wallet.
+if(poker&&game&&!Number.isInteger(game.players[0].buyin)){
+  if(game.phase==='result')game.players.forEach(p=>{p.buyin=200;});
+  else game=undefined;
+}
+if(game){
+  if(![0,5,10,20].includes(game.limit))game.limit=5;
+  seen=game.players[0].chips;
+}
+// In hold'em my stack is the shared wallet. What I win or lose is passed on as it
+// happens; a balance changed elsewhere (blackjack, another device, a refill) is
+// taken up between hands only, so a hand in progress keeps its own arithmetic.
+function mirror(){
+  if(!poker)return;
+  const me=game.players[0];
+  Wallet.set(Wallet.chips+me.chips-seen);seen=me.chips;
+}
+function absorb(){
+  if(!poker||!game||game.phase!=='result')return false;
+  const me=game.players[0],shift=Wallet.chips-me.chips;
+  if(!shift)return false;
+  me.chips+=shift;me.buyin+=shift;seen=me.chips;return true;
+}
+// During a hand the stack may never be larger than the wallet behind it (the
+// wallet can drop at blackjack or on another device while this hand is saved).
+function cap(){
+  if(!poker||!game||game.phase==='result')return false;
+  const me=game.players[0],cut=me.chips-Wallet.chips;
+  if(cut<=0)return false;
+  me.chips-=cut;me.buyin-=cut;seen=me.chips;return true;
+}
+Wallet.hold(()=>poker&&!!game&&game.phase!=='result');
+const limits=value=>'<label>판 수<select id="limit">'+[0,5,10,20].map(n=>'<option value="'+n+'" '+(n===value?'selected':'')+'>'+(n?n+'판 승부':'무제한')+'</option>').join('')+'</select></label>';
 const short=id=>ranks[CardTable.rank(id)-1]+suits[CardTable.suit(id)];
 const showCards=cards=>cards.map(id=>card(id)).join('');
 function btn(action,text,enabled=true,primary=false){return '<button data-act="'+action+'" '+(enabled?'':'disabled')+' class="'+(primary?'primary':'')+'">'+text+'</button>';}
@@ -12,13 +46,17 @@ function modal(heading,html){
   $('close').hidden=!game;if(!$('modal').open)$('modal').showModal();
 }
 function setup(){
-  modal(title+' · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(n=>'<option value="'+n+'" '+((game?.players.length||4)===n?'selected':'')+'>나 + AI '+(n-1)+'</option>').join('')+'</select></label><p>'+(poker?'200칩씩 시작 · 블라인드 5 / 10':'한 사람당 7장 · 정통 턴제')+' · 5판</p>'+btn('start','로컬 대국 시작',true,true)+'<a class="setupBack" href="./#worldwide">게임 선택으로</a>');
+  modal(title+' · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(n=>'<option value="'+n+'" '+((game?.players.length||4)===n?'selected':'')+'>나 + AI '+(n-1)+'</option>').join('')+'</select></label>'+limits(game?.limit??(poker?0:5))+'<p>'+(poker?'내 칩 '+Wallet.chips+' · AI 200칩씩 · 블라인드 5 / 10':'한 사람당 7장 · 정통 턴제')+'</p>'+(poker&&Wallet.chips<Wallet.LOW?btn('refill','무료 리필 '+Wallet.REFILL+'칩',true,true):btn('start','로컬 대국 시작',true,true))+'<a class="setupBack" href="./#worldwide">게임 선택으로</a>');
 }
-const pokerRules='<p>52장 한 덱을 사용합니다. 내 카드 2장과 공용 카드 5장 중 가장 강한 5장 조합이 이깁니다. 공용 카드만 사용할 수도 있습니다.</p><p>프리플롭과 플롭은 10칩, 턴과 리버는 20칩씩 올리는 고정 리밋입니다. 한 거리에서 베트와 레이즈를 합쳐 최대 4회입니다. 레이즈는 전액을 낼 수 있을 때 가능하며, 콜 금액이 부족하면 남은 칩만 올인합니다.</p><p>동점은 팟을 분할하고 나머지 칩은 버튼 왼쪽부터 받습니다. 올인한 사람은 자신이 기여한 범위의 팟만 겨룹니다. 5판 또는 내 칩 소진이나 한 명만 남으면 종료합니다.</p>';
-const hulaRules='<p>내 차례에는 더미에서 한 장 받거나 직전 버림패로 땡큐 등록을 하고, 원하는 만큼 등록·붙이기 후 한 장을 버립니다. 손을 비우면 훌라입니다.</p><p>같은 숫자 3장 이상, 같은 무늬의 연속 3장 이상, 또는 7 한 장을 등록할 수 있습니다. A는 낮거나 높게 쓰되 K-A-2로 잇지 않습니다. 7 한 장에는 같은 무늬의 이웃 숫자를 붙입니다. 내가 한 번 등록한 뒤에는 누구의 조합에나 붙일 수 있습니다.</p><p>이 테이블은 내 차례에만 땡큐를 허용합니다. 받기 전, 이미 등록했고 손패 합계가 2인 7점·3인 10점·4인 15점 이하면 스톱할 수 있습니다. 스톱이나 더미 소진 시 A=1부터 K=13까지 합산해 최저점자가 이깁니다. 동점은 공동 승리이며, 별도 배수 없이 5판의 승수를 겨룹니다.</p>';
-function finished(){return game.round>=5||(poker&&(game.players[0].chips===0||game.players.filter(p=>p.chips).length<2));}
+const pokerRules='<p>52장 한 덱을 사용합니다. 내 카드 2장과 공용 카드 5장 중 가장 강한 5장 조합이 이깁니다. 공용 카드만 사용할 수도 있습니다.</p><p>프리플롭과 플롭은 10칩, 턴과 리버는 20칩씩 올리는 고정 리밋입니다. 한 거리에서 베트와 레이즈를 합쳐 최대 4회입니다. 레이즈는 전액을 낼 수 있을 때 가능하며, 콜 금액이 부족하면 남은 칩만 올인합니다.</p><p>동점은 팟을 분할하고 나머지 칩은 버튼 왼쪽부터 받습니다. 올인한 사람은 자신이 기여한 범위의 팟만 겨룹니다.</p><p>내 칩은 블랙잭과 함께 쓰는 공용 지갑이고, AI는 200칩으로 앉습니다. 무제한 테이블은 끝없이 이어지며 칩이 떨어진 AI는 200칩으로 다시 앉습니다. 5·10·20판 승부는 정한 판 수를 마치거나 한 명만 남으면 그동안의 손익으로 순위를 정합니다. 내 칩이 떨어지면 설정 화면에서 무료로 채웁니다.</p>';
+const hulaRules='<p>내 차례에는 더미에서 한 장 받거나 직전 버림패로 땡큐 등록을 하고, 원하는 만큼 등록·붙이기 후 한 장을 버립니다. 손을 비우면 훌라입니다.</p><p>같은 숫자 3장 이상, 같은 무늬의 연속 3장 이상, 또는 7 한 장을 등록할 수 있습니다. A는 낮거나 높게 쓰되 K-A-2로 잇지 않습니다. 7 한 장에는 같은 무늬의 이웃 숫자를 붙입니다. 내가 한 번 등록한 뒤에는 누구의 조합에나 붙일 수 있습니다.</p><p>이 테이블은 내 차례에만 땡큐를 허용합니다. 받기 전, 이미 등록했고 손패 합계가 2인 7점·3인 10점·4인 15점 이하면 스톱할 수 있습니다. 스톱이나 더미 소진 시 A=1부터 K=13까지 합산해 최저점자가 이깁니다. 동점은 공동 승리이며, 별도 배수 없이 승수를 겨룹니다. 판 수는 설정에서 5·10·20판이나 무제한으로 고릅니다.</p>';
+function finished(){
+  if(game.limit&&game.round>=game.limit)return true;
+  return poker&&(game.players[0].chips===0||(game.limit>0&&game.players.filter(p=>p.chips).length<2));
+}
+const tally=p=>poker?p.chips-p.buyin:p.wins;
 function changed(){
-  selected=[];renderCardMove(render);
+  selected=[];mirror();absorb();renderCardMove(render);
   try{localStorage.setItem(key,JSON.stringify(game));}catch{$('msg').textContent+=' · 기기 저장 불가';}
 }
 function commit(action,event){
@@ -38,7 +76,7 @@ function announceResult(){
   if (!poker && !finished()) {
     outcome = !game.winners.includes(0) ? 'loss' : game.winners.length === 1 ? 'win' : 'draw';
   } else {
-    const scores = game.players.map(player => poker ? player.chips : player.wins);
+    const scores = game.players.map(tally);
     if (poker && !finished()) {
       scores.fill(0);
       game.report.forEach(({id,n}) => {scores[id] += n;});
@@ -63,7 +101,7 @@ function schedule(){
 function render(){
   const g=game,end=g.phase==='result',mine=g.players[0],local=!end&&g.turn===0;
   $('name').textContent=title;$('balance').textContent=poker?'내 칩 '+mine.chips:'내 승수 '+mine.wins;
-  $('round').textContent='ROUND '+g.round+' / 5';$('msg').textContent=end?resultSummary():poker?CardTable.seat(g.turn)+' 차례':g.last||'내 차례에 카드를 받으세요.';
+  $('round').textContent='ROUND '+g.round+(g.limit?' / '+g.limit:' · 무제한');$('msg').textContent=end?resultSummary():poker?CardTable.seat(g.turn)+' 차례':g.last||'내 차례에 카드를 받으세요.';
   $('opponents').innerHTML=g.players.slice(1).map((p,j)=>{
     const i=j+1,visible=end&&(!poker||g.showdown)&&!p.fold;
     return '<div class="opponent '+(!end&&g.turn===i?'active':'')+'"><b>'+CardTable.seat(i)+(poker&&g.button===i?' · D':'')+'</b><div class="miniCards">'+(visible?showCards(p.cards):poker?p.cards.map(()=>card(null,false,'상대 홀 카드')).join(''):'손패 '+p.cards.length+'장')+'</div><small>'+(poker?p.chips+'칩 · '+(p.last||'대기')+(visible?' · '+Poker.evaluate([...p.cards,...g.board]).category:''):end?Hula.points(p.cards)+'점':p.open?'등록함':'미등록')+'</small></div>';
@@ -90,14 +128,14 @@ function render(){
   }
   if(end){
     if(finished()){
-      const scores=g.players.map((p,i)=>({i,n:poker?p.chips:p.wins})).sort((a,b)=>b.n-a.n);
+      const scores=g.players.map((p,i)=>({i,n:tally(p)})).sort((a,b)=>b.n-a.n);
       $('msg').textContent+=' · 최종 '+scores.map((p,i)=>{
         const rank=scores.findIndex(other=>other.n===p.n)+1;
         const tied=scores[i-1]?.n===p.n||scores[i+1]?.n===p.n;
-        return (tied?'공동 ':'')+rank+'위 '+CardTable.seat(p.i)+' '+p.n+(poker?'칩':'승');
+        return (tied?'공동 ':'')+rank+'위 '+CardTable.seat(p.i)+' '+(poker&&p.n>0?'+':'')+p.n+(poker?'칩':'승');
       }).join(' / ');
     }
-    $('controls').innerHTML=btn('next',finished()?'새 테이블':'다음 판',true,true);
+    $('controls').innerHTML=(finished()?'':btn('setup','설정'))+btn('next',finished()?'새 테이블':'다음 판',true,true);
   }
   schedule();
 }
@@ -106,9 +144,11 @@ document.addEventListener('click',e=>{
   if(cardBtn){const id=+cardBtn.dataset.id;selected=selected.includes(id)?selected.filter(c=>c!==id):[...selected,id];redrawHandSelection(cardBtn,render);return;}
   const el=e.target.closest('[data-act]');if(!el)return;
   const a=el.dataset.act;
-  if(a==='start'){cardAudio.stopVoice();cardAudio.cue('deal',4);game=engine.start(+$('count').value);$('modal').close();changed();return;}
+  if(a==='start'){cardAudio.stopVoice();cardAudio.cue('deal',4);const limit=+$('limit').value;seen=Wallet.chips;game=poker?Poker.start(+$('count').value,Wallet.chips,limit):Hula.start(+$('count').value);game.limit=limit;$('modal').close();changed();return;}
+  if(a==='refill'){Wallet.refill();cardAudio.cue('chip');setup();return;}
   if(!game)return;
-  if(a==='next'&&game.phase==='result'){cardAudio.stopVoice();if(finished())setup();else{engine.deal(game);cardAudio.cue('deal',4);changed();}return;}
+  if(a==='setup'&&game.phase==='result'){setup();return;}
+  if(a==='next'&&game.phase==='result'){cardAudio.stopVoice();absorb();if(finished())setup();else{engine.deal(game);cardAudio.cue('deal',4);changed();}return;}
   if(game.turn!==0||game.phase==='result')return;
   if(poker){commit(a,e);return;}
   if(a==='thanks'){
@@ -122,4 +162,5 @@ document.addEventListener('click',e=>{
 $('guide').onclick=()=>modal(title+' · 테이블 규칙',poker?pokerRules:hulaRules);
 $('close').onclick=()=>$('modal').close();$('modal').onclose=schedule;$('modal').oncancel=e=>{if(!game)e.preventDefault();};
 document.body.className=poker?'poker':'hula';document.title=title+' · 51 Worldwide Games';$('name').textContent=title;
-if(game)render();else setup();
+Wallet.onChange(()=>{if(absorb()||cap()){try{localStorage.setItem(key,JSON.stringify(game));}catch{}render();}});
+if(game){absorb();cap();render();}else setup();

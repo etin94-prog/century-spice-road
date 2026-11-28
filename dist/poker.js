@@ -23,9 +23,12 @@ const Poker=(()=>{
     return {category:names[value[0]],score:value.reduce((s,v)=>s*15+v,0)};
   }
   const streets=['프리플롭','플롭','턴','리버'];
-  function start(count){const g={players:Array.from({length:count},()=>({chips:200})),button:-1,round:0};deal(g);return g;}
+  // buyin is what a seat has put on the table; chips-buyin is its result. On an
+  // open-ended table (limit 0) a broke AI seat buys in again instead of sitting out.
+  function start(count,mine=200,limit=5){const g={players:Array.from({length:count},(_,i)=>({chips:i?200:mine,buyin:i?200:mine})),button:-1,round:0,limit};deal(g);return g;}
   function pay(p,n){n=Math.min(p.chips,n);p.chips-=n;p.bet+=n;p.paid+=n;}
   function deal(g){
+    if(g.limit===0)for(const p of g.players.slice(1))if(!p.chips){p.chips=200;p.buyin+=200;}
     g.round++;g.street=0;g.phase='bet';g.board=[];g.report=[];g.deck=deck();g.price=10;g.raises=1;
     g.button=after(g,g.button,p=>p.chips>0);
     for(const p of g.players)Object.assign(p,{cards:[],fold:!p.chips,bet:0,paid:0,last:'',pending:p.chips>0});
