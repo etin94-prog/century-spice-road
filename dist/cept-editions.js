@@ -144,7 +144,7 @@ const CepterEditions=(()=>{
       iksear:'sagaiksear',terrair:'sagaterrair',bistair:'sagabistair',selenear:'sagaselenear',
       comet:'comet',crusherstorm:'crusherstorm',desolation:'desolation',elevation:'elevation',erosion:'erosion',
       fame:'fame',frostneedle:'frostneedle',venomousboil:'venomousboil',refuge:'refuge',gift:'sagagift',refresh:'refresh',holyblight:'holyblight',
-      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi',trade:'trade',drought:'sagadrought',float:'sagafloat',innocence:'innocence',reflection:'reflection',selection:'sagaselection',rouetsoleil:'rouetsoleil'},
+      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi',trade:'trade',intrusion:'intrusion',drought:'sagadrought',float:'sagafloat',innocence:'innocence',reflection:'reflection',selection:'sagaselection',rouetsoleil:'rouetsoleil',zeromn:'zeromn'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',

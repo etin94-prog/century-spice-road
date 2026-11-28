@@ -100,7 +100,7 @@ function decisionText(action,p){
 
 function actionCard(action,p){
   const [kind,x,id]=action;
-  if(['foresightCard','replaceCard','mesmerCard','stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind))return id;
+  if(['intrusionCard','foresightCard','replaceCard','mesmerCard','stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind))return id;
   if(kind==='buyCard'||kind==='circleCast')return x;
   if(kind==='eraseDraw'&&C.edition==='revolt')return p.peek?.ids[x];
   if(kind==='exchange')return p.hand[id];
@@ -168,7 +168,7 @@ function openTurnPicker(entries,title,preferred=-1){
     option.setAttribute('aria-pressed','false');
     if(card){
       const art=cardSeal(entry.id);art.alt='';option.prepend(art);
-      const kind=entry.action[0],noExtraCost=['circleCast','replaceCard'].includes(kind)||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
+      const kind=entry.action[0],noExtraCost=['circleCast','replaceCard','intrusionCard'].includes(kind)||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
       const cost=kind==='buyCard'?C.shopCost(entry.id):noExtraCost?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
       if(Number.isFinite(cost))option.append(el('small',cost+'G','card-cost'));
       if(card.kind==='creature')option.append(el('small','ST '+card.st+' · HP '+card.hp,'card-power'));
@@ -253,7 +253,7 @@ function commandGroup(group,p,controls){
   const [kind]=group[0],single=group.length===1;
   const box=el('div',null,'command');box.dataset.kind=kind;
   const pictured=group.some(a=>actionCard(a,p)!=null),territory=['level','element','exchange','transfer'].includes(kind);
-  const mustShowCard=kind==='replaceCard'||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
+  const mustShowCard=['replaceCard','intrusionCard'].includes(kind)||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
   if(!mustShowCard&&(single||!pictured&&!territory&&group.length<=3)){
     if(!single)box.append(el('small',labels[kind],'command-title'));
     for(const action of group){
@@ -328,7 +328,7 @@ function seatSummary(seat){
   ];
   if(map.gemStore)rows.push(['속성석',s.prices.map((price,e)=>C.elements[e]+' '+p.symbols[e]+'개 × '+price+'G').join(' · ')]);
   const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'모든 내 영지에 명령 가능',bravesong:'브레이브 송 · 전투 ST +20',toughsong:'터프 송 · 전투 HP +20',sagaTollUp:'통행료 30% 증가',
-    sagaTollDown:'통행료 30% 감소',sagadrought:'드라우트 · 영지 레벨 변경 금지',sagafloat:'플로트 · 주사위 5 고정',
+    sagaTollDown:'통행료 30% 감소',sagaStrut:'제롬 · 통행료 면제',sagaMagicEra:'제롬 · 카드 사용 마력 0G',sagadrought:'드라우트 · 영지 레벨 변경 금지',sagafloat:'플로트 · 주사위 5 고정',
     hunterssong:'헌터스 송 · 전투 격파 +200G',trespass:'트레스패스 · 다른 셉터 완주 보너스 획득',innocence:'이노센스 · 통행료 면제 및 침략 금지',sagaDeduction:'크리처·장비 비용 감면',sagaInflation:'크리처·장비 비용 증가',
     sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
     p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':p.sagaClemency?'다음 이동 통행료 면제':p.sagaService?'다음 요새 보너스 +50%':p.sagaFeast?'다음 주회 보너스 +50%':null;

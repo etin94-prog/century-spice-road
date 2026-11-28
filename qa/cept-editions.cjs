@@ -891,6 +891,78 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.ok(pulgasari.players[0].hand.includes(id('pulgasari')));
   assert.match(pulgasari.battle.lines.join(' '),/기본 ST와 최대 HP 증가/);
   console.log('Saga dragon evolutions, natural scrolls, gear fusion, fossil revival and battle growth verified');
+  for(const win of [true,false]){
+    const remote=sagaCast('intrusion',s=>{
+      s.players[0].hand=[id('intrusion'),id('leshy'),id('brontides'),id('mace')];s.players[0].pos=1;
+      s.players[1].hand=[];
+      unit(s,5,win?'giantrat':'dwarf',1,'무속성',3);
+      unit(s,6,'goblin',1,3);s.tiles[6].unit.enchant='landprotection';
+      unit(s,7,'goblin',1,3);s.tiles[7].unit.enchant='peace';
+    });
+    assert.equal(remote.players[0].cash,420);
+    assert.deepEqual(C.choices(remote),[['targetLand',5]]);
+    assert.ok(C.play(remote,['targetLand',5]));
+    assert.deepEqual(C.choices(remote),[['intrusionCard',0,id('leshy')]]);
+    const loaded=structuredClone(remote);
+    assert.deepEqual(room.view(C,loaded,1).choices,[]);
+    assert.deepEqual(room.view(C,loaded,1).game.players[0].hand,[]);
+    assert.ok(C.play(loaded,['intrusionCard',0,id('leshy')]));
+    assert.equal(loaded.players[0].cash,420);
+    assert.equal(loaded.players[0].pos,1);
+    if(win)assert.ok(C.play(loaded,['equip',1]));else assert.ok(C.play(loaded,['bare']));
+    assert.equal(loaded.players[0].cash,win?420-C.cards[id('mace')].cost:420);
+    assert.ok(C.play(loaded,['bare']));
+    assert.equal(loaded.battle.won,win);
+    assert.equal(loaded.battle.noToll,true);
+    assert.ok(C.play(loaded,['continue']));
+    assert.equal(loaded.phase,'roll');
+    assert.equal(loaded.turn,0);
+    assert.equal(loaded.players[0].pos,1);
+  }
+  const immediateRaid=sagaCast('intrusion',s=>{
+    s.players[0].hand=[id('intrusion'),id('tokebi')];
+    unit(s,5,'giantrat',1,'무속성');
+  });
+  assert.ok(C.play(immediateRaid,['targetLand',5]));
+  assert.ok(C.play(immediateRaid,['intrusionCard',0,id('tokebi')]));
+  assert.ok(C.play(immediateRaid,['bare'])&&C.play(immediateRaid,['bare']));
+  assert.ok(C.play(immediateRaid,['continue']));
+  assert.deepEqual([immediateRaid.phase,immediateRaid.immediateAt],['land',5]);
+  assert.ok(C.play(immediateRaid,['ability',5])&&C.play(immediateRaid,['abilityLand',5]));
+  assert.deepEqual([immediateRaid.phase,immediateRaid.turn,immediateRaid.tiles[5].owner],['roll',0,-1]);
+  for(const power of ['panic','extermination','removeCurse','fortune','love','strut','magicEra']){
+    const chosen=sagaCast('zeromn',s=>{
+      unit(s,4,'dwarf',0,2);unit(s,5,'fighter',1,2,2);
+      Object.assign(s.tiles[4].unit,{hp:32,enchant:'senility'});
+      Object.assign(s.tiles[5].unit,{hp:25,enchant:'senility'});
+      s.players[1].cash=1500;s.prices=s.prices.map(()=>40);
+    });
+    assert.equal(C.choices(chosen).length,7);
+    assert.equal(chosen.players[0].cash,500);
+    const restored=JSON.parse(JSON.stringify(chosen));
+    assert.ok(C.play(restored,['zeromnPower',power]));
+    assert.equal(restored.phase,'roll');
+    if(power==='panic')assert.ok(restored.prices.every(n=>n===20));
+    if(power==='extermination')assert.deepEqual(restored.tiles.slice(4,6).map(t=>t.unit.hp),[12,5]);
+    if(power==='removeCurse')assert.deepEqual(restored.tiles.slice(4,6).map(t=>t.unit.enchant),[undefined,'senility']);
+    if(power==='fortune')assert.equal(restored.players[0].cash,900);
+    if(power==='love')assert.deepEqual(restored.tiles.slice(4,6).map(t=>t.unit.hp),[50,25]);
+    if(power==='strut'){
+      assert.equal(restored.players[0].enchantDeadline,6);
+      assert.equal(C.owedToll(restored,restored.tiles[5],0),0);
+    }
+    if(power==='magicEra'){
+      assert.equal(restored.players[0].enchantDeadline,6);
+      for(const name of ['mace','tengu','trade'])assert.equal(C.price(restored.players[0],C.cards[id(name)],restored),0);
+      for(let step=1;step<=6;step++){
+        restored.phase='land';restored.players[restored.turn].pos=0;
+        assert.ok(C.play(restored,['pass']));
+        assert.equal(restored.players[0].status,step<6?'sagaMagicEra':undefined);
+      }
+      assert.equal(C.price(restored.players[0],C.cards[id('tengu')],restored),110);
+    }
+  }
+  console.log('Saga Intrusion paid once, remote attack and Immediate resumed the roll; all seven Zeromn powers checked');
   const boosts=fight('fighter','dwarf','무속성',null,s=>{
     unit(s,4,'ares',1,0);unit(s,5,'poseidon',0,1);
   });

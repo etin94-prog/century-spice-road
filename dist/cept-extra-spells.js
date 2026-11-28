@@ -15,9 +15,9 @@ const CepterExtraSpells=(()=>{
     gift:'global',charity:'global',turnover:'global',purify:'global',pacifism:'global',revoltphantasm:'global',
     armageddon:'global',beginstempest:'global',scarestorm:'global',disbelief:'global',beginsculdra:'global',immobilize:'global',footrace:'global',unholygrasp:'player',
     blacksmith:'player',reform:'player',beginspoisonmind:'player',discord:'global',metalform:'land',temptation:'land',beginspolymorph:'land',
-    trade:'land',reflection:'land',sagaselection:'global',rouetsoleil:'global',sagadrought:'player',sagafloat:'player',innocence:'player',sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
+    trade:'land',intrusion:'land',reflection:'land',sagaselection:'global',rouetsoleil:'global',sagadrought:'player',sagafloat:'player',innocence:'player',sagaiksear:'global',sagaterrair:'land',sagabistair:'land',sagaselenear:'global',sagagift:'player',
     beginsbistair:'global',beginsiksear:'global',beginsselenear:'global',beginsterrair:'global',
-    bravesong:'player',toughsong:'player',hunterssong:'player',trespass:'global',capture:'player',theft:'player',refuge:'global',
+    bravesong:'player',toughsong:'player',hunterssong:'player',trespass:'global',zeromn:'global',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
@@ -30,10 +30,16 @@ const CepterExtraSpells=(()=>{
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
   const stolenKind={capture:'item',theft:'spell'};
   const enemyOnly=new Set(['capture','theft','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind']);
-  const duration={bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
+  const duration={bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,sagaStrut:3,sagaMagicEra:3,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
   const soltis={
     goodluck:'행운 · 2라운드 통행료 면제',purify:'정화 · 모든 영지의 인챈트 해제',affection:'은총 · 순위 × 200G',
     hope:'희망 · 2장 드로우',depression:'불황 · 모든 호부 가격 20% 하락',suffocate:'질식 · 모든 크리처에 10 피해',lifeflow:'생명 · 한 지역의 내 크리처 전체 회복'
+  };
+  const zeromn={
+    panic:'대공황 · 모든 호부 가격 50% 하락',extermination:'박멸 · 모든 크리처에 20 피해',
+    removeCurse:'저주 제거 · 내 크리처와 영지의 인챈트 해제',fortune:'행운 · 내 순위 × 200G',
+    love:'사랑 · 내 모든 크리처 HP 회복',strut:'통행료 면제 · 3라운드',
+    magicEra:'마력의 시대 · 3라운드 동안 카드 사용 마력 0G'
   };
   const descriptions={
     babble:'적은 3라운드 동안 점술관과 신전을 이용할 수 없다. 사용한 카드는 북으로 돌아간다.',
@@ -58,8 +64,8 @@ const CepterExtraSpells=(()=>{
     speedpenalty:'나보다 많이 완주한 적 중 최다 완주자 한 명에게서 완주 차이 1회당 100G를 빼앗는다. 동률이면 한 명을 무작위로 고른다.',
     soltis:'행운, 정화, 순위에 따른 마력, 드로우, 호부 가격 하락, 전체 피해, 지역 회복 중 하나를 선택한다.'
   };
-  const actions={stealCard:'카드 탈취',soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처',forgeCard:'제련할 손패',reformCard:'변환할 아이템 또는 주문',poisonBookCard:'파괴할 북 카드'};
-  const hints={stealCard:'상대 손패에서 가져올 카드 한 장을 고르세요.',soltisPower:'일곱 권능 중 하나를 고르세요.',soltisArea:'내 크리처를 회복할 지역을 고르세요.',foresightCard:'북 맨 위의 카드 중 손패에 넣을 카드를 고르세요.',prophecyKind:'뽑을 카드 종류를 고르세요.',mesmerCard:'상대 손패에서 사용할 주문을 고르세요.',replaceCard:'영지 주인의 손패에서 교체할 크리처를 고르세요.',
+  const actions={zeromnPower:'제롬 권능',intrusionCard:'침략할 크리처',stealCard:'카드 탈취',soltisPower:'솔티스 권능',soltisArea:'회복할 지역',foresightCard:'북에서 가져올 카드',prophecyKind:'뽑을 종류',mesmerCard:'대신 사용할 주문',replaceCard:'교체할 크리처',forgeCard:'제련할 손패',reformCard:'변환할 아이템 또는 주문',poisonBookCard:'파괴할 북 카드'};
+  const hints={zeromnPower:'제롬의 일곱 권능 중 하나를 고르세요.',intrusionCard:'소환 조건이 없는 손패 크리처 중 한 장을 고르세요.',stealCard:'상대 손패에서 가져올 카드 한 장을 고르세요.',soltisPower:'일곱 권능 중 하나를 고르세요.',soltisArea:'내 크리처를 회복할 지역을 고르세요.',foresightCard:'북 맨 위의 카드 중 손패에 넣을 카드를 고르세요.',prophecyKind:'뽑을 카드 종류를 고르세요.',mesmerCard:'상대 손패에서 사용할 주문을 고르세요.',replaceCard:'영지 주인의 손패에서 교체할 크리처를 고르세요.',
     forgeCard:'무작위 무기나 방어구로 바꿀 손패 카드를 고르세요.',reformCard:'모든 북과 손패에서 마나로 바꿀 카드를 고르세요.',poisonBookCard:'상대 북 맨 위에서 최대 6장을 보고 파괴할 한 장을 고르세요.'};
   function clearCepter(p){
     for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete p[field];
@@ -141,6 +147,15 @@ const CepterExtraSpells=(()=>{
       seen.delete(pos);
       return [...seen];
     }
+    function intrusionCards(s,at){
+      const tile=s.tiles[at],p=s.players[s.turn];
+      if(!tile.unit||tile.unit.enchant==='peace'||!enemy(s,tile.owner)||!fx.targetable(s,tile)||!canInvade(s,s.turn,tile.owner)||
+        ['silence','sagaFear','pacifism'].includes(p.status))return [];
+      return p.hand.flatMap((id,j)=>{
+        const card=cards[id];
+        return card.kind==='creature'&&!card.catalog?.additionalCost&&deployable(s,id)&&canOccupy(card,tile)?[['intrusionCard',j,id]]:[];
+      });
+    }
     const rouetTargets=s=>s.players.filter((q,i)=>enemy(s,i)&&q.cash>=2);
     function tradeTargets(s,from){
       const owned=s.tiles[from];
@@ -154,6 +169,7 @@ const CepterExtraSpells=(()=>{
       return control(target,seat)+control(own,target.owner)-control(own,seat)-control(target,target.owner)+(strength(target)-strength(own))/5;
     }
     function targets(s,e){
+      if(e==='intrusion')return s.tiles.flatMap((_,at)=>intrusionCards(s,at).length?[['targetLand',at]]:[]);
       if(e==='trade'){
         if(s.tradeFrom!=null)return tradeTargets(s,s.tradeFrom);
         return s.tiles.flatMap((t,i)=>t.owner===s.turn&&fx.targetable(s,t)&&tradeTargets(s,i).length?[['targetLand',i]]:[]);
@@ -343,6 +359,7 @@ const CepterExtraSpells=(()=>{
             else if(first){s.abilityFrom=x;s.borrowedAbility=true;return 'territoryTarget';}
             break;
           }
+          case 'intrusion':s.intrusionAt=x;return 'intrusionCard';
           case 'trade':{
             if(s.tradeFrom==null){s.tradeFrom=x;return 'spellTarget';}
             const from=s.tradeFrom,own=s.tiles[from];
@@ -466,6 +483,7 @@ const CepterExtraSpells=(()=>{
             }
             break;
           }
+          case 'zeromn':return 'zeromnPower';
           case 'trespass':setStatus(s,p,e);break;
           case 'fame':p.cash+=100*Math.max(0,...owning(s,s.turn).map(t=>t.level));break;
           case 'desolation':for(const v of s.tiles)if(v.level===3&&!fx.blockedLevel(s,v))v.level--;break;
@@ -551,6 +569,8 @@ const CepterExtraSpells=(()=>{
           return kinds.filter(k=>s.edition!=='begins'||p.book.some(id=>cards[id].kind===k)).map(k=>['prophecyKind',k]);
         }
         case 'replaceCard':return replacement(s,s.tiles[s.replaceAt]);
+        case 'zeromnPower':return Object.keys(zeromn).map(name=>['zeromnPower',name]);
+        case 'intrusionCard':return intrusionCards(s,s.intrusionAt);
         case 'stealCard':return s.players[s.spellTarget].hand.flatMap((id,j)=>cards[id].kind===stolenKind[s.spellEffect]?[['stealCard',j,id]]:[]);
         case 'forgeCard':return (s.players[s.spellTarget]?.hand||[]).map((id,j)=>['forgeCard',j,id]);
         case 'reformCard':return (s.players[s.spellTarget]?.hand||[]).flatMap((id,j)=>cards[id].kind!=='creature'?[['reformCard',j,id]]:[]);
@@ -561,6 +581,18 @@ const CepterExtraSpells=(()=>{
     function choose(s,k,x){
       const p=s.players[s.turn];
       switch(k){
+        case 'zeromnPower':{
+          switch(x){
+            case 'panic':s.prices=s.prices.map(n=>Math.max(1,Math.floor(n/2)));break;
+            case 'extermination':for(const tile of s.tiles)if(tile.unit)fx.spellHarm(s,tile,20);break;
+            case 'removeCurse':for(const tile of owning(s,s.turn)){if(tile.unit)combo.clear(tile.unit);delete tile.enchant;}break;
+            case 'fortune':p.cash+=personalRank(s)*200;break;
+            case 'love':for(const tile of owning(s,s.turn))if(tile.unit&&!fx.immuneHP(tile))tile.unit.hp=fx.max(tile.unit);break;
+            case 'strut':setStatus(s,p,'sagaStrut');break;
+            case 'magicEra':setStatus(s,p,'sagaMagicEra');break;
+          }
+          break;
+        }
         case 'stealCard':p.hand.push(...s.players[s.spellTarget].hand.splice(x,1));delete s.spellTarget;break;
         case 'forgeCard':{
           s.players[s.spellTarget].hand[x]=sample(forgePool);
@@ -699,6 +731,18 @@ const CepterExtraSpells=(()=>{
         default:return sign*(t.unit.enchant===e?0:weight);
       }
     }
+    function scoreZeromn(s,e){
+      const p=s.players[s.turn],own=owning(s,s.turn);
+      switch(e){
+        case 'panic':return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?1:-1)*q.symbols.reduce((value,n,j)=>value+n*Math.floor(s.prices[j]/2),0),0)/12;
+        case 'extermination':return s.tiles.reduce((sum,t)=>sum+(t.unit?(enemy(s,t.owner)?1:-1)*fx.damageAmount(s,t,20)*(t.unit.hp<=20?t.level+2:1):0),0);
+        case 'removeCurse':return own.reduce((sum,t)=>sum+(t.unit&&(t.unit.poisoned||['paralysis','senility','disease','fog'].includes(t.unit.enchant))?10*t.level:0),0);
+        case 'fortune':return personalRank(s)*25;
+        case 'love':return own.reduce((sum,t)=>sum+(t.unit&&!fx.immuneHP(t)?(fx.max(t.unit)-t.unit.hp)*.6:0),0);
+        case 'strut':return p.status==='sagaStrut'?0:Math.max(0,...s.tiles.filter(t=>t.owner>=0&&enemy(s,t.owner)).map(t=>value(s,t)/35));
+        case 'magicEra':return p.status==='sagaMagicEra'?0:p.hand.reduce((sum,id)=>sum+cards[id].cost,0)/15;
+      }
+    }
     function scoreCast(s,e){
       if(type[e]!=='global')return Math.max(-40,...targets(s,e).map(([,x])=>scoreTarget(s,e,x)));
       const p=s.players[s.turn],mine=owning(s,s.turn),land=s.tiles.filter(t=>t.unit);
@@ -725,6 +769,7 @@ const CepterExtraSpells=(()=>{
       if(e==='castlerecall')return p.pos!==0&&p.flags.length===(board(s).checkpoints||board(s).forts).length?25:-20;
       if(e==='selenear')return mine.filter(t=>t.type===2).length*10;
       if(e==='lifestream')return mine.reduce((v,t)=>v+(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3),0);
+      if(e==='zeromn')return Math.max(...Object.keys(zeromn).map(name=>scoreZeromn(s,name)));
       if(e==='rouetsoleil'){
         const candidates=rouetTargets(s);
         return candidates.length?candidates.reduce((sum,q)=>sum+Math.floor(q.cash/2),0)/candidates.length/8:-20;
@@ -781,6 +826,7 @@ const CepterExtraSpells=(()=>{
       return 2;
     }
     function scoreChoice(s,k,x,id){
+      if(k==='zeromnPower')return scoreZeromn(s,x);
       if(k==='soltisPower')return x==='affection'?18:x==='hope'?6-s.players[s.turn].hand.length:0;
       if(k==='soltisArea')return owning(s,s.turn).filter(t=>t.area===x).reduce((v,t)=>v+fx.max(t.unit)-t.unit.hp,0);
       if(k==='prophecyKind')return -s.players[s.turn].hand.filter(id=>cards[id].kind===x).length;
@@ -792,8 +838,8 @@ const CepterExtraSpells=(()=>{
       if(k==='mesmerCard'&&type[card.effect])return scoreCast(s,card.effect);
       return card.cost/20+(card.kind==='creature'&&s.players[s.turn].hand.every(n=>cards[n].kind!=='creature')?4:0);
     }
-    return {apply,targets,choices,choose,chariotExits,personalRank,scoreTarget,scoreCast,scoreChoice,nearest,warp};
+    return {apply,targets,choices,choose,intrusionCards,chariotExits,personalRank,scoreTarget,scoreCast,scoreChoice,nearest,warp};
   }
-  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,clearCepter,setStatus,startTurn,damageSpells,landDamage};
+  return {rules,type:ps2Type,modernType:type,descriptions,actions,hints,soltis,zeromn,clearCepter,setStatus,startTurn,damageSpells,landDamage};
 })();
 if(typeof module!=='undefined')module.exports=CepterExtraSpells;
