@@ -192,13 +192,17 @@ export function stones(ui, board, w, actions, style = '', symbols = ['', '●', 
   const grid = ui.grid(w, 'board-grid ' + style);
   board.forEach((v, i) => {
     const m = actions.get(i);
-    ui.button(
+    const cell = ui.button(
       grid,
       symbols[v] ?? v,
       m?.play,
       'cell ' + (v ? 'occupied tone' + v : 'empty') + (m ? ' legal' : ''),
       m?.weight || 0,
-      Math.floor(i / w) + 1 + '행 ' + ((i % w) + 1) + '열 ' + (symbols[v] || '빈칸'),
+      Math.floor(i / w) + 1 + '행 ' + ((i % w) + 1) + '열 ' + (style === 'drop' && v ? (v === 1 ? '빨강 원반' : '노랑 원반') : symbols[v] || '빈칸'),
     );
+    if (style === 'hex') {
+      cell.style.gridRow = Math.floor(i / w) + 1;
+      cell.style.gridColumn = (2 * (i % w) + Math.floor(i / w) + 1) + ' / span 2';
+    }
   });
 }

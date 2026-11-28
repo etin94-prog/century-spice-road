@@ -1,4 +1,4 @@
-import { miniature } from './ww-scenery.js';
+import { miniature, material } from './ww-scenery.js';
 import { range, random } from './ww-core.js';
 import {
   sport,
@@ -122,6 +122,7 @@ for (const id of [36, 37, 41])
                 ? ['#4b9265', '#256348']
                 : ['#3b877b', '#205b63']),
           );
+          if (!football) material(g, hockey ? 'hockey-rink' : 'tennis-lawn', 1);
           if (football)
             for (const i of range(6)) {
               g.fillStyle = '#ffffff0b';
@@ -137,6 +138,9 @@ for (const id of [36, 37, 41])
           } else {
             g.strokeRect(95, 53, 410, 254);
             line(g, 95, 180, 505, 180, '#e7e4c9aa');
+            for (let y = 45; y <= 315; y += 6) line(g, 295, y, 303, y, '#d7dacbcc', 1);
+            for (const x of [295,299,303]) line(g, x, 45, x, 315, '#e3dfcb', 1);
+            for (const y of [42,318]) disc(g, ball(299, y, 5, '#785739'));
           }
           if (football) {
             for (const x of [105, 260, 340, 495]) {
@@ -240,6 +244,11 @@ sport(
         surface(g, '#3f4858', '#252e40');
         g.fillStyle = '#798aa2';
         g.fillRect(25, 155, 550, 150);
+        material(g, 'boxing-ring', 1);
+        for (const x of [25,575]) {
+          line(g, x, 109, x, 291, '#926d48', 12);
+          line(g, x - 2, 110, x - 2, 290, '#e6c294', 3);
+        }
         for (const y of [125, 166, 205]) line(g, 25, y, 575, y, y === 125 ? red : cream, 4);
         for (const p of [0, 1]) {
           const s = p ? -1 : 1,
@@ -378,20 +387,24 @@ sport(
       },
       draw(g) {
         surface(g, '#326b55', '#1e453c');
-        g.save();
-        g.translate(300, 250);
-        g.rotate(-Math.PI / 4);
-        g.fillStyle = '#bd9471';
-        g.fillRect(0, 0, 125, 125);
-        g.fillStyle = '#608766';
-        g.fillRect(12, 12, 101, 101);
-        g.restore();
-        for (const [i, pt] of [
-          [0, [389, 162]],
-          [1, [300, 73]],
-          [2, [211, 162]],
-        ])
-          disc(g, ball(...pt, 8, bases[i] ? red : cream));
+        const park = material(g, 'ballpark', 1);
+        if (!park) {
+          g.save();
+          g.translate(300, 250);
+          g.rotate(-Math.PI / 4);
+          g.fillStyle = '#bd9471';
+          g.fillRect(0, 0, 125, 125);
+          g.fillStyle = '#608766';
+          g.fillRect(12, 12, 101, 101);
+          g.restore();
+        }
+        const markers = park ? [[404,210],[298,145],[187,210]] : [[389,162],[300,73],[211,162]];
+        markers.forEach(([x,y], i) => {
+          if (bases[i] || !park) disc(g, ball(x, y, 8, bases[i] ? red : cream));
+        });
+        g.fillStyle = '#172719ab';
+        g.fillRect(63, 259, 482, 62);
+        miniature(g, 'bat', target, 327, 73, 18);
         line(g, 75, 290, 535, 290, '#d2dfcaaa', 2);
         g.fillStyle = '#e5ce8466';
         g.fillRect(target - 18, 265, 36, 50);
@@ -449,6 +462,8 @@ sport(
       },
       draw(g) {
         surface(g, '#62876c', '#3b614e');
+        miniature(g, 'pines', 80, 49, 80, 66);
+        miniature(g, 'rocks', 480, 316, 82, 52);
         for (const r of [0, 1]) {
           g.beginPath();
           g.ellipse(300, 180, 225 + r * 18, 100 + r * 15, 0, 0, 2 * Math.PI);
@@ -458,6 +473,12 @@ sport(
           g.lineWidth = 2;
           g.strokeStyle = '#a39f8e';
           g.stroke();
+        }
+        for (let j = 0; j < 32; j++) {
+          const start = j * Math.PI / 16;
+          g.beginPath();
+          g.ellipse(300,180,256,127,0,start,start+Math.PI/16);
+          g.lineWidth = 5; g.strokeStyle = j % 2 ? '#ad503c' : '#ead5b1'; g.stroke();
         }
         [s, cpu].forEach((n, i) => {
           const angle = n * Math.PI * 2;
@@ -524,6 +545,7 @@ sport(
       },
       draw(g) {
         surface(g, '#4b9796', '#214c60');
+        material(g, 'pond', 1);
         for (const i of range(22)) {
           const x = ((i * 83 + a.time * 8) % 660) - 30,
             y = 30 + ((i * 53) % 300);
@@ -546,7 +568,7 @@ sport(
           }
           if (phase === 'wait') {
             line(g, at.x, at.y, at.x, at.y - 18, cream, 4);
-            circle(g, at.x, at.y - 17, 4, red);
+            if (!miniature(g, 'float', at.x, at.y - 8, 17, 26)) circle(g, at.x, at.y - 17, 4, red);
           }
         } else {
           g.fillStyle = '#36545c88';
@@ -669,7 +691,9 @@ for (const [id, team] of [
         },
         draw(g) {
           surface(g, '#adb493', '#777e69', true);
-          blocks.forEach((t) => disc(g, ball(t.x, t.y, t.r, '#778779')));
+          blocks.forEach((t, i) => {
+            if (!miniature(g, i % 2 ? 'rocks' : 'tire', t.x, t.y, 2*t.r, 2*t.r)) disc(g, ball(t.x, t.y, t.r, '#778779'));
+          });
           for (const u of units) {
             g.save();
             g.translate(u.x, u.y);
@@ -717,8 +741,10 @@ sport(
       tap: fire,
       draw(g) {
         surface(g, '#504337', '#2e353c', true);
+        material(g, 'gallery', 1);
         for (const t of targets()) {
-          line(g, t.x, t.y + 15, t.x, 335, '#aa8a64', 5);
+          line(g, t.x, t.y + 15, t.x, 316, '#aa8a64', 5);
+          if (miniature(g, 'gallery-target', t.x, t.y, 60, 60)) continue;
           for (const [r, c] of [
             [30, cream],
             [22, red],

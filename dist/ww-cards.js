@@ -20,11 +20,20 @@ function card(ui, row, c, fn, weight = 0, hidden = false) {
     weight,
     hidden ? '뒷면 카드' : face(c),
   );
-  if (!hidden && typeof window.card === 'function') el.innerHTML = window.card(c);
+  if (!hidden && typeof window.card === 'function') printedCard(el, c);
   return el;
 }
 function handScore(ui, hands) {
   ui.score(hands.map((h, i) => seats[i] + ' ' + h.length + '장').join('　'));
+}
+function printedCard(el, c) {
+  el.classList.add('illustrated');
+  el.setAttribute('aria-label', face(c));
+  el.innerHTML = window.card(c);
+}
+function seasonFace(el, symbol) {
+  el.classList.add('season-face');
+  el.dataset.mark = symbol;
 }
 register(
   21,
@@ -67,7 +76,7 @@ register(
         h = hands[p];
       handScore(ui, hands);
       const table = ui.row();
-      ui.button(table, text(top), null, 'last-face shade' + active);
+      seasonFace(ui.button(table, text(top), null, 'last-face shade' + active), names[kind(top)] || '✦');
       if (choosing) {
         ui.section('다음 색 선택');
         const row = ui.row();
@@ -109,7 +118,7 @@ register(
         const k = kind(c),
           valid = debt ? k === kind(top) : k === 12 || color(c) === active || kind(top) === k;
         if (valid) count++;
-        ui.button(
+        const option = ui.button(
           row,
           p ? '◆' : text(c),
           valid
@@ -140,6 +149,7 @@ register(
           p ? 'card-back' : 'last-face shade' + color(c),
           k === 12 ? -2 : k,
         );
+        if (!p) seasonFace(option, names[k] || '✦');
       });
       if (debt || !count)
         ui.button(
@@ -211,7 +221,7 @@ register(
         for (let count = 1; count <= cards.length; count++) {
           if (top && (count !== top.cards.length || s <= top.s)) continue;
           const send = cards.slice(0, count);
-          ui.button(
+          const option = ui.button(
             row,
             p ? '◆ ×' + count : face(send[0]) + ' ×' + count,
             () => {
@@ -223,6 +233,12 @@ register(
             'playing-card',
             count * 20 - s,
           );
+          if (!p) {
+            printedCard(option, send[0]);
+            option.classList.add('combo-card');
+            option.dataset.count = '×' + count;
+            option.setAttribute('aria-label', face(send[0]) + ' ' + count + '장 내기');
+          }
         }
       }
       if (top)
@@ -250,15 +266,17 @@ register(
       const p = ui.turn,
         h = hands[p];
       handScore(ui, hands);
-      const field = ui.grid(4);
-      lanes.forEach(([lo, hi], s) =>
-        ui.button(
-          field,
-          suits[s] + ' ' + (lo > hi ? '–' : lo + ' … ' + hi),
-          null,
-          'playing-card ' + (s % 2 ? 'red' : ''),
-        ),
-      );
+      const field = ui.grid(4, 'suit-lanes');
+      lanes.forEach(([lo, hi], s) => {
+        const lane = document.createElement('div');
+        lane.className = 'suit-lane';
+        field.append(lane);
+        if (lo > hi) ui.button(lane, suits[s], null, 'foundation');
+        else {
+          card(ui, lane, s * 13 + lo - 1);
+          if (hi > lo) card(ui, lane, s * 13 + hi - 1);
+        }
+      });
       const row = ui.row();
       let count = 0;
       h.forEach((c, i) => {
@@ -358,7 +376,7 @@ register(
         const pair = [...memory.entries()].some(
           ([j, v]) => j !== i && !open.has(j) && v === memory.get(i),
         );
-        ui.button(
+        const el = ui.button(
           grid,
           open.has(i) ? '' : hidden ? '◆' : face(c),
           hidden && picks.length < 2
@@ -394,6 +412,7 @@ register(
                 ? 0
                 : 2,
         );
+        if (!open.has(i) && !hidden) printedCard(el, c);
       });
     };
   },
@@ -455,7 +474,7 @@ register(
         boards[side].forEach((c, i) => {
           const playable =
             side === p && current !== null && rank(current) === i + 1 && !open[p].has(i);
-          ui.button(
+          const el = ui.button(
             grid,
             open[side].has(i) ? face(c) : String(i + 1),
             playable
@@ -469,6 +488,8 @@ register(
               : null,
             open[side].has(i) ? cardStyle(c) : 'card-back ' + (playable ? 'selected' : ''),
           );
+          if (open[side].has(i)) printedCard(el, c);
+          else el.dataset.slot = i + 1;
         });
       }
       if (current === null) {
@@ -516,13 +537,20 @@ register(
       const row = ui.row();
       if (pile.length) card(ui, row, pile.at(-1));
       else ui.button(row, '빈 더미', null, 'card-back');
-      const grid = ui.grid(8, 'ring-cards');
+      const grid = ui.grid(9, 'ring-cards');
+      grid.append(row);
+      row.classList.add('ring-center');
+      const spots = [];
+      for (const inset of [0, 1]) {
+        const right = 8 - inset, bottom = 7 - inset;
+        for (let x = inset; x <= right; x++) spots.push([x, inset]);
+        for (let y = inset + 1; y <= bottom; y++) spots.push([right, y]);
+        for (let x = right - 1; x >= inset; x--) spots.push([x, bottom]);
+        for (let y = bottom - 1; y > inset; y--) spots.push([inset, y]);
+      }
       ring.forEach((c, i) => {
-        if (c === null) {
-          ui.button(grid, '', null, 'gone');
-          return;
-        }
-        card(
+        if (c === null) return;
+        const el = card(
           ui,
           grid,
           c,
@@ -533,6 +561,10 @@ register(
           0,
           true,
         );
+        const [x, y] = spots[i];
+        el.style.gridArea = (y + 1) + ' / ' + (x + 1);
+        el.style.setProperty('--fan-angle', ((x - 4) * (y < 4 ? 2 : -2)) + 'deg');
+        el.setAttribute('aria-label', (i + 1) + '번 뒷면 카드');
       });
       if (pen[p].length) {
         ui.section('다시 낼 벌점 카드');

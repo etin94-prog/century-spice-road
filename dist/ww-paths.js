@@ -68,7 +68,7 @@ export function moveBoard(ui, cells, w, moves, chosen, setChosen, apply, style =
       'cell ' +
         (chosen === i ? 'selected ' : '') +
         (destinations.length ? 'target ' : '') +
-        (extra?.(i) || '') +
+        (extra?.(i) || '') + (style === 'hound' && cell === '♘' ? ' hare' : '') +
         ({ '●': ' black-stone', '○': ' white-stone', '♕': ' white-king', '♛': style === 'checker' ? ' black-king' : '' }[cell] || ''),
       weight,
       '칸 ' + (i + 1) + (cell ? ' ' + cell : ''),
@@ -298,7 +298,8 @@ register(
                 ui.paint(2 - p);
               }
             : null,
-          v === null ? 'void' : 'cell ' + (legal ? 'legal' : ''),
+          v === null ? 'void' : 'cell ' + (legal ? 'legal ' : '') +
+            (v === '●' ? 'black-stone' : v === '○' ? 'white-stone' : ''),
         );
       });
     };

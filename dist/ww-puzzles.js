@@ -1,3 +1,4 @@
+import { decorateTile } from './ww-tile-art.js';
 import {
   register,
   range,
@@ -254,7 +255,10 @@ register(
                 ui.paint();
               }
             : null,
-          'pipe ' + (route?.includes(i) ? 'selected' : ''),
+          'pipe waterway-' + b[i] + (route?.includes(i) ? ' selected' : '') +
+            (route?.[sailing] === i ? ' sailing' : ''),
+          0,
+          b[i] < 0 ? '빈칸' : ['가로', '세로', '오른쪽 아래', '왼쪽 아래', '오른쪽 위', '왼쪽 위'][b[i]] + ' 물길',
         );
       }
       if (route) {
@@ -308,30 +312,30 @@ register(
     return () => {
       const left = tiles.filter((t) => t.live);
       ui.score('남은 ' + left.length + '패');
-      for (const z of [1, 0]) {
-        ui.section(z ? '윗단' : '아랫단');
-        const grid = ui.grid(z ? 6 : 8);
-        tiles
-          .filter((t) => t.z === z)
-          .forEach((t) => {
-            const f = t.f,
-              label = (f % 9) + 1 + ['萬', '筒', '索'][Math.floor(f / 9)];
-            ui.button(
-              grid,
-              t.live ? label : '',
-              free(t)
-                ? () => {
-                    if (selected && selected !== t && selected.f === t.f) {
-                      selected.live = t.live = false;
-                      selected = null;
-                    } else selected = selected === t ? null : t;
-                    ui.paint();
-                  }
-                : null,
-              'mah-tile ' + (!t.live ? 'gone' : t === selected ? 'selected' : ''),
-            );
-          });
-      }
+      const grid = ui.grid(8, 'mahjong-stack');
+      tiles.forEach((t) => {
+        if (!t.live) return;
+        const f = t.f,
+          label = (f % 9) + 1 + ['萬', '筒', '索'][Math.floor(f / 9)];
+        const el = ui.button(
+          grid,
+          label,
+          free(t)
+            ? () => {
+                if (selected && selected !== t && selected.f === t.f) {
+                  selected.live = t.live = false;
+                  selected = null;
+                } else selected = selected === t ? null : t;
+                ui.paint();
+              }
+            : null,
+          'mah-tile layer-' + t.z + (t === selected ? ' selected' : ''),
+          0, (t.z ? '윗단 ' : '아랫단 ') + label,
+        );
+        el.style.gridColumn = t.x + 1;
+        el.style.gridRow = t.y + 1;
+        decorateTile(el, 'mps'[Math.floor(f / 9)] + (f % 9 + 1));
+      });
       if (!left.length) ui.finish('모든 짝을 찾았습니다');
       else {
         const options = left.filter(free);
@@ -488,7 +492,7 @@ for (const [id, spider] of [
           if (!col.length) ui.button(stack, '＋', dest ? move : null, 'foundation');
           col.forEach((o, j) => {
             const movable = o.up && col.slice(j + 1).every((v, k) => builds(col[j + k], v));
-            ui.button(
+            const el = ui.button(
               stack,
               o.up ? face(o.c) : '◆',
               dest && j === col.length - 1
@@ -503,7 +507,12 @@ for (const [id, spider] of [
               (o.up ? cardStyle(o.c) : 'card-back') +
                 (selected?.col === i && j >= selected.at ? ' selected' : '') +
                 (dest && j === col.length - 1 ? ' target' : ''),
+              0, o.up ? face(o.c) : '뒷면 카드',
             );
+            if (o.up && j === col.length - 1) {
+              el.classList.add('illustrated','whole-card');
+              el.innerHTML = window.card(o.c);
+            }
           });
         });
         if (history.length) ui.button(ui.row(), '한 수 되돌리기', undo);

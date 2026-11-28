@@ -44,6 +44,9 @@ register(
         for (let i = 0; i < n; i++) [x, y] = [14 - y, x];
         return y * 15 + x;
       }
+      for (let side = 0; side < 4; side++) {
+        for (const x of [2,4]) for (const y of [2,4]) cells[rotate(x,y,side)].home = true;
+      }
       const route = range(4).flatMap((i) => quarter.map(([x, y]) => rotate(x, y, i)));
       route.forEach((i, k) => (cells[i] = { cls: 'road', text: safe.includes(k) ? '◇' : '' }));
       [0, 1].forEach((s) => {
@@ -63,7 +66,7 @@ register(
         });
       });
       cells.forEach((c) => {
-        const cell = ui.button(track, c.pieces ? c.pieces.join('') : c.text, null, 'ludo-cell ' + c.cls);
+        const cell = ui.button(track, c.pieces ? c.pieces.join('') : c.text, null, 'ludo-cell ' + c.cls + (c.home ? ' pawn-socket' : ''));
         if (!c.pieces) return;
         cell.classList.add('ludo-men');
         for (const piece of c.pieces) {

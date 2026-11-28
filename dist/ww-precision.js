@@ -76,13 +76,18 @@ sport(
         g.clip();
         material(g, 'grass', 0.54, -266, -266, 532, 532);
         g.restore();
+        material(g, 'putting-green', 1);
         for (const s of sand) {
           g.save();
           g.translate(s.x, s.y);
           g.scale(1, 0.52);
           circle(g, 0, 0, s.r, '#d5b679');
+          g.clip();
+          material(g, 'sisal', .5, -s.r, -s.r, 2*s.r, 2*s.r);
           g.restore();
         }
+        miniature(g, 'pines', 43, 37, 69, 67);
+        miniature(g, 'rocks', 555, 315, 70, 46);
         const cup = holes[hole];
         circle(g, cup.x, cup.y, 30, '#8bb77a');
         circle(g, cup.x, cup.y, 8, '#15312d');
@@ -93,7 +98,7 @@ sport(
         g.lineTo(cup.x + 25, cup.y - 36);
         g.lineTo(cup.x, cup.y - 29);
         g.fill();
-        disc(g, b);
+        if (!miniature(g, 'golf-ball', b.x, b.y, b.r*2, b.r*2)) disc(g, b);
       },
     };
   },
@@ -343,11 +348,24 @@ for (const id of [32, 35])
             circle(g, 300, 180, 62, '#9a553a', true);
             line(g, 173, 67, 427, 67, '#9a553a', 3);
             line(g, 173, 293, 427, 293, '#9a553a', 3);
+            g.beginPath();
+            for (let j = 0; j <= 16; j++) {
+              const angle = j * Math.PI / 8, radius = j % 2 ? 8 : 26;
+              const x = 300 + Math.cos(angle)*radius, y = 180 + Math.sin(angle)*radius;
+              if (j === 0) g.moveTo(x,y); else g.lineTo(x,y);
+            }
+            g.strokeStyle = '#9a553a'; g.stroke();
           }
           pockets.forEach((p) => circle(g, p.x, p.y, 15, '#142a26'));
           for (const b of pieces.filter((v) => v.live)) {
             disc(g, b);
-            if (!carrom) label(g, b.n, b.x, b.y + 3, 9, '#181c20');
+            if (carrom) {
+              miniature(g, ['pale-checker','dark-checker','red-disc'][b.side], b.x, b.y, b.r*2, b.r*2);
+            } else {
+              g.fillStyle = '#ffefd9';
+              g.fillRect(b.x - 4, b.y - 4, 8, 8);
+              label(g, b.n, b.x, b.y + 3, 9, '#181c20');
+            }
           }
           if (!scratch) disc(g, cue);
         },
@@ -455,6 +473,12 @@ sport(
         g.fillStyle = '#d9aa70';
         g.fillRect(12, 52, 576, 256);
         material(g, 'maple', 0.76, 12, 52, 576, 256);
+        for (const y of [38,308]) {
+          const gutter = g.createLinearGradient(0, y, 0, y + 14);
+          gutter.addColorStop(0, '#bb8d5b'); gutter.addColorStop(.42, '#38271f'); gutter.addColorStop(1, '#956b49');
+          g.fillStyle = gutter;
+          g.fillRect(12, y, 576, 14);
+        }
         for (let y = 60; y < 308; y += 13) line(g, 12, y, 588, y, '#995d303d');
         for (let i = 0; i < 7; i++)
           label(g, '▸', 260 + Math.abs(i - 3) * 8, 112 + i * 24, 14, '#805c3f');
@@ -551,9 +575,13 @@ sport(
           }
           label(g, order[i], 300 + Math.cos(mid) * 160, 185 + Math.sin(mid) * 160, 14);
         }
+        g.save();
+        g.beginPath(); g.arc(300, 180, 146, 0, 2*Math.PI); g.clip();
+        material(g, 'sisal', .18, 154, 34, 292, 292);
+        g.restore();
         circle(g, 300, 180, 13, '#397655');
         circle(g, 300, 180, 6, red);
-        if (last) disc(g, ball(last.x, last.y, 4, '#34343c'));
+        if (last && !miniature(g, 'dart', last.x + 14, last.y - 16, 34, 36)) disc(g, ball(last.x, last.y, 4, '#34343c'));
         if (!p) {
           const q = wobble();
           circle(g, q.x, q.y, 8, '#efd676', true);
@@ -632,6 +660,9 @@ sport(
           [10, cream],
         ])
           circle(g, target.x, target.y, r, c);
+        if (!busy && !turn && !stones.some((b) => b.x < 85 && Math.abs(b.y - 180) < 25)) {
+          miniature(g, 'red-curling', 65, 180, 26, 26);
+        }
         stones.forEach((b) => {
           if (!miniature(g, b.p ? 'blue-curling' : 'red-curling', b.x, b.y, 26, 26)) disc(g, b);
         });

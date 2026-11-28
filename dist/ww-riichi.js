@@ -1,3 +1,4 @@
+import { decorateTile } from './ww-tile-art.js';
 import { register, range, seats } from './ww-core.js';
 import { Mahjong, MahjongAI } from './ww-mahjong-engine.js';
 const zNames = ['', '東', '南', '西', '北', '白', '發', '中'];
@@ -103,19 +104,19 @@ register(
       m.he.forEach((river, i) => {
         const row = ui.row();
         ui.button(row, seats[m.player_id[i]], null, 'seat-label');
-        river._pai.slice(-10).forEach((p) => ui.button(row, tile(p), null, 'river-tile'));
+        river._pai.slice(-10).forEach((p) => decorateTile(ui.button(row, tile(p), null, 'river-tile'), p));
       });
       ui.section('내 패');
       const hand = ui.row(),
         counts = human.shoupai._bingpai;
       for (const s of 'mpsz')
         for (let n = 1; n < counts[s].length; n++)
-          for (let i = 0; i < counts[s][n]; i++) ui.button(hand, tile(s + n), null, 'mah-tile');
+          for (let i = 0; i < counts[s][n]; i++) decorateTile(ui.button(hand, tile(s + n), null, 'mah-tile'), s + n);
       if (human.shoupai._fulou.length) ui.section('공개 묶음　' + human.shoupai._fulou.join(' · '));
       ui.section(message);
       const row = ui.row();
-      for (const [label, reply] of choices)
-        ui.button(
+      for (const [label, reply] of choices) {
+        const el = ui.button(
           row,
           label,
           () => {
@@ -127,6 +128,8 @@ register(
           },
           'mah-tile',
         );
+        if (reply.dapai && label === tile(reply.dapai)) decorateTile(el, reply.dapai);
+      }
     };
   },
 );

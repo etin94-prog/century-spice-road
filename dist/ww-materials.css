@@ -185,3 +185,15 @@ html[data-table="world"] body {
 .shogi button.rotated:active:not(:disabled) { transform:rotate(180deg); }
 .dots { background:linear-gradient(#fff8e4ad,#f2e3bab3), var(--paper) center / cover; border-radius:7px; }
 .dots .dot { color:#573e30; text-shadow:0 1px #fff9db; }
+
+html:is([data-table="blackjack"],[data-table="card-table"]) .felt {
+  border:4px ridge #9e7d52; border-radius:18px;
+  box-shadow:inset 0 0 0 2px #322d23, inset 0 0 28px #0f241b77,0 3px #4e3829,0 6px 9px #19261e77;
+}
+#pot:not(:empty)::before,#wager::before {
+  content:"";display:inline-block;vertical-align:middle;width:21px;height:15px;margin-right:6px;border-radius:50%;
+  background:radial-gradient(ellipse,#9e382e 48%,transparent 50%),repeating-conic-gradient(#e7dabe 0 19deg,#a34335 20deg 60deg);
+  box-shadow:0 2px #663b2e,0 3px #dbbe90,0 5px #83392c;
+}
+
+#pot:not(:empty)::before,#wager::before {width:27px;height:21px;background:url('art/worldwide/table/chip-stack.webp') center/contain no-repeat;box-shadow:none;}

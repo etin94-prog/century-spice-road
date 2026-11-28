@@ -376,7 +376,7 @@ register(
     let guess = [];
     return () => {
       ui.score(Math.min(10, history.length + 1) + ' / 10');
-      const entry = ui.grid(4);
+      const entry = ui.grid(4, 'peg-rack');
       for (const i of range(4))
         ui.button(
           entry,
@@ -389,7 +389,7 @@ register(
             : null,
           'gem gem' + guess[i],
         );
-      const palette = ui.grid(3);
+      const palette = ui.grid(3, 'peg-palette');
       colors.forEach((c, i) =>
         ui.button(
           palette,

@@ -19,9 +19,10 @@ export function miniature(g, name, x, y, width, height) {
 }
 export function material(g, name, opacity, x = 0, y = 0, width = 600, height = 360) {
   const image = artwork(name);
-  if (!image) return;
+  if (!image) return false;
   g.save();
   g.globalAlpha = opacity;
   g.drawImage(image, x, y, width, height);
   g.restore();
+  return true;
 }

@@ -113,7 +113,7 @@ function spiderDeal() {
                 rank = ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K'][s];
               if (n >= 28) surface.querySelector('button.card-back').click();
               const b = [...surface.querySelectorAll('button.playing-card')].find(
-                (b) => b.textContent === rank + suit,
+                (b) => (b.getAttribute('aria-label') || b.textContent) === rank + suit,
               );
               if (!b) throw Error('Missing accessible card ' + rank + suit);
               b.click();
