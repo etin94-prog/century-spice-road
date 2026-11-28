@@ -189,4 +189,25 @@ const map='classic',deck=C.presets.intro;
   assert.ok(B.play(legacy,['pass']));
   assert.deepEqual([legacy.round,legacy.overtime],[26,true]);
 }
-console.log('Clock expiry, replay privacy, team overtime, Begins bankruptcy sudden death, round-limit ties, campaign progression and replay settings OK');
+{
+  // The table shows the card drawn at the start of a turn. The record says whose it was and how many, never which card.
+  const s=C.start(2,2,5000,map,deck,deck);
+  s.phase='land';s.die=3;
+  const before=s.players[1].hand.length;
+  assert.ok(C.play(s,['pass']));
+  assert.deepEqual(s.drawEvent,{seat:1,count:1,hand:before+1,sequence:1});
+  assert.deepEqual(room.view(C,s,0).game.drawEvent,s.drawEvent);
+  assert.deepEqual(room.view(C,s,0).game.players[1].hand,[]);
+  s.phase='land';
+  assert.ok(C.play(s,['pass']));
+  assert.equal(s.drawEvent.seat,0);assert.equal(s.drawEvent.sequence,2);
+  // A seventh card puts the turn into the discard step before anything else.
+  const full=C.start(2,2,5000,map,deck,deck);
+  while(full.players[1].hand.length<6)full.players[1].hand.push(full.players[1].book.pop());
+  full.phase='land';full.die=3;
+  assert.ok(C.play(full,['pass']));
+  assert.equal(full.phase,'discard');assert.equal(full.drawEvent.hand,7);
+  assert.ok(C.play(full,['discard',6]));
+  assert.equal(full.phase,'spell');assert.equal(full.players[1].hand.length,6);
+}
+console.log('Clock expiry, replay privacy, team overtime, Begins bankruptcy sudden death, round-limit ties, campaign progression, replay settings and the turn-start draw OK');

@@ -590,6 +590,37 @@ async function keepAwake(){
 document.addEventListener('visibilitychange',keepAwake);
 // A short banner and pulse tell a player who looked away that the game is waiting for them.
 let cueSeen='';
+// The card drawn at the start of a turn turns face up over the board and drops into the hand.
+// Only the seat that may see that hand is shown it; a hand-over prompt is answered first.
+let seenDraw={game:null,sequence:0};
+function presentDraw(owner,handSeat){
+  const draw=s.drawEvent;
+  if(!draw||pending||seenDraw.game===s&&seenDraw.sequence===draw.sequence)return;
+  seenDraw={game:s,sequence:draw.sequence};
+  document.querySelector('.draw-show')?.remove();
+  if(!owner||handSeat!==draw.seat||s.turn!==draw.seat||owner.hand.length!==draw.hand||!['spell','discard'].includes(s.phase)||s.battle)return;
+  const ids=owner.hand.slice(-draw.count),show=el('div',null,'draw-show');
+  show.setAttribute('role','status');
+  const row=el('div',null,'draw-cards');
+  for(const id of ids){
+    const card=el('div',null,'draw-card'),face=cardSeal(id);face.alt='';
+    const back=el('i',null,'draw-back');
+    if(typeof CepterBattleArt!=='undefined'&&CepterBattleArt.itemBack)back.style.background='url("'+CepterBattleArt.itemBack+'") center/cover';
+    card.append(back,face);row.append(card);
+  }
+  const over=owner.hand.length-6,note=el('p');
+  note.append(el('strong','카드를 '+ids.length+'장 뽑았습니다'),el('span',ids.map(id=>C.cards[id].name).join(' · ')));
+  if(over>0)note.append(el('em','손패 '+owner.hand.length+'장 · '+over+'장을 버려야 합니다'));
+  show.append(row,note);viewport.append(show);
+  // The card ends its flight on the hand strip.
+  const from=row.getBoundingClientRect(),to=(handPeek.offsetWidth?handPeek:handPanel).getBoundingClientRect();
+  show.style.setProperty('--to-x',(to.left+to.width/2-from.left-from.width/2)+'px');
+  show.style.setProperty('--to-y',(to.top+to.height/2-from.top-from.height/2)+'px');
+  playEffect('card');
+  const close=()=>show.remove();
+  show.addEventListener('animationend',e=>{if(e.target===show)close();});
+  setTimeout(close,fastPlay?1700:2700);
+}
 function turnCue(label){
   if(!label)return;
   document.querySelector('.turn-cue')?.remove();
@@ -770,6 +801,11 @@ function map(){
       b.style.setProperty('--tile-owner',colors[t.owner]);
       b.classList.add('occupied');
       compactLabel=toll;
+      // The land wears its owner's colour around the tile and shows its toll under the creature.
+      const ring=el('span',null,'owner-ring');ring.setAttribute('aria-hidden','true');
+      const fee=el('span',toll,'toll-mark');fee.setAttribute('aria-hidden','true');
+      if(t.level>1)fee.append(el('i','Lv'+t.level));
+      b.append(ring,fee);
       b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+toll+status));
       b.setAttribute('aria-label',b.getAttribute('aria-label')+' · Lv.'+t.level+' · 통행료 '+toll+status);
     }
@@ -1108,6 +1144,9 @@ function render(){
   const hand=$('hand'),handScroll=hand.scrollLeft;hand.replaceChildren();$('handTitle').textContent=owner?owner.name+'의 손패 · '+owner.hand.length+'장':'손패';
   $('handCount').textContent=owner?String(owner.hand.length):'';
   $('detail').textContent='';
+  // While a card is being chosen, the ones that cannot be used now are dimmed.
+  const usable=new Set(choices.flatMap(a=>['cast','equip','summon','invade','discard','sacrifice'].includes(a[0])?[a[1]]:a[0]==='exchange'?[a[2]]:[]));
+  const judging=local&&handSeat===i&&['spell','land','attack','defend','discard','sacrifice','towerDeploy'].includes(s.phase);
   if(owner){owner.hand.forEach((id,j)=>{const c=C.cards[id],b=btn('',()=>{
       focusCard=j;
       for(const [slot,card] of [...hand.querySelectorAll('.card')].entries()){
@@ -1122,7 +1161,7 @@ function render(){
     },'card'+(j===focusCard?' active':''));const ready=choices.find(([kind,index])=>index===j&&['cast','equip','summon','invade'].includes(kind));
     const type=c.kind==='creature'?cardElements(c)+' · 크리처':c.kind==='item'?'아이템':'주문';
     const availability={cast:'주문 사용 가능',equip:'장비 가능',summon:'소환 가능',invade:'침략 가능'};
-    b.classList.toggle('ready',!!ready);b.setAttribute('aria-pressed',String(j===focusCard));
+    b.classList.toggle('ready',!!ready);b.classList.toggle('unusable',judging&&!usable.has(j));b.setAttribute('aria-pressed',String(j===focusCard));
     b.append(cardSeal(id),el('span',ready?availability[ready[0]]:type,'card-type'),el('b',c.name),el('span',stats(c)),el('span',C.price(owner,c,s,!s.battle)+' G'));hand.append(b);});
     showHandSelection(owner,choices);hand.scrollLeft=handScroll;
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
@@ -1131,10 +1170,11 @@ function render(){
   handPeek.replaceChildren();
   if(owner&&!s.battle)owner.hand.forEach((id,j)=>{
     const ready=choices.find(([kind,index])=>index===j&&['cast','equip','summon','invade'].includes(kind));
-    const card=btn('',()=>{focusCard=j;handPanel.open=true;render();},'peek-card'+(ready?' ready':''));
+    const card=btn('',()=>{focusCard=j;handPanel.open=true;render();},'peek-card'+(ready?' ready':'')+(judging&&!usable.has(j)?' unusable':''));
     card.setAttribute('aria-label',C.cards[id].name+(ready?' · '+({cast:'주문 사용 가능',equip:'장비 가능',summon:'소환 가능',invade:'침략 가능'})[ready[0]]:''));
     const face=cardSeal(id);face.alt='';card.append(face);handPeek.append(card);
   });
+  presentDraw(owner,handSeat);
   $('log').replaceChildren(...(s.log.length?s.log:['아직 진행 기록이 없습니다.']).map(t=>el('li',t)));
   if(!s.battle)focusMapTile(cameraTile);
   if(local&&s.players.some(v=>v.ai)){

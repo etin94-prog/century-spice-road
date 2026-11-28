@@ -24,6 +24,49 @@ function attackMotion(id,item){
   if(card.stationary||card.st===0)return 'magic';
   return ['ember','wave','crush','gale'][card.element]||'slash';
 }
+// What strikes the card: a weapon or a limb drawn upright, grip at the bottom and point at the top.
+// A picture listed in CepterBattleArt.props under the same name replaces the drawn one.
+const battlePropShapes={
+  sword:'<path d="M50 4 62 30 58 132H42L38 30Z" fill="#e9eef6"/><path d="M50 4 62 30 58 132H50Z" fill="#aab4c6"/><path d="M22 132h56v12H22z" fill="#d7b25a"/><path d="M44 144h12v40H44z" fill="#6a4426"/><circle cx="50" cy="190" r="9" fill="#d7b25a"/>',
+  greatsword:'<path d="M50 2 70 30 64 126H36L30 30Z" fill="#e9eef6"/><path d="M50 2 70 30 64 126H50Z" fill="#9aa5ba"/><path d="M12 124 50 134 88 124v14L50 148 12 138Z" fill="#c9a24a"/><path d="M43 146h14v40H43z" fill="#4a2f1c"/><circle cx="50" cy="191" r="8" fill="#c9a24a"/>',
+  dagger:'<path d="M50 60 60 84 56 138H44L40 84Z" fill="#e9eef6"/><path d="M50 60 60 84 56 138H50Z" fill="#aab4c6"/><path d="M30 138h40v9H30z" fill="#8a93a6"/><path d="M44 147h12v36H44z" fill="#3a2a22"/><circle cx="50" cy="188" r="7" fill="#8a93a6"/>',
+  axe:'<path d="M45 20h10v172H45z" fill="#7a4e2a"/><path d="M55 20h4v172h-4z" fill="#56361c"/><path d="M55 22C86 20 98 44 96 70 84 60 70 58 55 62Z" fill="#dfe5ee"/><path d="M55 42C74 42 88 52 96 70 84 60 70 58 55 62Z" fill="#a3adbf"/><path d="M45 26C28 28 18 40 18 54c9-6 18-8 27-6Z" fill="#c4ccd9"/>',
+  club:'<path d="M38 8C52 0 68 4 70 22L60 150H42L30 30C29 20 32 12 38 8Z" fill="#a8733c"/><path d="M52 4c10 0 17 6 18 18L60 150H52Z" fill="#7a4f26"/><path d="M42 150h18l-3 42H45Z" fill="#5a3a1c"/><g fill="#e4e0d2"><circle cx="36" cy="34" r="5"/><circle cx="62" cy="48" r="5"/><circle cx="40" cy="70" r="4.5"/><circle cx="60" cy="88" r="4.5"/><circle cx="50" cy="20" r="5"/></g>',
+  mace:'<path d="M45 60h10v132H45z" fill="#7d8698"/><path d="M55 60h4v132h-4z" fill="#566070"/><circle cx="50" cy="38" r="26" fill="#c9d0dc"/><path d="M50 12a26 26 0 0 1 0 52Z" fill="#8f99ab"/><g fill="#eef2f8"><path d="M50 0 56 14H44Z"/><path d="M88 38 74 44V32Z"/><path d="M12 38 26 32V44Z"/><path d="M77 11 70 25 63 18Z"/><path d="M23 11 37 18 30 25Z"/><path d="M50 76 44 62H56Z"/></g>',
+  hammer:'<path d="M44 50h12v142H44z" fill="#7a4e2a"/><path d="M56 50h4v142h-4z" fill="#56361c"/><path d="M12 10h76v48H12z" fill="#c2c9d6"/><path d="M12 34h76v24H12z" fill="#8a94a8"/><path d="M12 10h10v48H12zM78 10h10v48H78z" fill="#e6ebf2"/>',
+  spear:'<path d="M46 50h8v144h-8z" fill="#8a5a30"/><path d="M54 50h3v144h-3z" fill="#5f3d1f"/><path d="M50 0 64 36 54 56H46L36 36Z" fill="#e9eef6"/><path d="M50 0 64 36 54 56H50Z" fill="#a3adbf"/><path d="M40 56h20v8H40z" fill="#d7b25a"/>',
+  fist:'<path d="M30 96h42v100H30z" fill="#b98a66"/><path d="M58 96h14v100H58z" fill="#946a4c"/><path d="M18 30c0-10 8-16 16-14 3-8 14-9 18-2 5-6 15-4 17 4 8-2 15 4 15 13v40c0 16-12 28-30 28H44C28 99 18 88 18 72Z" fill="#d6a680"/><path d="M69 18c8-2 15 4 15 13v40c0 16-12 28-30 28 12-8 16-18 16-30Z" fill="#a97f5e"/><g stroke="#7a573c" stroke-width="3" fill="none"><path d="M34 16v26M52 14v28M69 18v26"/></g>',
+  hand:'<path d="M34 120h36v76H34z" fill="#f0cdb2"/><path d="M58 120h12v76H58z" fill="#cfa98c"/><path d="M26 72V34a6 6 0 0 1 12 0v30h3V18a6 6 0 0 1 12 0v46h3V22a6 6 0 0 1 12 0v44h3V38a6 6 0 0 1 12 0v52c0 22-12 36-32 36-12 0-21-6-27-18L10 82a7 7 0 0 1 12-7Z" fill="#f6d9c2"/><path d="M71 66h3V38a6 6 0 0 1 9-5v57c0 22-12 36-32 36 14-8 20-22 20-38Z" fill="#d7b196"/>',
+  claw:'<path d="M32 110h40v86H32z" fill="#6f5a48"/><path d="M58 110h14v86H58z" fill="#4f3f32"/><path d="M22 60c0-14 12-22 28-22s30 8 30 22v34c0 14-12 24-30 24S22 108 22 94Z" fill="#8a705a"/><path d="M50 38c16 0 30 8 30 22v34c0 14-12 24-30 24Z" fill="#6a5544"/><g fill="#f2efe4"><path d="M26 56 20 8 40 46Z"/><path d="M43 44 46 0 58 42Z"/><path d="M62 46 78 6 76 56Z"/></g>'
+};
+const weaponProps={longsword:'sword',swordofthefalcon:'sword',aurablade:'sword',flametongue:'sword',rockbiter:'sword',airslasher:'sword',vorpalsword:'sword',masamune:'sword',
+  claymore:'greatsword',battleaxe:'axe',mace:'mace',morningstar:'mace',batteringram:'hammer',goldenhammer:'hammer',glaive:'spear',spear:'spear',trident:'spear',
+  lanceofodin:'spear',livingspear:'spear',icicle:'spear',daggerofmite:'dagger',kris:'dagger',clawoftheghoul:'claw'};
+const creatureProps={
+  club:'goblin kobold ogre troll cyclops hobgoblin orc gnoll',
+  axe:'minotaur dwarf viking berserker barbarian',
+  sword:'fighter knight skeleton paladin gladiator samurai amazon lizardman pirate hero swordsman',
+  spear:'marfolk merfolk centaur valkyrie valkyria dragoon lancer pegasus',
+  dagger:'ninja thief assassin',
+  fist:'colossus golem stonegolem firegiant stormgiant steamgear titan giant',
+  hand:'sprite nymph sylph succubus lilith dryad fairy mermaid siren banshee witch',
+  claw:'wolf ghoul zombie werewolf bear lion sabertooth panther harpy giantbat tigerbeetle giantrat caitsith sphinx mummy'
+};
+const kindProps={slash:'sword',leap:'spear',crush:'club',claw:'claw'};
+function battlePropName(id,item,kind){
+  const gear=C.cards[item];
+  if(gear?.category==='scroll')return null;
+  if(gear?.category==='weapon')return weaponProps[C.combo.key(gear)]??kindProps[kind]??null;
+  const key=C.combo.key(C.cards[id]);
+  return Object.entries(creatureProps).find(([,names])=>names.split(' ').includes(key))?.[0]??kindProps[kind]??null;
+}
+function battleProp(name){
+  const prop=el('div',null,'duel-prop '+name),listed=typeof CepterBattleArt==='undefined'?null:CepterBattleArt.props?.[name];
+  prop.setAttribute('aria-hidden','true');
+  if(listed){const image=new Image();image.src=listed;image.alt='';prop.append(image);}
+  else prop.innerHTML='<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">'+battlePropShapes[name]+'</svg>';
+  return prop;
+}
 // How a card goes when this kind of blow finishes it.
 const battleEndings={slash:'halves',leap:'split',claw:'strips',fang:'strips',crush:'launch',volley:'topple',ember:'burn',wave:'wilt',gale:'launch',magic:'fade',bolt:'fade',death:'void'};
 const battleRanged=['volley','ember','wave','gale','magic','bolt','death'];
@@ -175,6 +218,7 @@ function renderBattle(center,state){
     const chips=el('div',null,'duel-chips');
     let st=result?C.cards[id].st:unit?.st??C.cards[id].st,hp=base[i];
     const fighter={side,face,pocket,name,chips,art:illustration,scar,
+      strength:()=>st,vitality:()=>hp,
       setST(next,ms=0){battleCount(power,st,next,ms,'ST ');st=next;},
       setHP(next,ms=0){
         meter.max=Math.max(meter.max,next);meter.value=next;battleCount(value,hp,next,ms,'HP ');hp=next;
@@ -209,12 +253,25 @@ function renderBattle(center,state){
     const ground=C.battleGround(state,b);
     status.textContent='장비 선택 전 · 수비 지형 HP +'+ground.hp;
     status.append(el('small','인접 지원 ST · 침략 +'+ground.attack+' / 수비 +'+ground.defense,'battle-support'));
+    // Ability, what the neighbours and the land add, and the total, as the original lays it out.
+    const sheet=el('div',null,'duel-table'),strength=fighters.map(f=>f.strength()),plus=[[ground.attack,0],[ground.defense,ground.hp]];
+    const row=(label,cells,kind)=>{
+      const line=el('div',null,'duel-row '+(kind||''));
+      line.append(el('span',cells[0]),el('b',label),el('span',cells[1]));sheet.append(line);
+    };
+    row('침략 / 수비',seats.map(seat=>state.players[seat]?.name||''),'head');
+    row('능력치',[0,1].map(i=>'ST '+strength[i]+' · HP '+base[i]));
+    row('지원 / 지형',[0,1].map(i=>'+'+plus[i][0]+' · +'+plus[i][1]),'plus');
+    row('합계',[0,1].map(i=>'ST '+(strength[i]+plus[i][0])+' · HP '+(base[i]+plus[i][1])),'total');
+    status.append(sheet);
     if(ground.hp)fighters[1].chip('지형 HP +'+ground.hp,'land');
     if(ground.attack)fighters[0].chip('지원 ST +'+ground.attack,'support');
     if(ground.defense)fighters[1].chip('지원 ST +'+ground.defense,'support');
     if(state.phase==='defend')fighters[0].pocket.classList.add('set');
     if(entering){
-      const versus=el('div',null,'battle-versus');versus.append(el('b','VS'));
+      const versus=el('div',null,'battle-versus');
+      const corner=i=>{const side=el('span',null,'versus-side');side.append(el('i',state.players[seats[i]]?.name||''),el('em',C.cards[ids[i]].name));return side;};
+      versus.append(el('small','Battle'),corner(0),el('b','VS'),corner(1));
       versus.setAttribute('aria-hidden','true');stage.append(versus);
       if(fx){
         fighters.forEach((f,i)=>{
@@ -266,7 +323,12 @@ function renderBattle(center,state){
     }else f.pocket.hidden=true;
   });
   const settle=instant=>fighters.forEach((f,i)=>{
-    f.setST([b.attackST,b.defendST][i],instant?0:520*speed);f.setHP((b.startHP||base)[i],instant?0:520*speed);
+    const st=[b.attackST,b.defendST][i],hp=(b.startHP||base)[i],change=[[st-f.strength(),'ST'],[hp-f.vitality(),'HP']].filter(([delta])=>delta);
+    if(!instant&&change.length){
+      f.say(change.map(([delta,name])=>name+' '+(delta>0?'+':'−')+Math.abs(delta)).join(' · '),'stat');
+      f.face.classList.add('changing');setTimeout(()=>f.face.classList.remove('changing'),900*speed);
+    }
+    f.setST(st,instant?0:520*speed);f.setHP(hp,instant?0:520*speed);
     if(i&&b.landHP)f.chip('지형 HP +'+b.landHP,'land');
   });
   const finish=()=>{
@@ -319,7 +381,7 @@ function renderBattle(center,state){
     if(stage.dataset.phase!=='replay')return;
     stage.dataset.skipped='1';skip.remove();fx.clear();
     for(const animation of stage.getAnimations({subtree:true}))animation.cancel();
-    for(const node of stage.querySelectorAll('.duel-damage,.duel-callout,.duel-pieces,.duel-flash,.duel-focus'))node.remove();
+    for(const node of stage.querySelectorAll('.duel-damage,.duel-callout,.duel-pieces,.duel-flash,.duel-focus,.duel-prop,.duel-spirit'))node.remove();
     for(const f of fighters){f.art.classList.remove('broken');f.chips.replaceChildren();f.side.classList.remove('striking');f.settle();}
     stage.classList.remove('finisher');
     reveal(true);settle(true);finish();
@@ -362,6 +424,26 @@ function renderBattle(center,state){
         [{transform:'none'},{transform:move(-.1,'rotate('+lean*-9+'deg) scale(1.03)'),offset:.24},{transform:move(.6,'rotate('+lean*11+'deg) scale(1.1)'),offset:.5},{transform:move(.52,'rotate('+lean*6+'deg) scale(1.06)'),offset:.64},{transform:'none'}],
         {duration:800*speed,easing:'cubic-bezier(.3,.1,.3,1)'});
       playEffect(battleSounds[kind]||'slash');
+      // The picture on the card springs at its opponent ahead of the card itself.
+      const spirit=attacker.art.cloneNode(true);spirit.alt='';spirit.className='duel-spirit';
+      const box=stage.getBoundingClientRect(),own=attacker.art.getBoundingClientRect();
+      Object.assign(spirit.style,{left:own.left-box.left+'px',top:own.top-box.top+'px',width:own.width+'px',height:own.height+'px'});
+      stage.append(spirit);
+      spirit.animate([{transform:'none',opacity:0},{transform:move(.25,'scale(1.12)'),opacity:.75,offset:.3},{transform:move(.92,'scale(1.3)'),opacity:.5,offset:.8},{transform:move(1,'scale(1.45)'),opacity:0}],
+        {duration:480*speed,easing:'cubic-bezier(.4,0,.8,.6)'}).onfinish=()=>spirit.remove();
+      const name=battlePropName(ids[strike.side],items[strike.side],kind);
+      if(name){
+        // Its weapon, or its limb, is swung across the struck card and lands on the beat of the blow.
+        const prop=battleProp(name),tall=to.h*1.2,thrust=['spear','fist','dagger'].includes(name);
+        Object.assign(prop.style,{height:tall+'px',width:tall/2+'px',left:to.x-lean*to.w*(thrust?1.25:.8)-tall/4+'px',top:to.y+to.h*(thrust?.05:.42)-tall*.95+'px'});
+        stage.append(prop);
+        const turn=degrees=>'rotate('+lean*degrees+'deg)',push=distance=>'translateX('+lean*distance*to.w+'px) ';
+        prop.animate(thrust?[{transform:push(-.5)+turn(90)+' scale(.8)',opacity:0},{transform:push(-.35)+turn(90),opacity:1,offset:.3},{transform:push(.75)+turn(90)+' scale(1.08)',opacity:1,offset:.55},
+            {transform:push(.6)+turn(90),opacity:1,offset:.72},{transform:push(.1)+turn(90),opacity:0}]:
+          [{transform:turn(-70)+' scale(.7)',opacity:0},{transform:turn(-100),opacity:1,offset:.28},{transform:turn(48)+' scale(1.06)',opacity:1,offset:.55},
+            {transform:turn(60),opacity:1,offset:.72},{transform:turn(66),opacity:0}],
+          {duration:727*speed,easing:'cubic-bezier(.5,0,.3,1)'}).onfinish=()=>prop.remove();
+      }
       if(!ranged)later(160*speed,()=>fx.rush(from,to,kind));
       else if(['ember','wave','gale'].includes(kind))later(140*speed,()=>fx.shot(from,to,kind,.26*speed));
     });

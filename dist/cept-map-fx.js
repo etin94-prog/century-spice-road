@@ -45,6 +45,9 @@ function presentMapEffect(event){
     }else layer.classList.add('settled');
   }else{
     anchor.append(fx);layer.append(anchor);
+    // The summoned card spins down onto its land.
+    const summoned=event.type==='summon'?s.tiles[event.tile]?.unit?.id:null;
+    if(summoned!=null&&!quiet){const card=cardSeal(summoned);card.alt='';card.classList.add('map-fx-card');anchor.append(card);}
     for(const hit of event.hits||[]){
       if(!tiles[hit.at])continue;
       const [hx,hy]=point(tiles[hit.at]),marker=el('strong','−'+hit.damage,'map-damage');

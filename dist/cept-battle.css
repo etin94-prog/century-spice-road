@@ -129,7 +129,7 @@
 .arena.finisher .duel-field{scale:1.07}
 
 /* Entry and result. */
-#game .arena .battle-versus{position:absolute;inset:44% auto auto 50%;z-index:7;translate:-50% -50%;padding:0;border:0;background:none;pointer-events:none}
+#game .arena .battle-versus{position:absolute;inset:44% auto auto 50%;z-index:9;translate:-50% -50%;pointer-events:none}
 #game .arena .battle-versus b{display:block;font:italic 900 clamp(40px,15cqw,84px)/1 Georgia,serif;color:#ffe7a6;-webkit-text-stroke:1.5px #6b3510;
   text-shadow:0 0 22px #ff9a3c,0 0 5px #fff,0 4px 0 #6b3510;animation:duel-vs 1.7s .62s both}
 @keyframes duel-vs{0%{opacity:0;transform:scale(4) rotate(-14deg)}14%{opacity:1;transform:scale(.86) rotate(-6deg)}24%{transform:scale(1.08) rotate(-6deg)}32%,74%{opacity:1;transform:scale(1) rotate(-6deg)}100%{opacity:0;transform:scale(1.4) rotate(-6deg)}}
@@ -147,6 +147,35 @@
 .arena .duel-result b{animation:duel-result-word 2.3s cubic-bezier(.2,.9,.3,1) both}
 @keyframes duel-result-word{0%,6%{opacity:0;transform:translateX(-60%) skewX(-30deg)}20%{opacity:1;transform:translateX(3%) skewX(-4deg)}28%,100%{opacity:1;transform:none}}
 
+/* Who fights whom, shown as the stage opens. */
+#game .arena .battle-versus{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:2px 10px;width:min(92%,26rem);padding:8px 14px 10px;
+  border:2px solid #e6c47a;border-radius:10px;background:linear-gradient(#1b2334f2,#0e1320f2);box-shadow:0 8px 28px #000c;animation:duel-plate 2.3s .5s both}
+#game .arena .battle-versus small{grid-column:1/-1;justify-self:center;font:italic 800 13px/1.2 Georgia,serif;letter-spacing:.24em;text-transform:uppercase;color:#f3dfae}
+.arena .versus-side{display:grid;gap:1px;min-width:0;text-align:center}
+.arena .versus-side i{font-style:normal;font-size:11px;color:#c9d2e2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arena .versus-side em{font-style:normal;font-weight:800;font-size:14px;color:#fff1cf;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#game .arena .battle-versus b{font-size:clamp(26px,9cqw,44px);animation:none}
+@keyframes duel-plate{0%{opacity:0;transform:scale(1.5)}10%{opacity:1;transform:scale(.97)}16%,78%{opacity:1;transform:none}100%{opacity:0;transform:scale(1.06)}}
+/* Ability, support and land, total. */
+.arena .duel-table{display:grid;gap:1px;margin-top:4px;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.arena .duel-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:5px;padding:1px 0}
+#game .arena .duel-row b{min-width:4em;font:700 10.5px/1.3 system-ui;color:#d8c9a4;text-align:center}
+.arena .duel-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arena .duel-row span:first-child{text-align:right}.arena .duel-row span:last-child{text-align:left}
+.arena .duel-row.head span{font-size:11px;color:#c9d2e2}
+.arena .duel-row.plus span{color:#9af09a}
+.arena .duel-row.total{border-top:1px solid #c9a96a66;padding-top:2px}
+.arena .duel-row.total span{font-size:12px;font-weight:800;color:#fff}
+#game .arena .battle-caption:has(.duel-table) .battle-support{display:none}
+/* The numbers change. */
+.arena .duel-callout.stat{top:auto;bottom:30%;font-size:clamp(14px,4.4cqw,20px);color:#fff7c0;text-shadow:0 2px 0 #5a4208,0 0 16px #ffd45c}
+.arena .duel-card.changing::after{content:"";position:absolute;inset:-3%;border-radius:10px;pointer-events:none;mix-blend-mode:screen;
+  background:repeating-linear-gradient(115deg,#fff7a000 0 12%,#fff38acc 18%,#ffd23c88 24%,#fff7a000 32%);background-size:220% 220%;animation:duel-change .8s linear both}
+@keyframes duel-change{from{background-position:120% 0;opacity:0}20%{opacity:1}to{background-position:-60% 0;opacity:0}}
+/* The weapon or limb that strikes, and the picture that springs out of the card. */
+.arena .duel-prop{position:absolute;z-index:7;pointer-events:none;transform-origin:50% 95%;filter:drop-shadow(0 6px 10px #000b);will-change:transform,opacity}
+.arena .duel-prop>*{display:block;width:100%;height:100%;object-fit:contain}
+.arena .duel-spirit{position:absolute;z-index:5;pointer-events:none;object-fit:contain;border-radius:7px;filter:brightness(1.5) saturate(1.2);mix-blend-mode:screen;will-change:transform,opacity}
 #game .arena .battle-caption{position:relative;z-index:7;grid-area:auto;align-self:auto;justify-self:center;box-sizing:border-box;width:min(100%,34rem);margin:0;padding:5px 10px;border:1px solid #c9a96a80;border-radius:10px;
   background:#10141be6;font-size:12.5px;font-weight:600;line-height:1.35;text-align:center}
 #game .arena .battle-skip{left:10px;top:6px;translate:none}

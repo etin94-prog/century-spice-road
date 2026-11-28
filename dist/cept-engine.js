@@ -472,7 +472,10 @@ function createCepter(edition="ps2"){
     }
     if(firstEdition)detonateTimeBombs(s);
     extraSpells?.startTurn(s,cards);
+    const held=p.hand.length;
     for(let j=0;j<(fx.idol(s,'brassidol')?2:1);j++){draw(p,s);if(p.status==='despair')p.hand.pop();}
+    // The table shows the card arriving in the hand; which card it was stays with the hand itself.
+    if(p.hand.length>held)s.drawEvent={seat:s.turn,count:p.hand.length-held,hand:p.hand.length,sequence:(s.drawEvent?.sequence||0)+1};
     s.phase=!discardAtEnd&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
   }
   function timeBombRounds(s,t){
