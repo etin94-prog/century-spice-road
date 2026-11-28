@@ -109,9 +109,15 @@ register(
       ui.section('내 패');
       const hand = ui.row(),
         counts = human.shoupai._bingpai;
-      for (const s of 'mpsz')
-        for (let n = 1; n < counts[s].length; n++)
-          for (let i = 0; i < counts[s][n]; i++) decorateTile(ui.button(hand, tile(s + n), null, 'mah-tile'), s + n);
+      for (const s of 'mpsz') {
+        for (let n = 1; n < counts[s].length; n++) {
+          for (let i = 0; i < counts[s][n]; i++) {
+            // The engine includes red fives in both the rank-five total and index zero.
+            const code = s + (s !== 'z' && n === 5 && i < counts[s][0] ? 0 : n);
+            decorateTile(ui.button(hand, tile(code), null, 'mah-tile'), code);
+          }
+        }
+      }
       if (human.shoupai._fulou.length) ui.section('공개 묶음　' + human.shoupai._fulou.join(' · '));
       ui.section(message);
       const row = ui.row();
