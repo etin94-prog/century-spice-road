@@ -763,7 +763,10 @@ const CepterEditions=(()=>{
     berserker:{battleRecoilPercent:25},zombie:{battleEndHPLoss:10},
     battlegearalpha:{basicBattle:false,support:true,neutralizeScroll:true},battlegearbeta:{basicBattle:false,support:true,neutralizeScroll:true},
     bundlegear:{basicBattle:false,spellWard:true,neutralizeScroll:true,generatedOnly:true},littlegray:{basicBattle:false},anubias:{basicBattle:false},
-    etherealqueen:{firstStat:'enemyLandHP',enemyLandHP:5},flameweevil:{firstStat:'flameWeevilST'},kungfumonk:{first:true,firstStat:'hpToST'},ghost:{basicBattle:false}
+    etherealqueen:{firstStat:'enemyLandHP',enemyLandHP:5},flameweevil:{firstStat:'flameWeevilST'},kungfumonk:{first:true,firstStat:'hpToST'},ghost:{basicBattle:false},
+    medusa:{hitTransform:{form:'wallofstone',rate:.6}},cockatrice:{hitTransform:{form:'wallofstone',rate:.6}},
+    ghoul:{paralyze:true,statusRaces:['rh','rb','rd'],regenerateOnDefeat:true},barrowwight:{sleepOnHit:true},
+    thunderbeak:{first:true,paralyze:true,statusElements:[1]},toxicflower:{stationary:true,first:true,poison:true,statusRaces:['rh','rb','rd']}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1161,6 +1164,8 @@ const CepterEditions=(()=>{
         if(edition==='ps1'&&slug==='berserker')c.battleRecoilPercent=30;
         if(edition==='ps1'&&slug==='etherealqueen')c.enemyLandHP=10;
         if(edition==='ps1'&&slug==='zombie')c.battleEndHPLoss=20;
+        if(edition==='saturn'&&slug==='cockatrice')c.hitTransform={...c.hitTransform,races:['rh','rb','rd']};
+        if(edition==='ps1'&&slug==='barrowwight')c.statusRaces=['rh','rb'];
         if(slug==='wraith'){
           c.instantKill={races:['rh','rb'],rate:edition==='ps1'?.6:.3};
           if(edition==='ps1')c.selfDestructAfterBattle=true;
@@ -1249,6 +1254,11 @@ const CepterEditions=(()=>{
         machines[machines.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyMachines=machines;
+      const curses=tides.slice();
+      for(const [from,to] of [['cleric','barrowwight'],['berserker','cockatrice'],['seamonk','medusa'],['geophage','ghoul'],['leviathan','thunderbeak'],['nessie','toxicflower']]){
+        curses[curses.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyCurses=curses;
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

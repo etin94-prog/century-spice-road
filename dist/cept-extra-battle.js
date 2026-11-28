@@ -352,6 +352,9 @@ const CepterExtraBattle=(()=>{
         if(amount)lines.push('공격 명중 · '+amount+'G 탈취');
       }
       if(d.hp<=0)return;
+      const shape=a.c.hitTransform;
+      if(shape&&!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits&&
+        (!shape.races||shape.races.includes(d.c.catalog?.race))&&chance(shape.rate))convert(d,shape.form);
       if(s.edition==='begins'){
         const alteredForm={werewolf:'wolf',medusa:'statue',cockatrice:'wallofstone'}[n];
         if(alteredForm)transform(d,ids.get(alteredForm));

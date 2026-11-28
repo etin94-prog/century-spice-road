@@ -990,7 +990,7 @@ function createCepter(edition="ps2"){
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
           criticalBaseSTAtLeast:null,battleFee:0,reviveForm:null,splitReflect:false,instantKill:null,
           selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
-          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null};
+          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateOnDefeat:false,sleepOnHit:false};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1312,7 +1312,12 @@ function createCepter(edition="ps2"){
             lines.push(a.c.name+' · '+amount+'G 탈취');
           }
         }
-        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||weapon?.paralyzeRaces?.includes(d.c.catalog?.race)||edition==='dc'&&a.g==='goulsclaw'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
+        const creatureStatus=creatureEffects&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))&&
+          (!a.c.statusElements||a.c.statusElements.some(e=>combo.hasElement(d,e)));
+        if(creatureStatus&&a.c.sleepOnHit&&d.hp>0){
+          combo.clear(d.u);d.u.enchant='sleep';lines.push(a.c.name+' · 상대 영지 통행료 무효');
+        }
+        if(creatureStatus&&(a.c.poison||a.c.confuse||a.c.paralyze)||attacker==='nike'||a.g==='clawoftheghoul'||weapon?.paralyzeRaces?.includes(d.c.catalog?.race)||edition==='dc'&&a.g==='goulsclaw'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
         if(weapon?.deathStrike)extra.gearDeath(a,d);
@@ -1481,7 +1486,7 @@ function createCepter(edition="ps2"){
         if(edition==='saga'&&opponentAlive&&d.hp<=0)d.defeatedByOpponent=true;
       }
       if(!revolt&&!muted)applyPoison(a);
-      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||(edition!=='saga'||!basalt)&&a.u.enchant==='regeneration'||itemEnd&&(a.g==='fireamulet'||a.gear?.regenerateItem))){
+      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||a.c.regenerateOnDefeat&&d.hp<=0&&d.defeatedByOpponent||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||(edition!=='saga'||!basalt)&&a.u.enchant==='regeneration'||itemEnd&&(a.g==='fireamulet'||a.gear?.regenerateItem))){
         a.regenerated=a.heal=true;a.hp=fx.max(a.u);lines.push('재생 · HP 회복');
       }
       if(revolt&&a.hp>0&&d.hp>0&&a.n==='samhain'){

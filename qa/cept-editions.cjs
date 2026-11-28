@@ -9086,11 +9086,11 @@ for(const edition of ['ps1','saturn']){
   assert.ok(C.validBook(C.presets.legacyMachines));
   for(const n of ['battlegearalpha','battlegearbeta','ghost','littlegray'])assert.ok(C.presets.legacyMachines.includes(id(n)));
   assert.ok(C.cards[id('bundlegear')].generatedOnly);
-  function fight(a,d,{atkGear,defGear,extras=[],seed=.1,life,defHP,count,alliance=false}={}){
+  function fight(a,d,{atkGear,defGear,extras=[],seed=.1,life,defHP,count,alliance=false,type='무속성',level=1,defEnchant}={}){
     const seats=alliance?4:2;
     const s=C.start(seats,seats,7000,edition+'-original-marsh-paths',C.presets.legacyMachines,C.presets.legacyMachines,1,alliance?'teams':'duel');
     const at=s.tiles.findIndex(t=>C.territoryType(t.type)),t=s.tiles[at];
-    Object.assign(t,{type:'무속성',owner:1,unit:{id:id(d),hp:defHP??C.cards[id(d)].hp}});
+    Object.assign(t,{type,level,owner:1,unit:{id:id(d),hp:defHP??C.cards[id(d)].hp,enchant:defEnchant}});
     const sites=s.tiles.flatMap((v,i)=>i!==at&&!C.board(s).links[at].includes(i)&&C.territoryType(v.type)?[i]:[]);
     for(const [i,[owner,key]] of extras.entries())Object.assign(s.tiles[sites[i]],{owner:owner==='ally'?s.teams.findIndex((team,j)=>j>0&&team===s.teams[0]):owner,unit:{id:id(key),hp:C.cards[id(key)].hp}});
     if(count!=null)s.destroyedCount=count;
@@ -9129,5 +9129,40 @@ for(const edition of ['ps1','saturn']){
   assert.equal(fight('kungfumonk','wallofstone',{life:25,atkGear:'longsword'}).b.attackST,35+C.cards[id('longsword')].st);
   assert.equal(fight('ghost','goblin',{defHP:1}).t.unit.hp,C.cards[id('ghost')].hp-10);
   assert.equal(fight('ghost','goblin',{defHP:1,life:8}).b.finalHP[0],0);
+  assert.ok(C.validBook(C.presets.legacyCurses));
+  for(const key of ['medusa','cockatrice','barrowwight','ghoul','thunderbeak','toxicflower']){
+    assert.ok(C.presets.legacyCurses.includes(id(key)),edition+' curse book '+key);
+  }
+  const stone=fight('medusa','dwarf',{seed:.599});
+  assert.deepEqual([stone.t.unit.id,stone.t.unit.hp],[id('wallofstone'),40]);
+  assert.equal(fight('medusa','dwarf',{seed:.6}).t.unit.id,id('dwarf'));
+  assert.equal(fight('medusa','dwarf',{atkGear:'firebolt'}).t.unit.id,id('dwarf'));
+  assert.equal(fight('medusa','unseenstalker').b.strikes[0].effect,'block');
+  assert.equal(fight('medusa','dwarf',{defHP:1}).t.unit.id,id('medusa'));
+  assert.equal(fight('cockatrice','dwarf').t.unit.id,id('wallofstone'));
+  assert.equal(fight('cockatrice','wallofstone').b.lines.some(text=>text.includes('스톤 월 변신')),edition==='ps1');
+
+  const asleep=fight('barrowwight','dwarf');
+  assert.equal(asleep.t.unit.enchant,'sleep');
+  assert.equal(C.toll(asleep.s,asleep.t),0);
+  assert.equal(fight('barrowwight','wallofstone').t.unit.enchant,edition==='saturn'?'sleep':undefined);
+  const revived=fight('ghoul','goblin',{life:7});
+  assert.deepEqual([revived.t.owner,revived.t.unit.hp],[0,C.cards[id('ghoul')].hp]);
+  const paralyzed=fight('ghoul','dwarf',{life:7});
+  assert.equal(paralyzed.t.unit.enchant,'paralysis');
+  assert.equal(paralyzed.b.strikes[0].hp[0],7);
+  assert.ok(!paralyzed.b.lines.some(text=>text.includes('재생')));
+  assert.equal(fight('ghoul','wallofstone').t.unit.enchant,undefined);
+  assert.equal(fight('ghoul','dwarf',{atkGear:'firebolt'}).t.unit.enchant,undefined);
+
+  const water=fight('thunderbeak','nessie',{type:1,level:3});
+  assert.equal(water.b.strikes[0].side,0);
+  assert.equal(water.t.unit.enchant,'paralysis');
+  assert.equal(fight('thunderbeak','wallofstone').t.unit.enchant,undefined);
+  const toxin=fight('dwarf','toxicflower');
+  assert.equal(toxin.b.strikes[0].side,1);
+  assert.ok(toxin.b.lines.some(text=>text.startsWith('독 ·')));
+  assert.ok(!fight('wallofstone','toxicflower').b.lines.some(text=>text.startsWith('독 ·')));
+  assert.equal(fight('dwarf','toxicflower',{defEnchant:'paralysis'}).b.strikes[0].side,0);
 }
-console.log('PS1 and Saturn battle gear fusion, first-edition warps, resource scaling and Ghost victory penalty checked.');
+console.log('PS1 and Saturn fusion, warps, battle scaling, petrification and edition-specific curses checked.');

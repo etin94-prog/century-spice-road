@@ -567,10 +567,18 @@ const CepterCreatureText=(()=>{
     if(card.reflectNormal)pieces.push('일반 공격을 상대에게 반사합니다.');
     if(card.neutralizeNormal)pieces.push('일반 공격을 무효화합니다.');
     const status=card.poison?'독':card.confuse?'혼란':card.paralyze?'마비':null;
-    if(status){
-      const racesOnly=card.statusRaces?.map(r=>races[r]).join('·');
-      pieces.push((racesOnly?racesOnly+' 상대에게':'상대에게')+' 일반 공격으로 피해를 주면 '+status+' 상태를 부여합니다.');
+    if(status||card.sleepOnHit){
+      const scope=card.statusRaces?.map(r=>races[r]).join('·')||(card.statusElements&&targets(card.statusElements));
+      const match=scope?scope+' 상대에게':'상대에게';
+      const effect=card.sleepOnHit?'상대 영지의 통행료를 무효화합니다.':status+' 상태를 부여합니다.';
+      pieces.push(match+' 일반 공격으로 피해를 주면 '+effect);
     }
+    if(card.hitTransform){
+      const shape=card.hitTransform;
+      const scope=shape.races?shape.races.map(r=>races[r]).join('·')+' ':'';
+      pieces.push('일반 공격으로 피해를 준 '+scope+'상대가 생존하면 '+Math.round(shape.rate*100)+'% 확률로 스톤 월로 바꿉니다.');
+    }
+    if(card.regenerateOnDefeat)pieces.push('전투에서 상대를 격파하고 생존하면 HP를 모두 회복합니다.');
     const special=C.edition==='3ds'&&key==='powdereater'?'영지 이동 명령으로 이동할 때 원래 영지에도 분신을 남깁니다. 주문으로 이동하면 분신이 생기지 않습니다.':
       (C.edition==='revolt'||C.edition==='3ds'&&['chimera','pyromancer','sulfurousballoon'].includes(key))&&revoltBattle[key]?revoltBattle[key]:
       (C.edition==='begins'||C.edition==='3ds'&&['jackalope','humbaba','golem','leveller'].includes(key))&&beginsBattle[key]?beginsBattle[key]:
