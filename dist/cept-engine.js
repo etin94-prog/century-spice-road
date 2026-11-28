@@ -990,7 +990,7 @@ function createCepter(edition="ps2"){
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
           criticalBaseSTAtLeast:null,battleFee:0,battleFeePerHP:0,hitMagicPerHP:0,hitMagicPerLap:0,reviveForm:null,splitReflect:false,instantKill:null,
           selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
-          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false,battleCepterCurse:null};
+          battleEndHPLoss:0,landLevelLossRate:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false,battleCepterCurse:null};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1262,9 +1262,10 @@ function createCepter(edition="ps2"){
       if(damage>0&&!scroll&&!muted&&!blocksAttackBonus&&(edition!=='ps2'||a.hp>0)){
         const creatureEffects=!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits,attacker=creatureEffects?a.n:null;
         const instant=a.c.instantKill;
-        const instantTarget=instant&&(instant.minimumBaseST!=null?fx.strength(d.u)>=instant.minimumBaseST:
-          instant.races?.includes(d.c.catalog?.race)||matches(instant.elements,d));
-        if(creatureEffects&&d.hp>0&&instantTarget&&(instant.rate===1||!s.predict&&Math.random()<instant.rate)){
+        const instantTarget=instant&&(instant.minimumBaseST==null||fx.strength(d.u)>=instant.minimumBaseST)&&
+          (!instant.races&&!instant.elements||instant.races?.includes(d.c.catalog?.race)||matches(instant.elements,d));
+        if(creatureEffects&&d.hp>0&&instantTarget&&(instant.rate===1||(s.predict?
+          key(a.c)==='basilisk'&&(s.basiliskForecast&(a.defending?2:1))!==0:Math.random()<instant.rate))){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
         if(revolt&&d.hp>0&&(attacker==='saint'&&d.element===-1||attacker==='samurai'&&fx.strength(d.u)>=40&&!s.predict&&Math.random()<.7)){
@@ -2430,7 +2431,7 @@ function createCepter(edition="ps2"){
     const plan=combo.planner(s,seat,cards,fx,groups);
 
     // Only simulate the revealed board and our contemplated equipment. The opposing item is concealed.
-    function forecast(battle,gear,defending,unpaid=false,spent,raySuccess=false){
+    function forecast(battle,gear,defending,unpaid=false,spent,raySuccess=false,basiliskForecast=0){
       const tiles=s.tiles.map(t=>({...t,unit:t.unit&&{...t.unit}}));
       const players=s.players.map(q=>({...q,hand:q.hand.slice(),symbols:q.symbols.slice(),book:q.book?.slice()||[],peek:q.peek&&{...q.peek,ids:q.peek.ids.slice()}}));
       const acting=players[seat];
@@ -2438,11 +2439,20 @@ function createCepter(edition="ps2"){
       const removed=spent??((s.phase==='land'||unpaid)&&battle.from==null?[battle.inv]:[]);
       for(const id of removed){const j=acting.hand.indexOf(id);if(j>=0)acting.hand.splice(j,1);}
       if(gear!=null){const j=acting.hand.indexOf(gear);if(j>=0)acting.hand.splice(j,1);}
-      const trial={...s,predict:true,raySuccess,tiles,players,prices:s.prices.slice(),log:[],battle:{...battle,atkItem:defending?null:gear,defItem:defending?gear:null}};
+      const trial={...s,predict:true,raySuccess,basiliskForecast,tiles,players,prices:s.prices.slice(),log:[],battle:{...battle,atkItem:defending?null:gear,defItem:defending?gear:null}};
       resolve(trial);
       return trial.battle;
     }
     function evaluateGear(battle,gear,defending,unpaid,spent,score){
+      if(firstEdition){
+        const invader=cards[battle.inv],guard=cards[s.tiles[battle.at].unit?.id];
+        const raid=key(invader)==='basilisk'?invader.instantKill.rate:0;
+        const defense=key(guard)==='basilisk'?guard.instantKill.rate:0;
+        if(raid||defense){
+          const weights=[(1-raid)*(1-defense),raid*(1-defense),(1-raid)*defense,raid*defense];
+          return weights.reduce((total,weight,mask)=>total+(weight?weight*score(forecast(battle,gear,defending,unpaid,spent,false,mask)):0),0);
+        }
+      }
       const normal=score(forecast(battle,gear,defending,unpaid,spent));
       return edition==='saga'&&key(cards[gear])==='blasterray'?
         (normal+score(forecast(battle,gear,defending,unpaid,spent,true)))/2:normal;

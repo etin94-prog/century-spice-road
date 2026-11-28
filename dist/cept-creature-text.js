@@ -538,14 +538,15 @@ const CepterCreatureText=(()=>{
     if(card.randomHandBreak)pieces.push('전투에서 살아남으면 상대 손패 한 장을 무작위로 파괴합니다.');
     if(card.battleEvolution)pieces.push('세 번의 전투에서 살아남으면 플레임 로드로 변신합니다.');
     if(card.instantKill){
-      const target=card.instantKill.minimumBaseST!=null?'기본 ST '+card.instantKill.minimumBaseST+' 이상인':
-        card.instantKill.races?.map(r=>races[r]).join('·')||targets(card.instantKill.elements);
+      const {minimumBaseST,races:raceFilter,elements}=card.instantKill;
+      const target=[minimumBaseST!=null?'기본 ST '+minimumBaseST+' 이상인':'',raceFilter?.map(r=>races[r]).join('·')||(elements&&targets(elements))].filter(Boolean).join(' ');
       const chance=card.instantKill.rate===1?'':Math.round(card.instantKill.rate*100)+'% 확률로 ';
-      pieces.push('일반 공격으로 피해를 준 '+target+' 상대를 '+chance+'즉사시킵니다.');
+      pieces.push('일반 공격으로 피해를 준 '+(target?target+' ':'')+'상대를 '+chance+'즉사시킵니다.');
     }
     if(C.edition==='3ds'&&key==='paladin')pieces.push('전투에서 살아남으면 HP를 최대치까지 회복합니다.');
     if(card.selfDestructAfterBattle)pieces.push('전투가 끝날 때 자괴합니다.');
     if(card.battleRecoilPercent)pieces.push('일반 공격으로 준 피해의 '+card.battleRecoilPercent+'%만큼 반동 피해를 받습니다.');
+    if(card.landLevelLossRate)pieces.push('전투에서 생존하면 '+(card.landLevelLossRate===1?'':Math.round(card.landLevelLossRate*100)+'% 확률로 ')+'교전 영지의 레벨을 1 낮춥니다.');
     if(card.battleEndHPLoss)pieces.push('전투 종료 시 HP가 '+card.battleEndHPLoss+' 감소합니다.');
     if(card.terrainLevelHP)pieces.push(targets([card.terrainLevelHP.element])+' 영지에서 싸우면 영지 레벨 × '+card.terrainLevelHP.perLevel+'만큼 전투 HP가 오릅니다.');
     if(card.invadeVictoryTerrain!=null)pieces.push('침략에 성공하면 교전 영지를 '+targets([card.invadeVictoryTerrain])+' 영지로 바꿉니다.');

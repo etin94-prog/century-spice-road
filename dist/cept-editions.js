@@ -771,7 +771,9 @@ const CepterEditions=(()=>{
     efreet:{last:true,scrollCritical:true,battleFeePerHP:2},willothewisp:{last:true,hitMagicPerHP:2},bistair:{first:true,hitMagicPerLap:50},
     deepspawn:{battleCepterCurse:'bind'},
     ormechead:{neutralizeNormal:true,neutralizeScroll:true,battleEndHPLoss:10,battleEndLossIgnoresBonus:true},
-    taotieh:{basicBattle:false}
+    taotieh:{basicBattle:false},
+    basilisk:{instantKill:{races:['rh','rb','rd'],rate:.6},landLevelLossRate:1},
+    leveller:{landLevelLossRate:.3},lionsmane:{stationary:true,instantKill:{minimumBaseST:40,races:['rh','rb','rd'],rate:1}}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1281,6 +1283,10 @@ const CepterEditions=(()=>{
         earth[earth.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyEarthDefense=earth;
+      const siege=new Map([
+        ['wolf','basilisk'],['marfolk','lionsmane'],['wallofice','wallofstone'],['giantamoeba','dwarf'],['lizardman','wereboar'],['hurricane','leveller']
+      ].map(([from,to])=>[lookup.get(from),lookup.get(to)]));
+      presets.legacySiege=presets.intro.map(id=>siege.get(id)??id);
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

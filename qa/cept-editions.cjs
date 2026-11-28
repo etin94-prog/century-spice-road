@@ -9448,3 +9448,80 @@ for(const edition of ['ps1','saturn']){
   assert.doesNotMatch(fight('taotieh','wallofstone').battle.lines.join(' '),/격파 후 기본 ST/);
 }
 console.log('PS1 and Saturn Ormec Head and Tao Tieh: attack types, permanent HP, paralysis, defense growth, cap and edition-specific invasion checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),book=C.presets.legacySiege;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  assert.ok(C.validBook(book));
+  for(const key of ['basilisk','leveller','lionsmane']){
+    assert.equal(book.filter(n=>n===id(key)).length,2);
+  }
+  assert.match(creatureText.describe(C,C.cards[id('lionsmane')]),/기본 ST 40 이상인 인간형·야수형·용형/);
+  function setup(attacker,guard,{atkST,defHP,enchant,gear,defGear,type=2,level=3}={}){
+    const s=C.start(2,0,7000,edition+'-original-marsh-paths',book,book,3),at=3;
+    const def=id(guard);
+    Object.assign(s.players[0],{pos:at,hand:gear?[id(gear)]:[],cash:1000});
+    Object.assign(s.players[1],{hand:defGear?[id(defGear)]:[],cash:1000});
+    Object.assign(s.tiles[at],{type,owner:1,level,unit:{id:def,hp:defHP??C.cards[def].hp,enchant}});
+    s.phase='attack';
+    s.battle={at,inv:id(attacker),invUnit:{id:id(attacker),hp:C.cards[id(attacker)].hp,st:atkST},atkItem:null,defItem:null};
+    return s;
+  }
+  function fight(attacker,guard,{roll=.01,gear,...rest}={}){
+    const s=setup(attacker,guard,{gear,...rest}),random=Math.random;
+    try{
+      Math.random=()=>roll;
+      assert.ok(C.play(s,gear?['equip',0]:['bare'])&&C.play(s,['bare']));
+    }finally{Math.random=random;}
+    return s;
+  }
+  const won=fight('basilisk','fighter',{roll:.599});
+  assert.ok(won.battle.won);
+  assert.equal(won.tiles[3].level,2);
+  assert.match(won.battle.lines.join(' '),/즉사.*교전 영지 Lv.2/);
+  const resisted=fight('basilisk','fighter',{roll:.6});
+  assert.equal(resisted.battle.won,false);
+  assert.equal(resisted.tiles[3].level,2);
+  assert.doesNotMatch(fight('basilisk','mummy').battle.lines.join(' '),/즉사/);
+  assert.equal(fight('basilisk','fighter',{enchant:'drought'}).tiles[3].level,3);
+  assert.equal(fight('basilisk','fighter',{level:1}).tiles[3].level,1);
+  assert.equal(fight('fighter','basilisk',{atkST:100}).tiles[3].level,3);
+  assert.equal(fight('fighter','basilisk',{enchant:'paralysis'}).tiles[3].level,3);
+
+  const lowered=fight('leveller','wallofstone',{type:3,roll:.299});
+  assert.equal(lowered.tiles[3].level,2);
+  assert.match(lowered.battle.lines.join(' '),/교전 영지 Lv.2/);
+  assert.equal(fight('leveller','wallofstone',{type:3,roll:.3}).tiles[3].level,3);
+  assert.equal(fight('goblin','leveller',{roll:.299}).tiles[3].level,2);
+  assert.equal(fight('leveller','wallofstone',{enchant:'drought'}).tiles[3].level,3);
+
+  const lion=(attacker,options={})=>fight(attacker,'lionsmane',{type:1,...options});
+  for(const rival of ['fighter','wolf','dragon']){
+    const result=lion(rival,{atkST:40});
+    assert.equal(result.battle.finalHP[0],0);
+    assert.match(result.battle.lines.join(' '),/즉사/);
+  }
+  assert.doesNotMatch(lion('fighter',{atkST:39}).battle.lines.join(' '),/즉사/);
+  assert.doesNotMatch(lion('skeleton',{atkST:40}).battle.lines.join(' '),/즉사/);
+  assert.doesNotMatch(lion('wolf',{gear:'mace'}).battle.lines.join(' '),/즉사/);
+
+  const defense=setup('fighter','lionsmane',{type:1,level:1,defHP:25,defGear:'leatherarmor'});
+  assert.ok(C.play(defense,['bare']));
+  assert.deepEqual(C.ai(defense),['equip',0]);
+  assert.ok(C.play(defense,C.ai(defense)));
+  assert.match(defense.battle.lines.join(' '),/즉사/);
+  assert.equal(defense.battle.won,false);
+
+  for(const guard of ['dwarf','mummy']){
+    const siege=setup('basilisk',guard,{level:5});
+    siege.phase='land';siege.battle=null;siege.players[0].hand=[id('basilisk')];
+    for(const at of [1,2])Object.assign(siege.tiles[at],{type:2,owner:0,unit:{id:id('dwarf'),hp:50}});
+    const before=JSON.stringify(siege);
+    assert.deepEqual(C.ai(siege),guard==='dwarf'?['invade',0]:['pay']);
+    assert.equal(JSON.stringify(siege),before);
+  }
+  const invasion=setup('fighter','lionsmane',{type:1});
+  invasion.phase='land';invasion.battle=null;invasion.players[0].hand=[id('lionsmane')];
+  assert.ok(!C.choices(invasion).some(([action])=>action==='invade'));
+}
+console.log('PS1 and Saturn siege: exact 60% and 30% boundaries, ST and race together, successful defense, land locks and AI equipment checked.');

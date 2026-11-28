@@ -421,9 +421,10 @@ const CepterExtraBattle=(()=>{
         if(a.c.battleGrowth)grow(a,a.c.battleGrowth);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
         const leveller=['dc','begins','3ds','saga'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
-        if((a.n==='basilisk'||leveller&&t.type!==3)&&t.level>1&&!fx.blockedLevel(s,t)){
+        const levelLoss=a.c.landLevelLossRate??(a.n==='basilisk'||leveller&&t.type!==3?1:0);
+        if(levelLoss&&t.level>1&&!fx.blockedLevel(s,t)&&(levelLoss===1||chance(levelLoss))){
           t.level--;
-          if(['begins','3ds'].includes(s.edition))lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
+          if(firstEdition||['begins','3ds'].includes(s.edition))lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
         }
       }
       if(itemEnd&&a.hp>0&&a.gear?.permanentSTLoss){
