@@ -1090,6 +1090,7 @@ function createCepter(edition="ps2"){
         }
         if(a.n==='manes'&&combo.enchanted(t.unit))a.hp+=20;
         if(a.g==='terrair'&&!firstEdition)a.st+=count(3)*20;
+        if(firstEdition&&a.g==='tigerrobe')a.st+=d.gear?40:-20;
         if(a.g==='mujinamask')a.hp+=other.hand.length*10;
         if(handheld&&a.g==='powercrown')a.hp+=baseStrength[a===A?1:0];
         if(a.u.enchant==='regeneration')a.hp+=20;
@@ -1114,7 +1115,7 @@ function createCepter(edition="ps2"){
         }
         if(!a.gear&&a.c.innateScroll)a.st=a.c.innateScroll==='base'?fx.strength(a.u):a.c.innateScroll;
         if(!firstEdition&&a.n==='sorcerer'&&!a.gear)a.st=20;
-        if(['reflect','nullify'].includes(a.gear?.effect)||handheld&&a.u.enchant==='reflection')a.st=0;
+        if(a.gear?.zeroBattleST||['reflect','nullify'].includes(a.gear?.effect)||handheld&&a.u.enchant==='reflection')a.st=0;
       }
       if(!handheld&&!begins&&a.g==='powerbracelet')a.st*=2;
       if(a.g==='petrifystone'){a.st=0;a.hp=80+a.land;}
@@ -1160,9 +1161,10 @@ function createCepter(edition="ps2"){
         if(target.hp<=0)lines.push('블래스터 레이 · 빈 영지가 없어 격파');
         return reflected?'reflect':'hit';
       }
-      if(a.g==='sleep'||a.g==='death'){
+      if(a.g==='sleep'||a.g==='death'||scroll&&weapon?.deathStrike){
         const target=reflected?a:d;
         if(a.g==='sleep'){combo.clear(target.u);target.u.enchant='sleep';lines.push('수면 · 통행료 없음');}
+        else if(weapon?.deathStrike)extra.gearDeath(a,target);
         else if(!s.predict&&Math.random()<.6)target.hp=0;
         return reflected?'reflect':'hit';
       }
@@ -1204,8 +1206,8 @@ function createCepter(edition="ps2"){
         if(!scroll)d.hitByOpponent=true;
       }
       trackDamage(d,damage,!scroll);
-      if(handheld&&a.g==='soulblast'&&damage>0){
-        const amount=(s.players[a.seat].lap+1)*40;
+      if((handheld||firstEdition)&&a.g==='soulblast'&&damage>0){
+        const amount=firstEdition?damage:(s.players[a.seat].lap+1)*40;
         s.players[a.seat].cash+=amount;s.players[d.seat].cash-=amount;
         if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]-=amount;b.magicLoss[+d.defending]+=amount;}
         lines.push(a.gear.name+' · '+amount+'G 탈취');
@@ -1260,12 +1262,17 @@ function createCepter(edition="ps2"){
         if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||edition==='dc'&&a.g==='goulsclaw'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
-        if((revolt||begins)&&a.g==='ringofthesuccubus'||revolt&&attacker==='shadowgeist'||begins&&attacker==='succubus'){
+        if(weapon?.deathStrike)extra.gearDeath(a,d);
+        if(firstEdition&&a.g==='ringofthesuccubus'&&d.hp>0){
+          const before=fx.strength(d.u),after=Math.floor(before/2);
+          if(d.gear?.category!=='scroll'&&!d.gear?.scrollAsItem&&!d.gear?.zeroBattleST&&d.g!=='petrifystone')d.st=Math.max(0,d.st-(before-after));
+          d.u.st=after;lines.push(a.gear.name+' · 상대 기본 ST '+after);
+        }else if((revolt||begins)&&a.g==='ringofthesuccubus'||revolt&&attacker==='shadowgeist'||begins&&attacker==='succubus'){
           const fixed=d.gear?.category==='scroll'||d.g==='petrifystone'||d.c.evoBattle==='landST'||d.n==='spectre'||d.n==='gargoyle'&&d.defending||d.u.enchant==='liquidform'||begins&&['manticore','lilith'].includes(d.n);
           if(!fixed)d.st=Math.max(0,d.st-fx.strength(d.u));
           d.u.st=0;lines.push((['shadowgeist','succubus'].includes(attacker)?a.c.name:'서큐버스 링')+' · 상대 기본 ST 0');
-        }else if(attacker==='succubus'||!revolt&&!begins&&a.g==='ringofthesuccubus'||creatureEffects&&a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
-        if(a.g==='ringofthevampire')a.hp+=damage;
+        }else if(attacker==='succubus'||!firstEdition&&!revolt&&!begins&&a.g==='ringofthesuccubus'||creatureEffects&&a.c.drainST){d.u.st=0;d.st=0;if(a.c.drainST)lines.push('ST 드레인 · 상대 기본 ST 0');}
+        if(a.g==='ringofthevampire'){a.hp+=damage;if(firstEdition)a.absorbed=true;}
         if(attacker==='bandit'||a.g==='banditsglove'){
           const amount=begins&&attacker==='bandit'?damage*2:Math.min(s.players[d.seat].cash,damage*2);
           s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
@@ -1333,7 +1340,7 @@ function createCepter(edition="ps2"){
       if(count<2)continue;
       a.hp=0;lines.push('미러 월드 · '+a.c.name+' 격파');
     }
-    const priority=(a,d)=>muted?0:a.g==='hourglass'||d.g!=='hourglass'&&(a.c.first||a.gear?.first||a.u.enchant==='wing'||['earthamulet','wingedboots','sling','swordofthefalcon','ringofthesuccubus','ringofthevampire'].includes(a.g)||a.defending&&active('silveridol'))?1:a.c.last||a.gear?.last?-1:0;
+    const priority=(a,d)=>muted?0:a.g==='hourglass'||d.g!=='hourglass'&&(a.c.first||a.gear?.first||a.u.enchant==='wing'||['earthamulet','wingedboots','sling','swordofthefalcon'].includes(a.g)||!firstEdition&&['ringofthesuccubus','ringofthevampire'].includes(a.g)||a.defending&&active('silveridol'))?1:a.c.last||a.gear?.last?-1:0;
     const order=priority(D,A)>priority(A,D)?[D,A]:[A,D];
     for(const a of order){
       const d=a===A?D:A;
@@ -1476,7 +1483,7 @@ function createCepter(edition="ps2"){
         t.level=Math.min(5,t.level+(a.n==='leshy')+plow);
         if((revolt||begins)&&previous!==t.level)lines.push((plow?a.gear.name:a.c.name)+' · 영지 Lv.'+t.level);
       }
-      if(a.item!=null&&(a.n==='centaur'&&edition!=='saga'&&!begins&&(!revolt||a.hp>0)||['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
+      if(a.item!=null&&(a.n==='centaur'&&edition!=='saga'&&!begins&&(!revolt||a.hp>0)||!firstEdition&&['neutralamulet','belloflaw'].includes(a.g)))s.players[a.seat].book.unshift(a.item);
       a.n=originalName;
     }
     if(itemEnd){

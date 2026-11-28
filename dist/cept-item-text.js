@@ -124,7 +124,7 @@ const describeCepterItem=(()=>{
   return (C,card)=>{
     if(card.kind!=='item'||card.catalogOnly)return;
     const key=C.combo.key(card),name=aliases[key]||key,firstEdition=C.edition==='ps1'||C.edition==='saturn';
-    const pieces=[],scroll=card.category==='scroll'||card.scrollAsItem!=null,fixedST=['reflect','nullify'].includes(card.effect);
+    const pieces=[],scroll=card.category==='scroll'||card.scrollAsItem!=null,fixedST=card.zeroBattleST||['reflect','nullify'].includes(card.effect);
     const signed=(label,n)=>label+' '+(n>0?'+':'−')+Math.abs(n);
     const baseStatsBracelet=['3ds','begins'].includes(C.edition)&&key==='powerbracelet';
     if(baseStatsBracelet)pieces.push('전투의 기본 ST는 기본 ST의 두 배, 기본 HP는 최대 HP의 두 배로 계산합니다.');
@@ -150,6 +150,7 @@ const describeCepterItem=(()=>{
     if(card.last)pieces.push('후공');
     if(card.effect==='reflect'||card.reflectNormal)pieces.push('일반 공격을 반사합니다.');
     if(card.effect==='nullify'||card.neutralizeNormal)pieces.push('일반 공격을 무효화합니다.');
+    if(card.reflectScroll)pieces.push('두루마리 공격을 반사합니다.');
     if(card.neutralizeScroll)pieces.push('두루마리 공격을 무효화합니다.');
     if(card.doubleAttack)pieces.push('일반 공격을 연속으로 두 번 합니다. 같은 효과는 중첩되지 않습니다.');
     if(card.criticalOwnElements?.length)pieces.push('장착한 크리처가 '+list(card.criticalOwnElements)+'이면 일반 공격이 강타합니다.');
@@ -166,6 +167,12 @@ const describeCepterItem=(()=>{
     if(card.pierceElements?.length)pieces.push(list(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(list(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(list(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');
+    if(card.permanentSTLoss)pieces.push('생존하면 전투 후 기본 ST가 '+card.permanentSTLoss+' 감소합니다.');
+    if(card.deathStrike){
+      const {elements,races,rate}=card.deathStrike;
+      const target=elements?list(elements):races.map(r=>raceNames[r]).join('·')+' 종족';
+      pieces.push((scroll?'두루마리 공격으로 ':'일반 공격이 명중하면 ')+target+' 상대를 '+(rate<1?Math.round(rate*100)+'% 확률로 ':'')+'즉사시킵니다.');
+    }
     if(card.instantDeathElements?.length)pieces.push('일반 공격으로 피해를 준 '+list(card.instantDeathElements)+' 상대를 60% 확률로 즉사시킵니다.');
     if(!card.firstEquipment&&Object.hasOwn(shields,name)){
       const el=list([shields[name]]);
@@ -181,7 +188,12 @@ const describeCepterItem=(()=>{
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(['begins','3ds'].includes(C.edition)&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(C.edition==='3ds'&&name==='chameleonarmor')pieces.push('교전 영지 레벨에 1을 더해 10을 곱한 만큼 전투 HP가 오릅니다.');
-    else if(C.edition==='dc'&&name==='holygrail')pieces.push('일반 공격을 무효화하고 막은 피해량의 두 배만큼 마력을 잃습니다.');
+    else if(firstEdition&&name==='neutralamulet')pieces.push('장착한 크리처가 전투 중 무속성이 됩니다.');
+    else if(firstEdition&&name==='ringofthesuccubus')pieces.push('일반 공격이 명중하면 상대의 기본 ST를 절반으로 줄입니다.');
+    else if(firstEdition&&name==='offeringdoll')pieces.push('전투에서 이기면 교전 지역에서 장착 크리처와 같은 속성의 호부 가치가 20% 오릅니다.');
+    else if(firstEdition&&name==='soulblast')pieces.push('두루마리로 준 피해량만큼 상대의 마력을 빼앗습니다.');
+    else if(firstEdition&&name==='tigerrobe')pieces.push('상대가 아이템을 장착하면 전투 ST가 40 오르고, 장착하지 않으면 20 내려갑니다.');
+    else if((firstEdition||C.edition==='dc')&&name==='holygrail')pieces.push('일반 공격을 무효화하고 막은 피해량의 두 배만큼 마력을 잃습니다.');
     else if(C.edition==='dc'&&name==='stinkbottle')pieces.push('상대가 장비로 낸 원군 크리처를 파괴합니다. 전투 후 이 카드는 북으로 돌아갑니다.');
     else if(C.edition==='dc'&&name==='chameleonarmor')pieces.push('전투 HP를 교전 영지 레벨 × 20으로 맞춥니다.');
     else if(C.edition==='dc'&&name==='goulsclaw')pieces.push('일반 공격이 명중하면 상대에게 마비를 부여합니다.');
@@ -192,7 +204,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='begins'&&name==='coinofpiety')pieces.push('장착한 크리처가 생존하면 내가 가장 많이 가진 호부 수량이 10% 증가합니다.');
     else if(C.edition==='begins'&&name==='offeringdoll')pieces.push('생존하면 장착 크리처와 같은 속성의 호부 가치가 30% 오릅니다.');
     else if(!(C.edition==='dc'&&name==='windamulet')&&!card.firstEquipment&&!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
-    if(card.protectItem||protectedItem(name)&&!(C.edition==='dc'&&['iksear','terrair'].includes(key)))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
+    if(card.protectItem||protectedItem(name)&&!((C.edition==='dc'||firstEdition)&&['iksear','terrair'].includes(key)))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };
 })();

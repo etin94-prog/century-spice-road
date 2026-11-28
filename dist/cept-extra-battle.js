@@ -39,6 +39,13 @@ const CepterExtraBattle=(()=>{
       return pick(creatures.filter(id=>id!==excluded&&(s.edition!=='begins'||cards[id].catalog.rarity!=='E')));
     }
     const chance=n=>!s.predict&&Math.random()<n;
+    const firstEdition=s.edition==='ps1'||s.edition==='saturn';
+    function gearDeath(a,d){
+      const {elements,races,rate}=a.gear.deathStrike;
+      if(d.hp>0&&(elements?.includes(d.element)||races?.includes(d.c.catalog?.race))&&(rate===1||chance(rate))){
+        d.hp=0;lines.push(a.gear.name+' · 즉사');
+      }
+    }
     const onBoard=n=>s.tiles.some(v=>fx.name(v.unit)===n);
     // A Boost provider taking part in the battle cannot affect either side.
     // Another copy elsewhere can still provide the same non-stacking bonus.
@@ -54,7 +61,7 @@ const CepterExtraBattle=(()=>{
       Object.assign(a,{u,c,n:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
       lines.push(c.name+' 변신');
     }
-    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g)&&!(s.edition==='dc'&&['iksear','terrair'].includes(a.g));}
+    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g)&&!((s.edition==='dc'||firstEdition)&&['iksear','terrair'].includes(a.g));}
     function convert(target,name){
       const remaining=target.hp;
       transform(target,ids.get(name));
@@ -269,8 +276,8 @@ const CepterExtraBattle=(()=>{
     }
     function protect(a,d,damage,scroll,penetrates,orb){
       if(scroll){
-        const blocked=d.c.neutralizeScroll||d.gear?.neutralizeScroll||scrollBlock.has(d.g)&&!(s.edition==='dc'&&d.g==='holygrail')||['battlegearbeta','bundlegear'].includes(d.n);
-        const reflected=d.g==='magussmirror'||d.n==='carbunfly'||s.edition==='saga'&&(d.n==='livingmirror'||d.g==='livingmirror')||s.edition==='revolt'&&d.g==='mirrorhoplon'&&!a.gear;
+        const blocked=d.c.neutralizeScroll||d.gear?.neutralizeScroll||scrollBlock.has(d.g)&&!((s.edition==='dc'||firstEdition)&&d.g==='holygrail')||['battlegearbeta','bundlegear'].includes(d.n);
+        const reflected=d.gear?.reflectScroll||d.g==='magussmirror'||d.n==='carbunfly'||s.edition==='saga'&&(d.n==='livingmirror'||d.g==='livingmirror')||s.edition==='revolt'&&d.g==='mirrorhoplon'&&!a.gear;
         if(reflected&&!(s.edition==='revolt'&&blocked)){a.hp-=damage;lines.push('두루마리 반사');return 'reflect';}
         if(blocked){lines.push('두루마리 무효');return 'block';}
         return;
@@ -372,6 +379,10 @@ const CepterExtraBattle=(()=>{
           if(['begins','3ds'].includes(s.edition))lines.push(a.c.name+' · 교전 영지 Lv.'+t.level);
         }
       }
+      if(itemEnd&&a.hp>0&&a.gear?.permanentSTLoss){
+        a.u.st=Math.max(0,fx.strength(a.u)-a.gear.permanentSTLoss);
+        lines.push(a.gear.name+' · 기본 ST '+a.u.st);
+      }
       if(itemEnd&&a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
       if(s.edition!=='revolt'&&a.u.enchant==='thornfetter'&&a.hp>0){
         if(s.edition==='3ds'){
@@ -447,10 +458,10 @@ const CepterExtraBattle=(()=>{
         a.u.st=Math.max(before,Math.min(100,before+10));
       }
       if(!['3ds','begins'].includes(s.edition)&&a.g==='offeringdoll'&&a.element>=0){
-        const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*1.3);
+        const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*(firstEdition?1.2:1.3));
       }
     }
-    return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,end,victory,transform,convert,vacant,ids,boost,grow};
+    return {protectedGear,itemStart,forms,baseStats,critical,protect,onHit,gearDeath,end,victory,transform,convert,vacant,ids,boost,grow};
   }
   return {rules,protectedItem};
 })();

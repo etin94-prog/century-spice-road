@@ -8166,3 +8166,68 @@ console.log('Dreamcast item effects and five Wall Transform forms, plus first-ed
   }
 }
 console.log('Dreamcast fusion, idolatry, native book size, private previews, hand destruction and region economy passed.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),id=name=>C.cards.findIndex(c=>c.catalog&&!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const run=({weapon,armor,attacker='fighter',guard='fighter',initialHP=40,guardHP=40,guardST,terrain=0,level=1,roll=.1}={})=>{
+    const s=C.start(2,2,5000,edition+'-original-marsh-paths');
+    const at=s.tiles.findIndex(t=>C.territoryType(t.type)),tile=s.tiles[at];
+    Object.assign(tile,{type:terrain,owner:1,level,unit:{id:id(guard),hp:guardHP,...(guardST==null?{}:{st:guardST})}});
+    s.phase='attack';s.battle={at,inv:id(attacker),invHP:initialHP,atkItem:null,defItem:null};
+    s.players.forEach(q=>{q.cash=1000;q.hand=[];q.book=[];});
+    if(weapon)s.players[0].hand=[id(weapon)];
+    if(armor)s.players[1].hand=[id(armor)];
+    const originalRandom=Math.random;
+    try{
+      Math.random=()=>roll;
+      assert.ok(C.play(s,weapon?['equip',0]:['bare']));
+      assert.ok(C.play(s,armor?['equip',0]:['bare']));
+    }finally{Math.random=originalRandom;}
+    return {s,tile,result:s.battle,symbol:tile.area*4+terrain};
+  };
+  assert.ok(C.validBook(C.presets.legacyGear));
+  for(const gear of ['ringofthesuccubus','holygrail','soulblast','magicbelt','tigerrobe']){
+    assert.ok(C.presets.legacyGear.includes(id(gear)),edition+' preset: '+gear);
+  }
+  const grail=run({armor:'holygrail'});
+  assert.equal(grail.result.strikes[0].effect,'block');
+  assert.equal(grail.s.players[1].cash,1000-C.cards[id('holygrail')].cost-2*C.cards[id('fighter')].st);
+  const drain=run({weapon:'soulblast',armor:'holygrail'});
+  assert.equal(drain.result.strikes[0].effect,'hit');
+  assert.equal(drain.s.players[0].cash,1000-C.cards[id('soulblast')].cost+30);
+  assert.equal(drain.s.players[1].cash,1000-C.cards[id('holygrail')].cost-30);
+  const cuffs=run({weapon:'soulblast',armor:'handcuffs'});
+  assert.equal(cuffs.result.strikes[0].effect,'reflect');
+  assert.equal(cuffs.result.defendST,0);
+  assert.equal(cuffs.result.finalHP[0],10);
+  const ring=run({weapon:'ringofthesuccubus',attacker:'goblin',initialHP:30,guardST:41});
+  assert.equal(ring.tile.unit.st,20);
+  assert.equal(ring.result.finalHP[0],10);
+  assert.equal(run({armor:'ringofthesuccubus'}).result.strikes[0].side,0);
+  assert.equal(run({armor:'ringofthevampire',attacker:'goblin',guardHP:35}).tile.unit.hp,40);
+  const coin=run({weapon:'coinofpiety',guardHP:10,terrain:2});
+  assert.equal(coin.s.players[0].symbols[coin.symbol],10);
+  const trophy=run({weapon:'offeringdoll',attacker:'minotaur',guardHP:10});
+  assert.equal(trophy.s.prices[trophy.symbol],Math.floor(C.start(2,2,5000,edition+'-original-marsh-paths').prices[trophy.symbol]*1.2));
+  const neutral=run({weapon:'neutralamulet',attacker:'minotaur',guardHP:10});
+  assert.equal(neutral.tile.unit.id,id('minotaur'));
+  assert.ok(!neutral.s.players[0].book.includes(id('neutralamulet')));
+  const terrair=run({weapon:'terrair',guard:'kingtortoise',guardHP:50,terrain:1,level:5});
+  assert.equal(terrair.result.attackST,C.cards[id('fighter')].st+40);
+  assert.match(terrair.result.lines.join(' '),/즉사/);
+  assert.match(run({weapon:'evileyeball',attacker:'goblin',roll:.79}).result.lines.join(' '),/즉사/);
+  assert.doesNotMatch(run({weapon:'evileyeball',attacker:'goblin',roll:.8}).result.lines.join(' '),/즉사/);
+  assert.match(run({weapon:'holysymbol',attacker:'goblin',guard:'skeleton',guardHP:30,roll:.79}).result.lines.join(' '),/즉사/);
+  assert.doesNotMatch(run({weapon:'holysymbol',roll:.1}).result.lines.join(' '),/즉사/);
+  const lightning=run({weapon:'lightningbolt',roll:.65});
+  assert.equal(lightning.result.won,edition==='saturn');
+  assert.equal(run({weapon:'lightningbolt',armor:'magicshield'}).result.strikes[0].effect,'block');
+  assert.equal(run({weapon:'lightningbolt',armor:'handcuffs'}).result.finalHP[0],0);
+  assert.equal(run({weapon:'sleep'}).tile.unit.enchant,'sleep');
+  assert.equal(run({weapon:'tigerrobe'}).result.attackST,Math.max(0,C.cards[id('fighter')].st-20));
+  assert.equal(run({weapon:'tigerrobe',armor:'leatherarmor'}).result.attackST,C.cards[id('fighter')].st+40);
+  const belt=run({weapon:'magicbelt',guardHP:10});
+  assert.equal(belt.result.won,true);
+  assert.equal(belt.tile.unit.st,C.cards[id('fighter')].st-(edition==='ps1'?20:10));
+}
+console.log('PS1 and Saturn battle gear, spell reflection, probability thresholds, tally and legal deck checked.');

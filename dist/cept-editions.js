@@ -707,6 +707,12 @@ const CepterEditions=(()=>{
   };
   const firstRace={人:'rh',獣:'rb',不死:'ru',植物:'rp',竜:'rd'};
   const firstAffinity={無:-1,火:0,水:1,地:2,風:3};
+  const firstBattleGear={
+    coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
+    terrair:{first:true,st:40,hp:30,deathStrike:{elements:[1,2],rate:1}},
+    evileyeball:{deathStrike:{elements:[-1],rate:.8}},holysymbol:{deathStrike:{races:['ru'],rate:.8}},
+    handcuffs:{reflectScroll:true,zeroBattleST:true},soulblast:{st:30},tigerrobe:{},
+  };
   function firstEquipmentTrait(clause,category){
     const scrollPower=clause.match(/^巻物攻撃\[ST(\d+)\]$/);
     if(scrollPower&&category==='scroll')return {st:Number(scrollPower[1])};
@@ -1014,6 +1020,10 @@ const CepterEditions=(()=>{
         Object.assign(c,{st:0,hp:0,catalogOnly:false},dreamcastGear[slug]);
       }
       if(first&&kind==='item'){
+        if(Object.hasOwn(firstBattleGear,slug))Object.assign(c,{st:0,hp:0,catalogOnly:false},firstBattleGear[slug]);
+        if(slug==='magicbelt')Object.assign(c,{catalogOnly:false,st:40,permanentSTLoss:edition==='ps1'?20:10});
+        if(slug==='lightningbolt')Object.assign(c,{catalogOnly:false,st:0,
+          deathStrike:{races:edition==='ps1'?['rh','rb','rd']:['rh','rb'],rate:edition==='ps1'?.6:.75}});
         if(slug==='handbomb')Object.assign(c,{catalogOnly:false,scrollAsItem:20});
         if(slug==='potofsouls')Object.assign(c,{catalogOnly:false,regenerateItem:true});
         if(slug==='heavyhalberd')Object.assign(c,{catalogOnly:false,last:true,st:edition==='ps1'?50:0,criticalNormal:edition==='saturn'});
@@ -1112,6 +1122,13 @@ const CepterEditions=(()=>{
         replacements.set(lookup.get('leatherarmor'),lookup.get(edition==='ps1'?'dragonshield':'earthshield'));
       }
       presets.legacyControl=presets.intro.map(id=>replacements.get(id)??id);
+    }
+    if(edition==='ps1'||edition==='saturn'){
+      const gear=new Map([
+        ['mace','ringofthesuccubus'],['leatherarmor','holygrail'],['dragonshield','holygrail'],
+        ['earthshield','holygrail'],['freeze','soulblast'],['longsword','magicbelt'],['wingedboots','tigerrobe']
+      ].map(([from,to])=>[lookup.get(from),lookup.get(to)]));
+      presets.legacyGear=presets.legacyControl.map(id=>gear.get(id)??id);
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]
