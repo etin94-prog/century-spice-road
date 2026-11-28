@@ -1,3 +1,4 @@
+import { tennis, baseballField } from './ww-field-sports.js';
 import { miniature, material } from './ww-scenery.js';
 import { range, random, games } from './ww-core.js';
 import {
@@ -255,13 +256,12 @@ function glowRing(g, x, y, r, color = gold, width = 3) {
   g.restore();
 }
 
-for (const id of [36, 37, 41])
+arcade(36, '서브 후 화면을 좌우로 끌어 선수를 이동하세요. 라켓 가운데로 받으면 안정적인 리턴, 가장자리로 받으면 크로스 샷입니다. 드라이브와 로브를 고를 수 있고 7점 이상에서 두 점 앞서면 승리합니다.', tennis);
+for (const id of [37, 41])
   arcade(
     id,
-    id === 36
-      ? '내 코트(세로 화면은 아래쪽, 가로 화면은 왼쪽)를 터치하거나 끌어서 라켓을 움직이세요. 공을 받아 상대 라켓 너머로 보내세요. 7점 이상에서 두 점 앞서면 타이브레이크 승리입니다.'
-      : id === 37
-        ? '화면을 터치하거나 끌어 내 선수 줄을 옮기세요(세로 화면은 아래쪽, 가로 화면은 왼쪽 팀). 공을 밀어 상대 골대에 5골을 먼저 넣으면 승리합니다.'
+    id === 37
+      ? '화면을 터치하거나 끌어 내 선수 줄을 옮기세요(세로 화면은 아래쪽, 가로 화면은 왼쪽 팀). 공을 밀어 상대 골대에 5골을 먼저 넣으면 승리합니다.'
         : '내 쪽 절반(세로 화면은 아래, 가로 화면은 왼쪽)에서 손가락으로 말렛을 움직여 퍽을 칩니다. 상대 골대에 5골을 먼저 넣으세요.',
     (a) => {
       const hockey = id === 41,
@@ -274,7 +274,7 @@ for (const id of [36, 37, 41])
         pause = 0,
         flash = null;
       const path = [],
-        hint = hockey ? '끌어서 말렛 이동' : football ? '끌어서 선수 줄 이동' : '끌어서 라켓 이동';
+        hint = hockey ? '끌어서 말렛 이동' : '끌어서 선수 줄 이동';
       a.aim = { ...me };
       a.status('터치해서 시작하세요');
       function info() {
@@ -305,7 +305,7 @@ for (const id of [36, 37, 41])
         score[p]++;
         flash = { p, t: a.time };
         info();
-        if (score[p] >= (id === 36 ? 7 : 5) && (id !== 36 || score[p] - score[1 - p] >= 2)) {
+        if (score[p] >= 5) {
           a.finish((p ? '상대' : '나') + ' 승리 · ' + score.join(' : '));
           return;
         }
@@ -346,18 +346,15 @@ for (const id of [36, 37, 41])
               const direction = p ? -1 : 1,
                 dy = b.y - o.y,
                 dx = b.x - o.x;
-              const hits =
-                id === 36
-                  ? Math.abs(dx) < 13 && Math.abs(dy) < 37
-                  : Math.hypot(dx, dy) < (hockey ? 26 : 21);
+              const hits = Math.hypot(dx, dy) < (hockey ? 26 : 21);
               if (hits && b.vx * direction < 0) {
-                b.x = o.x + direction * (id === 36 ? 13 : 24);
+                b.x = o.x + direction * 24;
                 b.vx = direction * clamp(Math.abs(b.vx) * 1.08 + 12, 200, 460);
-                b.vy = clamp(dy * (id === 36 ? 6 : 13), -240, 240);
+                b.vy = clamp(dy * 13, -240, 240);
               }
             }
           if (b.x < 0 || b.x > 600) {
-            if (id === 36 || Math.abs(b.y - 180) < 62) goal(b.x < 0 ? 1 : 0);
+            if (Math.abs(b.y - 180) < 62) goal(b.x < 0 ? 1 : 0);
             else {
               b.vx *= -1;
               b.x = clamp(b.x, 1, 599);
@@ -365,33 +362,21 @@ for (const id of [36, 37, 41])
           }
         },
         draw(g) {
-          surface(
-            g,
-            ...(hockey
-              ? ['#ccdfe2', '#8cb3c2']
-              : football
-                ? ['#4b9265', '#256348']
-                : ['#3b877b', '#205b63']),
-          );
-          if (!football) material(g, hockey ? 'hockey-rink' : 'tennis-lawn', 1);
-          if (football)
-            for (const i of range(6)) {
-              g.fillStyle = '#ffffff0b';
-              g.fillRect(i * 100, 0, 50, 360);
-            }
+          surface(g, ...(hockey ? ['#ccdfe2', '#8cb3c2'] : ['#4b9265', '#256348']));
+          material(g, hockey ? 'hockey-rink' : 'sport-pitch', 1);
           g.strokeStyle = hockey ? '#60899b' : '#e7e4c9aa';
           g.lineWidth = 2;
           g.strokeRect(10, 10, 580, 340);
           line(g, 300, 10, 300, 350, g.strokeStyle, 3);
-          if (football || hockey) {
-            circle(g, 300, 180, 48, g.strokeStyle, true);
-            for (const x of [0, 556]) g.strokeRect(x, 112, 44, 136);
-          } else {
-            g.strokeRect(95, 53, 410, 254);
-            line(g, 95, 180, 505, 180, '#e7e4c9aa');
-            for (let y = 45; y <= 315; y += 6) line(g, 295, y, 303, y, '#d7dacbcc', 1);
-            for (const x of [295, 299, 303]) line(g, x, 45, x, 315, '#e3dfcb', 1);
-            for (const y of [42, 318]) disc(g, ball(299, y, 5, '#785739'));
+          circle(g, 300, 180, 48, g.strokeStyle, true);
+          for (const x of [0, 556]) g.strokeRect(x, 112, 44, 136);
+          if (football) {
+            // Polished rods beneath the sliding wooden figures.
+            for (const x of [105, 260, 340, 495]) {
+              line(g, x+2, 10, x+2, 350, '#15251d63', 4);
+              line(g, x, 10, x, 350, '#869596', 3);
+              line(g, x-1, 10, x-1, 350, '#d6dbcf', 1);
+            }
           }
           // Big faint score on each half: readable without looking up at the status rail.
           g.save();
@@ -432,21 +417,10 @@ for (const id of [36, 37, 41])
               if (!p) {
                 g.save();
                 g.globalAlpha = 0.55;
-                if (id === 36) {
-                  g.fillStyle = '#ffd76a55';
-                  g.beginPath();
-                  g.ellipse(o.x, o.y, 15, 38, 0, 0, Math.PI * 2);
-                  g.fill();
-                } else glowRing(g, o.x, o.y, hockey ? 23 : 18, gold, 2);
+                glowRing(g, o.x, o.y, hockey ? 23 : 18, gold, 2);
                 g.restore();
               }
-              if (id === 36) {
-                if (miniature(g, p ? 'red-paddle' : 'jade-paddle', o.x, o.y, 27, 64)) continue;
-                g.fillStyle = p ? red : cream;
-                g.beginPath();
-                g.roundRect(o.x - 5, o.y - 32, 10, 64, 5);
-                g.fill();
-              } else if (
+              if (
                 !a.upright(g, o.x, o.y, (x, y) =>
                   miniature(
                     g,
@@ -662,7 +636,7 @@ arcade(
 );
 arcade(
   40,
-  '3이닝 동안 공격과 수비를 번갈아 합니다. 공격에서는 공이 타석의 띠에 닿을 때 스윙하세요. 수비에서는 완급을 골라 던집니다. 3스트라이크는 아웃이고 3아웃이면 공수가 교대됩니다.',
+  '3이닝 동안 공격과 수비를 번갈아 합니다. 공격에서는 공이 홈플레이트에 닿을 때 스윙하세요. 수비에서는 완급을 골라 던집니다. 3스트라이크는 아웃이고 3아웃이면 공수가 교대됩니다.',
   (a) => {
     let pitch = -1,
       outs = 0,
@@ -675,8 +649,8 @@ arcade(
       cpuSwing = 1,
       shout = null;
     const runs = [0, 0],
-      target = 465,
-      path = [];
+      plateTime = 1;
+    let contactAt = -10, play = null;
     const hud = a.hud('scoreboard');
     hud.innerHTML =
       '<p class="inning"><b></b><span></span></p>' +
@@ -728,11 +702,11 @@ arcade(
       sync();
     }
     function start(fast = false) {
+      if (play) return a.reject('타구와 주자가 이동 중이에요');
       if (pitch >= 0) return;
       pitch = 0;
-      path.length = 0;
       speed = batting ? (fast ? 1.45 : 0.78) : 0.75 + Math.random() * 0.55;
-      cpuSwing = (target - 85) / 355 + (Math.random() - 0.5) * (fast ? 0.58 : 0.45);
+      cpuSwing = plateTime + (Math.random() - 0.5) * (fast ? 0.58 : 0.45);
       note = batting ? '상대 타석' : '공을 보고 스윙하세요';
       info();
     }
@@ -741,7 +715,10 @@ arcade(
         if (!batting) start();
         return;
       }
-      const accuracy = Math.abs(85 + pitch * 355 - target);
+      const timing = pitch - plateTime;
+      const accuracy = Math.abs(timing * 355);
+      contactAt = a.time;
+      if (accuracy <= 43 && typeof cardAudio !== 'undefined') cardAudio.cue('bat');
       pitch = -1;
       if (accuracy > 43) {
         strikes++;
@@ -756,6 +733,8 @@ arcade(
         note = steps === 4 ? '홈런' : steps === 2 ? '2루타' : '안타';
         strikes = 0;
         const runners = [1, ...bases];
+        play = { start: a.time, duration: .78 + steps*.17, steps, runners,
+          x: clamp(300 - timing * 1540, 60, 540), y: 172 - steps*25 };
         bases = [0, 0, 0];
         runners.forEach((v, i) => {
           if (!v) return;
@@ -813,43 +792,10 @@ arcade(
           pitch += dt * speed;
           if ((batting && pitch >= cpuSwing) || pitch > 1.48) swing();
         }
-        sync();
+        if (play && a.time - play.start >= play.duration) play = null;
       },
       draw(g) {
-        surface(g, '#326b55', '#1e453c');
-        const park = material(g, 'ballpark', 1);
-        if (!park) {
-          g.save();
-          g.translate(300, 250);
-          g.rotate(-Math.PI / 4);
-          g.fillStyle = '#bd9471';
-          g.fillRect(0, 0, 125, 125);
-          g.fillStyle = '#608766';
-          g.fillRect(12, 12, 101, 101);
-          g.restore();
-        }
-        const markers = park ? [[404, 210], [298, 145], [187, 210]] : [[389, 162], [300, 73], [211, 162]];
-        markers.forEach(([x, y], i) => {
-          if (bases[i]) glowRing(g, x, y, 12, gold, 2);
-          if (bases[i] || !park) disc(g, ball(x, y, 8, bases[i] ? red : cream));
-        });
-        g.fillStyle = '#172719ab';
-        g.fillRect(63, 259, 482, 62);
-        miniature(g, 'bat', target, 327, 73, 18);
-        line(g, 75, 290, 535, 290, '#d2dfcaaa', 2);
-        // The hitting band glows as the ball reaches it; the centre line is the perfect swing.
-        const x = 85 + pitch * 355,
-          near = pitch >= 0 ? clamp(1 - Math.abs(x - target) / 120, 0, 1) : 0;
-        g.fillStyle = '#e5ce84' + (near > 0.05 ? 'aa' : '66');
-        g.fillRect(target - 18, 265, 36, 50);
-        if (near > 0) glowRing(g, target, 290, 26 + 6 * near, '#ffe08a', 2 + 2 * near);
-        line(g, target, 263, target, 317, '#fff6d8', 2);
-        if (pitch >= 0) {
-          const y = 290 - 20 * Math.sin(pitch * Math.PI);
-          remember(path, { x, y }, 5);
-          trail(g, path, 8, '#fff6dc');
-          if (!miniature(g, 'baseball', x, y, 18, 18)) disc(g, ball(x, y, 9, cream));
-        }
+        baseballField(g, a, bases, pitch, contactAt, play, batting);
         if (shout && a.time - shout.t < 1.1 && !a.over())
           a.tag(g, shout.text, 300, 92, 24, '#fff8dd', shout.good ? '#7a5a18e6' : '#3b4752e6');
       },
@@ -918,8 +864,14 @@ arcade(
       },
       draw(g) {
         surface(g, '#62876c', '#3b614e');
-        a.upright(g, 80, 49, (x, y) => miniature(g, 'pines', x, y, 80, 66));
-        a.upright(g, 480, 316, (x, y) => miniature(g, 'rocks', x, y, 82, 52));
+        material(g, 'sport-race', 1);
+        g.save();
+        g.shadowColor = '#13201bab';
+        g.shadowBlur = 6; g.shadowOffsetY = 5;
+        g.beginPath();
+        g.ellipse(300, 180, 234, 107, 0, 0, Math.PI*2);
+        g.strokeStyle = '#383d3e'; g.lineWidth = 44; g.stroke();
+        g.restore();
         for (const r of [0, 1]) {
           g.beginPath();
           g.ellipse(300, 180, 225 + r * 18, 100 + r * 15, 0, 0, 2 * Math.PI);
@@ -929,6 +881,12 @@ arcade(
           g.lineWidth = 2;
           g.strokeStyle = '#a39f8e';
           g.stroke();
+        }
+        for (let j=0; j<5; j++) {
+          for (let k=0; k<2; k++) {
+            g.fillStyle = (j+k)%2 ? '#22262a' : '#f2ecda';
+            g.fillRect(517+j*7, 179+k*6, 7, 6);
+          }
         }
         // Curve zones on my lane: too fast here means a skid.
         for (const mid of [0, Math.PI]) {

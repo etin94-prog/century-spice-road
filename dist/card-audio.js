@@ -37,8 +37,20 @@ const cardAudio = (() => {
     oscillator.start(time);
     oscillator.stop(time + duration);
   }
+  const arrangement = typeof worldwideMusic === 'undefined' ? null : worldwideMusic;
+  let nextBeat = 0;
   function musicBeat() {
     if (context.state !== 'running' || document.hidden || !volume.music) return;
+    if (arrangement) {
+      const now = context.currentTime;
+      if (nextBeat < now) nextBeat = now + .014;
+      while (nextBeat < now + .12) {
+        arrangement.render(beat++, nextBeat, (pitch, time, duration, level, wave) =>
+          tone(buses.music, pitch, time, duration, level, wave));
+        nextBeat += arrangement.interval;
+      }
+      return;
+    }
     const [root, chord] = music[Math.floor(beat/8) % music.length];
     const step = beat++ % 8;
     const now = context.currentTime + .015;
@@ -78,7 +90,8 @@ const cardAudio = (() => {
   }
   function startMusic() {
     if (timer || !volume.music || document.hidden) return;
-    timer = setInterval(musicBeat, 335);
+    nextBeat = 0;
+    timer = setInterval(musicBeat, arrangement ? 60 : 335);
   }
   function whenReady(play) {
     if (document.hidden) return;
@@ -101,11 +114,20 @@ const cardAudio = (() => {
     source.start(time);
     if (land) tone(buses.effects, 43, time, .085, .22);
   }
+  const impacts = {
+    racket: [[62,.066,.16,'triangle'],[88,.035,.07,'sine']],
+    bounce: [[47,.085,.14,'sine']], bat: [[50,.13,.21,'triangle'],[85,.044,.16,'triangle']],
+    putt: [[73,.06,.12,'sine']], iron: [[77,.1,.16,'triangle'],[99,.055,.08,'sine']],
+    cup: [[76,.13,.14,'sine'],[88,.22,.08,'sine']],
+  };
   function cue(kind, count = 1) {
     if (!volume.effects) return;
     whenReady(() => {
       const now = context.currentTime + .008;
-      if (kind === 'chip') {
+      if (Object.hasOwn(impacts, kind)) {
+        impacts[kind].forEach(([pitch, duration, gain, wave], i) =>
+          tone(buses.effects, pitch, now + i*.014, duration, gain, wave));
+      } else if (kind === 'chip') {
         tone(buses.effects, 90, now, .06, .15, 'triangle');
       } else {
         for (let i=0; i<Math.min(count, 4); i++) paper(now + i*.054, kind === 'land');
@@ -157,6 +179,8 @@ const cardAudio = (() => {
     panel.querySelector('#card-' + name + '-value').value = volume[name] + '%';
   }
   panel.querySelector('[data-audio-preview]').onclick = () => result('win');
+  document.addEventListener('pointerup', unlock, true);
+  document.addEventListener('keydown', unlock, true);
   document.addEventListener('click', unlock, true);
   document.addEventListener('visibilitychange', () => {
     if (!context) return;

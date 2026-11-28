@@ -189,7 +189,7 @@ export function sport(id, rules, setup) {
         if (!pressed || ui.ended || e.isPrimary === false) return;
         const end = point(e);
         A.aim = end;
-        if (typeof cardAudio !== 'undefined') cardAudio.cue('chip');
+        if (![31, 36, 40].includes(id) && typeof cardAudio !== 'undefined') cardAudio.cue('chip');
         game.tap?.(end, pressed);
         pressed = null;
       };

@@ -441,3 +441,16 @@ html[data-table="world"] .shots .pips i.p5 { background: #f3c85a; box-shadow: 0 
   html[data-table="world"] #surface.arcade .studio-key.is-hot { animation: none; }
   html[data-table="world"] .fight .hp i { transition: none; }
 }
+
+.tennis-steer { display: none; }
+html[data-table="world"] #surface.arcade .studio-key[hidden] { display: none; }
+@media (orientation: portrait) {
+  html:not(.card-landscape) body[data-game="36"] #surface.arcade > .arena { margin-block: auto 0; }
+  html:not(.card-landscape) body[data-game="36"] #surface.arcade > .tennis-steer {
+    display: grid; gap: 2px; width: min(92%, 480px); align-self: center;
+    margin: 16px auto auto; padding: 8px 12px 2px; box-sizing: border-box;
+    border-radius: 12px; color: #fff0d1; background: #16382ed9; font-size: 14px;
+  }
+  .tennis-steer input { width: 100%; min-height: 44px; margin: 0; accent-color: #e8b879; }
+  html:not(.card-landscape) body[data-game="36"] #surface.arcade > .arcade-pads { margin-top: 0; }
+}

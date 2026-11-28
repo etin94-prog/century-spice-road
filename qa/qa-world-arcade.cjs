@@ -86,9 +86,9 @@ const ids = process.argv.slice(2).length
           while (stop.hidden && i++ < limit) {
             if (id === 31) {
               const goals = [
-                  [488, 121],
-                  [469, 235],
-                  [500, 173],
+                  [518, 46],
+                  [469, 240],
+                  [500, 145],
                 ],
                 n = Number(score()[0]) || 1;
               tap(...goals[n - 1]);

@@ -434,116 +434,119 @@ sport(
   (a) => {
     const v = table(a, 'turn', (pt) => hit(pt), {
       aimed: '조준했어요 · 샷 버튼으로 쳐요',
-      rolling: '공이 굴러가는 중…',
+      rolling: '샷 진행 중 · 착지 후 다음 샷',
       wait: () => (moving ? '공이 멈추면 칠 수 있어요' : ''),
     });
     const holes = [
-        { x: 488, y: 121 },
-        { x: 469, y: 235 },
-        { x: 500, y: 173 },
-      ],
-      sand = [
-        { x: 320, y: 155, r: 48 },
-        { x: 394, y: 240, r: 36 },
-      ];
-    let hole = 0,
-      count = 0,
-      teed = 0,
-      moving = false;
+      { x: 518, y: 46, tee: [66, 314], art: 'course', wind: [8, 3], par: 4, name: '해안 링크스', bunkers: [[332, 125, 29]] },
+      { x: 469, y: 240, tee: [72, 82], art: 'alpine', wind: [-9, 4], par: 4, name: '알프스 호반', bunkers: [[542, 197, 23], [544, 316, 31]], naturalSand: true },
+      { x: 500, y: 145, tee: [64, 312], art: 'orchard', wind: [5, -8], par: 3, name: '단풍 골짜기', bunkers: [[362, 206, 34]] },
+    ];
+    let hole = 0, count = 0, teed = 0, moving = false, flight = null, height = 0;
     const cards = [];
-    const b = ball(75, 245, 6, cream);
-    a.aim = { ...holes[0] };
-    function score() {
-      a.score([hole + 1 + ' / 3홀', count + '타']);
+    const b = ball(...holes[0].tee, 6, cream);
+    const cup = () => holes[hole];
+    const inSand = () => cup().bunkers.some(([x,y,r]) => ((b.x-x)/r)**2 + ((b.y-y)/(r*.47))**2 < 1);
+    const club = () => dist(b,cup()) < 62 ? '퍼터' : inSand() ? '웨지' : '아이언';
+    a.aim = { x: cup().x, y: cup().y };
+    function score() { a.score([hole + 1 + ' / 3홀', cup().name + ' · PAR ' + cup().par, count + '타']); }
+    function prompt() { a.status(club() + ' · 바람 ' + (cup().wind[0] < 0 ? '↙' : cup().wind[1] < 0 ? '↗' : '↘') + ' · 눌러서 샷'); }
+    score(); prompt(); a.force(); meter(a);
+    function plan(pt) {
+      const dx = pt.x-b.x, dy = pt.y-b.y, distance = Math.hypot(dx,dy);
+      const putt = club() === '퍼터' || distance < 52;
+      const reach = Math.min(distance, (putt ? 110 : inSand() ? 295 : 615) * a.power);
+      const carry = putt ? 0 : .86;
+      const duration = putt ? 0 : .47 + reach/690;
+      const ratio = reach / Math.max(1,distance);
+      const x = clamp(b.x + dx*ratio + cup().wind[0]*duration*duration, 10, 590);
+      const y = clamp(b.y + dy*ratio + cup().wind[1]*duration*duration, 10, 350);
+      return { x, y, landX:b.x+(x-b.x)*carry, landY:b.y+(y-b.y)*carry, duration,
+        peak: putt ? 0 : Math.min(68, 15 + reach*.115), originX:b.x, originY:b.y, age:0 };
     }
-    score();
-    a.status('홀 쪽을 누르면 샷 · 끌면 조준만 해요');
-    a.force();
-    meter(a);
+    function roll(f) {
+      b.vx = (f.x-b.x)*2.15;
+      b.vy = (f.y-b.y)*2.15;
+    }
     function hit(pt) {
       if (moving) return '공이 멈추면 칠 수 있어요';
-      shoot(b, pt, Math.min(660 * a.power, dist(b, pt) * 2.15));
-      count++;
-      moving = true;
-      score();
+      if (dist(b,pt)<1) return '공을 보낼 지점을 눌러 주세요';
+      if (typeof cardAudio !== 'undefined') cardAudio.cue(club() === '퍼터' ? 'putt' : 'iron');
+      flight = plan(pt);
+      moving = true; count++; score();
+      if (!flight.duration) { roll(flight); flight=null; }
     }
     key(a, '샷', v.shoot, v);
     return {
-      tap: v.tap,
-      down: v.down,
-      move: v.move,
+      tap:v.tap, down:v.down, move:v.move,
       step(dt) {
         if (!moving) return;
-        advance(b, dt, sand.some((s) => dist(b, s) < s.r) ? 0.935 : 0.967);
-        bounds(b, 12, 12, 588, 348, 0.45);
-        if (dist(b, holes[hole]) < 13 && Math.hypot(b.vx, b.vy) < 155) {
-          moving = false;
-          const strokes = count - teed;
-          cards.push(strokes);
-          if (hole === 2) {
-            a.finish('3홀 완료 · 총 ' + count + '타', cards.map((s, i) => i + 1 + '번 ' + s + '타').join(' · '));
+        if (flight) {
+          const f = flight, t = Math.min(1,(f.age+=dt)/f.duration);
+          b.x = f.originX + (f.landX-f.originX)*t;
+          b.y = f.originY + (f.landY-f.originY)*t;
+          height = 4*t*(1-t)*f.peak;
+          if (t<1) return;
+          flight=null; roll(f);
+        }
+        advance(b,dt,inSand() ? .915 : .965);
+        bounds(b,4,4,596,356,.28);
+        if (dist(b,cup()) < 10 && Math.hypot(b.vx,b.vy)<112) {
+          moving=false;
+          if (typeof cardAudio !== 'undefined') cardAudio.cue('cup');
+          cards.push(count-teed);
+          if (hole === holes.length-1) {
+            a.finish('3홀 완료 · 총 '+count+'타',cards.map((s,i)=>(i+1)+'번 '+s+'타').join(' · '));
             return;
           }
-          teed = count;
-          hole++;
-          Object.assign(b, { x: 68, y: hole === 1 ? 74 : 265, vx: 0, vy: 0 });
-          a.aim = { ...holes[hole] };
-          score();
-          a.status(hole + '번 홀 ' + strokes + '타 컵인! · ' + (hole + 1) + '번 홀 티샷');
-        } else if (!b.vx && !b.vy) {
-          moving = false;
-          a.status(hole + 1 + '번 홀 ' + (count - teed + 1) + '타째 · 홀 쪽을 누르세요');
-        }
+          teed=count; hole++;
+          Object.assign(b,{x:cup().tee[0],y:cup().tee[1],vx:0,vy:0});
+          a.aim={x:cup().x,y:cup().y}; score(); prompt();
+        } else if (!b.vx && !b.vy) { moving=false; prompt(); }
       },
       draw(g) {
         v.begin(g);
-        surface(g, '#285c47', '#15392f');
-        g.save();
-        g.translate(300, 180);
-        g.rotate(-0.15);
-        g.scale(1, 0.58);
-        circle(g, 0, 0, 266, '#73a668');
-        g.clip();
-        material(g, 'grass', 0.54, -266, -266, 532, 532);
-        g.restore();
-        material(g, 'putting-green', 1);
-        for (const s of sand) {
-          g.save();
-          g.translate(s.x, s.y);
-          g.scale(1, 0.52);
-          circle(g, 0, 0, s.r, '#d5b679');
-          g.clip();
-          material(g, 'sisal', 0.5, -s.r, -s.r, 2 * s.r, 2 * s.r);
-          g.restore();
+        const h=cup(), [dx,dy]=v.below;
+        g.fillStyle='#567540'; g.fillRect(0,0,600,360);
+        material(g,'sport-'+h.art,1);
+        for (const [x,y,r] of h.bunkers) {
+          if (h.naturalSand) continue;
+          g.save(); g.translate(x,y); g.scale(r,r*.47);
+          g.beginPath(); g.moveTo(-.98,.16);
+          g.bezierCurveTo(-1.12,-.52,-.57,-1.04,-.12,-.78);
+          g.bezierCurveTo(.34,-.46,.49,-1.05,.89,-.57);
+          g.bezierCurveTo(1.24,-.1,.88,.82,.23,.85);
+          g.bezierCurveTo(-.32,1.02,-.83,.75,-.98,.16);
+          const sand = g.createLinearGradient(-.2,-1,.3,.8);
+          sand.addColorStop(0,'#6e6539'); sand.addColorStop(.17,'#b99d67');
+          sand.addColorStop(.46,'#e2c891'); sand.addColorStop(1,'#d4b178');
+          g.fillStyle=sand; g.fill(); g.clip();
+          material(g,'sisal',.13,-1,-1,2,2); g.restore();
         }
-        sprite(g, v, 'pines', 43, 37, 69, 67);
-        sprite(g, v, 'rocks', 555, 315, 70, 46);
-        wash(g, a);
-        const cup = holes[hole];
-        circle(g, cup.x, cup.y, 30, '#8bb77a');
-        ring(g, cup.x, cup.y, 30, '#d8f0b955', 1.5);
-        circle(g, cup.x, cup.y, 8, '#15312d');
-        ring(g, cup.x, cup.y, 8, '#e9f6d2aa', 1.5);
-        v.upright(g, cup.x, cup.y, () => {
-          line(g, 1.5, 0, 1.5, -43, '#0b1d1777', 2);
-          line(g, 0, 0, 0, -43, cream);
-          g.fillStyle = red;
-          g.beginPath();
-          g.moveTo(0, -43);
-          g.lineTo(25, -36);
-          g.lineTo(0, -29);
-          g.fill();
-          label(g, hole + 1, 9, -32.5, 9, '#fff8dd');
+        v.upright(g,h.x,h.y,()=>{
+          g.fillStyle='#252d18'; g.beginPath(); g.ellipse(0,0,6,3,0,0,Math.PI*2); g.fill();
+          line(g,0,0,0,-29,'#fff5d4',2);
+          g.fillStyle='#b73437'; g.beginPath(); g.moveTo(0,-30); g.lineTo(20,-26);
+          g.lineTo(0,-19); g.fill(); label(g,hole+1,6,-23,7,'#fff');
         });
-        // aim: dotted line from the ball to the chosen point
         if (!moving && !v.ended) {
-          dash(g, b.x, b.y, a.aim.x, a.aim.y, '#fff7dfcc', 2, [3, 6]);
-          reticle(g, a.aim.x, a.aim.y);
-          ring(g, b.x, b.y, 13, '#fff7df99', 2, [4, 4]);
+          const f=plan(a.aim);
+          dash(g,b.x,b.y,f.landX,f.landY,'#fff6cdbb',1.6,[2,6]);
+          reticle(g,f.x,f.y);
         }
-        contact(g, v, b.x, b.y, b.r);
-        if (!sprite(g, v, 'golf-ball', b.x, b.y, b.r * 2.2, b.r * 2.2)) orb(g, v, b);
-        flash(g, a, v);
+        if (flight && flight.age > 0) {
+          const t = flight.age/flight.duration;
+          const prev = Math.max(0,t-.045);
+          const prevHeight = 4*prev*(1-prev)*flight.peak;
+          const tailX = flight.originX+(flight.landX-flight.originX)*prev-dx*prevHeight;
+          const tailY = flight.originY+(flight.landY-flight.originY)*prev-dy*prevHeight;
+          line(g,tailX,tailY,b.x-dx*height,b.y-dy*height,'#fff7dcc9',2);
+        }
+        contact(g,v,b.x,b.y,b.r+height*.06,.52-height*.004);
+        const size=12+height*.07;
+        if (!sprite(g,v,'golf-ball',b.x-dx*height,b.y-dy*height,size,size))
+          orb(g,v,{...b,x:b.x-dx*height,y:b.y-dy*height});
+        flash(g,a,v);
       },
     };
   },
