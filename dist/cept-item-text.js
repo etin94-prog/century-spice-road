@@ -194,7 +194,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(['begins','3ds'].includes(C.edition)&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(C.edition==='3ds'&&name==='chameleonarmor')pieces.push('교전 영지 레벨에 1을 더해 10을 곱한 만큼 전투 HP가 오릅니다.');
-    else if(firstEdition&&name==='belloflaw')pieces.push('상대 손패에서 마력 비용이 가장 높은 카드 한 장을 파괴합니다.');
+    else if(firstEdition&&name==='belloflaw')pieces.push('장착한 크리처가 생존하면 전투 종료 시 상대 손패에서 마력 비용이 가장 높은 카드 한 장을 파괴합니다.');
     else if(firstEdition&&name==='neutralamulet')pieces.push('장착한 크리처가 전투 중 무속성이 됩니다.');
     else if(firstEdition&&name==='ringofthesuccubus')pieces.push('일반 공격이 명중하면 상대의 기본 ST를 절반으로 줄입니다.');
     else if(firstEdition&&name==='offeringdoll')pieces.push('전투에서 이기면 교전 지역에서 장착 크리처와 같은 속성의 호부 가치가 20% 오릅니다.');

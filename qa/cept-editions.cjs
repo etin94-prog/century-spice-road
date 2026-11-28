@@ -8435,9 +8435,11 @@ for(const edition of ['ps1','saturn']){
     assert.ok(C.play(s,armor?['equip',0]:['bare']));
     return {s,tile,b:s.battle};
   };
-  const bell=run({attacker:'goblin',weapon:'belloflaw',hand:['goblin','holygrail']});
+  const bell=run({attacker:'goblin',guard:'goblin',weapon:'belloflaw',hand:['goblin','holygrail']});
   assert.deepEqual(bell.s.players[1].hand,[id('goblin')]);
   assert.ok(!bell.s.players[0].book.includes(id('belloflaw')));
+  const deadBell=run({attacker:'goblin',weapon:'belloflaw',hand:['goblin','holygrail']});
+  assert.deepEqual(deadBell.s.players[1].hand,[id('goblin'),id('holygrail')]);
   const torch=run({attacker:'goblin',armor:'queenstorch',life:20});
   assert.equal(torch.b.strikes[0].effect,'heal');
   assert.equal(torch.tile.unit.hp,40);

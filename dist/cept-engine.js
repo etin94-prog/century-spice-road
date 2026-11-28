@@ -970,6 +970,11 @@ function createCepter(edition="ps2"){
     const muted=fieldMuted||disk,initialLand=disk?battleGround(s,b).hp:null;
     if(disk)lines.push('워록 디스크 · 장비와 전투 능력 무효');
     const useGear=(a,src)=>{a.gear=src?.gear;a.g=src?.g;a.item=src?.item;};
+    function destroyHighestCostHandCard(player){
+      if(s.predict||!player.hand.length)return;
+      const costs=player.hand.map(id=>cards[id].cost);
+      player.hand.splice(costs.indexOf(Math.max(...costs)),1);
+    }
     const mimic=a=>begins&&a.n==='sonascetic'&&a.gear?.kind==='creature'?a.gear:null;
     const battleAbility=a=>key(mimic(a))||a.n;
     const protection=a=>extra.protectedGear(a)||mimic(a)?.protectGear;
@@ -1025,7 +1030,7 @@ function createCepter(edition="ps2"){
         const max=fx.max(a.u),gain=Math.max(0,Math.min(begins||revolt||edition==='saga'?100:80,max+a.gear.hp)-max);
         a.u.mhp=max+gain;a.u.hp+=gain;
       }
-      if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
+      if(!firstEdition&&a.g==='belloflaw')destroyHighestCostHandCard(other);
       if((handheld||begins)&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
       if((handheld||begins)&&a.n==='camazotz')a.st+=baseStrength[a===A?1:0];
       if((begins||edition==='saga')&&a.n==='avenger'){
@@ -1745,8 +1750,14 @@ function createCepter(edition="ps2"){
         if(gain>0){symbols[symbols.indexOf(most)]+=gain;lines.push(a.gear.name+' · 호부 '+gain+'개 증가');}
       }
     }
-    if(itemEnd)for(const a of sides)if(a.hp>0&&a.gear?.finalHP!=null){
-      a.hp=a.gear.finalHP;lines.push(a.gear.name+' · 전투 종료 HP '+a.hp);
+    if(itemEnd)for(const a of sides){
+      if(a.hp<=0)continue;
+      if(a.gear?.finalHP!=null){a.hp=a.gear.finalHP;lines.push(a.gear.name+' · 전투 종료 HP '+a.hp);}
+      if(firstEdition&&a.g==='belloflaw'){
+        const rival=s.players[(a===A?D:A).seat],before=rival.hand.length;
+        destroyHighestCostHandCard(rival);
+        if(rival.hand.length<before)lines.push(a.gear.name+' · 상대의 고비용 카드 파괴');
+      }
     }
     const onLand=a=>a.hp>0&&a.away==null&&!a.stolen&&!a.returned;
     const won=!onLand(D)&&onLand(A),empty=!onLand(D)&&!onLand(A);
