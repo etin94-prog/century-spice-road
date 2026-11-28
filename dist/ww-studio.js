@@ -1,4 +1,6 @@
 import { register, element } from './ww-core.js';
+import { material } from './ww-scenery.js';
+const surfaces = {31:'grass',32:'walnut',33:'walnut',34:'walnut',35:'walnut',36:'felt',37:'grass',38:'ice',39:'felt',40:'grass',41:'ice',42:'grass',43:'water',44:'terrain',45:'terrain',46:'walnut'};
 export const W = 600,
   H = 360,
   clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
@@ -15,7 +17,8 @@ export function disc(g, o) {
   const fill = g.createRadialGradient(x - r * 0.35, y - r * 0.45, 0, x, y, r);
   fill.addColorStop(0, '#fff9dd');
   fill.addColorStop(0.3, color);
-  fill.addColorStop(1, color);
+  fill.addColorStop(0.72, color);
+  fill.addColorStop(1, '#233031');
   g.fillStyle = fill;
   g.beginPath();
   g.arc(x, y, r, 0, Math.PI * 2);
@@ -58,7 +61,9 @@ export function surface(g, light, dark, grain = false) {
   shade.addColorStop(1, dark);
   g.fillStyle = shade;
   g.fillRect(0, 0, W, H);
-  if (grain) for (let x = 0; x < 600; x += 24) line(g, x, 0, x - 25, H, '#fff2ca20', 1);
+  const texture = surfaces[g.canvas?.dataset?.game];
+  if (texture) material(g, texture, 0.59);
+  else if (grain) for (let x = 0; x < 600; x += 24) line(g, x, 0, x - 25, H, '#fff2ca20', 1);
 }
 export function advance(o, dt, drag = 1) {
   o.x += o.vx * dt;
@@ -108,6 +113,7 @@ export function sport(id, rules, setup) {
       if (mounted) return;
       mounted = true;
       const canvas = element('canvas', 'arena');
+      canvas.dataset.game = id;
       canvas.width = 900;
       canvas.height = 540;
       canvas.tabIndex = 0;

@@ -1,3 +1,4 @@
+import { miniature, material } from './ww-scenery.js';
 import { range, random } from './ww-core.js';
 import {
   sport,
@@ -72,6 +73,8 @@ sport(
         g.rotate(-0.15);
         g.scale(1, 0.58);
         circle(g, 0, 0, 266, '#73a668');
+        g.clip();
+        material(g, 'grass', 0.54, -266, -266, 532, 532);
         g.restore();
         for (const s of sand) {
           g.save();
@@ -335,6 +338,7 @@ for (const id of [32, 35])
           surface(g, '#af8459', '#674a35', true);
           g.fillStyle = carrom ? '#dfa974' : '#25725d';
           g.fillRect(carrom ? 136 : 17, 17, carrom ? 328 : 566, 326);
+          material(g, carrom ? 'maple' : 'felt', 0.67, carrom ? 136 : 17, 17, carrom ? 328 : 566, 326);
           if (carrom) {
             circle(g, 300, 180, 62, '#9a553a', true);
             line(g, 173, 67, 427, 67, '#9a553a', 3);
@@ -450,14 +454,14 @@ sport(
         surface(g, '#664831', '#322b2d');
         g.fillStyle = '#d9aa70';
         g.fillRect(12, 52, 576, 256);
+        material(g, 'maple', 0.76, 12, 52, 576, 256);
         for (let y = 60; y < 308; y += 13) line(g, 12, y, 588, y, '#995d303d');
         for (let i = 0; i < 7; i++)
           label(g, '▸', 260 + Math.abs(i - 3) * 8, 112 + i * 24, 14, '#805c3f');
         for (const p of pins.filter((v) => v.live)) {
-          disc(g, p);
-          circle(g, p.x, p.y, 4, red);
+          if (!miniature(g, 'pin', p.x, p.y - 4, 17, 27)) disc(g, p);
         }
-        disc(g, b);
+        if (!miniature(g, 'bowling-ball', b.x, b.y, b.r * 2, b.r * 2)) disc(g, b);
       },
     };
   },
@@ -628,7 +632,9 @@ sport(
           [10, cream],
         ])
           circle(g, target.x, target.y, r, c);
-        stones.forEach((b) => disc(g, b));
+        stones.forEach((b) => {
+          if (!miniature(g, b.p ? 'blue-curling' : 'red-curling', b.x, b.y, 26, 26)) disc(g, b);
+        });
       },
     };
   },

@@ -1,3 +1,4 @@
+import { miniature } from './ww-scenery.js';
 import { range, random } from './ww-core.js';
 import {
   sport,
@@ -137,19 +138,28 @@ for (const id of [36, 37, 41])
             g.strokeRect(95, 53, 410, 254);
             line(g, 95, 180, 505, 180, '#e7e4c9aa');
           }
+          if (football) {
+            for (const x of [105, 260, 340, 495]) {
+              line(g, x + 2, 0, x + 2, 360, '#13292155', 5);
+              line(g, x, 0, x, 360, '#74807b', 3);
+              line(g, x - 1, 0, x - 1, 360, '#ddd9c3', 1);
+            }
+          }
           for (const p of [0, 1])
             for (const o of players(p)) {
               if (id === 36) {
+                if (miniature(g, p ? 'red-paddle' : 'jade-paddle', o.x, o.y, 27, 64)) continue;
                 g.fillStyle = p ? red : cream;
                 g.beginPath();
                 g.roundRect(o.x - 5, o.y - 32, 10, 64, 5);
                 g.fill();
-              } else {
+              } else if (!miniature(g, hockey ? (p ? 'red-mallet' : 'teal-mallet') :
+                (p ? 'red-player' : 'blue-player'), o.x, o.y, hockey ? 40 : 32, hockey ? 40 : 44)) {
                 disc(g, ball(o.x, o.y, hockey ? 20 : 14, p ? red : blue));
                 circle(g, o.x, o.y, hockey ? 9 : 5, p ? '#784b45' : '#246372');
               }
             }
-          disc(g, b);
+          if (!football || !miniature(g, 'football', b.x, b.y, b.r * 2, b.r * 2)) disc(g, b);
         },
       };
     },
@@ -238,6 +248,16 @@ sport(
             c = p ? red : blue,
             reach = (p ? aiSwing : mySwing) > a.time ? 76 : 0,
             high = p ? (strike ? tell : aiGuard) : guard;
+          const lunging = reach > 0;
+          const drawn = miniature(g, p ? 'red-boxer' : 'teal-boxer',
+            x + s * (lunging ? 18 : 0), y - (high ? 12 : 8), 102, high ? 139 : 127);
+          if (drawn) {
+            if (lunging) {
+              line(g, x + s * 26, y - 9, x + s * 84, y - (high ? 5 : 35), c, 14);
+              disc(g, ball(x + s * 92, y - (high ? 5 : 35), 16, c));
+            }
+            continue;
+          }
           g.fillStyle = '#26343c';
           g.fillRect(x - 23, y + 17, 16, 33);
           g.fillRect(x + 7, y + 17, 16, 33);
@@ -375,8 +395,10 @@ sport(
         line(g, 75, 290, 535, 290, '#d2dfcaaa', 2);
         g.fillStyle = '#e5ce8466';
         g.fillRect(target - 18, 265, 36, 50);
-        if (pitch >= 0)
-          disc(g, ball(85 + pitch * 355, 290 - 20 * Math.sin(pitch * Math.PI), 9, cream));
+        if (pitch >= 0) {
+          const x = 85 + pitch * 355, y = 290 - 20 * Math.sin(pitch * Math.PI);
+          if (!miniature(g, 'baseball', x, y, 18, 18)) disc(g, ball(x, y, 9, cream));
+        }
       },
     };
   },
@@ -445,10 +467,12 @@ sport(
             180 + (100 + i * 15) * Math.sin(angle),
           );
           g.rotate(Math.atan2(100 * Math.cos(angle), -225 * Math.sin(angle)));
-          g.fillStyle = i ? red : cream;
-          g.fillRect(-12, -7, 24, 14);
-          g.fillStyle = '#263b43';
-          g.fillRect(-3, -5, 8, 10);
+          if (!miniature(g, i ? 'red-car' : 'cream-car', 0, 0, 33, 21)) {
+            g.fillStyle = i ? red : cream;
+            g.fillRect(-12, -7, 24, 14);
+            g.fillStyle = '#263b43';
+            g.fillRect(-3, -5, 8, 10);
+          }
           g.restore();
         });
         label(g, '3 LAPS', 300, 188, 25);
@@ -528,7 +552,9 @@ sport(
           g.fillStyle = '#36545c88';
           for (const i of [1, 2, 3]) {
             g.beginPath();
-            g.ellipse((i * 115 + a.time * 12) % 580, 70 + i * 60, 19, 6, -0.3, 0, Math.PI * 2);
+            const x = (i * 115 + a.time * 12) % 580, y = 70 + i * 60;
+            if (miniature(g, 'trout', x, y, 52, 24)) continue;
+            g.ellipse(x, y, 19, 6, -0.3, 0, Math.PI * 2);
             g.fill();
           }
         }
@@ -648,12 +674,14 @@ for (const [id, team] of [
             g.save();
             g.translate(u.x, u.y);
             g.rotate(u.angle);
-            g.fillStyle = '#454d4a';
-            g.fillRect(-17, -14, 34, 28);
-            g.fillStyle = u.p ? red : blue;
-            g.fillRect(-15, -10, 30, 20);
-            line(g, 0, 0, 23, 0, cream, 5);
-            circle(g, 0, 0, 7, u.p ? '#974e47' : '#316770');
+            if (!miniature(g, u.p ? 'red-tank' : 'teal-tank', 0, 0, 46, 33)) {
+              g.fillStyle = '#454d4a';
+              g.fillRect(-17, -14, 34, 28);
+              g.fillStyle = u.p ? red : blue;
+              g.fillRect(-15, -10, 30, 20);
+              line(g, 0, 0, 23, 0, cream, 5);
+              circle(g, 0, 0, 7, u.p ? '#974e47' : '#316770');
+            }
             g.restore();
           }
           shots.forEach((b) => disc(g, b));

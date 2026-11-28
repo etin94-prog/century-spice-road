@@ -62,9 +62,16 @@ register(
           c.pieces.push(s ? '○' : '●');
         });
       });
-      cells.forEach((c) =>
-        ui.button(track, c.pieces ? c.pieces.join('') : c.text, null, 'ludo-cell ' + c.cls),
-      );
+      cells.forEach((c) => {
+        const cell = ui.button(track, c.pieces ? c.pieces.join('') : c.text, null, 'ludo-cell ' + c.cls);
+        if (!c.pieces) return;
+        cell.classList.add('ludo-men');
+        for (const piece of c.pieces) {
+          const pawn = document.createElement('i');
+          pawn.className = piece === '●' ? 'jade-pawn' : 'red-pawn';
+          cell.append(pawn);
+        }
+      });
       if (!die) {
         ui.button(
           ui.row(),

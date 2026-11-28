@@ -17,8 +17,8 @@ function pathsBehind(grid, cols, rows, edges, key) {
     g.stroke();
     lineImages.set(key, 'url(' + canvas.toDataURL() + ')');
   }
-  grid.style.backgroundImage = lineImages.get(key);
-  grid.style.backgroundSize = '100% 100%';
+  grid.style.backgroundImage = lineImages.get(key) + ', var(--maple)';
+  grid.style.backgroundSize = '100% 100%, cover';
 }
 export function moveBoard(ui, cells, w, moves, chosen, setChosen, apply, style = '', extra) {
   const grid = ui.grid(w, 'board-grid ' + style);
@@ -68,7 +68,8 @@ export function moveBoard(ui, cells, w, moves, chosen, setChosen, apply, style =
       'cell ' +
         (chosen === i ? 'selected ' : '') +
         (destinations.length ? 'target ' : '') +
-        (extra?.(i) || ''),
+        (extra?.(i) || '') +
+        ({ '●': ' black-stone', '○': ' white-stone', '♕': ' white-king', '♛': style === 'checker' ? ' black-king' : '' }[cell] || ''),
       weight,
       '칸 ' + (i + 1) + (cell ? ' ' + cell : ''),
     );
@@ -407,7 +408,8 @@ register(
         '나 ' + hands[0].length + '장 · 상대 ' + hands[1].length + '장 · 더미 ' + bag.length,
       );
       const track = ui.row();
-      chain.forEach((t) => ui.button(track, t.join('│'), null, 'domino'));
+      const tileClass = (t) => 'domino face-' + t[0] + ' end-' + t[1];
+      chain.forEach((t) => ui.button(track, t.join('│'), null, tileClass(t)));
       let count = 0;
       for (const side of [0, 1]) {
         ui.section(side ? '오른쪽 끝 ' + ends[1] : '왼쪽 끝 ' + ends[0]);
@@ -429,7 +431,7 @@ register(
                   if (!hand.length) ui.victor(p);
                 }
               : null,
-            'domino',
+            p ? 'domino' : tileClass(tile),
             tile[0] + tile[1],
           );
         });

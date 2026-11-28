@@ -183,7 +183,7 @@ for (const [id, w] of [
             } else play(m);
           },
           'shogi',
-          (i) => (board[i]?.p === 1 ? 'rotated' : ''),
+          (i) => (board[i] ? 'engraved ' + (board[i].p === 1 ? 'rotated' : '') : ''),
         );
         if (promos) {
           const row = ui.row();

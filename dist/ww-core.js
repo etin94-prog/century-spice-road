@@ -20,7 +20,8 @@ export const suit = (c) => Math.floor(c / 13);
 export const suits = ['♠', '♥', '♣', '♦'];
 export const face = (c) =>
   ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][c % 13] + suits[suit(c)];
-export const cardStyle = (c) => 'playing-card ' + (suit(c) % 2 ? 'red' : 'black');
+export const cardStyle = (c) => 'playing-card ' + (suit(c) % 2 ? 'red' : 'black') +
+  (rank(c) >= 11 ? ' portrait-' + ['jack', 'queen', 'king'][rank(c) - 11] : '');
 export function element(tag, cls, text) {
   const el = document.createElement(tag);
   el.className = cls || '';

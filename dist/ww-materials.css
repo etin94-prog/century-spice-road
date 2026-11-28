@@ -1,0 +1,187 @@
+/* Table materials share the upper-left light of the library photography. */
+:root {
+  --walnut: url('art/worldwide/table/walnut.webp');
+  --maple: url('art/worldwide/table/maple.webp');
+  --felt: url('art/worldwide/table/felt.webp');
+  --paper: url('art/worldwide/table/paper.webp');
+}
+html[data-table="world"] body {
+  background: linear-gradient(115deg,#26190ed9,#171410eb), var(--walnut) center / 640px;
+}
+.desk, html:is([data-table="blackjack"],[data-table="card-table"]) .felt {
+  background: radial-gradient(ellipse at 40% 10%,#47765c55,#102e25a6),var(--felt) center / 420px;
+  border-color:#ab8c5b;
+  box-shadow:inset 0 1px 1px #fff1bc80,inset 0 0 0 3px #553f29,0 4px 0 #332418,0 8px 18px #120f0b88;
+}
+.board-grid, .mancala, .backgammon {
+  background-image:var(--maple);
+  background-size:cover;
+  border-color:#81552f;
+  box-shadow:inset 0 1px 2px #fff0be,0 2px 0 #885631,0 4px 0 #5c3a22,0 6px 0 #39251c,0 9px 12px #0c171a9c;
+}
+.checker .dark { background:linear-gradient(#492b2844,#38272262),var(--walnut) center / 220px; }
+.checker .light, .shogi .cell { background:linear-gradient(#fff2ca52,#ffe1ae4d),var(--maple) center / 220px; }
+.chess .cell { position:relative; isolation:isolate; }
+.chess .cell[class*="man-"] { color:transparent; text-shadow:none; }
+.chess .cell[class*="man-"]::before {
+  content:""; position:absolute; inset:1% 7% 5%; pointer-events:none;
+  background:var(--man) center bottom / contain no-repeat;
+  filter:drop-shadow(1px 2px 1px #271c1677);
+}
+.chess .cell.man-p::before { top:20%; }
+.chess .cell.man-r::before { top:13%; }
+.chess .cell.man-n::before, .chess .cell.man-b::before { top:8%; }
+.shogi .engraved { position:relative; isolation:isolate; text-shadow:0 1px #fff0bf; }
+.shogi .engraved::before {
+  content:""; position:absolute; z-index:-1; inset:5% 10%;
+  background:linear-gradient(125deg,#fff0b892,#bd844b70),var(--maple) center / cover;
+  clip-path:polygon(50% 0,84% 17%,100% 100%,0 100%,16% 17%);
+  box-shadow:inset 0 -3px #8c572f;
+}
+.goban .cell {
+  background:linear-gradient(90deg,transparent 48%,#8c5f39 49% 51%,transparent 52%),
+    linear-gradient(transparent 48%,#8c5f39 49% 51%,transparent 52%),#ffdfa525;
+}
+.mancala { align-self:center; width:min(100%,760px); background-image:var(--walnut); background-size:cover; }
+.mancala .pit {
+  background:radial-gradient(ellipse at 48% 16%,#2b1a13b8 0%,#6240206b 49%,#d69d5b4d 76%,#391e0f99),
+    var(--walnut) center / 210px;
+  box-shadow:inset 2px 5px 8px #24160ef2,inset -2px -2px 3px #c9956277,0 1px 1px #ffdb9f99;
+}
+.pit i { filter:drop-shadow(1px 2px 1px #1e110eb3); }
+.die,.domino,.mah-tile,.tile:not(.gone) {
+  background-image:linear-gradient(140deg,#fffdf1e6,#f4e5c8cf),var(--paper);
+  box-shadow:inset 0 1px #fffaf0,0 2px 0 #bda67d,0 4px 0 #897254,1px 6px 6px #11241e66;
+}
+.arena { box-shadow:0 0 0 2px #b89762,0 0 0 5px #463124,0 8px 14px #10261e9c; }
+.card:not(.back) {
+  background-image:linear-gradient(130deg,#fffdf2eb,#fff9e5d9),var(--paper);
+  box-shadow:inset 0 1px #fff,0 1px 0 #c0aa88,1px 3px 4px #101b1b73;
+}
+.card .center[class*="court-"] { background-position:center; background-size:cover; color:transparent; inset:12% 17%; }
+.card .corner { z-index:1; }
+.card.back,.card-back { background:#124e41 url('art/worldwide/table/back.webp') center / 100% 100%; }
+.card.back::after { content:none; }
+.card .court-jack { background-image:url('art/worldwide/table/jack.webp'); }
+.card .court-queen { background-image:url('art/worldwide/table/queen.webp'); }
+.card .court-king { background-image:url('art/worldwide/table/king.webp'); }
+.chess .ivory.man-p { --man:url('art/worldwide/table/ivory-p.webp'); }
+.chess .ivory.man-n { --man:url('art/worldwide/table/ivory-n.webp'); }
+.chess .ivory.man-b { --man:url('art/worldwide/table/ivory-b.webp'); }
+.chess .ivory.man-r { --man:url('art/worldwide/table/ivory-r.webp'); }
+.chess .ivory.man-q { --man:url('art/worldwide/table/ivory-q.webp'); }
+.chess .ivory.man-k { --man:url('art/worldwide/table/ivory-k.webp'); }
+.chess .ebony.man-p { --man:url('art/worldwide/table/ebony-p.webp'); }
+.chess .ebony.man-n { --man:url('art/worldwide/table/ebony-n.webp'); }
+.chess .ebony.man-b { --man:url('art/worldwide/table/ebony-b.webp'); }
+.chess .ebony.man-r { --man:url('art/worldwide/table/ebony-r.webp'); }
+.chess .ebony.man-q { --man:url('art/worldwide/table/ebony-q.webp'); }
+.chess .ebony.man-k { --man:url('art/worldwide/table/ebony-k.webp'); }
+
+.pit i {
+  width:clamp(8px,29%,29px); height:auto; aspect-ratio:1;
+  transform:translate(-50%,-50%); box-shadow:none;
+  background:var(--gem) center / contain no-repeat;
+}
+.pit .amber { --gem:url('art/worldwide/table/amber.webp'); }
+.pit .emerald { --gem:url('art/worldwide/table/emerald.webp'); }
+.pit .turquoise { --gem:url('art/worldwide/table/turquoise.webp'); }
+.pit .sapphire { --gem:url('art/worldwide/table/sapphire.webp'); }
+
+.cell.black-stone,.cell.white-stone,.cell.black-king,.cell.white-king { position:relative; font-size:0; }
+.cell.black-stone::before,.cell.white-stone::before,.cell.black-king::before,.cell.white-king::before {
+  content:""; width:78%; aspect-ratio:1; display:block;
+}
+.cell.tone1::before,.cell.black-stone::before,.cell.black-king::before {
+  background: url('art/worldwide/table/black-stone.webp') center / contain no-repeat;
+}
+.cell.tone2::before,.cell.white-stone::before,.cell.white-king::before {
+  background: url('art/worldwide/table/white-stone.webp') center / contain no-repeat;
+}
+.cell.occupied::before,.cell.black-stone::before,.cell.white-stone::before { box-shadow:none; filter:drop-shadow(1px 2px 1px #241b1670); }
+.cell.black-king::after,.cell.white-king::after { content:'♛'; position:absolute; font-size:clamp(12px,3vmin,24px); color:#b78230; }
+
+.checker .dark { background-image:linear-gradient(#b09879bf,#af9375bf),var(--walnut); }
+.checker .light { background-image:linear-gradient(#fff4d3bd,#ffedc6b8),var(--maple); }
+.mancala .mancala-store { display:none; }
+@media (min-width:600px) {
+  .mancala.tiles { grid-template-columns:.8fr repeat(6,minmax(0,1fr)) .8fr; }
+  .mancala .pit { min-height:clamp(64px,17dvh,100px); border-radius:48%; }
+  .mancala .mancala-store { display:flex; grid-row:1 / span 2; border-radius:46%; }
+  .mancala-store.theirs { grid-column:1; }
+  .mancala-store.mine { grid-column:8; }
+}
+@media (orientation:landscape) and (max-height:550px) {
+  .arena { width:min(100%,120dvh); justify-self:center; }
+  .board-grid.chess { width:min(65vw,calc(100dvh - 98px)); }
+}
+.gem,.ball,.last-face {
+  background-image:linear-gradient(135deg,#ffffff42 0%,transparent 35%,#00000045);
+  box-shadow:inset 1px 1px 1px #ffedc698,inset -2px -3px 2px #111c2160,0 3px 3px #142b2380;
+  text-shadow:0 1px 2px #24333b;
+}
+.ballwell .ball { border-radius:50%; background-image:radial-gradient(at 30% 22%,#ffffff8a,transparent 30%,#10232e66 85%); }
+.pipe {
+  background:linear-gradient(135deg,#e1b57580,#d39d5b66),var(--maple) center / 180px;
+  color:#18495c; text-shadow:0 -1px 1px #193a40,0 2px #efd29a;
+  box-shadow:inset 1px 1px 0 #fff2c588,inset -2px -3px 0 #765338;
+}
+.die[class*="face-"],.domino[class*="face-"] {
+  position:relative; font-size:0; color:transparent;
+  background:linear-gradient(140deg,#fffcf3e6,#efe4cacf),var(--paper) center / 160px;
+}
+.die[class*="face-"] { width:46px; height:46px; }
+.domino[class*="face-"] { width:62px; height:38px; border-radius:6px; }
+.die[class*="face-"]::before,.domino[class*="face-"]::before,.domino[class*="face-"]::after {
+  content:""; position:absolute; inset:7%; background-image:var(--dots,none);
+}
+.domino[class*="face-"]::before { inset:8% 50% 8% 3%; border-right:1px solid #927854; }
+.domino[class*="face-"]::after { inset:8% 3% 8% 50%; background-image:var(--end,none); }
+.face-0 { --dots:none; }
+.end-0 { --end:none; }
+.face-1 { --dots:radial-gradient(circle at 50% 50%,#252b2c 0 10%,transparent 12%); }
+.end-1 { --end:radial-gradient(circle at 50% 50%,#252b2c 0 10%,transparent 12%); }
+.face-2 { --dots:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.end-2 { --end:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.face-3 { --dots:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 50% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.end-3 { --end:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 50% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.face-4 { --dots:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 75%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.end-4 { --end:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 75%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.face-5 { --dots:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 50% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 75%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.end-5 { --end:radial-gradient(circle at 25% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 25%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 50% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 75%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 75%,#252b2c 0 10%,transparent 12%); }
+.face-6 { --dots:radial-gradient(circle at 25% 20%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 20%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 80%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 80%,#252b2c 0 10%,transparent 12%); }
+.end-6 { --end:radial-gradient(circle at 25% 20%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 20%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 50%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 25% 80%,#252b2c 0 10%,transparent 12%),radial-gradient(circle at 75% 80%,#252b2c 0 10%,transparent 12%); }
+
+.ludo-board { background:var(--maple) center / cover; border-color:#8c693f; }
+.ludo-cell.ludo-men { font-size:0; position:relative; display:flex; align-items:flex-end; justify-content:center; }
+.ludo-men i { flex:1 1 0; height:110%; background:url('art/worldwide/table/ivory-p.webp') center bottom / contain no-repeat; }
+.jade-pawn { filter:hue-rotate(111deg) saturate(1.6) drop-shadow(0 1px 1px #1e231b); }
+.red-pawn { filter:hue-rotate(325deg) saturate(2.4) drop-shadow(0 1px 1px #311b14); }
+.point {
+  background:linear-gradient(74deg,transparent 48%,#984e33d9 49% 65%,transparent 66%),var(--maple) center / cover;
+}
+.point:nth-child(even) { background:linear-gradient(74deg,transparent 48%,#2f6357df 49% 65%,transparent 66%),var(--maple) center / cover; }
+.point i { background:#fff0cc url('art/worldwide/table/white-stone.webp') center / 100% 100%; }
+.point .dark-chip { background:#363330 url('art/worldwide/table/black-stone.webp') center / 100% 100%; }
+.stack .playing-card {
+  background:linear-gradient(125deg,#fffdf3e8,#fbf2d8d4), var(--paper) center / 110px;
+  box-shadow:inset 0 1px #fff,0 1px 1px #806c4b;
+}
+.stack .playing-card:last-child { aspect-ratio:5/7; max-height:90px; align-items:flex-start; }
+.stack .playing-card[class*="portrait-"]:last-child { background:var(--portrait) center 85% / 74% 68% no-repeat,#fff4da; }
+.portrait-jack { --portrait:url('art/worldwide/table/jack.webp'); }
+.portrait-queen { --portrait:url('art/worldwide/table/queen.webp'); }
+.portrait-king { --portrait:url('art/worldwide/table/king.webp'); }
+.last-face { background-image:radial-gradient(ellipse at 65% 40%,transparent 35%,#ffe7b685 36%,transparent 39%),
+  linear-gradient(125deg,#ffffff39,transparent 48%,#1823234d); }
+.last-face.shade4 { background-image:conic-gradient(#406e88,#95713e,#a64849,#326f61,#406e88); }
+
+.board-grid:is(.checker,.goban,.shogi,.reversi), .mancala {
+  transform:perspective(920px) rotateX(7deg);
+  transform-origin:center 58%;
+}
+.zoom-frame .board-grid { transform:none; }
+.board-grid button:active:not(:disabled) { filter:brightness(1.12); transform:none; }
+.shogi button.rotated:active:not(:disabled) { transform:rotate(180deg); }
+.dots { background:linear-gradient(#fff8e4ad,#f2e3bab3), var(--paper) center / cover; border-radius:7px; }
+.dots .dot { color:#573e30; text-shadow:0 1px #fff9db; }

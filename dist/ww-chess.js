@@ -47,7 +47,7 @@ register(
         'checker chess',
         (i) =>
           (((i % 8) + Math.floor(i / 8)) % 2 ? 'dark ' : 'light ') +
-          (board[i]?.color === 'w' ? 'ivory' : 'ebony'),
+          (board[i] ? (board[i].color === 'w' ? 'ivory' : 'ebony') + ' man-' + board[i].type : ''),
       );
       if (promos) {
         const row = ui.row();

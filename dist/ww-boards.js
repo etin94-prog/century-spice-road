@@ -160,8 +160,9 @@ register(
         store = offset + 6;
       ui.score('내 창고 ' + pits[6] + '  ·  상대 창고 ' + pits[13]);
       const grid = ui.grid(6, 'mancala');
-      for (const i of [...range(6).map((n) => 12 - n), ...range(6)]) {
-        const legal = i >= offset && i < store && pits[i] > 0;
+      for (const i of [13, ...range(6).map((n) => 12 - n), 6, ...range(6)]) {
+        const isStore = i === 6 || i === 13;
+        const legal = !isStore && i >= offset && i < store && pits[i] > 0;
         const el = ui.button(
           grid,
           pits[i],
@@ -191,21 +192,21 @@ register(
                 if (over) ui.victor(pits[6] === pits[13] ? -1 : pits[6] > pits[13] ? 0 : 1);
               }
             : null,
-          'pit',
+          isStore ? 'pit mancala-store ' + (i === 6 ? 'mine' : 'theirs') : 'pit',
           (i + pits[i]) % 14 === store ? 10 : 0,
-          '씨앗 ' + pits[i] + '개',
+          (isStore ? (i === 6 ? '내 창고 ' : '상대 창고 ') : '씨앗 ') + pits[i] + '개',
         );
         const count = document.createElement('b');
         count.textContent = pits[i];
         el.replaceChildren(count);
-        const colors = ['#deb875', '#58978b', '#db8e66', '#87aeb3'];
+        const gems = ['amber', 'emerald', 'sapphire', 'turquoise'];
         for (let n = 0; n < Math.min(9, pits[i]); n++) {
           const seed = document.createElement('i'),
             angle = n * 2.4;
           const radius = 12 * Math.sqrt(n);
           seed.style.left = 48 + Math.cos(angle) * radius + '%';
           seed.style.top = 52 + Math.sin(angle) * radius + '%';
-          seed.style.backgroundColor = colors[(n + i) % 4];
+          seed.className = gems[(n + i) % gems.length];
           el.append(seed);
         }
       }
@@ -324,7 +325,7 @@ register(
                 ui.paint();
               }
             : null,
-          'die ' + (hold.has(i) ? 'selected' : ''),
+          'die face-' + v + (hold.has(i) ? ' selected' : ''),
         ),
       );
       if (rolls < 3)
