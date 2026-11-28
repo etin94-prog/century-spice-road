@@ -110,7 +110,7 @@ const CepterExtraBattle=(()=>{
       if(form!=null){
         const preserveReflection=s.edition==='3ds'&&!temporary&&form===ids.get('bundlegear')&&a.u.enchant==='reflection';
         const {enchant,expires,enchantDeadline,caster}=a.u;
-        transform(a,form,temporary,s.edition==='3ds'&&!temporary?'합체':'변신');
+        transform(a,form,temporary,(s.edition==='3ds'||firstEdition)&&!temporary?'합체':'변신');
         if(preserveReflection)Object.assign(a.u,{enchant,expires,enchantDeadline,caster});
         if(s.edition==='begins'&&a.mimicked)consume=true;
       }
@@ -142,6 +142,9 @@ const CepterExtraBattle=(()=>{
           case 'windHP':a.hp=20*own(3);break;
           case 'windST':a.st=20*own(3);break;
           case 'neutralST':a.st+=10*own(-1);break;
+          case 'enemyLandHP':a.hp=a.c.enemyLandHP*s.tiles.filter(v=>v.owner>=0&&!combo.allied(s,v.owner,a.seat)).length;break;
+          case 'flameWeevilST':a.st+=10*s.tiles.filter(v=>fx.name(v.unit)==='flameweevil').length;break;
+          case 'hpToST':a.st=60-a.u.hp;break;
         }
       }
       if(s.edition==='revolt'){
@@ -364,7 +367,7 @@ const CepterExtraBattle=(()=>{
           else convert(d,'wallofstone');
         }
       }
-      if(n==='littlegray'&&chance(.5))vacant(d);
+      if(n==='littlegray'&&chance(s.edition==='saturn'?.6:.5))vacant(d);
       if(n==='nymph'&&fx.max(d.u)<=30&&s.players[a.seat].hand.length<6&&chance(.4)){
         d.stolen=true;s.players[a.seat].hand.push(d.u.id);lines.push('상대 크리처를 손패로 획득');
       }
@@ -447,6 +450,10 @@ const CepterExtraBattle=(()=>{
       a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
     }
     function victory(a,d,creatureEnd){
+      if(firstEdition&&creatureEnd&&a.n==='ghost'&&d.defeatedByOpponent){
+        a.hp=Math.min(a.hp,a.u.hp)-10;
+        lines.push(a.c.name+' · 상대 격파 후 HP 10 감소');
+      }
       if(s.edition==='3ds'&&a.n==='ghoul')grow(a,10);
       if(s.edition==='3ds'&&creatureEnd&&a.n==='mattocktail'&&d.defeatedByOpponent&&t.level<5&&!fx.blockedLevel(s,t,false)){
         t.level++;lines.push(a.c.name+' · 영지 Lv.'+t.level);

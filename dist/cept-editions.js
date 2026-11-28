@@ -760,7 +760,10 @@ const CepterEditions=(()=>{
     giantcrawler:{instantKill:{races:['rp'],rate:.6}},radon:{instantKill:{elements:[0,3],rate:.3}},geophage:{instantKill:{elements:[2],rate:.3}},
     seamonk:{paralyze:true,statusRaces:['rh'],neutralizeRaces:['rh'],scrollCritical:true},stranglevine:{criticalRaces:['rb']},
     baal:{first:true,battleFee:200},nessie:{terrainLevelHP:{element:1,perLevel:5}},leviathan:{invadeVictoryTerrain:1},
-    berserker:{battleRecoilPercent:25},zombie:{battleEndHPLoss:10}
+    berserker:{battleRecoilPercent:25},zombie:{battleEndHPLoss:10},
+    battlegearalpha:{basicBattle:false,support:true,neutralizeScroll:true},battlegearbeta:{basicBattle:false,support:true,neutralizeScroll:true},
+    bundlegear:{basicBattle:false,spellWard:true,neutralizeScroll:true,generatedOnly:true},littlegray:{basicBattle:false},anubias:{basicBattle:false},
+    etherealqueen:{firstStat:'enemyLandHP',enemyLandHP:5},flameweevil:{firstStat:'flameWeevilST'},kungfumonk:{first:true,firstStat:'hpToST'},ghost:{basicBattle:false}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1156,6 +1159,7 @@ const CepterEditions=(()=>{
         Object.assign(c,{catalogOnly:false,basicBattle:true},firstBattleCreatures[slug]);
         if(edition==='ps1'&&c.battleFee===200)c.battleFee=100;
         if(edition==='ps1'&&slug==='berserker')c.battleRecoilPercent=30;
+        if(edition==='ps1'&&slug==='etherealqueen')c.enemyLandHP=10;
         if(edition==='ps1'&&slug==='zombie')c.battleEndHPLoss=20;
         if(slug==='wraith'){
           c.instantKill={races:['rh','rb'],rate:edition==='ps1'?.6:.3};
@@ -1166,6 +1170,7 @@ const CepterEditions=(()=>{
           else c.criticalRaces=['rh'];
         }
       }
+      if(edition==='ps1'&&slug==='werewolf')Object.assign(c,{catalogOnly:false,basicBattle:false});
       if(first&&['knight','darkelf','elf'].includes(slug))c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
       if(first&&['pan','hornet'].includes(slug))c.statusRaces=['rh','rb','rd'];
       if(id===undefined)cards.push(c);else cards[id]=c;
@@ -1239,6 +1244,11 @@ const CepterEditions=(()=>{
         tides[tides.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyTides=tides;
+      const machines=presets.legacyControl.slice();
+      for(const [from,to] of [['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','littlegray'],['hobgoblin','ghost']]){
+        machines[machines.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyMachines=machines;
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

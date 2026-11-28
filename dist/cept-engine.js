@@ -1162,7 +1162,7 @@ function createCepter(edition="ps2"){
     function reflectNormal(a,damage){
       a.hp-=damage;
       trackDamage(a,damage,edition==='saga');
-      if((edition==='saga'||revolt)&&a.hp<=0)a.defeatedByOpponent=true;
+      if((firstEdition||edition==='saga'||revolt)&&a.hp<=0)a.defeatedByOpponent=true;
     }
     function hit(a,d){
       const scroll=a.gear?.category==='scroll'||a.gear?.scrollAsItem||!muted&&!a.gear&&(a.c.innateScroll||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb'||a.suppressPhysicalWard;
@@ -1409,7 +1409,7 @@ function createCepter(edition="ps2"){
           if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]-=300;}
           lines.push('현상 수배 · 300G 획득');
         }
-        if(edition==='saga'||handheld||revolt){
+        if(firstEdition||edition==='saga'||handheld||revolt){
           if(d.hp<=0)d.defeatedByOpponent=true;
           if(effect==='reflect'&&a.hp<=0)a.defeatedByOpponent=true;
         }

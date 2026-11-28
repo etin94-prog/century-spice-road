@@ -9079,3 +9079,55 @@ console.log('3DS swarm, neutral wards, scrolls, last strike, obliteration, rank,
   }
 }
 console.log('3DS Bard, Behemoth, Lung, rulers, land levels, Mycoron, Barong and Ganji checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),rate=edition==='ps1'?.5:.6;
+  const id=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  assert.ok(C.validBook(C.presets.legacyMachines));
+  for(const n of ['battlegearalpha','battlegearbeta','ghost','littlegray'])assert.ok(C.presets.legacyMachines.includes(id(n)));
+  assert.ok(C.cards[id('bundlegear')].generatedOnly);
+  function fight(a,d,{atkGear,defGear,extras=[],seed=.1,life,defHP,count,alliance=false}={}){
+    const seats=alliance?4:2;
+    const s=C.start(seats,seats,7000,edition+'-original-marsh-paths',C.presets.legacyMachines,C.presets.legacyMachines,1,alliance?'teams':'duel');
+    const at=s.tiles.findIndex(t=>C.territoryType(t.type)),t=s.tiles[at];
+    Object.assign(t,{type:'무속성',owner:1,unit:{id:id(d),hp:defHP??C.cards[id(d)].hp}});
+    const sites=s.tiles.flatMap((v,i)=>i!==at&&!C.board(s).links[at].includes(i)&&C.territoryType(v.type)?[i]:[]);
+    for(const [i,[owner,key]] of extras.entries())Object.assign(s.tiles[sites[i]],{owner:owner==='ally'?s.teams.findIndex((team,j)=>j>0&&team===s.teams[0]):owner,unit:{id:id(key),hp:C.cards[id(key)].hp}});
+    if(count!=null)s.destroyedCount=count;
+    s.phase='attack';s.battle={at,inv:id(a),invHP:life,atkItem:null,defItem:null};
+    s.players.forEach((p,i)=>{const gear=[atkGear,defGear][i];p.hand=gear?[id(gear)]:[];p.cash=1000;});
+    const random=Math.random;
+    try{
+      Math.random=()=>seed;
+      assert.ok(C.play(s,atkGear?['equip',0]:['bare']));
+      assert.ok(C.play(s,defGear?['equip',0]:['bare']));
+    }finally{Math.random=random;}
+    return {s,t,b:s.battle};
+  }
+  for(const [body,gear] of [['battlegearalpha','battlegearbeta'],['battlegearbeta','battlegearalpha']]){
+    const pair=fight(body,'goblin',{atkGear:gear});
+    assert.deepEqual([pair.b.forms[0],pair.b.attackST,pair.b.startHP[0]],[id('bundlegear'),60,70]);
+    assert.deepEqual([pair.t.owner,pair.t.unit.id],[0,id('bundlegear')]);
+    assert.deepEqual(pair.s.players[0].hand,[]);
+    const blocked=fight(body,'gremlin',{atkGear:gear});
+    assert.equal(blocked.b.forms[0],id(body));
+    const ward=fight('fighter',body,{atkGear:'nuclearfusion'});
+    assert.equal(ward.b.strikes[0].effect,'block');
+  }
+  const grey=fight('littlegray','wallofstone',{seed:rate-.01});
+  assert.ok(grey.s.tiles.some(t=>t!==grey.t&&t.owner===1&&t.unit?.id===id('wallofstone')));
+  assert.equal(fight('littlegray','wallofstone',{seed:rate}).t.unit.id,id('wallofstone'));
+  if(edition==='ps1'){
+    assert.equal(fight('werewolf','wallofstone',{seed:.599}).t.unit.id,id('wolf'));
+    assert.equal(fight('werewolf','wallofstone',{seed:.6}).t.unit.id,id('wallofstone'));
+  }
+  const queen=fight('etherealqueen','wallofstone',{extras:[[1,'goblin'],['ally','goblin']],alliance:true});
+  assert.equal(queen.b.startHP[0],edition==='ps1'?20:10);
+  assert.equal(fight('anubias','wallofstone',{count:7}).b.startHP[0],35);
+  assert.equal(fight('flameweevil','wallofstone',{extras:[[0,'flameweevil'],[1,'flameweevil']]}).b.attackST,C.cards[id('flameweevil')].st+20);
+  assert.equal(fight('kungfumonk','wallofstone',{life:25}).b.attackST,35);
+  assert.equal(fight('kungfumonk','wallofstone',{life:25,atkGear:'longsword'}).b.attackST,35+C.cards[id('longsword')].st);
+  assert.equal(fight('ghost','goblin',{defHP:1}).t.unit.hp,C.cards[id('ghost')].hp-10);
+  assert.equal(fight('ghost','goblin',{defHP:1,life:8}).b.finalHP[0],0);
+}
+console.log('PS1 and Saturn battle gear fusion, first-edition warps, resource scaling and Ghost victory penalty checked.');

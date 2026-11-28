@@ -556,7 +556,10 @@ const CepterCreatureText=(()=>{
       rivalFireST:'상대가 가진 화 영지 한 곳당 전투 ST가 10 내려갑니다.',
       windHP:'전투의 기본 HP는 내 풍 영지 수 × 20입니다.',
       windST:'전투의 기본 ST는 내 풍 영지 수 × 20입니다.',
-      neutralST:'내 무속성 영지 한 곳당 전투 ST가 10 오릅니다.'
+      neutralST:'내 무속성 영지 한 곳당 전투 ST가 10 오릅니다.',
+      enemyLandHP:'전투 기본 HP는 모든 적의 영지 수 × '+card.enemyLandHP+'입니다.',
+      flameWeevilST:'지도에 배치된 플레임 위빌 한 마리당 전투 ST가 10 오릅니다.',
+      hpToST:'전투 기본 ST는 60에서 전투 시작 전 현재 HP를 뺀 값입니다.'
     }[card.firstStat]);
     if(card.pierceElements?.length)pieces.push(targets(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(targets(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
@@ -616,6 +619,10 @@ const CepterCreatureText=(()=>{
       C.edition==='3ds'&&key==='mycoron'?'전투에서 살아남으면 HP를 회복합니다. 상대에게 피해를 받았다면 무작위 빈 영지에 마이코론을 배치합니다.':
       C.edition==='3ds'&&key==='barong'?'영지 명령 외의 속성 변경과 레벨 하락을 막습니다. 전투에서 격파되면 손패로 돌아오며 손패가 6장이면 파괴됩니다.':
       C.edition==='3ds'&&key==='ganji'?'둘 다 살아남으면 전투가 끝날 때 상대에게 노쇠를 겁니다.':
+      firstEdition&&key==='battlegearalpha'?'배틀 기어 β를 지원으로 사용하면 번들 기어로 합체합니다.':
+      firstEdition&&key==='battlegearbeta'?'배틀 기어 α를 지원으로 사용하면 번들 기어로 합체합니다.':
+      C.edition==='saturn'&&key==='littlegray'?'일반 공격으로 피해를 준 상대가 살아 있으면 60% 확률로 무작위 빈 영지로 보냅니다. 빈 영지가 없으면 상대가 격파됩니다.':
+      firstEdition&&key==='ghost'?'상대를 격파하고 생존하면 자신의 HP가 10 감소합니다.':
       C.edition==='3ds'&&key==='deathgaze'?'적을 격파하면 80% 확률로 같은 카드를 상대의 손패와 북에서 모두 제거합니다.':
       C.edition==='3ds'&&key==='taotieh'?'적을 격파하고 생존하면 기본 ST·최대 HP가 20씩 오릅니다. 상한은 100입니다.':
       C.edition==='3ds'&&key==='igneousfatui'?'일반 공격으로 피해를 준 상대를 70% 확률로 즉사시킵니다.':
