@@ -1107,6 +1107,7 @@ const CepterEditions=(()=>{
       if(first&&kind==='item'){
         if(Object.hasOwn(firstBattleGear,slug))Object.assign(c,{st:0,hp:0,catalogOnly:false},firstBattleGear[slug]);
         if(slug==='ripperknife')Object.assign(c,{catalogOnly:false,st:40,recoilPercent:edition==='ps1'?30:25});
+        if(slug==='deadlythorn')Object.assign(c,{catalogOnly:false,st:0,scrollTransform:'wallofstone'});
         if(slug==='bloodspoil')Object.assign(c,{catalogOnly:false,st:0,scrollPoisonRaces:edition==='ps1'?['rh','rb','rd']:['rh','rb']});
         if(slug==='magicbelt')Object.assign(c,{catalogOnly:false,st:40,permanentSTLoss:edition==='ps1'?20:10});
         if(slug==='lightningbolt')Object.assign(c,{catalogOnly:false,st:0,
@@ -1269,6 +1270,7 @@ const CepterEditions=(()=>{
         curses[curses.indexOf(lookup.get(from))]=lookup.get(to);
       }
       curses[curses.indexOf(lookup.get('lizardman'))]=lookup.get('deepspawn');
+      curses[curses.indexOf(lookup.get('stonehail'))]=lookup.get('deadlythorn');
       if(edition==='ps1')curses[curses.indexOf(lookup.get('fighter'))]=lookup.get('ashura');
       presets.legacyCurses=curses;
       const workshop=new Map([['harpy','roadrunner'],['manna','armorsmith'],['cure','weaponsmith']]

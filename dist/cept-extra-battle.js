@@ -62,8 +62,7 @@ const CepterExtraBattle=(()=>{
       lines.push(c.name+' '+label);
     }
     function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g)&&!((s.edition==='dc'||firstEdition)&&['iksear','terrair'].includes(a.g));}
-    function convert(target,name){
-      const remaining=target.hp;
+    function convert(target,name,remaining=target.hp){
       transform(target,ids.get(name));
       target.u.hp=target.hp=Math.min(target.hp,remaining);
     }

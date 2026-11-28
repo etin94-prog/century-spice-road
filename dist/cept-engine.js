@@ -1213,10 +1213,15 @@ function createCepter(edition="ps2"){
         if(target.hp<=0)lines.push('블래스터 레이 · 빈 영지가 없어 격파');
         return reflected?'reflect':'hit';
       }
-      if(a.g==='sleep'||a.g==='death'||scroll&&(weapon?.deathStrike||weapon?.scrollPoisonRaces)){
+      if(a.g==='sleep'||a.g==='death'||scroll&&(weapon?.deathStrike||weapon?.scrollPoisonRaces||weapon?.scrollTransform)){
         const target=reflected?a:d;
         if(a.g==='sleep'){combo.clear(target.u);target.u.enchant='sleep';lines.push('수면 · 통행료 없음');}
         else if(weapon?.deathStrike)extra.gearDeath(a,target);
+        else if(weapon?.scrollTransform){
+          lines.push(weapon.name+' · 석화');
+          extra.convert(target,weapon.scrollTransform,Math.min(target.u.hp,target.hp));
+          if(s.predict)b.scrollStoneSide=target.defending?1:0;
+        }
         else if(weapon?.scrollPoisonRaces){
           if(weapon.scrollPoisonRaces.includes(target.c.catalog?.race)){
             combo.clear(target.u);target.u.poisoned=true;lines.push(a.gear.name+' · 독 부여');
@@ -2488,6 +2493,10 @@ function createCepter(edition="ps2"){
       return edition==='saga'&&key(cards[gear])==='blasterray'?
         (normal+score(forecast(battle,gear,defending,unpaid,spent,true)))/2:normal;
     }
+    function forcedStopRemoval(at,out){
+      const tile=s.tiles[at];
+      return !out.won&&out.scrollStoneSide===1&&creatureStops(s,tile,seat)?toll(s,tile)*.55:0;
+    }
     function invasionValue(at,cardIndex,discardIndex){
       const base=p.hand[cardIndex],discard=p.hand[discardIndex],invUnit=synthesizedUnit(base,discard),inv=invUnit.id;
       const tile=s.tiles[at],tower=s.phase==='towerDeploy'||s.pendingCard?.phase==='towerDeploy',c=cards[base];
@@ -2496,7 +2505,7 @@ function createCepter(edition="ps2"){
       return Math.max(...[null,...items].map(item=>{
         return evaluateGear({at,inv,invUnit,tower},item,false,true,discardIndex==null?[base]:[base,discard],battle=>
           (battle.won?value(s,tile)+100:battle.noToll&&!tower?toll(s,tile):-60)-price(p,c,s)*.5-(cards[item]?.cost||0)*.5-
-          (firstEdition?(battle.magicLoss?.[0]||0)*.65:0));
+          (firstEdition?(battle.magicLoss?.[0]||0)*.65:0)+forcedStopRemoval(at,battle));
       }));
     }
     function intrusionScore(at,index,spellCost=0){
@@ -2819,7 +2828,8 @@ function createCepter(edition="ps2"){
         return evaluateGear(s.battle,k==='equip'?p.hand[x]:null,defending,false,undefined,out=>{
           const territory=defending?out.defended??out.finalHP[1]>0:out.won;
           const remaining=Math.min(out.finalHP[side],unit.hp);
-          return (territory?220:0)+(out.finalHP[side]>0?35:0)+remaining*.35-Math.min(80,out.finalHP[1-side])*.2
+          return (territory?220:0)+(out.finalHP[side]>0?35:0)+remaining*.35-Math.min(80,out.finalHP[1-side])*.2+
+            (defending?0:forcedStopRemoval(s.battle.at,out))
             -(k==='equip'?6+price(p,c,s,false)*.16:0)+(k==='equip'&&plan.pair(key(unit),n)?15:0)
             +(out.revengeValue||0)*(defending?-.3:.3)-(out.magicLoss?.[side]||0)*.3+(out.handRecovery===side?10:0)+(handheld&&!territory&&out.noToll&&!defending&&s.battle.from==null?toll(s,s.tiles[s.battle.at])*.6:0);
         });

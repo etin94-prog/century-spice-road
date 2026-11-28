@@ -9665,3 +9665,70 @@ console.log('PS1 and Saturn Hoodlum and Dee Dum: threshold, half rounding, weapo
   assert.deepEqual(C.ai(early),['roll']);
 }
 console.log('Saturn Chaos Stream: round boundary, reordering, seat indexes, Bind, bomb, input clock, replay, round limit, overtime and AI checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),book=C.presets.legacyCurses;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const thorn=id('deadlythorn'),wall=id('wallofstone');
+  assert.ok(C.validBook(book)&&book.includes(thorn));
+  assert.deepEqual([C.cards[thorn].cost,C.cards[thorn].st,C.cards[thorn].category],[40,0,'scroll']);
+  assert.match(describeItem(C,C.cards[thorn]),/스톤 월로 석화/);
+  function setup(attacker,guard,{gear,defHP,defMHP,atkFrom,level=4,enchant}={}){
+    const s=C.start(2,0,7000,edition+'-original-marsh-paths',book,book,3),at=3;
+    const inv=id(attacker),def=id(guard);
+    Object.assign(s.players[0],{pos:at,hand:[thorn],cash:1000});
+    Object.assign(s.players[1],{hand:gear?[id(gear)]:[],cash:1000});
+    Object.assign(s.tiles[at],{type:2,owner:1,level,unit:{id:def,hp:defHP??C.cards[def].hp,mhp:defMHP,enchant}});
+    if(atkFrom!=null)Object.assign(s.tiles[atkFrom],{type:2,owner:0,unit:{id:inv,hp:C.cards[inv].hp}});
+    s.phase='attack';s.battle={at,from:atkFrom,inv,atkItem:null,defItem:null};
+    return s;
+  }
+  function fight(attacker,guard,opts={}){
+    const s=setup(attacker,guard,opts);
+    assert.ok(C.play(s,['equip',0]));
+    assert.ok(C.play(s,opts.gear?['equip',0]:['bare']));
+    return s;
+  }
+  const s=fight('fighter','dwarf',{gear:'leatherarmor',defHP:26,enchant:'vitality'});
+  assert.equal(s.players[0].cash,960);
+  assert.deepEqual(s.tiles[3].unit,{id:wall,hp:26});
+  assert.deepEqual([s.tiles[3].owner,s.tiles[3].type,s.tiles[3].level],[1,2,4]);
+  assert.deepEqual(s.battle.finalForms,[id('fighter'),wall]);
+  assert.match(s.battle.lines.join(' '),/석화.*스톤 월 변신/);
+  assert.equal(s.battle.strikes[0].effect,'hit');
+  assert.doesNotMatch(s.battle.strikes[0].notes.join(' '),/→ .*피해/);
+  const suited=fight('fighter','dwarf',{gear:'handcuffs'});
+  assert.equal(suited.battle.strikes[0].effect,'reflect');
+  assert.deepEqual(suited.battle.finalForms,[wall,id('dwarf')]);
+  assert.equal(suited.tiles[3].unit.id,id('dwarf'));
+  assert.deepEqual(suited.players[0].hand,[wall]);
+  const relocated=fight('fighter','dwarf',{gear:'handcuffs',atkFrom:2});
+  assert.equal(relocated.tiles[2].unit.id,wall);
+  assert.equal(relocated.tiles[2].owner,0);
+  assert.deepEqual(relocated.players[0].hand,[]);
+  for(const [guard,gear] of [['sandman',null],['dwarf','magicshield'],['ormechead',null]]){
+    const blocked=fight('fighter',guard,{gear});
+    assert.equal(blocked.battle.strikes[0].effect,'block');
+    assert.equal(blocked.tiles[3].unit.id,id(guard));
+    assert.doesNotMatch(blocked.battle.lines.join(' '),/석화/);
+  }
+  const wallHP=C.cards[wall].hp;
+  assert.equal(fight('fighter','cyclops',{gear:'leatherarmor',defHP:wallHP+10,defMHP:wallHP+10}).tiles[3].unit.hp,wallHP);
+  const counter=setup('fighter','dwarf',{gear:'deadlythorn'});
+  assert.ok(C.play(counter,['bare'])&&C.play(counter,['equip',0]));
+  assert.deepEqual(counter.players[0].hand,[thorn,wall]);
+  assert.equal(counter.battle.strikes[1].side,1);
+  assert.match(counter.battle.strikes[1].notes.join(' '),/석화/);
+  const ward=setup('fighter','sandman',{level:1});
+  assert.deepEqual(C.ai(ward),['bare']);
+  const trap=setup('fighter','oldwillow');
+  trap.tiles[3].type=0;trap.phase='land';trap.battle=null;trap.players[0].hand=[id('fighter'),thorn];
+  assert.deepEqual(C.ai(trap),['invade',0]);
+  assert.ok(C.play(trap,C.ai(trap)));
+  assert.deepEqual(C.ai(trap),['equip',0]);
+  assert.ok(C.play(trap,C.ai(trap))&&C.play(trap,['bare']));
+  assert.equal(trap.tiles[3].unit.id,wall);
+  const restricted=setup('wolf','dwarf');
+  assert.ok(!C.choices(restricted).some(([move])=>move==='equip'));
+}
+console.log('PS1 and Saturn Deadly Thorn: true scroll effect, permanent form, battle bonuses, wards, reflection, equipment legality and AI checked.');
