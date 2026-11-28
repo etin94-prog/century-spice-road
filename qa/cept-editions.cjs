@@ -1909,7 +1909,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,46);
+  assert.equal(ready.length,60);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
   {
     const shot=mode=>revolt('battleaxe',null,'goblin',mode).s.battle.strikes[0].effect;
@@ -2280,7 +2280,62 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(R.play(slowDie,['roll']));
     assert.ok(slowDie.die>=1&&slowDie.die<=3);
     assert.equal(slowDie.players[0].diceLimitRolls,undefined);
-    console.log('Revolt new creature reactions, gear wards, placement commands, evolution, living equipment and secret arts checked');
+    for(const [name,material,st,hp] of [['deadwarlord','greenogre',60,60],['werebear','greenogre',50,50],['martialmonk','mace',60,40],['samhain','bindingmist',40,40]]){
+      const id=bySlug.get(name),resource=bySlug.get(material);
+      assert.deepEqual(R.synthesizedUnit(id,resource),{id,st,hp,mhp:hp},name);
+      const summons=R.start(2,2,5000,'revolt-original-watchpost');
+      Object.assign(summons.players[0],{pos:1,cash:500,hand:[resource,id]});
+      summons.phase='land';summons.tiles[1].type=CForRevolt(name).element;
+      assert.ok(R.play(summons,['summon',1])&&R.play(summons,['sacrifice',0]),name);
+      assert.deepEqual(summons.tiles[1].unit,{id,st,hp,mhp:hp,...(CForRevolt(name).vigorous?{}:{fatigued:true})},name);
+      assert.equal(summons.players[0].hand.length,0);
+    }
+    assert.equal(R.synthesizedUnit(bySlug.get('pyroculus'),bySlug.get('manna')).id,bySlug.get('hellpyron'));
+    assert.equal(R.synthesizedUnit(bySlug.get('pyroculus'),bySlug.get('magicbolt')).id,bySlug.get('hellpyron'));
+    assert.equal(R.synthesizedUnit(bySlug.get('scolopendra'),bySlug.get('blueogre')).id,bySlug.get('deepseadragon'));
+    assert.equal(R.synthesizedUnit(bySlug.get('id'),bySlug.get('gargoyle')).id,bySlug.get('gargoyle'));
+    assert.equal(R.synthesizedUnit(bySlug.get('id'),bySlug.get('mace')).id,bySlug.get('id'));
+    const fusedInvasion=R.start(2,2,5000,'revolt-original-watchpost');
+    Object.assign(fusedInvasion.players[0],{pos:1,cash:500,hand:[bySlug.get('martialmonk'),bySlug.get('mace')]});
+    fusedInvasion.players[1].hand=[];
+    revoltUnit(fusedInvasion,1,'goblin',1,2);
+    revoltUnit(fusedInvasion,2,'deadwarlord',0,0);
+    fusedInvasion.phase='land';
+    assert.ok(R.play(fusedInvasion,['invade',0])&&R.play(fusedInvasion,['sacrifice',1]));
+    assert.deepEqual([fusedInvasion.battle.invUnit.st,fusedInvasion.battle.invUnit.hp],[60,40]);
+    assert.ok(R.play(fusedInvasion,['bare'])&&R.play(fusedInvasion,['bare']));
+    assert.equal(fusedInvasion.battle.attackST,70);
+    assert.deepEqual([fusedInvasion.tiles[1].unit.st,fusedInvasion.tiles[1].unit.mhp],[60,40]);
+    const reaper=revolt(null,null,'samhain','redogre',s=>{s.tiles[1].unit.st=0;}).s;
+    assert.equal(reaper.tiles[1].unit.mhp,CForRevolt('redogre').hp-CForRevolt('samhain').st);
+    const carried=actSecret('sleipnir',s=>{
+      revoltUnit(s,2,'blueogre',0,1);
+      s.tiles[2].unit.fatigued=true;
+    });
+    assert.ok(R.play(carried,['secretLand',2]));
+    assert.equal(carried.phase,'teleMove');
+    assert.ok(R.play(carried,['teleTo',3]));
+    assert.deepEqual([carried.phase,carried.players[0].cash,carried.tiles[2].unit,carried.tiles[3].unit.id],['roll',440,null,bySlug.get('blueogre')]);
+    const leeched=actSecret('deathleech',s=>{
+      revoltUnit(s,2,'blueogre',1,1,3,20);s.tiles[2].unit.fatigued=true;
+      revoltUnit(s,3,'redogre',1,0,1,30);
+    });
+    assert.deepEqual(R.choices(leeched).filter(([k])=>k==='secretLand'),[['secretLand',2]]);
+    assert.ok(R.play(leeched,['secretLand',2]));
+    assert.deepEqual([leeched.tiles[1].unit,leeched.tiles[2].owner,leeched.tiles[2].level,leeched.tiles[2].unit.id],[null,0,3,bySlug.get('deathleech')]);
+    const doom=actSecret('doomdevourer');
+    assert.deepEqual([doom.players[0].cash,doom.tiles[1].unit.st,doom.tiles[1].unit.mhp],[560,20,20]);
+    doom.players[0].word=3;
+    assert.ok(R.play(doom,['roll']));
+    assert.deepEqual([doom.tiles[1].unit.st,doom.tiles[1].unit.mhp],[30,30]);
+    const lap=R.start(2,2,5000,'revolt-original-watchpost');
+    revoltUnit(lap,5,'mosstitan',0,2,1,50);lap.tiles[5].unit.mhp=80;
+    revoltUnit(lap,6,'mosstitan',0,2,1,30);
+    Object.assign(lap.players[0],{pos:11,previous:10,dir:1,word:1,flags:[0,4]});
+    lap.phase='roll';
+    assert.ok(R.play(lap,['roll']));
+    assert.deepEqual([lap.players[0].lap,lap.tiles[5].unit.mhp,lap.tiles[5].unit.hp,lap.tiles[6].unit.mhp,lap.tiles[6].unit.hp],[1,30,30,40,40]);
+    console.log('Revolt living equipment, secret moves, lap growth, and persistent synthesis in placement and invasion checked');
 
 
 

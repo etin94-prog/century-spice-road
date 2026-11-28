@@ -536,6 +536,14 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='redcap'?'배치된 고블린 한 마리당 자신의 전투 ST와 HP가 20씩 오릅니다. 자신이 전투에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
       C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
       C.edition==='begins'&&key==='ambermosquito'?'전투에서 티라노사우루스와 자이언트 래트 중 하나로 같은 확률로 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
+      C.edition==='revolt'&&key==='doomdevourer'?'자기 차례에 이동 주사위가 1~3이면 기본 ST와 최대 HP가 각각 10 오릅니다. 상한은 100입니다.':
+      C.edition==='revolt'&&key==='id'?'크리처 카드를 합성 재료로 버리면 그 크리처로 변신합니다. 두루마리 공격을 무효화합니다.':
+      C.edition==='revolt'&&key==='pyroculus'?'즉시 주문을 합성 재료로 버리면 헬 파이론으로 진화합니다. 두루마리 공격을 무효화합니다.':
+      C.edition==='revolt'&&key==='scolopendra'?'수 크리처를 합성 재료로 버리면 딥 시 드래곤으로 진화합니다. 공격이 명중하면 독을 겁니다.':
+      C.edition==='revolt'&&key==='deadwarlord'?'지 크리처를 합성하면 기본 ST와 최대 HP가 20씩 오릅니다. 지도에 배치되어 교전에 참여하지 않으면 침략 크리처의 ST를 10 올립니다.':
+      C.edition==='revolt'&&key==='werebear'?'지 크리처를 합성하면 기본 ST가 30, 최대 HP가 10 오릅니다.':
+      C.edition==='revolt'&&key==='martialmonk'?'아이템을 합성하면 기본 ST가 40 오르고 최대 HP가 10 내립니다.':
+      C.edition==='revolt'&&key==='samhain'?'인챈트 주문을 합성하면 기본 ST가 20 오릅니다. 전투가 끝날 때 상대 최대 HP를 자신의 기본 ST만큼 낮춥니다.':
       C.edition==='revolt'&&key==='livingamulet'?'상대가 무기를 쓰지 않았다면 전투에서 격파된 자신 또는 장착 크리처를 리빙 아뮬렛으로 되살립니다.':
       C.edition==='revolt'&&key==='livingbomb'?'전투 종료 시 자신 또는 장착 크리처가 살아 있고 HP가 20 이하면 양쪽을 격파합니다.':
       C.edition==='revolt'&&key==='livingglove'?'배치된 크리처 중 사용자의 크리처와 속성이 다른 한 마리당 전투 ST와 HP가 5가 됩니다. 장비로 쓰면 그만큼 더합니다.':

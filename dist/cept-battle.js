@@ -64,7 +64,7 @@ function renderBattle(center,state){
   const caption=el('small',(b.at+1)+'번 영지 · '+(C.elements[tile.type]||tile.type)+' Lv.'+tile.level);
   const versus=el('div',null,'battle-pair'),status=el('div',null,'battle-caption');
   status.setAttribute('role','status');
-  const base=[b.invHP??C.cards[b.inv].hp,b.guardHP??tile.unit.hp];
+  const base=[b.invHP??b.invUnit?.hp??C.cards[b.inv].hp,b.guardHP??tile.unit.hp];
   const fighters=ids.map((id,i)=>{
     const cell=el('div',null,'battle-side'),frame=el('div',null,'battle-face');
     const illustration=cardSeal(id);frame.append(illustration);
@@ -73,7 +73,7 @@ function renderBattle(center,state){
     const meter=el('meter');meter.min=0;meter.max=Math.max(1,base[i],b.startHP?.[i]||0);
     const bar=el('div',null,'battle-hp'),fill=el('i'),lag=el('i',null,'lag');bar.append(lag,fill);bar.setAttribute('aria-hidden','true');
     const value=el('span',null,'battle-hp-value'),power=el('small',null,'battle-st');
-    const unit=i?tile.unit:state.tiles[b.from]?.unit;
+    const unit=i?tile.unit:state.tiles[b.from]?.unit??b.invUnit;
     power.textContent='ST '+(result?C.cards[id].st:unit?.st??C.cards[id].st);
     const update=hp=>{
       meter.max=Math.max(meter.max,hp);meter.value=hp;value.textContent='HP '+hp;

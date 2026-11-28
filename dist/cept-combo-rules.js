@@ -536,6 +536,9 @@ const CepterCombos = (() => {
       replaceHand:{cost:20,label:'고른 셉터의 손패 한 장 교체',player:true},
       discardBookTop:{cost:50,label:'고른 셉터의 북 맨 위 카드 한 장 파괴',player:true},
       shortDice:{cost:50,label:'고른 셉터의 다음 주사위 합을 1~3으로 제한',player:true},
+      carryCreature:{cost:60,label:'내 크리처를 한두 칸 이동',carry:true},
+      leechCapture:{cost:80,label:'피로한 부상 크리처를 격파하고 해당 영지로 이동'},
+      tradeStrength:{cost:0,label:'최대 HP의 두 배만큼 마력 획득 · 기본 ST와 최대 HP −10',self:true},
       playerBarrier:{cost:50,label:'고른 셉터에게 안티 스펠 부여',player:true},
       toArmedPrincess:{cost:60,label:'아머드 프린세스로 진화',form:'armedprincess',self:true},
       toGaruda:{cost:60,label:'가루다로 진화',form:'garuda',self:true},
@@ -590,6 +593,11 @@ const CepterCombos = (() => {
     const secretArt=(card,unit)=>arts[secretKey(card,unit)];
     const vacantLand=t=>!t.unit&&territoryType(t.type);
     const vacantNeighbors=(s,from)=>board(s).links[from].filter(at=>vacantLand(s.tiles[at]));
+    function secretMoveExits(s,from){
+      const src=s.tiles[from];
+      if(!src?.unit||isDefensive(src.unit)||src.unit.enchant==='thornfetter')return [];
+      return territoryMoveExits(s,from).filter(at=>canOccupy(cards[src.unit.id],s.tiles[at])&&canInvade(s,src.owner,s.tiles[at].owner));
+    }
     function secretTargets(s,from,borrowed=false){
       const src=s.tiles[from];
       const key=secretKey(cards[src?.unit?.id],src?.unit),p=s.players[s.turn],art=arts[key];
@@ -615,6 +623,8 @@ const CepterCombos = (() => {
         if(art.grow&&!immuneHP(t)&&max(t.unit)<100)return [['secretLand',at]];
         if(art.shrink&&!immuneHP(t)&&(!art.enemy||!allied(s,t.owner,s.turn)))return [['secretLand',at]];
         if(key==='copyForm'&&t.unit.id!==src.unit.id)return [['secretLand',at]];
+        if(art.carry&&t.owner===s.turn&&secretMoveExits(s,at).length)return [['secretLand',at]];
+        if(key==='leechCapture'&&at!==from&&t.unit.fatigued&&t.unit.hp<max(t.unit)&&canOccupy(cards[src.unit.id],t))return [['secretLand',at]];
         if(key==='landToMulti'&&t.type!=='복합'&&activeWorld(s)!=='solidworld'&&!terrainLocked(s,t,true))return [['secretLand',at]];
         if(art.enemy&&allied(s,t.owner,s.turn)||art.own&&t.owner!==s.turn)return [];
         if(key==='poison'&&!t.unit.poisoned)return [['secretLand',at]];
@@ -672,6 +682,18 @@ const CepterCombos = (() => {
       }
       if(key==='landToMulti'){target.type='복합';destroy(s,src);return art.label;}
       if(key==='ownWaterShift')src.type=1;
+      if(art.carry){s.teleFrom=at;s.secretTravel=true;return art.label;}
+      if(key==='leechCapture'){
+        spellDestroy(s,target);
+        if(!target.unit){claim(target,src.owner,src.unit);vacate(src);clear(target.unit);}
+        return art.label;
+      }
+      if(key==='tradeStrength'){
+        const unit=src.unit,amount=2*max(unit);
+        p.cash+=amount;unit.st=Math.max(0,strength(unit)-10);
+        shrinkHealth(s,src,10);
+        return amount+'G 획득 · 기본 ST와 최대 HP −10';
+      }
       if(art.summon){claim(target,s.turn,morph(null,art.summon));delete target.enchant;}
       if(art.consume)destroy(s,src);
       if(art.grant)p.hand.push(ids.get(art.grant));
@@ -746,6 +768,8 @@ const CepterCombos = (() => {
       if(art==='offering')utility=200-value(s,t)-(t.level-1)*35;
       if(art==='draw')utility=p.hand.length<5?35:4;
       if(art==='drawItem')utility=p.hand.filter(id=>cards[id]?.kind==='item').length<2?28:0;
+      if(art==='leechCapture')utility=friendly?-20:(value(s,t)-value(s,s.tiles[from]))*.15+20+t.level*4;
+      if(art==='tradeStrength')utility=max(source)*.3+(p.cash<120?20:0)-(t.level-1)*10-(max(source)<=10?30:0);
       if(spec.summon){
         const creature=cards[ids.get(spec.summon)];
         utility=20+(matchesTerrain(creature,t.type)?12:0)+creature.hp*.3-(spec.consume?value(s,s.tiles[from])/6:0);
@@ -795,7 +819,7 @@ const CepterCombos = (() => {
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,shrinkHealth,isDefensive,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,sagaFormChoices,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
+      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,sagaFormChoices,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,secretMoveExits,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],

@@ -51,8 +51,9 @@ function shopMenu(controls,choices,p){
 function decisionText(action,p){
   const [kind,x,y]=action,position=s.towerAt??p.pos,here=s.tiles[position];
   if(kind==='sacrifice'&&s.pendingCard){
-    const id=p.hand[s.pendingCard.index],form=C.synthesizedCreature(id,C.cards[p.hand[x]]);
-    if(form!==id)return C.cards[form].name+'로 합성됩니다.';
+    const id=p.hand[s.pendingCard.index],unit=C.synthesizedUnit(id,p.hand[x]);
+    if(unit.id!==id)return C.cards[unit.id].name+'로 합성됩니다.';
+    if(unit.mhp!=null)return '합성 후 기본 ST '+unit.st+' · 최대 HP '+unit.mhp;
   }
   if(kind==='circleCast')return '마법진 사용 비용 0G';
   if(kind==='switchKeep'||kind==='switchFlip')return '다음 이동 '+(C.pathSwitch(s,p.pos,p.previous,kind==='switchFlip').to+1)+'번 칸';
