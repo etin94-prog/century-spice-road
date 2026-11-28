@@ -764,11 +764,11 @@ function createCepter(edition="ps2"){
     const {unit,area,owner}=s.tiles[from],name=fx.name(unit),links=board(s).links;
     if((begins||revolt)&&['immobilize','bountyhunt'].includes(unit.enchant))return [];
     const {remoteVacant,remoteVacantElements}=cards[unit.id];
-    const nearby=name==='roadrunner'?[...(begins?links[from]:[]),...links[from].flatMap(j=>links[j]).filter(j=>j!==from)]:links[from];
+    const nearby=name==='roadrunner'?[...(begins||handheld?links[from]:[]),...links[from].flatMap(j=>links[j]).filter(j=>j!==from)]:links[from];
     const remote=s.tiles.flatMap((tile,j)=>{
       if(tile.unit&&!allied(s,owner,tile.owner)&&unit.enchant!=='paralysis'){
         if(name==='aerogoetia'&&tile.type===3||revolt&&name==='thunderspawn'&&!combo.matchesTerrain(cards[tile.unit.id],tile.type)||
-          edition==='saga'&&name==='tengu'&&tile.area===area&&tile.type===3)return [j];
+          (edition==='saga'||handheld)&&name==='tengu'&&tile.area===area&&tile.type===3)return [j];
       }
       if(tile.owner>=0||!territoryType(tile.type))return [];
       if((remoteVacant||remoteVacantElements?.includes(tile.type)||begins&&unit.enchant==='spiritwalk')&&unit.enchant!=='paralysis')return [j];
@@ -1029,7 +1029,10 @@ function createCepter(edition="ps2"){
       if(a.n==='spectre'||(revolt||begins||edition==='saga')&&a.u.enchant==='liquidform'){a.st=randomStat();a.hp=randomStat();}
       if((revolt||edition==='saga')&&a.g==='spectresrobe'){a.st+=randomStat();a.hp+=randomStat();}
       if(a.n==='nightfiend')a.st+=t.level*20;
-      if(a.n==='peri'&&other.book.length-owner.book.length>=3){a.st+=20;a.hp+=20;}
+      if(a.n==='peri'){
+        if(handheld)a.st=a.hp=owner.book.length+10;
+        else if(other.book.length-owner.book.length>=3){a.st+=20;a.hp+=20;}
+      }
       if(revolt&&!muted&&a.n==='coatlicue'&&owner.book.length>other.book.length){a.st+=20;a.hp+=20;}
       if(a.g==='changingsalve')[a.st,a.hp]=[a.hp,a.st];
       if(a.g==='neutralamulet'||!revolt&&a.g==='neutralcloak'){a.element=-1;a.elements=null;}
@@ -1241,6 +1244,10 @@ function createCepter(edition="ps2"){
             lines.push(a.c.name+' · '+amount+'G 탈취');
           }
         }
+        if(handheld&&attacker==='remora'){
+          const hand=s.players[d.seat].hand;
+          if(hand.length){hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);lines.push(a.c.name+' · 상대 손패 한 장 파괴');}
+        }
         if(a.g==='rathunter'&&d.hp>0)extra.convert(d,'giantrat');
         if(attacker==='wraith'&&!s.predict&&Math.random()<(handheld?.6:.5)){d.hp=0;if(handheld)lines.push(a.c.name+' · 즉사');}
       }
@@ -1420,7 +1427,7 @@ function createCepter(edition="ps2"){
         if(begins)lines.push('좀비 · 기본 HP 20 감소');
       }
       const needsSurvivor=(revolt||begins||edition==='saga')&&a.n==='baal'||(begins||edition==='saga')&&a.n==='behemoth';
-      if(['behemoth','baal','remora'].includes(a.n)&&(!needsSurvivor||a.hp>0)){
+      if(['behemoth','baal','remora'].includes(a.n)&&!(handheld&&a.n==='remora')&&(!needsSurvivor||a.hp>0)){
         const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;
         if(hand.length){
           hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);
@@ -1665,7 +1672,7 @@ function createCepter(edition="ps2"){
       }
       if((a.n==='valkyria'||begins&&a.n==='valkyrie'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0&&(!revolt||opponent.defeatedByOpponent)){
         const st=fx.strength(a.u);
-        a.u.st=Math.max(st,Math.min(begins||revolt||a.n==='ixtol'?100:80,st+10));
+        a.u.st=Math.max(st,Math.min(begins||revolt||handheld?100:80,st+10));
         lines.push(a.c.name+' · 승리 후 ST '+a.u.st);
       }
     }

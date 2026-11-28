@@ -7358,6 +7358,35 @@ for(const edition of ['dc','ps1','saturn']){
     assert.deepEqual([restoredFungus.tiles[3].unit.mhp,restoredFungus.tiles[3].unit.hp],[50,50]);
     console.log('2012 3DS map Idols, restricted living equipment, lap rewards, scroll magic and regeneration checked');
 
+    const bookPower=fight('peri',null,null,null,s=>{s.players[0].book=[id('fly'),id('goblin'),id('manna')];});
+    assert.deepEqual([bookPower.battle.attackST,bookPower.battle.startHP[0]],[13,13]);
+
+    const stolenHand=fight('remora',null,null,null,s=>{s.players[1].hand=[id('manna')];});
+    assert.ok(stolenHand.battle.lines.some(line=>line.includes('상대 손패 한 장 파괴')));
+    assert.deepEqual(stolenHand.players[1].hand,[]);
+    const powerLimit=fight('valkyria','battleaxe',null,null,asDefender('goblin'));
+    assert.equal(powerLimit.tiles[3].unit.st,C.cards[id('valkyria')].st+10);
+
+    const regionalTengu=C.start(4,4,0,'3ds-original-terraced-valleys',undefined,undefined,0,'teams');
+    place(regionalTengu,3,'tengu',0);place(regionalTengu,10,'goblin',1);place(regionalTengu,22,'goblin',1);
+    for(const at of [3,10,22])regionalTengu.tiles[at].type=3;
+    Object.assign(regionalTengu,{phase:'land'});
+    Object.assign(regionalTengu.players[0],{pos:3,cash:600});
+    const longRange=C.choices(regionalTengu).filter(([kind,from])=>kind==='transfer'&&from===3);
+    assert.ok(longRange.some(([, ,to])=>to===10));
+    assert.ok(!longRange.some(([, ,to])=>to===22));
+
+    const randomBeforeBasilisk=Math.random;
+    try{
+      for(const [roll,won] of [[.39,true],[.4,false]]){
+        Math.random=()=>roll;
+        const hunt=fight('basilisk',null,null,null,s=>{asDefender('minotaur',{st:0})(s);s.tiles[3].level=3;});
+        assert.equal(hunt.battle.won,won);
+        assert.equal(hunt.tiles[3].level,2);
+      }
+    }finally{Math.random=randomBeforeBasilisk;}
+    console.log('2012 3DS regional Tengu, private hand attack, Peri book scaling, Valkyria and Basilisk thresholds checked');
+
     const shifts=spell('turnover');
     for(const [at,st] of [[1,30],[2,40],[3,50],[5,80]]){place(shifts,at,'goblin',at%4);shifts.tiles[at].unit.st=st;}
     cast(shifts);

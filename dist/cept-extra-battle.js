@@ -172,7 +172,7 @@ const CepterExtraBattle=(()=>{
           if(sources.some(v=>fx.name(v.unit)==='brontides'&&v.unit.enchant!=='paralysis'))a.hp+=10;
         }
       }
-      if(['saga','begins'].includes(s.edition)&&a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
+      if(['saga','begins','3ds'].includes(s.edition)&&a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
       if(s.edition==='saga'&&a.elements){
         const owned=lands.filter(v=>a.elements.includes(v.type)).length;
         if(a.n==='flammefleur')a.st=owned*10;
@@ -336,7 +336,7 @@ const CepterExtraBattle=(()=>{
       if(['ghoul','hugespider','livingclaw'].includes(n)||s.edition==='saga'&&a.g==='livingclaw'){combo.clear(d.u);d.u.enchant='paralysis';}
       if(n==='hunbaba'){combo.clear(d.u);d.u.poisoned=true;}
       if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
-        s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||
+        s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(['begins','3ds'].includes(s.edition)?.4:.5)||
         n==='yeti'&&combo.hasElement(d,0)&&chance(.6)||n==='dhampir'&&combo.hasElement(d,2)&&chance(.6)||
         s.edition==='saga'&&(n==='saint'&&combo.hasElement(d,-1)&&chance(.8)||n==='nil'&&chance(.5)||n==='unnameable'&&chance(.7))){
         d.hp=0;lines.push('즉사');
@@ -396,6 +396,7 @@ const CepterExtraBattle=(()=>{
       a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
     }
     function victory(a,d){
+      if(s.edition==='3ds'&&a.n==='ghoul')grow(a,10);
       if(s.edition==='begins'){
         if(a.n==='nezha')a.u.mhp=Math.min(100,fx.max(a.u)+10);
         if(a.n==='mattocktail'&&t.level<5&&!fx.levelLocked(t)){t.level++;lines.push(a.c.name+' · 영지 Lv.'+t.level);}

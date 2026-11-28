@@ -537,6 +537,11 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='redcap'?'배치된 고블린 한 마리당 자신의 전투 ST와 HP가 20씩 오릅니다. 자신이 전투에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
       C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
       C.edition==='begins'&&key==='ambermosquito'?'전투에서 티라노사우루스와 자이언트 래트 중 하나로 같은 확률로 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
+      C.edition==='3ds'&&key==='peri'?'내 북의 남은 카드 수에 10을 더한 값이 전투 ST와 HP가 됩니다.':
+      C.edition==='3ds'&&key==='remora'?'일반 공격이 명중하면 상대 손패 한 장을 무작위로 파괴합니다.':
+      C.edition==='3ds'&&key==='ghoul'?'공격이 명중하면 상대에게 마비를 부여합니다. 승리하면 최대 HP가 10 오릅니다. 상한은 100입니다.':
+      C.edition==='3ds'&&key==='basilisk'?'공격이 명중하면 상대를 40% 확률로 즉사시킵니다. 전투에서 생존하면 교전 영지 레벨을 1 낮춥니다.':
+      C.edition==='3ds'&&key==='valkyria'?'승리하면 기본 ST가 10 오릅니다. 상한은 100입니다.':
       C.edition==='3ds'&&key==='wraith'?'일반 공격이 명중하면 상대를 60% 확률로 즉사시킵니다. 전투가 끝나면 자신도 파괴됩니다.':
       C.edition==='3ds'&&key==='fungonoid'?'전투에서 생존하면 최대 HP가 10 오르고 HP가 회복됩니다. 최대 HP 상한은 100입니다.':
       C.edition==='revolt'&&key==='enchantress'?'단일 인챈트 주문을 받으면 같은 인챈트를 동맹 크리처에 옮긴 뒤 피로 상태가 됩니다.':
