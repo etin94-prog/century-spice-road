@@ -53,7 +53,7 @@ for(const edition of ['ps2','dc','ps1','saturn','3ds','saga','revolt','begins'])
 }
 let seed=89231;
 Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,37],['saturn',361,11],['saga',487,19],['revolt',489,41],['begins',400,18]]){
+for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,37],['saturn',361,11],['saga',487,20],['revolt',489,41],['begins',400,18]]){
   const modern=['saga','revolt','begins'].includes(edition);
   const C=ps2.createEdition(edition),catalog=C.cards.filter(c=>!c.unlisted);
   assert.equal(catalog.length,count);
@@ -4436,6 +4436,62 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,37],['saturn',36
   const restoredMap=structuredClone(threeArea);
   assert.equal(C.board(restoredMap).areaCount,3);
   assert.deepEqual(sameElement.map(at=>restoredMap.tiles[at].area),[0,1,2]);
+
+  {
+    const four='saga-original-four-beacons',beacons=()=>C.start(4,4,0,four,undefined,undefined,2,'teams');
+    const match=beacons(),board=C.board(match),reach=new Set([0]);
+    for(const at of reach)for(const to of board.links[at])reach.add(to);
+    assert.deepEqual([reach.size,board.position.length,board.areaCount,match.prices.length],[56,56,4,16]);
+    assert.equal(match.target,9000);
+    assert.equal(new Set(board.position.map(pair=>pair.join(','))).size,56);
+    for(const [at,exits] of board.links.entries())for(const to of exits){
+      const [row,col]=board.position[at],[destRow,destCol]=board.position[to];
+      assert.equal(Math.abs(row-destRow)+Math.abs(col-destCol),1);
+      assert.ok(board.links[to].includes(at));
+    }
+    assert.deepEqual(board.forts.map(at=>match.tiles[at].area),[0,1,2,3]);
+    for(const [from,previous,remaining,direction,destination] of [[9,8,1,10,42],[9,8,2,10,11],[41,40,1,42,10],[4,3,3,48,23]]){
+      const walk=beacons();
+      Object.assign(walk,{phase:'fork',visited:[],remaining});
+      Object.assign(walk.players[0],{pos:from,previous});
+      assert.equal(C.routePreview(walk,['route',direction]).at,destination);
+      assert.ok(C.play(walk,['route',direction]));
+      assert.equal(walk.players[0].pos,destination);
+    }
+    const p=match.players[0];
+    p.cash=2000;
+    match.phase='land';
+    const sameFire=[1,19,26,38];
+    for(const at of sameFire)Object.assign(match.tiles[at],{owner:0,unit:{id:id('minotaur'),hp:40}});
+    const allied=match.teams.findIndex((team,seat)=>seat>0&&team===match.teams[0]);
+    Object.assign(match.tiles[44],{owner:allied,unit:{id:id('minotaur'),hp:40}});
+    assert.deepEqual(sameFire.map(at=>C.chain(match,match.tiles[at])),[1,1,1,2]);
+    const oldPrices=match.prices.slice();
+    assert.ok(C.play(match,['level',38,2]));
+    const changed=match.prices.flatMap((price,k)=>price!==oldPrices[k]?[k]:[]);
+    assert.deepEqual(changed,[12]);
+
+    const market=JSON.parse(JSON.stringify(match)),buyer=market.players[market.turn];
+    buyer.cash=1000;buyer.pos=45;
+    market.phase='temple';market.remaining=0;
+    const cost=market.prices[15]*3;
+    assert.ok(C.choices(market).some(a=>a.join()===['buySymbol',15,3].join()));
+    assert.ok(C.play(market,['buySymbol',15,3]));
+    assert.deepEqual([buyer.cash,buyer.symbols[15]],[1000-cost,3]);
+    assert.equal(buyer.symbols.slice(0,15).reduce((sum,n)=>sum+n,0),0);
+
+    const lap=beacons(),traveler=lap.players[0];
+    Object.assign(traveler,{pos:42,previous:41,flags:[3,17,30],cash:300});
+    Object.assign(lap,{phase:'fork',visited:[],remaining:1});
+    assert.ok(C.play(lap,['route',43]));
+    assert.deepEqual(traveler.flags,[3,17,30,43]);
+    assert.equal(traveler.cash,450);
+    Object.assign(traveler,{pos:11,previous:10});
+    Object.assign(lap,{phase:'fork',visited:[],remaining:1});
+    assert.ok(C.play(lap,['route',0]));
+    assert.deepEqual([traveler.lap,traveler.cash,traveler.flags],[1,750,[]]);
+    assert.deepEqual(C.board(JSON.parse(JSON.stringify(lap))).shrineKinds,{15:'light',33:'dark'});
+  }
   for(const [spell,slot,choice] of [['capture',1,'mace'],['theft',2,'magicbolt']]){
     const s=C.start(4,4,5000,'saga-1',undefined,undefined,0,'teams');
     const viewRoom=require('../dist/cept-room-state').view;

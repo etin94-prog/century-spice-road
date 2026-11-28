@@ -50,6 +50,26 @@ const CepterMaps=(()=>{
   ],[...Array(36).keys()].map(i=>Math.floor(i/12)).concat(0,1,0,2,1,2),260);
   sagaPractice['saga-original-eveningstar']={...sanctuary,areaCount:3,section:'arena',graph:true,startCash:250,
     fortBonus:100,defaultGoal:8000,castles:[0],checkpoints:sanctuary.forts,shrineKinds:{5:'light',15:'dark',28:'light'}};
+
+  const beaconOrigins=[[0,0],[0,6],[6,0],[6,6]];
+  const beaconTypes=[
+    '성',0,0,'북쪽 요새',3,1,0,2,'신전',3,'전송진',0,
+    1,1,3,'성소',2,'동쪽 요새',1,0,2,'신전',1,3,
+    2,2,0,'신전',3,2,'서쪽 요새',1,0,'성소',2,1,
+    3,3,0,2,3,1,'전송진','남쪽 요새',0,'신전',1,3,
+    0,1,2,3,1,2,0,3
+  ];
+  const beacons=map('사방 등대령 · 창작 지도',[
+    ...beaconOrigins.flatMap(([r,c])=>sanctuaryLoop.map(([row,col])=>[row+r,col+c])),
+    [2,5],[2,6],[8,5],[8,6],[5,3],[6,3],[5,10],[6,10]
+  ],beaconTypes,[3,17,30,43],100,9,[
+    ...beaconOrigins.flatMap((_,area)=>loop(12).map(([a,b])=>[a+area*12,b+area*12])),
+    [4,48],[48,49],[49,23],[28,50],[50,51],[51,47],
+    [7,52],[52,53],[53,26],[18,54],[54,55],[55,39]
+  ],beaconTypes.slice(0,48).map((_,at)=>Math.floor(at/12)).concat(0,1,2,3,0,2,1,3),300);
+  sagaPractice['saga-original-four-beacons']={...beacons,areaCount:4,section:'arena',graph:true,startCash:300,
+    fortBonus:150,defaultGoal:9000,castles:[0],checkpoints:beacons.forts,shrineKinds:{15:'light',33:'dark'},
+    transit:{10:42,42:10}};
   const trapway=map('메아리 수로 · 창작 지도',[...ring,[2,3],[3,3],[4,3]],
     ['성',0,1,2,'동쪽 게이트',1,0,3,2,'마력 트랩',0,3,'서쪽 게이트',2,3,1,'마력 트랩',2,1],
     [4,12],100,12,[...loop(16),[2,16],[16,17],[17,18],[18,10]],Array(19).fill(0));

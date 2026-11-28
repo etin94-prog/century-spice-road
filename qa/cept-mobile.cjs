@@ -530,6 +530,20 @@ const {chromium}=require('playwright');
     assert.equal(await sagaPage.locator('#aiChoice option[value=sagaAffinity]').count(),1);
     await sagaPage.selectOption('#mapChoice','saga-original-eveningstar');
     assert.match(await sagaPage.locator('#stagePreview figcaption').innerText(),/42칸 · 3지역 · 요새 3곳/);
+    const fourAreas=await browser.newPage({viewport:{width:320,height:568},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+    try{
+      await fourAreas.route('https://**',r=>r.abort());
+      await fourAreas.goto(sagaUrl.href);
+      await fourAreas.selectOption('#humans','1');
+      await fourAreas.selectOption('#mapChoice','saga-original-four-beacons');
+      assert.match(await fourAreas.locator('#stagePreview figcaption').innerText(),/56칸 · 4지역 · 요새 4곳/);
+      await fourAreas.locator('#config .match-start .primary').tap();
+      await fourAreas.locator('#mapViews summary').tap();
+      await fourAreas.locator('#mapViews [data-zoom="1"]').tap();
+      await fourAreas.getByRole('button',{name:/^11번 전송진/}).tap();
+      assert.match(await fourAreas.locator('#center').innerText(),/1지역.*전송진.*43번/s);
+      await fourAreas.locator('#mapRoll').tap({trial:true});
+    }finally{await fourAreas.close();}
     await sagaPage.selectOption('#mapChoice','saga-original-crosswind');
     assert.match(await sagaPage.locator('#stagePreview figcaption').innerText(),/32칸 · 2지역 · 요새 3곳/);
     await sagaPage.locator('#config .match-start .primary').tap();
