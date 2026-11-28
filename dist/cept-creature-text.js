@@ -322,7 +322,7 @@ const CepterCreatureText=(()=>{
     deathgaze:'두루마리 공격을 무효화합니다. 전투에서 상대를 격파하고 생존하면 60% 확률로 그와 같은 종류의 카드를 상대 북에서 제거합니다.',
     sorcerer:'크리처를 지원 장비로 사용할 수 있습니다. 두루마리로 공격하면 강타가 적용됩니다.'
   };
-  const elements=['화','수','지','풍'],races={rh:'인간형',rb:'야수형',rd:'용형',ru:'불사형'};
+  const elements=['화','수','지','풍'],races={rh:'인간형',rb:'야수형',rd:'용형',ru:'불사형',rp:'식물형'};
   const targets=ids=>ids.map(i=>elements[i]||'무').join('·')+' 속성';
   const revoltBattle={
     brancharmy:'지도에 배치된 지 크리처 한 마리당 전투 ST가 5 오릅니다.',
@@ -518,8 +518,11 @@ const CepterCreatureText=(()=>{
     if(card.battleHP)pieces.push('전투 HP '+(card.battleHP>0?'+':'')+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');
     if(card.battleFee){
-      const target=key==='elderdragon'?'용 종족':targets([card.element]);
-      pieces.push('지도에 배치되어 전투에 참여하지 않으면 '+target+' 크리처의 전투 ST를 10 올립니다. 자신이 전투에 참가하면 '+card.battleFee+'G를 지불합니다.');
+      if(key!=='baal'){
+        const target=key==='elderdragon'?'용 종족':targets([card.element]);
+        pieces.push('지도에 배치되어 전투에 참여하지 않으면 '+target+' 크리처의 전투 ST를 10 올립니다.');
+      }
+      pieces.push('자신이 전투에 참가하면 '+card.battleFee+'G를 지불합니다.');
     }
     if(card.criticalBaseSTAtLeast!=null)pieces.push('기본 ST가 '+card.criticalBaseSTAtLeast+' 이상인 상대에게 일반 공격이 강타합니다.');
     if(firstEdition&&card.noLapHeal)pieces.push('주회 보상으로 HP가 회복되지 않습니다.');
@@ -528,10 +531,14 @@ const CepterCreatureText=(()=>{
     if(card.randomHandBreak)pieces.push('전투에서 살아남으면 상대 손패 한 장을 무작위로 파괴합니다.');
     if(card.battleEvolution)pieces.push('세 번의 전투에서 살아남으면 플레임 로드로 변신합니다.');
     if(card.instantKill){
-      const races=card.instantKill.races.map(r=>({rh:'인간',rb:'야수'})[r]).join('·');
-      pieces.push('일반 공격으로 피해를 준 '+races+' 종족을 '+Math.round(card.instantKill.rate*100)+'% 확률로 즉사시킵니다.');
+      const target=card.instantKill.races?.map(r=>races[r]).join('·')||targets(card.instantKill.elements);
+      pieces.push('일반 공격으로 피해를 준 '+target+' 상대를 '+Math.round(card.instantKill.rate*100)+'% 확률로 즉사시킵니다.');
     }
     if(card.selfDestructAfterBattle)pieces.push('전투가 끝날 때 자괴합니다.');
+    if(card.battleRecoilPercent)pieces.push('일반 공격으로 준 피해의 '+card.battleRecoilPercent+'%만큼 반동 피해를 받습니다.');
+    if(card.battleEndHPLoss)pieces.push('전투 종료 시 HP가 '+card.battleEndHPLoss+' 감소합니다.');
+    if(card.terrainLevelHP)pieces.push(targets([card.terrainLevelHP.element])+' 영지에서 싸우면 영지 레벨 × '+card.terrainLevelHP.perLevel+'만큼 전투 HP가 오릅니다.');
+    if(card.invadeVictoryTerrain!=null)pieces.push('침략에 성공하면 교전 영지를 '+targets([card.invadeVictoryTerrain])+' 영지로 바꿉니다.');
     if(card.entryST!=null)pieces.push('손패에서 영지에 배치되면 기본 ST가 '+card.entryST+'이 됩니다.');
     if(card.battleGrowth)pieces.push('전투 종료 시 생존하면 최대 HP가 '+card.battleGrowth+' 증가합니다. 상한은 80입니다.');
     if(firstEdition&&card.tollFactor)pieces.push('이 영지의 통행료는 '+card.tollFactor+'배입니다.');

@@ -58,7 +58,7 @@ const CepterExtraBattle=(()=>{
       if(temporary)a.original={...a.u};
       else delete a.original;
       const c=cards[id],u={id,hp:c.hp};
-      Object.assign(a,{u,c,n:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
+      Object.assign(a,{u,c,n:c.basicBattle?null:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
       lines.push(c.name+' 변신');
     }
     function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g)&&!((s.edition==='dc'||firstEdition)&&['iksear','terrair'].includes(a.g));}
@@ -127,6 +127,7 @@ const CepterExtraBattle=(()=>{
     }
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
+      if(a.c.terrainLevelHP?.element===t.type)a.hp+=t.level*a.c.terrainLevelHP.perLevel;
       if(a.c.firstStat){
         const own=element=>lands.filter(v=>v.type===element||element===-1&&v.type==='무속성').length;
         switch(a.c.firstStat){
@@ -431,7 +432,7 @@ const CepterExtraBattle=(()=>{
       const cap=['3ds','saga'].includes(s.edition)?100:80,max=fx.max(a.u),gain=Math.max(0,Math.min(cap,max+n)-max);
       a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
     }
-    function victory(a,d){
+    function victory(a,d,creatureEnd){
       if(s.edition==='3ds'&&a.n==='ghoul')grow(a,10);
       if(s.edition==='begins'){
         if(a.n==='nezha')a.u.mhp=Math.min(100,fx.max(a.u)+10);
@@ -454,7 +455,11 @@ const CepterExtraBattle=(()=>{
         if(combo.hasElement(d,index%4)){s.prices[index]=Math.max(1,Math.floor(price/2));}
       }
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
-      if(a.n==='leviathan'&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld')t.type=1;
+      const invadeTerrain=creatureEnd&&!a.defending?a.c.invadeVictoryTerrain:null;
+      if((a.n==='leviathan'||invadeTerrain!=null)&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld'){
+        if(invadeTerrain!=null&&t.type!==invadeTerrain)lines.push(a.c.name+' · 교전 영지 속성 변경');
+        t.type=invadeTerrain??1;
+      }
       if(s.edition==='revolt'&&a.c.victoryTerrain!=null&&d.defeatedByOpponent&&combo.activeWorld(s)!=='solidworld'){
         t.type=a.c.victoryTerrain;
         lines.push(a.c.name+' · 교전 영지 속성 변경');

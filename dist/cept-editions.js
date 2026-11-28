@@ -735,7 +735,12 @@ const CepterEditions=(()=>{
     darkmaster:{scrollCritical:true,battleFee:200},beelzebub:{scrollCritical:true,battleFee:200},
     juggernaut:{criticalBaseSTAtLeast:40,noLapHeal:true},myrmecoleo:{last:true,reviveForm:'dragonfly'},
     bandicoot:{splitReflect:true},hedgehog:{splitReflect:true},acheron:{randomHandBreak:true},
-    homunculus:{battleEvolution:{count:3,form:'flamelord'}},wraith:{},mantrap:{}
+    homunculus:{battleEvolution:{count:3,form:'flamelord'}},wraith:{},mantrap:{},
+    cleric:{support:true,instantKill:{races:['ru'],rate:.6}},igneousfatui:{last:true,instantKill:{races:['rh','rb','rd'],rate:.8}},
+    giantcrawler:{instantKill:{races:['rp'],rate:.6}},radon:{instantKill:{elements:[0,3],rate:.3}},geophage:{instantKill:{elements:[2],rate:.3}},
+    seamonk:{paralyze:true,statusRaces:['rh'],neutralizeRaces:['rh'],scrollCritical:true},stranglevine:{criticalRaces:['rb']},
+    baal:{first:true,battleFee:200},nessie:{terrainLevelHP:{element:1,perLevel:5}},leviathan:{invadeVictoryTerrain:1},
+    berserker:{battleRecoilPercent:25},zombie:{battleEndHPLoss:10}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1116,6 +1121,8 @@ const CepterEditions=(()=>{
       if(first&&kind==='creature'&&Object.hasOwn(firstBattleCreatures,slug)){
         Object.assign(c,{catalogOnly:false,basicBattle:true},firstBattleCreatures[slug]);
         if(edition==='ps1'&&c.battleFee===200)c.battleFee=100;
+        if(edition==='ps1'&&slug==='berserker')c.battleRecoilPercent=30;
+        if(edition==='ps1'&&slug==='zombie')c.battleEndHPLoss=20;
         if(slug==='wraith'){
           c.instantKill={races:['rh','rb'],rate:edition==='ps1'?.6:.3};
           if(edition==='ps1')c.selfDestructAfterBattle=true;
@@ -1193,6 +1200,11 @@ const CepterEditions=(()=>{
         evolution[evolution.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyEvolution=evolution;
+      const tides=presets.waterEarth.slice();
+      for(const [from,to] of [['wolf','cleric'],['fighter','berserker'],['marfolk','seamonk'],['kingtortoise','geophage'],['lizardman','leviathan'],['giantamoeba','nessie']]){
+        tides[tides.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyTides=tides;
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

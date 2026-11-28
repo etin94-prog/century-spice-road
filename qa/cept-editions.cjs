@@ -8635,3 +8635,68 @@ for(const edition of ['ps1','saturn']){
   assert.equal(dead.b.finalHP[1],0);
 }
 console.log('First editions: split reflection, scroll bypass, race-specific kill rates, hand removal, and persistent evolution checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),saturn=edition==='saturn';
+  const id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+  function fight(attacker,guard,{type='무속성',level=1,seed=.5,atkGear,defGear,placed=false,guardUnit={}}={}){
+    const s=C.start(2,2,7000,edition+'-original-marsh-paths'),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    const t=s.tiles[at];
+    Object.assign(t,{type,level,owner:1,unit:{id:id(guard),hp:C.cards[id(guard)].hp,...guardUnit}});
+    const from=s.tiles.findIndex((tile,i)=>i!==at&&C.territoryType(tile.type));
+    if(placed)Object.assign(s.tiles[from],{owner:0,unit:{id:id(attacker),hp:C.cards[id(attacker)].hp}});
+    s.phase='attack';s.battle={at,inv:id(attacker),atkItem:null,defItem:null,...(placed?{from}:{})};
+    s.players.forEach((p,i)=>{const gear=[atkGear,defGear][i];p.cash=1000;p.hand=gear?[id(gear)]:[];});
+    const random=Math.random;
+    try{
+      Math.random=()=>seed;
+      assert.ok(C.play(s,atkGear?['equip',0]:['bare']));
+      assert.ok(C.play(s,defGear?['equip',0]:['bare']));
+    }finally{Math.random=random;}
+    return {s,b:s.battle,t};
+  }
+  assert.ok(C.validBook(C.presets.legacyTides));
+  for(const c of ['cleric','berserker','seamonk','geophage','leviathan','nessie'])assert.ok(C.presets.legacyTides.includes(id(c)));
+  for(const [attacker,guard,excluded,rate] of [
+    ['cleric','dragonzombie','fighter',.6],['igneousfatui','fighter','dragonzombie',.8],
+    ['giantcrawler','mantrap','dragonzombie',.6],['radon','minotaur','dragonzombie',.3],
+    ['geophage','dragonzombie','fighter',.3]
+  ]){
+    const ability=fight(attacker,guard,{seed:rate-.01,guardUnit:{st:0,hp:60}});
+    const misses=fight(attacker,guard,{seed:rate,guardUnit:{st:0,hp:60}});
+    assert.match(ability.b.lines.join(' '),/즉사/,attacker);
+    assert.doesNotMatch(misses.b.lines.join(' '),/즉사/,attacker);
+    assert.doesNotMatch(fight(attacker,excluded,{seed:0,guardUnit:{st:0,hp:60}}).b.lines.join(' '),/즉사/,attacker);
+  }
+  const priest=fight('cleric','dragonzombie',{atkGear:'goblin',guardUnit:{st:0,hp:60},seed:1});
+  assert.equal(priest.b.attackST,C.cards[id('cleric')].st+C.cards[id('goblin')].st);
+  const delayed=fight('igneousfatui','fighter',{seed:1});
+  assert.equal(delayed.b.strikes[0].side,1);
+  const monk=fight('fighter','seamonk',{placed:true});
+  assert.equal(monk.b.strikes[0].effect,'block');
+  assert.equal(monk.s.tiles[monk.b.from].unit.enchant,'paralysis');
+  const monkScroll=fight('seamonk','wallofstone',{atkGear:'nuclearfusion'});
+  assert.match(monkScroll.b.strikes[0].notes.join(' '),/75 피해/);
+  const baal=fight('goblin','baal');
+  assert.equal(baal.b.strikes[0].side,1);
+  assert.equal(baal.s.players[1].cash,saturn?800:900);
+  assert.equal(fight('goblin','baal',{guardUnit:{hp:1,enchant:'paralysis'}}).s.players[1].cash,1000);
+  const clone=fight('doppelganger','baal');
+  assert.equal(clone.b.forms[0],id('baal'));
+  assert.equal(clone.s.players[0].cash,saturn?800:900);
+  const recoil=fight('berserker','wallofstone');
+  assert.equal(recoil.b.strikes[0].hp[0],C.cards[id('berserker')].hp-(saturn?10:12));
+  assert.match(recoil.b.lines.join(' '),/반동/);
+  const decay=fight('goblin','zombie');
+  assert.equal(decay.t.unit.hp,C.cards[id('zombie')].hp-C.cards[id('goblin')].st-(saturn?10:20));
+  assert.equal(fight('goblin','zombie',{guardUnit:{hp:25}}).b.finalHP[1],0);
+  const water=fight('fighter','nessie',{type:1,level:3});
+  assert.equal(water.b.startHP[1],C.cards[id('nessie')].hp+water.b.landHP+15);
+  const dry=fight('fighter','nessie',{type:2,level:3});
+  assert.equal(dry.b.startHP[1],C.cards[id('nessie')].hp);
+  assert.equal(fight('leviathan','goblin',{type:2}).t.type,1);
+  assert.equal(fight('goblin','leviathan',{type:2}).t.type,2);
+  assert.equal(fight('leviathan','wallofstone',{type:2}).t.type,2);
+  if(saturn)assert.match(fight('giantrat','stranglevine').b.strikes.at(-1).notes.join(' '),/60 피해/);
+}
+console.log('PS1 and Saturn race and elemental instant kills, scrolls, battle cost, recoil, zombie decay and water terrain checked.');

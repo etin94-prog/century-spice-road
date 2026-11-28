@@ -984,7 +984,8 @@ function createCepter(edition="ps2"){
           criticalElements:[],criticalRaces:[],pierceElements:[],pierceAll:false,reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false,neutralizeRaces:[],
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
           criticalBaseSTAtLeast:null,battleFee:0,reviveForm:null,splitReflect:false,instantKill:null,
-          selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false};
+          selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
+          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1237,6 +1238,10 @@ function createCepter(edition="ps2"){
         const recoil=Math.floor(damage*weapon.recoilPercent/100);
         a.hp-=recoil;lines.push(a.gear.name+' · 반동 '+recoil+' 피해');
       }
+      if(!scroll&&!muted&&a.c.battleRecoilPercent&&damage>0){
+        const recoil=Math.floor(damage*a.c.battleRecoilPercent/100);
+        a.hp-=recoil;if(recoil)lines.push(a.c.name+' · 반동 '+recoil+' 피해');
+      }
       if((handheld||firstEdition)&&a.g==='soulblast'&&damage>0){
         const amount=firstEdition?damage:(s.players[a.seat].lap+1)*40;
         s.players[a.seat].cash+=amount;s.players[d.seat].cash-=amount;
@@ -1250,7 +1255,9 @@ function createCepter(edition="ps2"){
       const blocksAttackBonus=revolt&&(d.n==='scylla'||d.g==='squidmantle');
       if(damage>0&&!scroll&&!muted&&!blocksAttackBonus&&(edition!=='ps2'||a.hp>0)){
         const creatureEffects=!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits,attacker=creatureEffects?a.n:null;
-        if(creatureEffects&&d.hp>0&&!s.predict&&a.c.instantKill?.races.includes(d.c.catalog?.race)&&Math.random()<a.c.instantKill.rate){
+        const instant=a.c.instantKill;
+        if(creatureEffects&&d.hp>0&&!s.predict&&instant&&
+          (instant.races?.includes(d.c.catalog?.race)||matches(instant.elements,d))&&Math.random()<instant.rate){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
         if(revolt&&d.hp>0&&(attacker==='saint'&&d.element===-1||attacker==='samurai'&&fx.strength(d.u)>=40&&!s.predict&&Math.random()<.7)){
@@ -1494,9 +1501,12 @@ function createCepter(edition="ps2"){
       }
       if(a.n==='golem'&&a.hp>0){a.u.st=Math.max(0,fx.strength(a.u)-10);if(!firstEdition&&!begins&&!handheld)a.hp=Math.min(a.hp,a.u.hp)-10;}
       if(a.g==='boomerang'&&edition!=='saga'&&edition!=='begins'&&!firstEdition&&(!revolt||a.n!=='centaur'||a.hp<=0)&&hasHandSpace(s.players[a.seat]))s.players[a.seat].hand.push(a.item);
-      if(a.n==='zombie'&&a.hp>0){
-        a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-20;
+      const hpLoss=creatureEnd&&a.c.battleEndHPLoss;
+      if(a.hp>0&&(hpLoss||a.n==='zombie')){
+        const loss=hpLoss||20;
+        a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-loss;
         if(begins)lines.push('좀비 · 기본 HP 20 감소');
+        else if(hpLoss)lines.push(a.c.name+' · 전투 종료 HP '+loss+' 감소');
       }
       const needsSurvivor=(revolt||begins||edition==='saga')&&a.n==='baal'||(begins||edition==='saga')&&a.n==='behemoth';
       if(['behemoth','baal','remora'].includes(a.n)&&!(handheld&&a.n==='remora')&&(!needsSurvivor||a.hp>0)){
@@ -1721,7 +1731,7 @@ function createCepter(edition="ps2"){
         if(s.predict){b.magicLoss??=[0,0];b.magicLoss[a.defending?1:0]-=200;}
         lines.push('헌터스 송 · 상대 크리처 격파 +200G');
       }
-      if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent);
+      if(!muted&&a.hp>0&&opponent.hp<=0)extra.victory(a,opponent,creatureEnd);
       if(revolt&&creatureEnd&&a.n==='duskdweller'&&a.hp>0&&opponent.hp<=0){
         a.u.st=Math.min(100,fx.strength(a.u)+10);
         const max=fx.max(a.u),gain=Math.max(0,Math.min(10,100-max));
