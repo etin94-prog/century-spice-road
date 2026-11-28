@@ -41,4 +41,21 @@ for(let stage=1;stage<=40;stage++){
   s.players[0].hand=[plague];assert.ok(C.play(s,['cast',0]));assert.ok(C.play(s,['plagueArea',0]));
   assert.equal(targets[0].unit.poisoned,true);assert.equal(targets[1].unit.poisoned,undefined);
 }
-console.log('All published bridge/warp destinations, legacy layouts and Plague area targeting OK');
+{
+  // Every playable stage tile is fitted to the 2:1 tile painted in its picture, and says how the picture shows it.
+  const layouts=require('../dist/cept-layouts.js');
+  assert.equal(layouts.length,40);
+  for(const layout of layouts){
+    const m=C.board(C.start(2,0,5000,'ps2-'+layout.stage,C.presets.fire));
+    assert.equal(m.fit,layout.fit);assert.equal(m.fit.length,m.position.length,'Fit marks for stage '+layout.stage);
+    assert.match(m.fit,/^[012]+$/);
+    assert.ok(m.half>2.5&&m.half<5,'Tile size of stage '+layout.stage);
+    m.position.forEach(([x,y],i)=>{
+      assert.ok(x>m.half&&x<100-m.half&&y>0&&y<100,'Stage '+layout.stage+' tile '+i+' lies inside the picture');
+      for(let j=0;j<i;j++)assert.ok(Math.hypot(x-m.position[j][0],(y-m.position[j][1])*4/3)>m.half*.6,'Stage '+layout.stage+' tiles '+j+' and '+i+' overlap');
+    });
+  }
+  const marks=layouts.map(layout=>layout.fit).join('');
+  assert.ok(marks.split('2').length-1>marks.length*.9,'Most tiles stand on their painted tile');
+}
+console.log('All published bridge/warp destinations, legacy layouts, fitted stage tiles and Plague area targeting OK');

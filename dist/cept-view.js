@@ -665,6 +665,8 @@ function map(){
   const root=$('map'),m=C.board(s);root.replaceChildren();const span=m.stage?1:m.rows+m.cols+.6;
   const half=m.stage?m.half:100/span;
   root.classList.toggle('source-map',!!m.stage);
+  // A fitted board has every tile lined up with the tile painted in its picture.
+  root.classList.toggle('fitted',!!(m.stage&&m.fit));
   if(['3ds','saga','revolt','begins'].includes(C.edition))root.dataset.editionBoard=C.edition;
   else delete root.dataset.editionBoard;
   root.style.setProperty('--board-art',m.stage?'url("art/cept-maps/'+m.image+'.webp")':'none');
@@ -692,6 +694,11 @@ function map(){
       b.style.setProperty('--tile-art-x',(half-r)+'cqw');
       b.style.setProperty('--tile-art-y',(half*.5-c*2/3)+'cqw');
       b.classList.toggle('altered',t.type!==m.types[n]);b.dataset.fort=m.forts.includes(n)?'true':'false';
+      // The picture shows this tile itself (2), its frame in another colour (1) or nothing (0).
+      if(m.fit){
+        const painted=m.fit[n],land=typeof m.types[n]==='number'||m.types[n]==='무속성';
+        if(painted==='0')b.classList.add('drawn');else if(painted==='1'&&land)b.classList.add('tinted');
+      }
     }
     b.style.zIndex=String(m.stage?Math.round(c):2*(r+c));b.setAttribute('aria-label',(n+1)+'번 '+name+' '+owner);
     const links=C.chain(s,t);

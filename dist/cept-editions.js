@@ -100,7 +100,7 @@ const CepterEditions=(()=>{
         areas,areaCount:regional?2:same?other.areaCount:1,...(regional?{regionalRevision:2}:{}),
         ...(splitKelder?{initialSymbolPrices:[10,10,10,10,10,10,1,1]}:{}),
         ...(edition==='ps1'&&m.slug==='talio'?{lapIncrement:50}:{}),startCash,bonus:lapBonus||200,base:landPrice||(edition==='begins'&&m.slug==='gaidess-arena-2'?100:80),die:die||Number(m.die)||other?.die||(edition==='begins'?8:6),storyGoal:goal||other?.storyGoal,
-        graph:true,...(fortBonus||edition==='begins'?{fortBonus:fortBonus||200}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
+        graph:true,...(fortBonus||edition==='begins'?{fortBonus:fortBonus||200}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fit:other.fit,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
         ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{}),
         ...(shop?{cardShops:Object.fromEntries(types.flatMap((t,i)=>t==='카드 상점'?[[i,shop]]:[]))}:{})};
     }
