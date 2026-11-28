@@ -6719,6 +6719,32 @@ for(const edition of ['dc','ps1','saturn']){
     cast(released,'targetLand',allyAt);
     assert.deepEqual([released.players[0].cash,released.tiles[allyAt].owner,released.players[0].book],[390+value,-1,[id('goblin')]]);
   }
+  if(edition==='dc'){
+    function nativeSpell(name,prepare){
+      const s=C.start(2,2,5000,map);
+      Object.assign(s.players[0],{cash:600,hand:[id(name),id('manna')]});
+      if(prepare)prepare(s);
+      assert.ok(C.play(s,['cast',0]),name);
+      if(s.phase==='sacrifice')assert.ok(C.play(s,['sacrifice',1]),name);
+      return s;
+    }
+    const bind=nativeSpell('bind',s=>{s.players[1].cash=500;});
+    assert.deepEqual(C.choices(bind),[['targetPlayer',0],['targetPlayer',1]]);
+    assert.ok(C.play(bind,['targetPlayer',1]));
+    assert.deepEqual([bind.players[1].cash,bind.players[1].status,bind.players[1].enchantDeadline],[500,'bind',2]);
+    const rust=nativeSpell('rust',s=>{s.players[1].hand=['manna','battleaxe','chainmail','goblin'].map(id);});
+    assert.ok(C.play(rust,['targetPlayer',1]));
+    assert.deepEqual(rust.players[1].hand,['manna','goblin'].map(id));
+    const phantasm=nativeSpell('phantasm',s=>{
+      Object.assign(s.tiles[1],{type:0,owner:0,unit:{id:id('goblin'),hp:30}});
+    });
+    assert.ok(C.play(phantasm,['targetLand',1]));
+    assert.equal(phantasm.tiles[1].unit.enchant,'phantasm');
+    phantasm.turn=1;phantasm.phase='spell';phantasm.players[1].hand=[id('magicbolt')];
+    cast(phantasm,'targetLand',1);
+    assert.equal(phantasm.tiles[1].unit.hp,30);
+    console.log('Dreamcast native Bind, Rust and Phantasm checks passed');
+  }
   console.log(edition,'native barrier, Chariot, healing, draw and economy effects passed');
 }
 {

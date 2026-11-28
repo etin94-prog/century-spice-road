@@ -106,7 +106,12 @@ const CepterEditions=(()=>{
     dc:{
       acidrain:'acidrain',avalanche:'avalanche',backward:'backward',banishingray:'banishingray',barrier:'barrier',
       bistair:'bistair',chariot:'chariot',corruption:'corruption',dispelmagic:'dispelmagic',erasure:'erasure',
-      find:'find',foresight:'foresight',holyword2:'holyword2',lifestream:'lifestream'
+      find:'find',foresight:'foresight',holyword2:'holyword2',lifestream:'lifestream',
+      bind:'bind',bindingmist:'bindingmist',blackout:'blackout',fairylight:'fairylight',
+      forestleap:'forestleap',lakeleap:'lakeleap',mountainleap:'mountainleap',plainleap:'plainleap',
+      locust:'locust',parasite:'parasite',phantasm:'phantasm',quintessence:'quintessence',
+      removecurse:'removecurse',replace:'replace',revival:'revival',rust:'rust',
+      soulsteal:'soulsteal',spiritwalk:'spiritwalk',teleport:'teleport',triumph:'triumph'
     },
     ps1:{...firstSpellEffects,corruption:'corruption'},
     saturn:firstSpellEffects

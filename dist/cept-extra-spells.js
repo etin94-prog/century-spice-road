@@ -240,7 +240,8 @@ const CepterExtraSpells=(()=>{
       if(type[e]==='player'){
         if(e!=='dispelmagic'&&category==='sflash'&&fx.idol(s,'graniteidol'))return [];
         return s.players.flatMap((q,i)=>{
-          if(e!=='dispelmagic'&&q.status==='barrier'||enemyOnly.has(e)&&!enemy(s,i))return [];
+          const enemyRequired=enemyOnly.has(e)&&!(e==='bind'&&['dc','3ds'].includes(s.edition));
+          if(e!=='dispelmagic'&&q.status==='barrier'||enemyRequired&&!enemy(s,i))return [];
           if(e==='unholygrasp'&&!symbolCount(q)||e==='forfeit'&&!forfeitSymbols(s,i).length||['fear','revoltFear'].includes(e)&&!fearTarget(s,i))return [];
           if(e==='fluxion'&&s.players[s.turn].cash>=q.cash)return [];
           if(e==='revoltErosion'&&eroded(q.hand).length===q.hand.length)return [];
