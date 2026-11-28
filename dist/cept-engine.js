@@ -786,6 +786,7 @@ function createCepter(edition="ps2"){
     if(s.phase==='teleMove'&&['outrage','thrustblow'].includes(s.spellEffect))
       return extra.forcedMoveExits(s,s.teleFrom,s.spellEffect).map(at=>['teleTo',at]);
     if(s.phase==='teleMove'&&s.spellEffect==='chariot')return extra.chariotExits(s,s.teleFrom).map(n=>['teleTo',n]);
+    if(['runeHand','lemuresHand'].includes(s.phase))return fx.secretHandChoices(s);
     if(s.phase==='bookWorm')return s.players[s.spellTarget].hand.map((_,j)=>['wormDiscard',j]);
     if(s.phase==='sacrifice')return s.players[s.turn].hand.flatMap((_,j)=>j===s.pendingCard.index?[]:[['sacrifice',j]]);
     if(s.phase==='mindseeker')return Array.from({length:Math.min(6,(s.players[s.spellTarget].book?.length??s.players[s.spellTarget].bookCount??0))},(_,j)=>['eraseDraw',j]);
@@ -1805,7 +1806,11 @@ function createCepter(edition="ps2"){
       delete s.pendingCard;s.phase=pending.phase;s.cardPaid=true;
       const ok=applyAction(s,pending.action,discarded);delete s.cardPaid;return ok;
     }
-    const trackChains=['summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','secretArt','secretLand','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','zeromnPower','replaceCard'].includes(k);
+    const enchantedTarget=revolt&&k==='targetLand'&&s.spellCategory==='senchant'&&fx.name(s.tiles[x].unit)==='enchantress'?s.tiles[x]:null;
+    const curseFields=['enchant','poisoned','confused','expires','enchantDeadline','caster'];
+    const sourceUnit=enchantedTarget?.unit;
+    const earlierCurse=sourceUnit?curseFields.map(field=>sourceUnit[field]):null;
+    const trackChains=['lemuresCard','runeCard','summon','element','transfer','sell','equip','bare','roll','route','direction','leaveTemple','buySymbol','sellSymbol','cast','targetLand','targetPlayer','comboArea','secretArt','secretLand','ability','abilityLand','abilityPlayer','totem','teleTo','mesmerCard','soltisPower','zeromnPower','replaceCard'].includes(k);
     const previousChains=trackChains||combo.activeWorld(s)==='jointworld'||(handheld||revolt)&&k==='exchange'?chainCounts(s):null;
     armBeginsSuddenDeath(s);
     if(k==='roll'){delete s.doublecast;delete s.chainNotice;delete s.shrineNotice;if(p.sagaClemency)s.shrineClemencyUsed=true;}
@@ -1835,11 +1840,13 @@ function createCepter(edition="ps2"){
       const unit=s.tiles[from].unit,card=cards[unit.id],move=fx.secretArt(card,unit)?.move;
       const borrowed=s.borrowedSecret;
       if(!borrowed)fatigue(unit);
+      s.phase='roll';
       const label=fx.applySecret(s,from,at,borrowed);
       delete s.secretFrom;delete s.borrowedSecret;
       if(move){moveWithAbility(from,at,false,card.name);return;}
       mapEffect('cast',label,player?s.players[at].pos:at,{source:from});
-      s.phase=s.secretTravel?'teleMove':s.cloudGizmo==='secret'?'bookWorm':'roll';
+      if(s.secretTravel)s.phase='teleMove';
+      if(s.cloudGizmo==='secret')s.phase='bookWorm';
     }
     function commandHealth(tile){
       const unit=tile.unit,delta=unit.enchant==='dominantgrowth'&&!fx.immuneHP(tile)?20:cards[unit.id].commandMHP;
@@ -1874,6 +1881,12 @@ function createCepter(edition="ps2"){
         mapEffect('cast',borrowed?'템테이션 · 영지 능력':'영지 능력',k==='abilityLand'?x:s.players[x].pos,{source:from});
         if(next)s.phase=next;else if(borrowed)s.phase='roll';else afterTerritory(s);
         break;
+      }
+      case 'lemuresCard':{
+        const src=s.tiles[s.lemuresFrom],victim=s.players[s.spellTarget],id=src.unit.id;
+        p.hand.push(victim.hand[x]);victim.hand[x]=id;
+        vacate(src);delete s.lemuresFrom;delete s.spellTarget;
+        mapEffect('cast','크리처 손패 교환',victim.pos,{title:cards[id].name});s.phase='roll';break;
       }
       case 'wormDiscard':{
         const victim=s.players[s.spellTarget],id=victim.hand.splice(x,1)[0];
@@ -1951,12 +1964,13 @@ function createCepter(edition="ps2"){
         if(k==='foresightCard'&&s.shrineForesight){delete s.shrineForesight;s.phase='land';shrine.after(s);}
         mapEffect('cast',extraSpells.soltis[x]||extraSpells.actions[k]);break;
       case 'circleSkip':delete s.circleOffers;s.phase='land';break;
-      case 'circleCast':case 'mesmerCard':case 'cast':{
-        const id=k==='circleCast'?x:k==='mesmerCard'?s.players[s.spellTarget].hand.splice(x,1)[0]:paid(s,p,x);
+      case 'circleCast':case 'mesmerCard':case 'runeCard':case 'cast':{
+        const id=k==='circleCast'?x:k==='runeCard'?y:k==='mesmerCard'?s.players[s.spellTarget].hand.splice(x,1)[0]:paid(s,p,x);
         if(k==='circleCast'){delete s.circleOffers;s.circleCasting=true;}
         const c=cards[id],cash=p.cash;s.phase='roll';
         if(c.doublecast)s.doublecast='pending';else delete s.doublecast;
         p.lastCast={name:key(c),round:s.round};
+        if(revolt)s.spellCategory=c.category;
         delete p.invisible;
         if(p.status==='revoltLifeForce'){
           fx.clearCepter(p);
@@ -2153,6 +2167,16 @@ function createCepter(edition="ps2"){
         }
         break;
     }
+    if(sourceUnit&&enchantedTarget.unit===sourceUnit&&combo.enchanted(sourceUnit)&&
+        curseFields.some((field,index)=>sourceUnit[field]!==earlierCurse[index])){
+      for(const tile of s.tiles){
+        if(tile===enchantedTarget||!tile.unit||!allied(s,tile.owner,enchantedTarget.owner))continue;
+        combo.clear(tile.unit);
+        for(const field of curseFields)if(sourceUnit[field]!=null)tile.unit[field]=sourceUnit[field];
+      }
+      sourceUnit.fatigued=true;
+      note(s,cards[sourceUnit.id].name+' · 동맹 크리처에게 인챈트 전파');
+    }
     if(s.doublecast==='pending'&&s.phase==='roll'){
       s.doublecast='ready';s.phase='spell';note(s,'연속 주문 · 주사위를 굴리기 전에 주문을 더 쓸 수 있습니다.');
     }
@@ -2261,6 +2285,8 @@ function createCepter(edition="ps2"){
     function secretScore(from,to){
       const unit=s.tiles[from].unit,art=fx.secretArt(cards[unit.id],unit);
       if(art.carry)return Math.max(-20,...fx.secretMoveExits(s,to).map(at=>sleipnirValue(to,at)/8))-art.cost/12;
+      if(art===fx.secretArt(cards[unit.id],unit)&&cards[unit.id].secretArt==='useInstant')
+        return Math.max(-20,...fx.secretHandChoices({...s,phase:'runeHand'}).map(([, ,id])=>extra.scoreCast(s,cards[id].effect)))-art.cost/12;
       return art.move?sleipnirValue(from,to)/8-art.cost/12:fx.secretValue(s,from,to);
     }
     function development(k,x,y,c){
@@ -2459,8 +2485,9 @@ function createCepter(edition="ps2"){
         return Math.max(...s.players.map((_,j)=>alliedWordTarget(j,targetWord)))-c.cost/35;
       }
       if(k==='shrineChoice')return shrine.score(s,x);
-      if(k==='circleCast'){
-        const effect=cards[x].effect;
+      if(k==='lemuresCard')return cards[y].cost+cards[y].st+cards[y].hp;
+      if(k==='circleCast'||k==='runeCard'){
+        const effect=cards[k==='runeCard'?y:x].effect;
         if(extraTypes?.[effect])return extra.scoreCast(s,effect);
         if(combo.type[effect])return plan.cast(effect);
         if(effect==='manna')return Math.max(1,p.lap)*6;

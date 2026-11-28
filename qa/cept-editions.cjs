@@ -1909,7 +1909,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,60);
+  assert.equal(ready.length,63);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
   {
     const shot=mode=>revolt('battleaxe',null,'goblin',mode).s.battle.strikes[0].effect;
@@ -2335,7 +2335,35 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     lap.phase='roll';
     assert.ok(R.play(lap,['roll']));
     assert.deepEqual([lap.players[0].lap,lap.tiles[5].unit.mhp,lap.tiles[5].unit.hp,lap.tiles[6].unit.mhp,lap.tiles[6].unit.hp],[1,30,30,40,40]);
-    console.log('Revolt living equipment, secret moves, lap growth, and persistent synthesis in placement and invasion checked');
+    const rune=actSecret('runeadept',s=>{
+      s.players[0].hand=['magicbolt','manna','bindingmist','goblin'].map(n=>bySlug.get(n));
+      revoltUnit(s,2,'blueogre',1,1,1,40);
+    });
+    assert.equal(rune.phase,'runeHand');
+    assert.deepEqual(R.choices(rune),[['runeCard',0,bySlug.get('magicbolt')],['runeCard',1,bySlug.get('manna')]]);
+    assert.ok(R.play(rune,R.choices(rune)[0])&&R.play(rune,['targetLand',2]));
+    assert.deepEqual([rune.phase,rune.players[0].cash,rune.tiles[2].unit.hp,rune.players[0].hand.length],['roll',400,20,4]);
+    const lemures=actSecret('lemures',s=>{
+      s.players[1].hand=['shatter','goblin','mace'].map(n=>bySlug.get(n));
+    });
+    assert.ok(R.play(lemures,['secretPlayer',1]));
+    const privateExchange=engineRoom.view(R,lemures,0),opponentExchange=engineRoom.view(R,lemures,1);
+    assert.deepEqual(privateExchange.choices,[['lemuresCard',1,bySlug.get('goblin')]]);
+    assert.deepEqual(privateExchange.game.players[1].hand,[]);
+    assert.deepEqual(opponentExchange.choices,[]);
+    assert.ok(R.play(lemures,privateExchange.choices[0]));
+    assert.deepEqual([lemures.phase,lemures.players[0].cash,lemures.tiles[1].unit,lemures.players[0].hand,lemures.players[1].hand],
+      ['roll',450,null,[bySlug.get('goblin')],['shatter','lemures','mace'].map(n=>bySlug.get(n))]);
+    const spread=revoltCast('bindingmist',s=>{
+      s.teams=[0,1,1,0];s.players.push(structuredClone(s.players[0]),structuredClone(s.players[1]));
+      revoltUnit(s,1,'enchantress',1,3);
+      revoltUnit(s,2,'blueogre',1,1);revoltUnit(s,3,'greenogre',2,2);
+      revoltUnit(s,5,'redogre',0,0);revoltUnit(s,6,'goblin',3,0);
+    });
+    assert.ok(R.play(spread,['targetLand',1]));
+    assert.deepEqual([1,2,3,5,6].map(at=>spread.tiles[at].unit.enchant),['paralysis','paralysis','paralysis',undefined,undefined]);
+    assert.equal(spread.tiles[1].unit.fatigued,true);
+    console.log('Revolt living equipment, secret moves, lap growth, synthesis, private hand exchange and alliance enchantment checked');
 
 
 

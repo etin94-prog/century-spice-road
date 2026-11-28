@@ -539,6 +539,8 @@ const CepterCombos = (() => {
       carryCreature:{cost:60,label:'내 크리처를 한두 칸 이동',carry:true},
       leechCapture:{cost:80,label:'피로한 부상 크리처를 격파하고 해당 영지로 이동'},
       tradeStrength:{cost:0,label:'최대 HP의 두 배만큼 마력 획득 · 기본 ST와 최대 HP −10',self:true},
+      useInstant:{cost:100,label:'내 손패의 단일 즉시 주문 효과 사용 · 카드는 유지',self:true},
+      exchangeEnemyCreature:{cost:50,label:'적 손패 크리처와 레무레스를 교환',player:true,enemy:true},
       playerBarrier:{cost:50,label:'고른 셉터에게 안티 스펠 부여',player:true},
       toArmedPrincess:{cost:60,label:'아머드 프린세스로 진화',form:'armedprincess',self:true},
       toGaruda:{cost:60,label:'가루다로 진화',form:'garuda',self:true},
@@ -598,13 +600,22 @@ const CepterCombos = (() => {
       if(!src?.unit||isDefensive(src.unit)||src.unit.enchant==='thornfetter')return [];
       return territoryMoveExits(s,from).filter(at=>canOccupy(cards[src.unit.id],s.tiles[at])&&canInvade(s,src.owner,s.tiles[at].owner));
     }
+    function secretHandChoices(s){
+      const rune=s.phase==='runeHand',hand=s.players[rune?s.turn:s.spellTarget].hand;
+      return hand.flatMap((id,j)=>{
+        const c=cards[id];
+        return (rune?c.kind==='spell'&&c.category==='sflash'&&!c.catalogOnly:c.kind==='creature')?[[rune?'runeCard':'lemuresCard',j,id]]:[];
+      });
+    }
     function secretTargets(s,from,borrowed=false){
       const src=s.tiles[from];
       const key=secretKey(cards[src?.unit?.id],src?.unit),p=s.players[s.turn],art=arts[key];
       if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.enchant==='paralysis'||!borrowed&&(src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost))return [];
       if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
         (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'&&(!art.chooseDirection||!q.chooseDirection)&&
-        (key!=='replaceHand'||q.hand.length)&&(key!=='discardBookTop'||q.book.length)?[['secretPlayer',i]]:[]);
+        (key!=='replaceHand'||q.hand.length)&&(key!=='discardBookTop'||q.book.length)&&
+        (key!=='exchangeEnemyCreature'||hasHandSpace(p)&&q.hand.some(id=>cards[id].kind==='creature'))?[['secretPlayer',i]]:[]);
+      if(key==='useInstant')return secretHandChoices({...s,phase:'runeHand'}).length?[['secretSelf',from]]:[];
       if(key==='ownWaterShift')return src.type!==1&&activeWorld(s)!=='solidworld'?[['secretSelf',from]]:[];
       if(key==='drawItem')return p.book.some(id=>cards[id].kind==='item')?[['secretSelf',from]]:[];
       if(art.move)return territoryMoveExits(s,from,true).map(at=>['secretLand',at]);
@@ -651,6 +662,9 @@ const CepterCombos = (() => {
         if(key==='replaceHand'){
           s.spellTarget=at;s.cloudGizmo='secret';return art.label;
         }
+        if(key==='exchangeEnemyCreature'){
+          s.spellTarget=at;s.lemuresFrom=from;s.phase='lemuresHand';return art.label;
+        }
         if(key==='playerBarrier'){clearCepter(q);q.status='barrier';return art.label;}
         if(key==='shortDice'){clearCepter(q);q.status='slow';q.diceLimitRolls=1;return art.label;}
         if(key==='discardBookTop'){
@@ -670,6 +684,7 @@ const CepterCombos = (() => {
         note(s,p.name+' · '+card.name+' 비술 · '+q.name+'에게서 '+amount+'G 탈취');
         return amount+'G 탈취';
       }
+      if(key==='useInstant'){s.phase='runeHand';return art.label;}
       if(key==='purgeCepters')s.players.forEach(clearCepter);
       if(key==='damageEnchanted')for(const tile of s.tiles){
         if(enchanted(tile.unit))spellHarm(s,tile,20);
@@ -756,6 +771,7 @@ const CepterCombos = (() => {
         if(q.antiMagic)return -20;
         if(art==='replaceHand')return allied(s,at,s.turn)?q.hand.length>2?10:0:Math.max(0,...q.hand.map(id=>cards[id].cost*.2))-(borrowed?0:4);
         if(art==='playerBarrier')return allied(s,at,s.turn)?16:-20;
+        if(art==='exchangeEnemyCreature')return s.tiles[from].level>1?0:(q.hand.some(id=>cards[id].kind==='creature'&&cards[id].cost>=75)?14:4);
         if(art==='discardBookTop')return allied(s,at,s.turn)?-60:Math.min(24,36/Math.max(1,q.book.length))-(borrowed?0:8);
         if(art==='shortDice')return allied(s,at,s.turn)?-12:q.word!=null?10:0;
         if(spec.word||spec.chooseDirection)return allied(s,at,s.turn)&&q.word==null?5:-20;
@@ -819,7 +835,7 @@ const CepterCombos = (() => {
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,shrinkHealth,isDefensive,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,sagaFormChoices,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,secretMoveExits,applySecret,secretValue};
+      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,sagaFormChoices,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,secretMoveExits,secretHandChoices,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],

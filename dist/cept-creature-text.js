@@ -536,6 +536,7 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='redcap'?'배치된 고블린 한 마리당 자신의 전투 ST와 HP가 20씩 오릅니다. 자신이 전투에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
       C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
       C.edition==='begins'&&key==='ambermosquito'?'전투에서 티라노사우루스와 자이언트 래트 중 하나로 같은 확률로 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
+      C.edition==='revolt'&&key==='enchantress'?'단일 인챈트 주문을 받으면 같은 인챈트를 동맹 크리처에 옮긴 뒤 피로 상태가 됩니다.':
       C.edition==='revolt'&&key==='doomdevourer'?'자기 차례에 이동 주사위가 1~3이면 기본 ST와 최대 HP가 각각 10 오릅니다. 상한은 100입니다.':
       C.edition==='revolt'&&key==='id'?'크리처 카드를 합성 재료로 버리면 그 크리처로 변신합니다. 두루마리 공격을 무효화합니다.':
       C.edition==='revolt'&&key==='pyroculus'?'즉시 주문을 합성 재료로 버리면 헬 파이론으로 진화합니다. 두루마리 공격을 무효화합니다.':
