@@ -129,7 +129,7 @@ const CepterEditions=(()=>{
       selenear:'selenear',simulacrum:'simulacrum',sink:'sink',soulhunt:'soulhunt',subsidence:'subsidence',
       upheaval:'upheaval',weathering:'weathering',wildgrowth:'wildgrowth',wing:'wing',wizardseye:'wizardeye',
       aports:'aports',babble:'babble',haunt:'haunt',judgement:'judgment',lightcraft:'lightcraft',
-      magicfountain:'magicfountain',mesmerize:'mesmerize',torture:'torture'
+      magicfountain:'magicfountain',mesmerize:'mesmerize',torture:'torture',walltransform:'dcWallTransform'
     },
     ps1:{...firstSpellEffects,antielement:'antielement',corruption:'corruption',lifeforce:'lifeforce',revival:'revival'},
     saturn:{...firstSpellEffects,alchemy:'alchemy',dimensiondoor:'dimensiondoor',evilblast:'evilblast',landtax:'landtax',meteorstorm:'meteorstorm',recover:'firstRecover'}
@@ -680,6 +680,15 @@ const CepterEditions=(()=>{
     const elements=[...parts[2].matchAll(/\[(\w+)\]/g)].map(([,name])=>battleElements.indexOf(name));
     return {[elementalTraits[parts[1]]]:elements};
   }
+  const dreamcastGear={
+    amberring:{st:20,pierceElements:[3]},aurablade:{},batteringram:{st:20},chameleonarmor:{},coinofpiety:{},daggerofmite:{},
+    earthamulet:{st:10,first:true,criticalOwnElements:[2]},fireamulet:{st:20,criticalOwnElements:[0]},fireshield:{},
+    heartfibula:{st:20},hellblaze:{st:40},holygrail:{},icicle:{st:20,criticalElements:[0]},iksear:{},kris:{st:30,protectItem:true},
+    magicshield:{hp:20,neutralizeScroll:true},magussmirror:{hp:20},markerflag:{},offeringdoll:{},
+    rainbowpiece:{hp:40,neutralizeScroll:true},sapphirering:{st:20,pierceElements:[1]},shadowarmor:{},sleep:{},smoketorch:{},
+    stinkbottle:{},stonehail:{st:30,scrollCriticalElements:[3]},terrair:{},trapezon:{},venom:{},vorpalsword:{st:30},
+    windamulet:{st:10,hp:20,criticalOwnElements:[3]},wingedboots:{first:true},goulsclaw:{},spikedshield:{},knightsshield:{}
+  };
   const firstRace={人:'rh',獣:'rb',不死:'ru',植物:'rp',竜:'rd'};
   const firstAffinity={無:-1,火:0,水:1,地:2,風:3};
   function firstEquipmentTrait(clause,category){
@@ -982,6 +991,14 @@ const CepterEditions=(()=>{
       }
       if(simple)for(const effect of effects.values())if(effect)Object.assign(c,effect);
       if(first&&basicGear&&[...effects.values()].some(Boolean))c.firstEquipment=true;
+      if(edition==='dc'&&kind==='item'&&Object.hasOwn(dreamcastGear,slug)){
+        Object.assign(c,{st:0,hp:0,catalogOnly:false},dreamcastGear[slug]);
+      }
+      if(first&&kind==='item'){
+        if(slug==='handbomb')Object.assign(c,{catalogOnly:false,scrollAsItem:20});
+        if(slug==='potofsouls')Object.assign(c,{catalogOnly:false,regenerateItem:true});
+        if(slug==='heavyhalberd')Object.assign(c,{catalogOnly:false,last:true,st:edition==='ps1'?50:0,criticalNormal:edition==='saturn'});
+      }
       if(edition==='begins'&&kind==='creature'&&Object.hasOwn(beginsCreatures,slug))Object.assign(c,{catalogOnly:false},beginsCreatures[slug]);
       if(edition==='begins'&&kind==='item'&&Object.hasOwn(beginsGear,slug)){
         Object.assign(c,{st:0,hp:0,catalogOnly:false},beginsGear[slug]);
@@ -1067,7 +1084,11 @@ const CepterEditions=(()=>{
     }[edition];
     if(controlSpells){
       const replacements=new Map(['fly','holyword1','shatter','magicbolt'].map((name,i)=>[lookup.get(name),lookup.get(controlSpells[i])]));
-      if(edition!=='dc'){
+      if(edition==='dc'){
+        replacements.set(lookup.get('longsword'),lookup.get('vorpalsword'));
+        replacements.set(lookup.get('chainmail'),lookup.get('magicshield'));
+        replacements.set(lookup.get('magicbolt'),lookup.get('walltransform'));
+      }else{
         replacements.set(lookup.get('holyword6'),lookup.get('timebomb'));
         replacements.set(lookup.get('leatherarmor'),lookup.get(edition==='ps1'?'dragonshield':'earthshield'));
       }

@@ -54,7 +54,7 @@ const CepterExtraBattle=(()=>{
       Object.assign(a,{u,c,n:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
       lines.push(c.name+' 변신');
     }
-    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g);}
+    function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g)&&!(s.edition==='dc'&&['iksear','terrair'].includes(a.g));}
     function convert(target,name){
       const remaining=target.hp;
       transform(target,ids.get(name));
@@ -269,7 +269,7 @@ const CepterExtraBattle=(()=>{
     }
     function protect(a,d,damage,scroll,penetrates,orb){
       if(scroll){
-        const blocked=d.c.neutralizeScroll||d.gear?.neutralizeScroll||scrollBlock.has(d.g)||['battlegearbeta','bundlegear'].includes(d.n);
+        const blocked=d.c.neutralizeScroll||d.gear?.neutralizeScroll||scrollBlock.has(d.g)&&!(s.edition==='dc'&&d.g==='holygrail')||['battlegearbeta','bundlegear'].includes(d.n);
         const reflected=d.g==='magussmirror'||d.n==='carbunfly'||s.edition==='saga'&&(d.n==='livingmirror'||d.g==='livingmirror')||s.edition==='revolt'&&d.g==='mirrorhoplon'&&!a.gear;
         if(reflected&&!(s.edition==='revolt'&&blocked)){a.hp-=damage;lines.push('두루마리 반사');return 'reflect';}
         if(blocked){lines.push('두루마리 무효');return 'block';}
@@ -388,6 +388,7 @@ const CepterExtraBattle=(()=>{
       if(itemEnd&&(a.g==='wingedboots'||a.g==='stinkbottle')){
         const book=s.players[a.seat].book;
         book.splice(s.predict?0:Math.floor(Math.random()*(book.length+1)),0,a.item);
+        for(const player of s.players)if(player.peek?.seat===a.seat)delete player.peek;
       }
       if(a.g==='markerflag'&&!b.teleport&&!b.spellMove)b.markerFlag=true;
     }
@@ -440,7 +441,7 @@ const CepterExtraBattle=(()=>{
           a.u.mhp=max;a.u.hp=Math.min(max,a.u.hp+gain);a.hp+=gain;a.heal=true;
         }else grow(a,gain);
       }
-      if(a.g==='heartfibula'||a.g==='windamulet')grow(a,a.g==='heartfibula'?20:10);
+      if(a.g==='heartfibula'||a.g==='windamulet'&&s.edition!=='dc')grow(a,a.g==='heartfibula'?20:10);
       if(s.edition==='3ds'&&a.g==='wateramulet'){
         const before=fx.strength(a.u);
         a.u.st=Math.max(before,Math.min(100,before+10));

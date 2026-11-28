@@ -970,7 +970,7 @@ function createCepter(edition="ps2"){
       for(const [a,d] of [[A,D],[D,A]]){
         extra.itemStart(a,d);
         const ability=battleAbility(a);
-        const destroy=ability==='gremlin'||['talisman','gremlinamulet'].includes(a.g)||a.g==='stinkbottle'&&(d.gear?.category==='tool'||d.gear?.kind==='creature');
+        const destroy=ability==='gremlin'||['talisman','gremlinamulet'].includes(a.g)||a.g==='stinkbottle'&&(d.gear?.kind==='creature'||edition!=='dc'&&d.gear?.category==='tool');
         const target=d.gear?.category;
         const penguin=revolt&&a.n==='kaiserpenguin'&&(target==='tool'||target==='scroll'||d.gear?.kind==='creature');
         const monarch=ability==='abyssalmonarch'&&d.gear?.kind==='item'&&['weapon','tool'].includes(target);
@@ -1088,7 +1088,7 @@ function createCepter(edition="ps2"){
           if(owner.status==='toughsong')a.hp+=20;
         }
         if(a.n==='manes'&&combo.enchanted(t.unit))a.hp+=20;
-        if(a.g==='terrair')a.st+=count(3)*20;
+        if(a.g==='terrair'&&!firstEdition)a.st+=count(3)*20;
         if(a.g==='mujinamask')a.hp+=other.hand.length*10;
         if(handheld&&a.g==='powercrown')a.hp+=baseStrength[a===A?1:0];
         if(a.u.enchant==='regeneration')a.hp+=20;
@@ -1139,7 +1139,7 @@ function createCepter(edition="ps2"){
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||a.c.pierceBaseSTAtLeast&&fx.strength(d.u)>=a.c.pierceBaseSTAtLeast||weapon?.pierceAll||matches(weapon?.pierceElements,d));
       const beastCritical=revolt&&a.n==='lonebeast'&&board(s).links[b.at].some(at=>at!==b.from&&s.tiles[at].owner===a.seat);
-      const elementalCritical=!scroll&&!muted&&(beastCritical||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||weapon?.criticalRaces?.includes(d.c.catalog?.race)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
+      const elementalCritical=!scroll&&!muted&&(beastCritical||weapon?.criticalNormal||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||weapon?.criticalRaces?.includes(d.c.catalog?.race)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
@@ -1256,7 +1256,7 @@ function createCepter(edition="ps2"){
             lines.push(a.c.name+' · '+amount+'G 탈취');
           }
         }
-        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
+        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||edition==='dc'&&a.g==='goulsclaw'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
         if((revolt||begins)&&a.g==='ringofthesuccubus'||revolt&&attacker==='shadowgeist'||begins&&attacker==='succubus'){
@@ -1419,7 +1419,7 @@ function createCepter(edition="ps2"){
         if(edition==='saga'&&opponentAlive&&d.hp<=0)d.defeatedByOpponent=true;
       }
       if(!revolt&&!muted)applyPoison(a);
-      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||(edition!=='saga'||!basalt)&&a.u.enchant==='regeneration'||itemEnd&&a.g==='fireamulet')){
+      if(!muted&&a.hp>0&&(creatureEnd&&(opal||a.c.regenerate||['greenmold','healer'].includes(a.n))||a.n==='hydra'&&t.type!==0||(edition!=='saga'||!basalt)&&a.u.enchant==='regeneration'||itemEnd&&(a.g==='fireamulet'||a.gear?.regenerateItem))){
         a.regenerated=a.heal=true;a.hp=fx.max(a.u);lines.push('재생 · HP 회복');
       }
       if(revolt&&a.hp>0&&d.hp>0&&a.n==='samhain'){

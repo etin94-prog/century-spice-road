@@ -325,6 +325,7 @@ const describeCepterSpell=(()=>{
       if(e==='soulhunt')return '고른 크리처가 맵에서 파괴되면 내가 그 크리처의 최대 HP 1당 10G를 얻습니다.';
       if(e==='darkcraft')return '모든 셉터가 보유한 호부 하나당 5G를 잃습니다. 사용한 주문은 북으로 돌아갑니다.';
       if(e==='lightcraft')return '맵의 모든 크리처에 HP 고정을 부여하고 이 주문을 북으로 돌려보냅니다.';
+      if(e==='dcWallTransform')return '고른 크리처를 같은 속성의 지정 방어형으로 바꿉니다. 기본 ST와 HP는 새 크리처의 수치를 쓰고 인챈트는 유지합니다.';
       if(e==='magicfountain')return '고른 영지에 처음 멈춘 셉터가 500G를 받습니다.';
     }
     if(edition==='begins'&&e==='revoltphantasm')return '모든 크리처에 HP 고정을 부여합니다. 주문의 효과로 현재 HP와 최대 HP가 변하지 않습니다.';

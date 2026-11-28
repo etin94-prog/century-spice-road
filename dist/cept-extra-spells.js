@@ -31,7 +31,7 @@ const CepterExtraSpells=(()=>{
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
     aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',firstBarricade:'area',firstHolyblight:'global',
     firstMindseeker:'player',mindblast:'player',magicdie:'player',snatch:'player',swapspell:'player',
-    solitude:'land',poisonmist:'land',unsummon:'land',firstRecover:'land',jump:'global',landtax:'global',meteorstorm:'global',
+    solitude:'land',poisonmist:'land',unsummon:'land',firstRecover:'land',dcWallTransform:'land',jump:'global',landtax:'global',meteorstorm:'global',
     timebomb:'global',balance:'global',alchemy:'global',
     ...Object.fromEntries(Object.keys(firstStorms).map(e=>[e,'area'])),
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
@@ -42,6 +42,7 @@ const CepterExtraSpells=(()=>{
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
   const wallForms={[-1]:'wonderwall',0:'creepingflame',1:'wallofice',2:'wallofstone',3:'tornado'};
+  const dcWallForms={[-1]:'statue',0:'pillarofflame',1:'wallofice',2:'wallofstone',3:'hurricane'};
   const stolenKind={capture:'item',theft:'spell',sneakhand:'item'};
   const enemyOnly=new Set(['capture','theft','sneakhand','metamorphosis','fluxion','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind','firstMindseeker','mindblast','snatch']);
   const duration={release:4,uniformity:3,mesozoicsong:3,sinkingsong:3,bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,holdcurse:8,sagaStrut:3,sagaMagicEra:3,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,magicdie:3,soulsteal:3,goodluck:2};
@@ -285,6 +286,7 @@ const CepterExtraSpells=(()=>{
         if(e==='venomousboil'&&![1,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='chariot'&&(t.owner!==s.turn||!chariotExits(s,i).length))return [];
         if(e==='walltransform'&&!Object.hasOwn(wallForms,cards[t.unit.id].element))return [];
+        if(e==='dcWallTransform'&&!Object.hasOwn(dcWallForms,cards[t.unit.id].element))return [];
         if((e==='bistair'||e==='parasite')&&!enemy(s,t.owner)||e==='banishingray'&&cards[t.unit.id].element!==-1)return [];
         const creature=cards[t.unit.id];
         if((e==='shininggeyser'||e==='shininggeyserstrong')&&!enemy(s,t.owner))return [];
@@ -414,6 +416,12 @@ const CepterExtraSpells=(()=>{
             combo.clear(u);u.enchant=e;u.enchantDeadline=time(s)+5*s.players.length;delete u.fatigued;
             break;
           case 'walltransform':morph(t,ids.get(wallForms[cards[u.id].element]));break;
+          case 'dcWallTransform':{
+            const id=ids.get(dcWallForms[cards[u.id].element]);
+            t.unit={...u,id,hp:cards[id].hp};
+            delete t.unit.st;delete t.unit.mhp;
+            break;
+          }
           case 'reflection':case 'holyasylum':combo.clear(u);u.enchant=e;break;
           case 'lunaticlight':
             if(!fx.immuneHP(t)){
@@ -1058,7 +1066,7 @@ const CepterExtraSpells=(()=>{
         case 'banishingray':return -sign*(5+weight*4);
         case 'thornfetter':case 'parasite':case 'bindingmist':return -sign*weight*3;
         case 'wing':case 'phantasm':case 'simulacrum':return sign*(t.unit.enchant===e?0:weight*3);
-        case 'sagapolymorph':case 'beginspolymorph':case 'polymorph':case 'turntothewall':case 'walltransform':return -sign*(cards[t.unit.id].cost/12+weight-4);
+        case 'sagapolymorph':case 'beginspolymorph':case 'polymorph':case 'turntothewall':case 'walltransform':case 'dcWallTransform':return -sign*(cards[t.unit.id].cost/12+weight-4);
         case 'removecurse':if(!t.unit)return t.timeBombUntil!=null&&s.players.some((q,seat)=>!enemy(s,seat)&&(q.pos===x||board(s).links[x].includes(q.pos)))?5:0;
           return (['paralysis','thornfetter','parasite','senility','antielement','disease'].includes(t.unit.enchant)||t.unit.poisoned?sign:-sign)*(combo.enchanted(t.unit)?9:0);
         case 'replace':case 'revoltExchange':return Math.max(0,...replacement(s,t).map(a=>sign*(cards[a[2]].hp+cards[a[2]].st-t.unit.hp-fx.strength(t.unit))/5));

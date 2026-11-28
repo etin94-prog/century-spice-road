@@ -124,7 +124,7 @@ const describeCepterItem=(()=>{
   return (C,card)=>{
     if(card.kind!=='item'||card.catalogOnly)return;
     const key=C.combo.key(card),name=aliases[key]||key,firstEdition=C.edition==='ps1'||C.edition==='saturn';
-    const pieces=[],scroll=card.category==='scroll',fixedST=['reflect','nullify'].includes(card.effect);
+    const pieces=[],scroll=card.category==='scroll'||card.scrollAsItem!=null,fixedST=['reflect','nullify'].includes(card.effect);
     const signed=(label,n)=>label+' '+(n>0?'+':'−')+Math.abs(n);
     const baseStatsBracelet=['3ds','begins'].includes(C.edition)&&key==='powerbracelet';
     if(baseStatsBracelet)pieces.push('전투의 기본 ST는 기본 ST의 두 배, 기본 HP는 최대 HP의 두 배로 계산합니다.');
@@ -137,7 +137,9 @@ const describeCepterItem=(()=>{
     if(C.edition==='3ds'&&key==='lifestealer')pieces.push('일반 공격이 무효화되거나 반사되고 살아남으면 상대 최대 HP를 30 낮춥니다.');
     if(fixedST)pieces.push('전투 ST를 0으로 맞춥니다.');
     if(!scroll&&(card.st||card.hp))pieces.push('전투 중 '+[card.st&&signed('ST',card.st),card.hp&&signed('HP',card.hp)].filter(Boolean).join(' · '));
-    if(scroll&&card.st)pieces.push('두루마리 공격력 '+card.st);
+    if(scroll&&(card.scrollAsItem||card.st))pieces.push('두루마리 공격력 '+(card.scrollAsItem||card.st));
+    if(card.regenerateItem)pieces.push('전투에서 살아남으면 최대 HP까지 회복합니다.');
+    if(card.criticalNormal)pieces.push('일반 공격이 강타합니다.');
     if(card.scrollTerritoryElements)pieces.push('내 '+list(card.scrollTerritoryElements)+' 영지 수 × 10만큼 두루마리 피해를 줍니다.');
     if(card.scrollCriticalRaces?.length)pieces.push(card.scrollCriticalRaces.map(r=>raceNames[r]).join('·')+' 종족 상대에게 두루마리 강타가 적용됩니다.');
     if(card.criticalRaces?.length)pieces.push(card.criticalRaces.map(r=>raceNames[r]).join('·')+' 종족 상대에게 강타합니다.');
@@ -179,14 +181,18 @@ const describeCepterItem=(()=>{
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(['begins','3ds'].includes(C.edition)&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(C.edition==='3ds'&&name==='chameleonarmor')pieces.push('교전 영지 레벨에 1을 더해 10을 곱한 만큼 전투 HP가 오릅니다.');
+    else if(C.edition==='dc'&&name==='holygrail')pieces.push('일반 공격을 무효화하고 막은 피해량의 두 배만큼 마력을 잃습니다.');
+    else if(C.edition==='dc'&&name==='stinkbottle')pieces.push('상대가 장비로 낸 원군 크리처를 파괴합니다. 전투 후 이 카드는 북으로 돌아갑니다.');
+    else if(C.edition==='dc'&&name==='chameleonarmor')pieces.push('전투 HP를 교전 영지 레벨 × 20으로 맞춥니다.');
+    else if(C.edition==='dc'&&name==='goulsclaw')pieces.push('일반 공격이 명중하면 상대에게 마비를 부여합니다.');
     else if(C.edition==='3ds'&&name==='heartfibula')pieces.push('적을 격파하면 최대 HP가 최대 100까지 20 오릅니다.');
     else if(C.edition==='3ds'&&name==='wateramulet')pieces.push(ability[name]+' 적을 격파하면 기본 ST가 최대 100까지 10 오릅니다.');
     else if(C.edition==='3ds'&&name==='windamulet')pieces.push('풍 속성 크리처가 장착하면 일반 공격이 강타합니다. 적을 격파하면 최대 HP가 최대 100까지 10 오릅니다.');
     else if(['begins','saga'].includes(C.edition)&&name==='proteanring')pieces.push('전투에서 E 등급을 제외한 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.');
     else if(C.edition==='begins'&&name==='coinofpiety')pieces.push('장착한 크리처가 생존하면 내가 가장 많이 가진 호부 수량이 10% 증가합니다.');
     else if(C.edition==='begins'&&name==='offeringdoll')pieces.push('생존하면 장착 크리처와 같은 속성의 호부 가치가 30% 오릅니다.');
-    else if(!card.firstEquipment&&!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
-    if(card.protectItem||protectedItem(name))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
+    else if(!(C.edition==='dc'&&name==='windamulet')&&!card.firstEquipment&&!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);
+    if(card.protectItem||protectedItem(name)&&!(C.edition==='dc'&&['iksear','terrair'].includes(key)))pieces.push('장비 파괴와 탈취의 영향을 받지 않습니다.');
     return pieces.length?pieces.join(' · '):undefined;
   };
 })();

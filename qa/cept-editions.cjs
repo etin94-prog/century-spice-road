@@ -7990,3 +7990,84 @@ for(const edition of ['ps1','saturn']){
   assert.equal(firstStrike('fighter','goblin','hellblaze','magicshield').effect,'block');
 }
 console.log('Legacy delayed curses, simultaneous ranking, random card copy, relocation and native gear battle effects checked.');
+
+{
+  const C=ps2.createEdition('dc');
+  const id=name=>C.cards.findIndex(c=>c.catalog&&!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const open=()=>C.start(4,4,12000,'dc-1',undefined,undefined,0,'teams');
+  const act=(s,...action)=>assert.ok(C.play(s,action),JSON.stringify(action));
+  const gear=(s,seat,name)=>{s.players[seat].hand=name?[id(name)]:[];};
+  function place(s,at,name,owner=1){
+    const card=id(name);
+    assert.ok(card>=0,name);
+    return Object.assign(s.tiles[at],{type:'무속성',owner,unit:{id:card,hp:C.cards[card].hp}});
+  }
+  function fight(attack,defender,attackItem,defendItem,setup=()=>{}){
+    const s=open();
+    const at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    const t=place(s,at,defender);
+    s.players.forEach(q=>{q.cash=1000;q.hand=[];q.book=[id('fighter')];});
+    s.players[0].pos=at;
+    s.phase='attack';s.battle={at,inv:id(attack),atkItem:null,defItem:null};
+    gear(s,0,attackItem);gear(s,1,defendItem);
+    setup(s,t);
+    for(const item of [attackItem,defendItem])act(s,...(item?['equip',0]:['bare']));
+    assert.equal(s.phase,'result');return s;
+  }
+  const first=s=>s.battle.strikes[0];
+  const fighter=C.cards[id('fighter')];
+  assert.ok(first(fight('fighter','goblin','aurablade',null)).notes.some(line=>line.includes(fighter.st+fighter.hp+' 피해')));
+  assert.equal(fight('fighter','goblin',null,'chameleonarmor',(_,t)=>{t.level=4;}).battle.startHP[1],80);
+  assert.equal(fight('fighter','goblin',null,'shadowarmor',(_,t)=>{t.level=3;}).battle.startHP[1],70);
+  assert.equal(first(fight('fighter','goblin','nuclearfusion','magicshield')).effect,'block');
+  const mirror=fight('fighter','goblin','nuclearfusion','magussmirror');
+  assert.equal(mirror.battle.startHP[1],50);assert.equal(first(mirror).effect,'reflect');
+  const grail=fight('fighter','goblin',null,'holygrail');
+  assert.equal(first(grail).effect,'block');
+  assert.equal(grail.players[1].cash,1000-C.cards[id('holygrail')].cost-2*C.cards[id('fighter')].st);
+  assert.equal(first(fight('fighter','goblin','nuclearfusion','holygrail')).effect,'hit');
+  const stink=fight('fighter','goblin','stinkbottle','holygrail');
+  assert.equal(first(stink).effect,'block');
+  assert.ok(stink.players[0].book.includes(id('stinkbottle')));
+  const boots=fight('fighter','goblin',null,'wingedboots',s=>{s.players[0].peek={seat:1,ids:[id('fighter')]};});
+  assert.equal(first(boots).side,1);
+  assert.ok(boots.players[1].book.includes(id('wingedboots')));
+  assert.equal(boots.players[0].peek,undefined);
+  const ram=fight('fighter','wallofstone','batteringram',null,(_,t)=>{t.unit.hp=100;t.unit.mhp=100;});
+  assert.ok(first(ram).notes.some(line=>line.includes('즉사')));
+  const wind=fight('harpy','goblin','windamulet',null,(_,t)=>{t.unit.hp=10;});
+  assert.equal(wind.tiles[wind.battle.at].unit.mhp,undefined);
+  const heart=fight('fighter','goblin','heartfibula',null,(_,t)=>{t.unit.hp=10;});
+  assert.equal(heart.tiles[heart.battle.at].unit.mhp,C.cards[id('fighter')].hp+20);
+  const coin=fight('fighter','goblin','coinofpiety',null,(_,t)=>{t.type=2;t.unit.hp=10;});
+  assert.equal(coin.players[0].symbols[coin.tiles[coin.battle.at].area*4+2],10);
+  assert.ok(C.validBook(C.presets.legacyControl));
+  assert.equal(C.presets.legacyControl.filter(n=>C.cards[n].effect==='dcWallTransform').length,2);
+  for(const [target,form] of [['fighter','statue'],['minotaur','pillarofflame'],['lizardman','wallofice'],['dwarf','wallofstone'],['harpy','hurricane']]){
+    const s=open(),at=s.tiles.findIndex(t=>C.territoryType(t.type)),tile=place(s,at,target);
+    Object.assign(tile.unit,{hp:5,mhp:90,st:70,enchant:'peace',caster:1});
+    s.players[0].cash=1000;s.players[0].hand=[id('walltransform')];
+    act(s,'cast',0);act(s,'targetLand',at);
+    assert.deepEqual(tile.unit,{id:id(form),hp:C.cards[id(form)].hp,enchant:'peace',caster:1});
+    assert.equal(tile.owner,1);
+  }
+}
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),id=name=>C.cards.findIndex(c=>c.catalog&&!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const fight=(weapon,enemyItem,life=40)=>{
+    const s=C.start(2,2,5000,edition+'-original-marsh-paths'),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    Object.assign(s.tiles[at],{type:'무속성',owner:1,unit:{id:id('fighter'),hp:life}});
+    s.phase='attack';s.battle={at,inv:id('fighter'),invHP:10,atkItem:null,defItem:null};
+    s.players.forEach(q=>{q.cash=1000;q.hand=[];});
+    s.players[0].hand=[id(weapon)];if(enemyItem)s.players[1].hand=[id(enemyItem)];
+    assert.ok(C.play(s,['equip',0]));
+    assert.ok(C.play(s,enemyItem?['equip',0]:['bare']));
+    return s.battle;
+  };
+  assert.equal(fight('handbomb','magicshield').strikes[0].effect,'block');
+  assert.equal(fight('heavyhalberd',null).strikes[0].side,1);
+  assert.equal(fight('heavyhalberd',null).attackST,C.cards[id('fighter')].st+(edition==='ps1'?50:0));
+  const pot=fight('potofsouls',null,5);
+  assert.equal(pot.finalHP[0],C.cards[id('fighter')].hp);
+}
+console.log('Dreamcast item effects and five Wall Transform forms, plus first-edition scroll tool, regeneration and heavy weapon checked.');
