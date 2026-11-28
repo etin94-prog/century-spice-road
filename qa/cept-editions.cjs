@@ -9347,3 +9347,64 @@ for(const edition of ['ps1','saturn']){
   assert.deepEqual(C.ai(raid),['invade',0]);
 }
 console.log('PS1 and Saturn fire magic: edition costs, Bistair lap theft, Wisp successful hit and Efreet post-battle payment checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const start=()=>C.start(4,4,7000,edition+'-original-marsh-paths',C.presets.legacyCurses,C.presets.legacyCurses,2,'teams');
+  assert.ok(C.validBook(C.presets.legacyCurses));
+  assert.ok(C.presets.legacyCurses.includes(id('deepspawn')));
+  assert.equal(!!C.cards[id('deepspawn')].stationary,edition==='ps1');
+  function fight(attacker,guard,paralyzed=false){
+    const s=start(),at=3;
+    Object.assign(s.players[0],{pos:at,previous:2,dir:1,hand:[],cash:1000});
+    Object.assign(s.players[1],{hand:[],cash:1000});
+    const unit={id:id(guard),hp:C.cards[id(guard)].hp};
+    if(paralyzed)unit.enchant='paralysis';
+    Object.assign(s.tiles[at],{type:2,owner:1,unit});
+    s.phase='attack';s.battle={at,inv:id(attacker),atkItem:null,defItem:null};
+    assert.ok(C.play(s,['bare'])&&C.play(s,['bare']));
+    return s;
+  }
+  const defended=fight('goblin','deepspawn');
+  assert.equal(defended.players[0].status,'bind');
+  assert.equal(defended.players[2].status,undefined);
+  assert.match(defended.battle.lines.join(' '),/다음 차례 행동 금지/);
+  assert.equal(fight('goblin','deepspawn',true).players[0].status,undefined);
+  assert.equal(fight('bistair','deepspawn').players[0].status,undefined);
+  const failedAttack=fight('deepspawn','fighter');
+  assert.equal(failedAttack.battle.won,false);
+  assert.equal(failedAttack.players[1].status,edition==='saturn'?'bind':undefined);
+  const settled=JSON.parse(JSON.stringify(defended));
+  assert.ok(C.play(settled,['continue']));
+  assert.equal(settled.turn,1);
+  function backToInvader(s){
+    for(let seat=1;seat<=3;seat++){
+      assert.equal(s.turn,seat);
+      Object.assign(s.players[seat],{pos:0,hand:[]});
+      s.phase='land';assert.ok(C.play(s,['pass']));
+    }
+  }
+  backToInvader(settled);
+  settled.players[0].hand=[id('manna')];
+  assert.deepEqual(C.choices(settled),[['roll']]);
+  assert.ok(C.play(settled,['roll']));
+  assert.deepEqual([settled.die,settled.turn,settled.players[0].pos],[0,1,3]);
+  backToInvader(settled);
+  assert.equal(settled.players[0].status,undefined);
+  if(edition==='ps1'){
+    assert.ok(C.presets.legacyCurses.includes(id('ashura')));
+    assert.equal(fight('ashura','goblin').players[1].reverse,true);
+    assert.equal(fight('ashura','dwarf').players[1].reverse,undefined);
+    const reversal=fight('fighter','ashura');
+    assert.equal(reversal.battle.won,false);
+    assert.ok(reversal.battle.finalHP.every(h=>h>0));
+    assert.equal(reversal.players[0].reverse,true);
+    assert.ok(C.play(reversal,['continue']));
+    backToInvader(reversal);
+    reversal.fixed=1;
+    assert.ok(C.play(reversal,['roll']));
+    assert.deepEqual(reversal.lastMove.path,[3,2]);
+    assert.equal(reversal.players[0].reverse,undefined);
+  }
+}
+console.log('Deep Spawn: defense vs surviving combat, lost turn, expiry and paralysis; PS1 Ashura next reverse route checked.');

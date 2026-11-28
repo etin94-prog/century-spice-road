@@ -990,7 +990,7 @@ function createCepter(edition="ps2"){
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
           criticalBaseSTAtLeast:null,battleFee:0,battleFeePerHP:0,hitMagicPerHP:0,hitMagicPerLap:0,reviveForm:null,splitReflect:false,instantKill:null,
           selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
-          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false};
+          battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false,battleCepterCurse:null};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1845,6 +1845,21 @@ function createCepter(edition="ps2"){
     }
     const onLand=a=>a.hp>0&&a.away==null&&!a.stolen&&!a.returned;
     const won=!onLand(D)&&onLand(A),empty=!onLand(D)&&!onLand(A);
+    if(creatureEnd)for(const a of sides){
+      const curse=a.c.battleCepterCurse,d=a===A?D:A;
+      if(!curse||a.hp<=0||a.u.enchant==='paralysis'||allied(s,a.seat,d.seat))continue;
+      if(edition==='ps1'&&(a.defending?!onLand(D):!won))continue;
+      const rival=s.players[d.seat];
+      if(curse==='bind'){
+        extraSpells.setStatus(s,rival,'bind');
+        // The invader has already moved this turn. Keep Bind until that player's next turn.
+        if(d.seat===s.turn)rival.enchantDeadline++;
+      }else{
+        extraSpells.clearCepter(rival);
+        rival.reverse=true;
+      }
+      lines.push(a.c.name+' · 상대 셉터 '+(curse==='bind'?'다음 차례 행동 금지':'다음 이동 방향 역전'));
+    }
     b.finalHP=health();b.finalForms=sides.map(a=>a.u.id);
     if(edition==='saga')b.defended=onLand(D);
     const tollGuard=begins?cards[D.original?.id??D.u.id]:D.c;

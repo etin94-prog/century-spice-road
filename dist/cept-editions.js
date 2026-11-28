@@ -768,7 +768,8 @@ const CepterEditions=(()=>{
     ghoul:{paralyze:true,statusRaces:['rh','rb','rd'],regenerateOnDefeat:true},barrowwight:{sleepOnHit:true},
     thunderbeak:{first:true,paralyze:true,statusElements:[1]},toxicflower:{stationary:true,first:true,poison:true,statusRaces:['rh','rb','rd']},
     roadrunner:{},giantleech:{regenerateHitRatio:.25},
-    efreet:{last:true,scrollCritical:true,battleFeePerHP:2},willothewisp:{last:true,hitMagicPerHP:2},bistair:{first:true,hitMagicPerLap:50}
+    efreet:{last:true,scrollCritical:true,battleFeePerHP:2},willothewisp:{last:true,hitMagicPerHP:2},bistair:{first:true,hitMagicPerLap:50},
+    deepspawn:{battleCepterCurse:'bind'}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1178,6 +1179,7 @@ const CepterEditions=(()=>{
         }
       }
       if(edition==='ps1'&&slug==='werewolf')Object.assign(c,{catalogOnly:false,basicBattle:false});
+      if(edition==='ps1'&&slug==='ashura')Object.assign(c,{catalogOnly:false,basicBattle:true,battleCepterCurse:'reverse'});
       if(first&&['knight','darkelf','elf'].includes(slug))c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
       if(first&&['pan','hornet'].includes(slug))c.statusRaces=['rh','rb','rd'];
       if(id===undefined)cards.push(c);else cards[id]=c;
@@ -1260,6 +1262,8 @@ const CepterEditions=(()=>{
       for(const [from,to] of [['cleric','barrowwight'],['berserker','cockatrice'],['seamonk','medusa'],['geophage','ghoul'],['leviathan','thunderbeak'],['nessie','toxicflower']]){
         curses[curses.indexOf(lookup.get(from))]=lookup.get(to);
       }
+      curses[curses.indexOf(lookup.get('lizardman'))]=lookup.get('deepspawn');
+      if(edition==='ps1')curses[curses.indexOf(lookup.get('fighter'))]=lookup.get('ashura');
       presets.legacyCurses=curses;
       const workshop=new Map([['harpy','roadrunner'],['manna','armorsmith'],['cure','weaponsmith']]
         .map(([from,to])=>[lookup.get(from),lookup.get(to)]));

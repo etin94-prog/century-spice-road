@@ -518,6 +518,8 @@ const CepterCreatureText=(()=>{
     if(card.battleST)pieces.push('전투 ST '+(card.battleST>0?'+':'')+card.battleST);
     if(card.battleHP)pieces.push('전투 HP '+(card.battleHP>0?'+':'')+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');
+    if(card.battleCepterCurse==='reverse')pieces.push('영지를 지키거나 빼앗으면 상대 셉터의 다음 이동 방향을 뒤집습니다.');
+    if(card.battleCepterCurse==='bind')pieces.push((C.edition==='ps1'?'영지를 지키면':'전투가 끝날 때 생존하면')+' 상대 셉터의 다음 차례 행동을 막습니다.');
     if(card.battleFeePerHP)pieces.push('전투 종료 시 남은 HP × '+card.battleFeePerHP+'G를 지불합니다. 일시 HP 보너스는 제외합니다.');
     if(card.hitMagicPerHP)pieces.push('일반 공격이 명중하면 일시 보너스를 제외한 남은 HP × '+card.hitMagicPerHP+'G를 상대의 보유 마력 한도에서 빼앗습니다.');
     if(card.hitMagicPerLap)pieces.push('일반 공격이 명중하면 현재 주회 번호 × '+card.hitMagicPerLap+'G를 상대의 보유 마력 한도에서 빼앗습니다. 첫 주회부터 적용합니다.');

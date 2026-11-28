@@ -356,12 +356,12 @@ function seatSummary(seat){
     mindblast:'마인드 블래스트 · 성 통과까지 차례마다 −5G',torture:'토처 · 성 통과까지 주문 한 장당 차례마다 −20G',
     revoltLifeForce:'라이프 포스 · 크리처와 장비 0G',uniformity:'유니포미티 · 통행료 200G',release:'릴리스 · 장비와 배치 제한 해제',
     mesozoicsong:'메소조익 송 · 전투에서 티라노사우루스로 변신',sinkingsong:'싱킹 송 · 전투 피해 절반',conspiracy:'컨스피러시 · 조건부 소환 마력 0G',
-    sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
+    sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지',bind:'바인드 · 행동 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
     p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':p.sagaClemency?'다음 이동 통행료 면제':p.sagaService?'다음 요새 보너스 +50%':p.sagaFeast?'다음 주회 보너스 +50%':null;
   if(effect){
     const turns=p.enchantDeadline-(s.round-1)*s.players.length-s.turn;
     const rolls=p.diceLimitRolls??p.hasteRolls;
-    const remaining=rolls>0?' · '+rolls+'회 굴림 남음':turns>0?' · '+Math.ceil(turns/s.players.length)+'라운드 남음':'';
+    const remaining=p.status==='bind'?'':rolls>0?' · '+rolls+'회 굴림 남음':turns>0?' · '+Math.ceil(turns/s.players.length)+'라운드 남음':'';
     rows.push(['셉터 인챈트',effect+remaining]);
   }
   $('seatStats').replaceChildren(...rows.flatMap(([label,value])=>[el('dt',label),el('dd',value)]));
