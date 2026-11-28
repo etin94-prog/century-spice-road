@@ -1,0 +1,680 @@
+/* Touch fit and visual polish for the Worldwide boards tables. Loaded after ww-tabletop.css.
+   Games: 1 Mancala, 2 Dots and Boxes, 3 Yacht, 4 Four-in-a-Row, 5 Hit and Blow, 7 Hex,
+   10 Gomoku, 15 Reversi. Every rule is scoped by body[data-game] because other tables reuse
+   .die, .gem, .tiles and .board-grid. Portrait phone rules exclude html.card-landscape (the
+   quarter-turned view), which follows the phone-table container rules at the end instead. */
+
+/* ---------- 1 Mancala: a full-width board with both stores visible in portrait ---------- */
+body[data-game="1"] .mancala .pit { font-variant-numeric: tabular-nums; }
+body[data-game="1"] .mancala .pit b {
+  min-width: 22px;
+  padding: 1px 5px;
+  font: 700 15px/1.2 system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 1px 2px #0008;
+}
+body[data-game="1"] .mancala .mancala-store b {
+  right: 50%;
+  bottom: 6px;
+  translate: 50% 0;
+  min-width: 30px;
+  font-size: 18px;
+  background: #2f2216;
+  border: 1px solid #c89b5c;
+}
+body[data-game="1"] .mancala .mancala-store em {
+  position: absolute;
+  z-index: 1;
+  top: 6px;
+  left: 0;
+  right: 0;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  font-style: normal;
+  color: #f6e3bf;
+  text-align: center;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+}
+body[data-game="1"] .mancala .mancala-store em {
+  width: max-content;
+  margin: 0 auto;
+  padding: 1px 7px;
+  border-radius: 7px;
+  background: #2f2216d9;
+}
+/* Every seed has the same size, in pits and stores: a share of one pit's width, measured
+   from the board (a container), since a store is wider or taller than a pit. */
+body[data-game="1"] .mancala.tiles { container: mancala / inline-size; --seed: calc((100cqw - 42px) / 7.6 * 0.29); }
+body[data-game="1"] .mancala .pit i { width: clamp(8px, var(--seed), 29px); }
+/* Store seeds lie in their own bed, clear of the label (top) and the count (bottom). */
+body[data-game="1"] .mancala .mancala-store .seeds { position: absolute; inset: 30px 4px 38px; pointer-events: none; }
+/* Pits keep their oval well whether or not they can be sown (the shared .movable card lift
+   and rounded rectangle do not apply to a carved pit). */
+html[data-table="world"] body[data-game="1"] #surface .mancala .pit:not(.mancala-store) { border-radius: 50% / 42%; }
+html[data-table="world"] body[data-game="1"] #surface .mancala .pit.movable { translate: none; filter: none; }
+/* Pits you may sow from now: an amber ring around the oval, the language of .movable. */
+html[data-table="world"] body[data-game="1"] #surface .mancala .pit.movable {
+  outline: 2px solid #f0b54ae6;
+  outline-offset: 2px;
+}
+/* The last sowing: gold badges on pits that gained seeds, red where seeds were taken. */
+body[data-game="1"] .mancala .pit.sown b { background: #f1cf7b; color: #2a1d10; }
+body[data-game="1"] .mancala .pit.taken b { background: #b2412f; color: #fff2e8; }
+body[data-game="1"] .mancala .pit.origin { outline: 2px dashed #f1cf7b99; outline-offset: -4px; }
+html[data-table="world"] body[data-game="1"] #surface .mancala .pit.movable.origin { outline: 2px solid #f0b54ae6; outline-offset: 2px; }
+
+@media (orientation: portrait) and (max-width: 599px) {
+  html:not(.card-landscape) body[data-game="1"] .mancala.tiles {
+    width: 100%;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    /* Pits grow with the screen height, like a real board's deep wells. */
+    grid-template-rows: 64px repeat(2, clamp(84px, calc((var(--play-height) - 230px) / 2), 124px)) 64px;
+    --seed: calc((100cqw - 30px) / 6 * 0.29);
+    gap: 10px 6px;
+    padding: 10px;
+    border-width: 5px;
+    border-radius: 30px;
+  }
+  html:not(.card-landscape) body[data-game="1"] .mancala .pit { min-height: 0; }
+  html:not(.card-landscape) body[data-game="1"] .mancala .mancala-store {
+    display: flex;
+    grid-column: 1 / -1;
+    border-radius: 30px;
+  }
+  html:not(.card-landscape) body[data-game="1"] .mancala-store.theirs { grid-row: 1; }
+  html:not(.card-landscape) body[data-game="1"] .mancala-store.mine { grid-row: 4; }
+  html:not(.card-landscape) body[data-game="1"] .mancala .mancala-store em { top: 50%; left: 16px; right: auto; translate: 0 -50%; }
+  html:not(.card-landscape) body[data-game="1"] .mancala .mancala-store b { right: 14px; bottom: 50%; translate: 0 50%; }
+  html:not(.card-landscape) body[data-game="1"] .mancala .mancala-store .seeds { inset: 4px 66px 4px 96px; }
+}
+
+/* ---------- 2 Dots and Boxes: pencil lines from dot to dot, diamond hit areas ---------- */
+body[data-game="2"] .dots.tiles {
+  /* Room at the right for the pencil that lies beside the paper. */
+  width: min(100% - 28px, 380px, var(--play-height, 100%));
+  padding: 10px;
+}
+body[data-game="2"] .dots .piece {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  line-height: 1;
+  color: transparent;
+  text-shadow: none;
+  overflow: visible;
+}
+body[data-game="2"] .dots :is(.dot, .box) { pointer-events: none; }
+body[data-game="2"] .dots .dot { z-index: 3; }
+/* The dot is taken out of flow so it sits exactly on the cell centre, where the lines meet. */
+body[data-game="2"] .dots .dot::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 28%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7a685a, #2a201a 72%);
+  box-shadow: 0 1px 1px #fff9e0, 0 0 0 2px #fbf1d9;
+}
+/* Lines run between the two dot centres, which sit one cell either side of the edge cell. */
+body[data-game="2"] .dots :is(.h, .v) { z-index: 1; }
+body[data-game="2"] .dots :is(.h, .v)::before { content: ""; position: absolute; border-radius: 3px; }
+body[data-game="2"] .dots .h::before { left: -50%; right: -50%; top: calc(50% - 2px); height: 4px; }
+body[data-game="2"] .dots .v::before { top: -50%; bottom: -50%; left: calc(50% - 2px); width: 4px; }
+body[data-game="2"] .dots .guide.h::before { background: repeating-linear-gradient(90deg, #9a8a72 0 5px, transparent 5px 10px); opacity: 0.6; }
+body[data-game="2"] .dots .guide.v::before { background: repeating-linear-gradient(180deg, #9a8a72 0 5px, transparent 5px 10px); opacity: 0.6; }
+body[data-game="2"] .dots .ink.h::before { top: calc(50% - 3px); height: 6px; }
+body[data-game="2"] .dots .ink.v::before { left: calc(50% - 3px); width: 6px; }
+body[data-game="2"] .dots .ink::before { box-shadow: 0 1px 1px #0005; }
+body[data-game="2"] .dots .by0::before { background: linear-gradient(#36589e, #22407e); }
+body[data-game="2"] .dots .by1::before { background: linear-gradient(#b54636, #8c2c20); }
+body[data-game="2"] .dots .ink.last::before { box-shadow: 0 0 0 3px #f6c64f99, 0 1px 1px #0005; }
+/* Each line owns the diamond between its two dots and the two box centres, so the
+   whole paper is a target and neighbouring lines never overlap. */
+body[data-game="2"] .dots :is(.h, .v)::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+body[data-game="2"] .dots .guide[data-table-pressed]::before {
+  opacity: 1;
+  background: #36589ecc;
+}
+body[data-game="2"] .dots .guide.h[data-table-pressed]::before { top: calc(50% - 3px); height: 6px; }
+body[data-game="2"] .dots .guide.v[data-table-pressed]::before { left: calc(50% - 3px); width: 6px; }
+/* A tap right on a dot would be a guess between four lines: a small dead zone refuses it
+   and says to tap a line (the span's data-why). */
+body[data-game="2"] .dots .dot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+body[data-game="2"] .dots .box { z-index: 0; font: 700 15px/1 system-ui, sans-serif; }
+body[data-game="2"] .dots .box::before { content: ""; position: absolute; inset: calc(-50% + 4px); border-radius: 3px; }
+body[data-game="2"] .dots .own0 { color: #22407e; }
+body[data-game="2"] .dots .own1 { color: #8c2c20; }
+body[data-game="2"] .dots .own0::before { background: repeating-linear-gradient(135deg, #36589e30 0 4px, #36589e18 4px 8px); }
+body[data-game="2"] .dots .own1::before { background: repeating-linear-gradient(135deg, #b5463630 0 4px, #b5463618 4px 8px); }
+
+/* ---------- 3 Yacht: a two-player score sheet, a fixed dice tray, the roll under the thumb ---------- */
+body[data-game="3"] .yacht-sheet.tiles {
+  width: min(100%, 460px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(6, auto) auto;
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 6px;
+}
+body[data-game="3"] .score-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  justify-content: stretch;
+  gap: 0 6px;
+  min-height: 46px;
+  padding: 3px 7px;
+  text-align: left;
+  border-radius: 4px;
+  white-space: normal;
+}
+body[data-game="3"] .score-cell .name { font: 600 13px/1.2 system-ui, sans-serif; color: #3e3931; word-break: keep-all; }
+body[data-game="3"] .score-cell .mark { font: 700 17px/1 system-ui, sans-serif; font-variant-numeric: lining-nums tabular-nums; text-align: right; color: #3e3931; }
+body[data-game="3"] .score-cell .mark.me { min-width: 24px; }
+body[data-game="3"] .score-cell .mark.ai {
+  min-width: 34px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  font: 700 12px/1.1 system-ui, sans-serif;
+  color: #7c3a2c;
+  background: #7c3a2c14;
+}
+body[data-game="3"] .score-cell .mark.ai::before { content: "AI "; font-weight: 600; opacity: 0.75; }
+body[data-game="3"] .score-cell .mark:not(.done):not(.potential) { color: #a1957e; }
+body[data-game="3"] .score-cell .mark.potential {
+  padding: 3px 4px;
+  border: 1px dashed #4d8a5e;
+  border-radius: 5px;
+  color: #1f5e3e;
+  background: #e8f3d6;
+}
+body[data-game="3"] .score-cell.zero .mark.potential { color: #8f8471; border-color: #b4a88f; background: #f4ecda; }
+body[data-game="3"] .score-cell.open:enabled { box-shadow: inset 0 0 0 2px #d99a2ab0; }
+body[data-game="3"] .score-cell.open:enabled:not(.zero) { box-shadow: inset 0 0 0 2px #d99a2a; background-color: #fff7e2; }
+body[data-game="3"] .yacht-bonus {
+  grid-column: 1 / -1;
+  grid-row: 7;
+  margin: 2px 0 0;
+  font: 600 12px/1.3 system-ui, sans-serif;
+  color: #33291c;
+  text-align: center;
+}
+body[data-game="3"] .dice-tray {
+  flex-wrap: nowrap;
+  gap: 10px;
+  min-height: 92px;
+  padding: 10px 10px 24px;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 50% 30%, #0e2a2066, #08180f80);
+  box-shadow: inset 0 2px 6px #0009, 0 1px #ffffff1c;
+}
+body[data-game="3"] .dice-tray .die { flex: none; width: 54px; height: 54px; padding: 0; min-height: 0; }
+body[data-game="3"] .dice-tray .die-empty {
+  border: 2px dashed #e8d6ad55;
+  border-radius: 11px;
+  background: #0d241c55;
+  box-shadow: none;
+  color: transparent;
+  font-size: 0;
+}
+body[data-game="3"] .dice-tray .die.held,
+body[data-game="3"] .dice-tray .die.held:active { translate: 0 -7px; outline: 3px solid #f6c64f; outline-offset: 2px; border-radius: 10px; }
+body[data-game="3"] .dice-tray .die.held::after {
+  content: "보관";
+  position: absolute;
+  left: 50%;
+  bottom: -23px;
+  translate: -50% 0;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font: 700 12px/1.3 system-ui, sans-serif;
+  color: #2a2016;
+  background: #f1cf7b;
+  white-space: nowrap;
+}
+body[data-game="3"] .roll-bar .primary { min-width: min(100%, 240px); min-height: 52px; font-size: 17px; border-radius: 12px; }
+/* After the last category the tray and the roll button rest, so nothing looks playable. */
+body[data-game="3"] .desk:has(#result:not([hidden])) :is(.dice-tray, .roll-bar) { opacity: 0.45; filter: grayscale(0.7); }
+body[data-game="3"] .roll-bar .spent { display: inline-flex; color: #f3e3c1; background: #f0dcb32e; border: 1px dashed #f0dcb380; font-weight: 600; }
+
+/* ---------- 4 Four-in-a-Row: tap anywhere in a column, see where the disc lands ---------- */
+body[data-game="4"] .drop.board-grid { overflow: clip; }
+body[data-game="4"] .drop .cell { position: relative; }
+/* Discs seen face-on, as in an upright rack: concentric rings, centred in the hole and a
+   little smaller than it, so the dark hole rim shows all round. */
+body[data-game="4"] .drop .cell:is(.tone1, .tone2)::before {
+  content: "";
+  width: 79%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: none;
+  background:
+    radial-gradient(circle at 34% 28%, #ffffff80 0 7%, #fff0 26%),
+    radial-gradient(circle, var(--disc-a) 0 44%, var(--disc-b) 46% 52%, var(--disc-a) 54% 76%, var(--disc-c) 80% 87%, #110e0c 89%);
+  box-shadow: inset 0 -2px 3px #0005;
+}
+body[data-game="4"] .drop .cell.tone1 { --disc-a: #d8402f; --disc-b: #a92a1d; --disc-c: #861e14; }
+body[data-game="4"] .drop .cell.tone2 { --disc-a: #f1bf32; --disc-b: #c8931a; --disc-c: #9c6d0e; }
+body[data-game="4"] .drop .cell.landing::after {
+  content: "";
+  position: absolute;
+  inset: 13%;
+  border-radius: 50%;
+  border: 2px dashed #f3cf7acc;
+  pointer-events: none;
+}
+/* Last disc: a ring instead of a square tint, and it drops in from above the board. */
+body[data-game="4"] .drop .cell.last-move { --tint: 0 0 #0000; outline: none; }
+body[data-game="4"] .drop .cell.last-move::after {
+  content: "";
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #f6c64fd0;
+  pointer-events: none;
+}
+body[data-game="4"] .drop .cell.last-move::before {
+  animation: ww-disc-drop calc(0.2s + var(--row, 0) * 0.05s) cubic-bezier(0.45, 0, 1, 1) both;
+}
+@keyframes ww-disc-drop {
+  0% { translate: 0 calc((var(--row, 0) + 1) * -127%); }
+  78% { translate: 0 0; }
+  90% { translate: 0 -7%; }
+  100% { translate: 0 0; }
+}
+body[data-game="4"] .drop .cell.win::after {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px #ffe08a, 0 0 12px 4px #ffd45ea6;
+  pointer-events: none;
+}
+/* Pressing a square lights its whole column. */
+body[data-game="4"] .drop .cell[data-table-pressed] { --tint: 0 0 #0000; }
+body[data-game="4"] .drop:has(> :nth-child(7n+1)[data-table-pressed]) > :nth-child(7n+1),
+body[data-game="4"] .drop:has(> :nth-child(7n+2)[data-table-pressed]) > :nth-child(7n+2),
+body[data-game="4"] .drop:has(> :nth-child(7n+3)[data-table-pressed]) > :nth-child(7n+3),
+body[data-game="4"] .drop:has(> :nth-child(7n+4)[data-table-pressed]) > :nth-child(7n+4),
+body[data-game="4"] .drop:has(> :nth-child(7n+5)[data-table-pressed]) > :nth-child(7n+5),
+body[data-game="4"] .drop:has(> :nth-child(7n+6)[data-table-pressed]) > :nth-child(7n+6),
+body[data-game="4"] .drop:has(> :nth-child(7n+7)[data-table-pressed]) > :nth-child(7n+7) {
+  box-shadow: inset 0 0 0 999px #fff4d229;
+}
+
+/* ---------- 5 Hit and Blow: a decoding board with pins, the rack and gems under the thumb ---------- */
+body[data-game="5"] #surface { gap: 8px; }
+body[data-game="5"] .peg-history {
+  align-self: center;
+  width: min(100%, 425px);
+  display: grid;
+  gap: 2px;
+  padding: 7px 10px;
+  background: linear-gradient(#ffffff0d, #0000001f), var(--walnut) center / cover;
+  border: 3px ridge #8e5b37;
+  border-radius: 13px;
+  box-shadow: 0 3px 0 #3b2618, 0 6px 10px #0c171a80;
+}
+body[data-game="5"] .peg-line {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 104px;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 0 6px;
+  border-radius: 7px;
+}
+body[data-game="5"] .peg-line > b { font: 700 13px/1 system-ui, sans-serif; color: #f2dcac; text-align: center; font-variant-numeric: tabular-nums; }
+body[data-game="5"] .peg-line .pegs { display: flex; justify-content: center; gap: 10px; }
+body[data-game="5"] .peg {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: var(--glass) center / contain no-repeat;
+  filter: drop-shadow(0 1px 1px #000a);
+}
+body[data-game="5"] .peg.hole { background: radial-gradient(circle at 50% 42%, #140d08 38%, #3d2a1d 62%, #6b4a3200 70%); filter: none; }
+body[data-game="5"] .peg.cover {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, #6a5240, #2a1d14 75%);
+  color: #f2dcac;
+  font: 700 12px/1 system-ui, sans-serif;
+}
+body[data-game="5"] .peg-line .keys { display: flex; align-items: center; gap: 3px; }
+body[data-game="5"] .pin { width: 10px; height: 10px; border-radius: 50%; background: #1a110b; box-shadow: inset 0 1px 1px #000; }
+body[data-game="5"] .pin.hit { background: radial-gradient(circle at 35% 30%, #ff9f86, #b3261b 70%); box-shadow: 0 1px 1px #000a; }
+body[data-game="5"] .pin.blow { background: radial-gradient(circle at 35% 30%, #fff, #c9bb9b 70%); box-shadow: 0 1px 1px #000a; }
+body[data-game="5"] .keys small { margin-left: 5px; font: 700 12px/1 system-ui, sans-serif; color: #f6e2b8; font-variant-numeric: tabular-nums; }
+body[data-game="5"] .peg-line.now { background: #f3cf7a24; box-shadow: inset 0 0 0 1px #f3cf7a99; }
+body[data-game="5"] .peg-line.code { margin-bottom: 3px; padding-bottom: 4px; border-bottom: 1px solid #f2dcac3d; border-radius: 7px 7px 0 0; }
+body[data-game="5"] .peg-line.code.open { background: #f3cf7a2e; }
+body[data-game="5"] .peg-rack .gem,
+body[data-game="5"] .peg-palette .gem { min-height: 58px; padding: 2px 0; }
+body[data-game="5"] .peg-rack .gem.slot { color: transparent; text-shadow: none; }
+body[data-game="5"] .peg-rack .gem.slot::before {
+  background: radial-gradient(circle at 50% 42%, #120b07 40%, #3d2a1d 66%, #3d2a1d00 72%);
+}
+/* The next empty place in the rack (the first empty one, which the next gem fills). */
+body[data-game="5"] .peg-rack > .slot.next::before { box-shadow: 0 0 0 2px #f3cf7acc; border-radius: 50%; }
+/* Once the code is out, the rack, palette and bar rest. */
+body[data-game="5"] .desk:has(#result:not([hidden])) :is(.peg-rack, .peg-palette, .peg-bar) { opacity: 0.45; filter: grayscale(0.7); }
+body[data-game="5"] .peg-palette { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; padding: 8px; }
+body[data-game="5"] .peg-palette .gem.used { opacity: 0.38; }
+body[data-game="5"] .peg-palette .gem.used::before { filter: grayscale(0.6); }
+body[data-game="5"] .peg-bar .primary { min-width: min(100%, 240px); min-height: 50px; font-size: 17px; border-radius: 12px; }
+body[data-game="5"] .peg-bar .pending { display: inline-flex; color: #f3e3c1; background: #f0dcb32e; border: 1px dashed #f0dcb380; font-weight: 600; }
+
+/* ---------- 7 Hex: painted player edges; a diamond in portrait for bigger cells ---------- */
+body[data-game="7"] .board-grid.hex {
+  /* Black's edges are 12px bands above and below the rows, so they read as playing edges. */
+  padding-block: 15px 22px;
+  --hex-black: #241c17e6;
+  --hex-white: #f6eedbe6;
+  background:
+    linear-gradient(var(--hex-black), var(--hex-black)) left top / 69% 12px no-repeat,
+    linear-gradient(var(--hex-black), var(--hex-black)) right bottom / 69% 12px no-repeat,
+    linear-gradient(to bottom left, transparent 50%, var(--hex-white) 50.4%) left / 31% 100% no-repeat,
+    linear-gradient(to top right, transparent 50%, var(--hex-white) 50.4%) right / 31% 100% no-repeat,
+    linear-gradient(#ffffff14, #00000014),
+    var(--maple) center / cover;
+}
+body[data-game="7"] .hex .cell.last-move { outline: none; }
+/* The newest stone: a bright face and a red mark on the stone, as in Gomoku. */
+body[data-game="7"] .hex .cell.last-move::after { background: linear-gradient(#fff0a8, #f2c24c); }
+body[data-game="7"] .hex .cell.last-move.tone1::before {
+  background: radial-gradient(circle, #e0452f 0 12%, #fff9 13% 17%, #fff0 18%), url('art/worldwide/table/black-stone.webp') center / contain no-repeat;
+}
+body[data-game="7"] .hex .cell.last-move.tone2::before {
+  background: radial-gradient(circle, #d43a25 0 12%, #2a1d1499 13% 16%, #0000 17%), url('art/worldwide/table/white-stone.webp') center / contain no-repeat;
+}
+body[data-game="7"] .hex .cell.win::after { background: linear-gradient(#ffb43c, #e8892a); }
+body[data-game="7"] .hex .cell.aim::after { background: linear-gradient(#fff3c8c0, #f3cf7a99), var(--maple) center / 180px; }
+body[data-game="7"] .hex .cell.refused::after { background: linear-gradient(#e0604ab0, #c9452f99), var(--maple) center / 180px; }
+body[data-game="7"] .hex .cell[data-table-pressed]::after { background: linear-gradient(#fff6dcb0, #f5dca480), var(--maple) center / 180px; }
+body[data-game="7"] .hex .cell.aim::before {
+  content: "";
+  width: 74%;
+  aspect-ratio: 1;
+  background: url('art/worldwide/table/black-stone.webp') center / contain no-repeat;
+  opacity: 0.6;
+}
+body[data-game="7"] .hex .cell.legal:disabled::before { content: none; }
+body[data-game="7"] .hex .cell.win::before { filter: drop-shadow(0 0 2px #ffd45e) drop-shadow(0 0 3px #ffd45e); }
+
+@media (orientation: portrait) and (max-width: 699px) {
+  /* Rotated 60 degrees the rhombus stands on its tip: 17 rows by 18 half-columns. */
+  html:not(.card-landscape) body[data-game="7"] .board-grid.hex {
+    grid-template-columns: repeat(18, minmax(0, 1fr));
+    grid-template-rows: repeat(17, minmax(0, 1fr));
+    aspect-ratio: 0.617;
+    width: min(100%, calc((var(--play-height) - 48px) * 0.617));
+    padding: 8px 10px 18px;
+    background:
+      linear-gradient(to bottom right, var(--hex-white) 50%, transparent 50.4%) top left / 50% 50% no-repeat,
+      linear-gradient(to bottom left, var(--hex-black) 50%, transparent 50.4%) top right / 50% 50% no-repeat,
+      linear-gradient(to top right, var(--hex-black) 50%, transparent 50.4%) bottom left / 50% 50% no-repeat,
+      linear-gradient(to top left, var(--hex-white) 50%, transparent 50.4%) bottom right / 50% 50% no-repeat,
+      linear-gradient(#ffffff14, #00000014),
+      var(--maple) center / cover;
+  }
+  html:not(.card-landscape) body[data-game="7"] .hex .cell {
+    grid-row: var(--dr) !important;
+    grid-column: var(--dc) / span 2 !important;
+  }
+  html:not(.card-landscape) body[data-game="7"] .zoom-frame > .board-grid.hex { width: 480px; }
+}
+
+/* ---------- 10 Gomoku: a real goban (edges, star points), aim before placing ---------- */
+body[data-game="10"] .board-grid.goban { gap: 0; padding: 6px; --line: #7a522f; }
+body[data-game="10"] .goban .cell {
+  position: relative;
+  --vs: 100% 100%;
+  --vp: center;
+  --hs: 100% 100%;
+  --hp: center;
+  background:
+    radial-gradient(circle, var(--line) 0 var(--hoshi, 0px), transparent calc(var(--hoshi, 0px) + 0.6px)) center / 100% 100% no-repeat,
+    linear-gradient(90deg, transparent calc(50% - 0.7px), var(--line) calc(50% - 0.7px) calc(50% + 0.7px), transparent calc(50% + 0.7px)) var(--vp) / var(--vs) no-repeat,
+    linear-gradient(transparent calc(50% - 0.7px), var(--line) calc(50% - 0.7px) calc(50% + 0.7px), transparent calc(50% + 0.7px)) var(--hp) / var(--hs) no-repeat,
+    #ffdfa51c;
+}
+body[data-game="10"] .goban .gy0 { --vs: 100% 50%; --vp: bottom; }
+body[data-game="10"] .goban .gyn { --vs: 100% 50%; --vp: top; }
+body[data-game="10"] .goban .gx0 { --hs: 50% 100%; --hp: right; }
+body[data-game="10"] .goban .gxn { --hs: 50% 100%; --hp: left; }
+body[data-game="10"] .goban .hoshi { --hoshi: 2.6px; }
+body[data-game="10"] .goban .cell.legal.empty:not(.aim)::before { content: none; }
+body[data-game="10"] .goban .cell.aim::before {
+  content: "";
+  width: 80%;
+  aspect-ratio: 1;
+  background: url('art/worldwide/table/black-stone.webp') center / contain no-repeat;
+  opacity: 0.6;
+}
+body[data-game="10"] .goban .cell.aim { outline: 2px solid #ffd25e; outline-offset: 0; --tint: 0 0 #0000; }
+/* Cross hairs through the aimed intersection. */
+body[data-game="10"] .goban.aiming::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: 1;
+  pointer-events: none;
+  --ax: calc((var(--aim-x) + 0.5) / 15 * 100%);
+  --ay: calc((var(--aim-y) + 0.5) / 15 * 100%);
+  background:
+    linear-gradient(90deg, transparent calc(var(--ax) - 1px), #c8432bb0 calc(var(--ax) - 1px) calc(var(--ax) + 1px), transparent calc(var(--ax) + 1px)),
+    linear-gradient(transparent calc(var(--ay) - 1px), #c8432bb0 calc(var(--ay) - 1px) calc(var(--ay) + 1px), transparent calc(var(--ay) + 1px));
+}
+/* Last stone: a small red mark on the stone, as on a printed game record. */
+body[data-game="10"] .goban .cell.last-move { --tint: 0 0 #0000; outline: none; }
+body[data-game="10"] .goban .cell.last-move::after {
+  content: "";
+  position: absolute;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #d9402b;
+  box-shadow: 0 0 0 1.5px #fff7;
+  pointer-events: none;
+}
+body[data-game="10"] .goban .cell.win::before { filter: drop-shadow(0 0 2px #ffd45e) drop-shadow(0 0 3px #ffd45e); }
+body[data-game="10"] .goban .cell[data-table-pressed] { --tint: inset 0 0 0 999px #fff4d240; }
+
+/* ---------- 15 Reversi: clear legal hints, the placed disc marked, turned discs flip ---------- */
+body[data-game="15"] .reversi .cell { position: relative; }
+body[data-game="15"] .reversi .cell.legal.empty:enabled::before {
+  width: 38%;
+  border-radius: 50%;
+  background: #0b1c1559;
+  box-shadow: inset 0 0 0 2px #f4e7c8b3;
+}
+body[data-game="15"] .reversi .cell.legal.empty:disabled::before { content: none; }
+body[data-game="15"] .reversi .cell.legal.empty[data-table-pressed]::before {
+  width: 78%;
+  background: url('art/worldwide/table/black-stone.webp') center / contain no-repeat;
+  box-shadow: none;
+  opacity: 0.6;
+}
+body[data-game="15"] .reversi .cell.flipped::before { animation: ww-disc-flip 0.32s ease-out both; }
+@keyframes ww-disc-flip {
+  0% { scale: 0.05 1; }
+  100% { scale: 1 1; }
+}
+
+/* ---------- Short landscape, fullscreen and the quarter-turned view ---------- */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  /* Wide boards (Mancala, Yacht, Hit and Blow) keep the rail on top. The result never covers
+     the board: it is folded into the rail, where #status already carries the same words. */
+  body:is([data-game="1"], [data-game="3"], [data-game="5"]) #result { display: none; }
+  body:is([data-game="1"], [data-game="3"], [data-game="5"]) .desk:has(#result:not([hidden])) #status {
+    padding-inline: 12px;
+    border-radius: 9px;
+    color: #2a1d10;
+    text-shadow: none;
+    background: linear-gradient(#f8dc93, #e9bd5c);
+    box-shadow: inset 0 1px #fff6d6, 0 2px 5px #0007;
+  }
+
+  /* Square and hex boards: the rail moves into the left gutter, so the board gets the whole
+     desk height (about 300px instead of 265px) and the result sits under the rail. */
+  body:is([data-game="2"], [data-game="4"], [data-game="7"], [data-game="10"], [data-game="15"]) .desk {
+    --play-height: calc(100cqh - 68px);
+    --board-w: var(--play-height);
+    display: grid;
+    grid-template-columns: minmax(128px, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    column-gap: 10px;
+  }
+  body[data-game="4"] .desk { --board-w: calc(var(--play-height) * 1.12); }
+  body[data-game="7"] .desk { --board-w: calc(var(--play-height) * 1.47); }
+  body:is([data-game="2"], [data-game="4"], [data-game="7"], [data-game="10"], [data-game="15"]) .rail {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 6px 0 0;
+    border-bottom: 0;
+  }
+  body:is([data-game="2"], [data-game="4"], [data-game="7"], [data-game="10"], [data-game="15"]) #status {
+    flex: none;
+    margin: 0;
+    padding: 6px 8px;
+    border-radius: 9px;
+    background: #0b201a59;
+    box-shadow: inset 0 1px 2px #0006, 0 1px #ffffff14;
+    -webkit-line-clamp: 6;
+  }
+  html body:is([data-game="2"], [data-game="4"], [data-game="7"], [data-game="10"], [data-game="15"]) #score {
+    max-width: none;
+    padding: 0 8px;
+    text-align: left;
+    white-space: normal;
+    font-size: 14px;
+    color: #f6e3bf;
+  }
+  body:is([data-game="2"], [data-game="4"], [data-game="7"], [data-game="10"], [data-game="15"]) #surface {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: var(--board-w);
+    max-width: calc(100cqw - 176px);
+    min-height: 0;
+  }
+  body:is([data-game="2"], [data-game="4"], [data-game="7"], [data-game="10"], [data-game="15"]) #result {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    margin: 0 0 4px;
+    padding: 8px 6px;
+    border-radius: 12px;
+    color: #2a1d10;
+    background: linear-gradient(#f8dc93, #e9bd5c);
+    border-color: #fff1c4;
+    box-shadow: inset 0 1px #fff6d6, 0 3px 8px #0008;
+  }
+  body:is([data-game="2"], [data-game="4"], [data-game="7"], [data-game="10"], [data-game="15"]) .desk:has(#result:not([hidden])) #status { display: none; }
+
+  body[data-game="1"] .mancala.tiles { width: min(100%, calc(var(--play-height) * 2.6)); padding: 8px; gap: 6px; }
+  body[data-game="1"] .mancala .pit { min-height: 0; height: calc((var(--play-height) - 48px) / 2); max-height: 100px; }
+  /* Stores stand the full height of both rows, as on a real board. */
+  body[data-game="1"] .mancala .mancala-store { grid-row: 1 / span 2; height: auto; max-height: none; }
+
+  body[data-game="2"] .dots.tiles { width: min(100% - 24px, var(--play-height)); padding: 8px; }
+  body[data-game="2"] .dots .piece { min-height: 0; }
+
+  /* Gomoku: a thinner frame gives every intersection a little more room. */
+  body[data-game="10"] .board-grid.goban { padding: 3px; }
+  body[data-game="10"] .goban.aiming::before { inset: 3px; }
+  body[data-game="3"] #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    gap: 6px 10px;
+  }
+  body[data-game="3"] .yacht-sheet.tiles {
+    grid-row: 1 / span 2;
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(4, auto) auto;
+    gap: 3px;
+    padding: 4px;
+  }
+  body[data-game="3"] .yacht-bonus { grid-row: 5; }
+  /* Three narrow columns: the name gets its own line, both marks sit under it. */
+  body[data-game="3"] .score-cell {
+    min-height: 44px;
+    padding: 3px 6px;
+    grid-template-columns: auto auto;
+    grid-template-areas: "name name" "me ai";
+    justify-content: space-between;
+    align-content: center;
+    gap: 2px 4px;
+  }
+  body[data-game="3"] .score-cell .name { grid-area: name; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body[data-game="3"] .score-cell .mark { font-size: 14px; }
+  body[data-game="3"] .score-cell .mark.me { grid-area: me; justify-self: start; text-align: left; min-width: 22px; }
+  body[data-game="3"] .score-cell .mark.ai { grid-area: ai; justify-self: end; min-width: 0; padding: 1px 4px; }
+  body[data-game="3"] .score-cell .mark.potential { padding: 1px 4px; }
+  /* All five dice in one row. */
+  body[data-game="3"] .dice-tray { grid-column: 2; flex-wrap: nowrap; justify-content: center; gap: 6px; min-height: 0; padding: 8px 6px 24px; }
+  body[data-game="3"] .dice-tray .die { width: 40px; height: 40px; }
+  body[data-game="3"] .dice-tray .die.held,
+  body[data-game="3"] .dice-tray .die.held:active { translate: 0 -5px; }
+  body[data-game="3"] .dice-tray .die.held::after { bottom: -22px; }
+  body[data-game="3"] .roll-bar { grid-column: 2; }
+  body[data-game="3"] .roll-bar .primary { min-height: 46px; }
+
+  body[data-game="5"] #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-rows: auto auto auto;
+    align-content: center;
+    gap: 5px 10px;
+  }
+  body[data-game="5"] .peg-history { grid-column: 1; grid-row: 1 / span 3; gap: 0; padding: 3px 8px; }
+  body[data-game="5"] .peg-line { min-height: 20px; grid-template-columns: 30px minmax(0, 1fr) 96px; }
+  body[data-game="5"] .peg-line.code { padding-bottom: 2px; margin-bottom: 2px; }
+  body[data-game="5"] .peg { width: 17px; height: 17px; }
+  body[data-game="5"] :is(.peg-rack, .peg-palette, .peg-bar) { grid-column: 2; width: 100%; }
+  body[data-game="5"] :is(.peg-rack, .peg-palette) { padding: 4px; }
+  body[data-game="5"] .peg-rack .gem,
+  body[data-game="5"] .peg-palette .gem { min-height: 50px; }
+  body[data-game="5"] .peg-bar .primary { min-height: 44px; }
+}
+
+/* ---------- Rail: the score keeps one line; the status takes what is left ---------- */
+body:is([data-game="1"], [data-game="2"], [data-game="3"], [data-game="4"], [data-game="5"], [data-game="7"], [data-game="10"], [data-game="15"]) #score { flex: none; max-width: none; white-space: nowrap; }
+
+/* ---------- Portrait: square boards rest toward the thumb ---------- */
+@media (orientation: portrait) and (max-width: 599px) {
+  html:not(.card-landscape) body:is([data-game="4"], [data-game="10"], [data-game="15"]) #surface { justify-content: safe flex-end; padding-bottom: 14px; }
+}

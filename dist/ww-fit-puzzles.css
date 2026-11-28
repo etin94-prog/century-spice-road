@@ -1,0 +1,828 @@
+/* Touch fit and visual polish for the Worldwide puzzles tables. Loaded after ww-tabletop.css.
+   47 6-Ball Puzzle, 48 Sliding Puzzle, 49 Mahjong Solitaire, 50 Klondike, 51 Spider.
+   Light comes from the upper left; pieces sit centred in their cells; state uses the shared
+   language from ww-fit-core.css (.movable, .selected, .target, .last-move, .refused). */
+
+/* The result banner appears under the table when a game ends; boards sized from --play-height
+   give its height back so the banner never pushes the page into scrolling. */
+html[data-table="world"] body:is([data-game="47"], [data-game="48"], [data-game="49"]) .desk { --result-h: 0px; }
+html[data-table="world"] body:is([data-game="47"], [data-game="48"], [data-game="49"]) .desk:has(#result:not([hidden])) { --result-h: 58px; }
+/* The status pill (and its red refusal state) stays inside the felt frame. */
+html[data-table="world"] body:is([data-game="47"], [data-game="48"], [data-game="49"], [data-game="50"], [data-game="51"]) #status { margin-left: 0; }
+/* Disabled controls (AI turn, finished game) read as resting, not as broken. */
+html[data-table="world"] body:is([data-game="47"], [data-game="50"], [data-game="51"]) #surface :is(.sixball-tool, .sol-undo):disabled { opacity: 0.45; filter: saturate(0.6); }
+
+/* ───────────── 47 · 6-Ball Puzzle ───────────── */
+/* The well has no tappable cells, so magnifying it only hides the drop row. */
+html[data-table="world"] body[data-game="47"] #boardZoom { display: none; }
+html[data-table="world"] body[data-game="47"] #surface { gap: 8px; }
+
+/* Top tray: opponent field · next balls in drop formation · tools. */
+html[data-table="world"] body[data-game="47"] .sixball-top {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 2px;
+}
+html[data-table="world"] body[data-game="47"] .sixball-opp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+html[data-table="world"] body[data-game="47"] .sixball-label {
+  writing-mode: vertical-rl;
+  letter-spacing: 2px;
+  font: 700 13px/1 system-ui, sans-serif;
+  color: #f1dcae;
+}
+html[data-table="world"] body[data-game="47"] .mini-well {
+  --mini: 9px;
+  width: auto;
+  grid-template-columns: repeat(7, var(--mini));
+  grid-auto-rows: var(--mini);
+  gap: 1px !important;
+  padding: 4px;
+  background: linear-gradient(135deg, #ffffff1f, #0000 45%, #0000002e), var(--maple) center / 140px;
+  border: 2px solid #7a5434;
+  border-radius: 6px;
+  box-shadow: inset 1px 1px #ffe8b866, 0 2px 0 #4a3322, 1px 4px 6px #0b1f1a88;
+}
+html[data-table="world"] body[data-game="47"] .mini-well .piece {
+  width: var(--mini);
+  height: var(--mini);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  /* Symbols stay in the DOM for assistive tech; the glass colour carries the meaning. */
+  font-size: 12px;
+  text-indent: 30px;
+  color: transparent;
+  background: radial-gradient(circle closest-side, #3a2a1d 0 55%, #6f5236 72%, transparent 80%);
+  box-shadow: none;
+}
+html[data-table="world"] body[data-game="47"] .mini-well .piece[class*="gem"] {
+  background: var(--glass) center / contain no-repeat;
+  filter: drop-shadow(0 1px 0 #1b120b99);
+}
+html[data-table="world"] body[data-game="47"] .mini-well .last-move {
+  outline: 1.5px solid #ffd25e;
+  outline-offset: 0;
+}
+
+/* Next balls: [2] sits on top of [0] (left) or [1] (right, when 좌우 전환 is on). */
+html[data-table="world"] body[data-game="47"] .sixball-next {
+  --b: 30px;
+  display: grid;
+  grid-template-columns: repeat(2, var(--b));
+  grid-template-rows: repeat(2, var(--b));
+  gap: 3px;
+  padding: 6px;
+  border-radius: 10px;
+  background: linear-gradient(140deg, #ffffff26, #0000 40%, #00000038), var(--walnut) center / 160px;
+  border: 2px solid #7a5434;
+  box-shadow: inset 2px 3px 6px #1b0f0899, 0 2px 0 #3c2919, 1px 5px 8px #0b1f1a80;
+}
+html[data-table="world"] body[data-game="47"] .sixball-next .ball {
+  width: var(--b);
+  height: var(--b);
+  min-height: 0;
+  padding: 0;
+  font: 700 13px/1 system-ui, sans-serif;
+  filter: drop-shadow(1px 2px 1px #120a0599);
+}
+html[data-table="world"] body[data-game="47"] .sixball-next .next-0 { grid-area: 2 / 1; }
+html[data-table="world"] body[data-game="47"] .sixball-next .next-1 { grid-area: 2 / 2; }
+html[data-table="world"] body[data-game="47"] .sixball-next .next-2 { grid-area: 1 / 1; }
+html[data-table="world"] body[data-game="47"] .sixball-next.inverted .next-2 { grid-area: 1 / 2; }
+
+html[data-table="world"] body[data-game="47"] .sixball-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+html[data-table="world"] body[data-game="47"] .sixball-tool {
+  min-height: 44px;
+  min-width: 92px;
+  padding: 4px 10px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* The well and its drop row share one frame (.sixball-play). Cells are square:
+   cell = min(width / 7, (height left for the well) / 10), never under 20px. */
+html[data-table="world"] body[data-game="47"] #surface {
+  container: sixball / inline-size;
+  --chip: 30px;
+  --tray-h: 112px;
+  --res: 0px;
+  --cell: clamp(20px, min(calc((var(--play-height) - var(--tray-h) - 8px - var(--chip) - 2px - 16px - var(--res)) / 10), calc((100cqw - 16px) / 7)), 54px);
+}
+html[data-table="world"] body[data-game="47"] .desk:has(#result:not([hidden])) #surface { --res: 26px; }
+/* Once the game ends the drop row is gone (it is disabled anyway); the well keeps its rows. */
+html[data-table="world"] body[data-game="47"] .desk:has(#result:not([hidden])) .sixball-aim { display: none; }
+html[data-table="world"] body[data-game="47"] #score { flex: none; max-width: none; white-space: nowrap; }
+html[data-table="world"] body[data-game="47"] .sixball-play {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  gap: 2px;
+  width: calc(var(--cell) * 7 + 16px);
+  max-width: 100%;
+  flex: none;
+}
+html[data-table="world"] body[data-game="47"] .sixball-play > .ballwell {
+  grid-area: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 5px;
+  gap: 0;
+  border-width: 3px;
+  grid-template-columns: repeat(7, var(--cell));
+  grid-template-rows: repeat(10, var(--cell));
+  box-sizing: border-box;
+}
+html[data-table="world"] body[data-game="47"] .ballwell .cell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  aspect-ratio: auto;
+  padding: 0;
+  font-size: clamp(12px, calc(var(--cell) * 0.36), 18px);
+}
+html[data-table="world"] body[data-game="47"] .ballwell .cell:not(.ball) {
+  background: radial-gradient(circle closest-side, #2a1d14 0 40%, #5e4430 58%, #b8936255 74%, transparent 80%);
+}
+html[data-table="world"] body[data-game="47"] .ballwell .ball {
+  background: var(--glass) center / 92% 92% no-repeat;
+  filter: drop-shadow(1px 2px 1px #1d120a8c);
+}
+/* Ghost balls: where the pressed drop will land. */
+html[data-table="world"] body[data-game="47"] .ballwell .cell.ghost {
+  color: transparent;
+  background:
+    var(--glass) center / 80% 80% no-repeat,
+    radial-gradient(circle closest-side, #2a1d14 0 40%, #5e4430 58%, #b8936255 74%, transparent 80%);
+  opacity: 0.8;
+  outline: 2px dashed #fff1c4d9;
+  outline-offset: -2px;
+  border-radius: 50%;
+}
+
+/* Drop row: one chip under each column gap. The chip is the visual cue; the button's ::before
+   is the real target, a strip over the whole well, one column pitch wide. The chip stays
+   unpositioned (no transform, filter or translate) so the strip always measures from the frame. */
+html[data-table="world"] body[data-game="47"] .sixball-play > .sixball-aim {
+  position: static;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  gap: 0;
+  padding: 0 calc(8px + var(--cell) / 2);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  box-sizing: border-box;
+}
+html[data-table="world"] body[data-game="47"] #surface .sixball-aim .piece.drop,
+html[data-table="world"] body[data-game="47"] #surface .sixball-aim .piece.drop[data-table-pressed] {
+  position: static;
+  height: var(--chip);
+  min-height: 0;
+  min-width: 0;
+  margin: 0 3px;
+  padding: 0;
+  font: 700 clamp(14px, calc(var(--chip) * 0.62), 20px) / 1 system-ui, sans-serif;
+  border-radius: 0 0 12px 12px;
+  background: linear-gradient(#2e6a5c, #1d4b41);
+  color: #fff0c8;
+  box-shadow: inset 0 1px #ffffff2e, inset 0 -3px #0f2c26, 0 3px 4px #0008;
+  transform: none;
+  translate: none;
+  filter: none;
+  animation: none;
+}
+html[data-table="world"] body[data-game="47"] #surface .sixball-aim .piece.drop[data-table-pressed] {
+  background: linear-gradient(#4c9a86, #2e6a5c);
+  color: #fff;
+}
+html[data-table="world"] body[data-game="47"] .sixball-aim .drop::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: calc(8px + var(--cell) * (var(--x) + 0.5));
+  width: var(--cell);
+  height: calc(var(--cell) * 10 + 16px);
+  border-radius: 6px;
+}
+html[data-table="world"] body[data-game="47"] .sixball-aim .drop:first-child::before { left: 0; width: calc(8px + var(--cell) * 1.5); }
+html[data-table="world"] body[data-game="47"] .sixball-aim .drop:last-child::before { width: calc(8px + var(--cell) * 1.5); }
+html[data-table="world"] body[data-game="47"] .sixball-aim button.drop[data-table-pressed]::before {
+  background: linear-gradient(#1d4b4122, #1d4b4152);
+  box-shadow: inset 0 0 0 2px #ffd25e, 0 0 10px #ffd25e80;
+}
+html[data-table="world"] body[data-game="47"] .sixball-aim span.drop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.38;
+  background: #183a33;
+}
+html[data-table="world"] body[data-game="47"] #surface .sixball-aim span.piece.drop.refused {
+  opacity: 1;
+  outline: 3px solid #d9553f;
+  outline-offset: -3px;
+}
+html[data-table="world"] body[data-game="47"] .sixball-aim span.drop.refused::before {
+  background: linear-gradient(#d9553f10, #d9553f40);
+  box-shadow: inset 0 0 0 2px #d9553fa0;
+}
+html[data-table="world"] body[data-game="47"] .sixball-aim button.drop:disabled { opacity: 0.45; }
+
+/* Short portrait (360×640 and similar): the tray stands beside the well instead of above it,
+   so the well gets the height. */
+@media (orientation: portrait) and (max-height: 700px) {
+  html:not(.card-landscape)[data-table="world"] body[data-game="47"] #surface {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: center;
+    align-items: center;
+    column-gap: 8px;
+    --cell: clamp(20px, min(calc((var(--play-height) - var(--chip) - 2px - 16px - var(--res)) / 10), calc((100cqw - 16px - 108px) / 7)), 54px);
+  }
+  html:not(.card-landscape)[data-table="world"] body[data-game="47"] .sixball-play { grid-area: 1 / 1; }
+  html:not(.card-landscape)[data-table="world"] body[data-game="47"] .sixball-top {
+    grid-area: 1 / 2;
+    flex-direction: column;
+    width: auto;
+    gap: 12px;
+    padding: 0;
+  }
+  html:not(.card-landscape)[data-table="world"] body[data-game="47"] .sixball-tool { min-width: 92px; }
+}
+
+/* Short landscape: opponent | my well + drop row | next balls + tools (right thumb).
+   The well takes the height first; the opponent's field is a smaller board beside it. */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  html[data-table="world"] body[data-game="47"] #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: center;
+    justify-items: center;
+    column-gap: 10px;
+    row-gap: 6px;
+    --chip: 18px;
+    --res: 0px;
+    --cell: clamp(18px, calc((var(--play-height) - var(--chip) + 6px - 2px - 16px - 2px) / 10), 44px);
+  }
+  /* The chips hang from the well frame; the strips over the well are the targets here. */
+  html[data-table="world"] body[data-game="47"] .sixball-play > .sixball-aim { margin-top: -6px; }
+  html[data-table="world"] body[data-game="47"] .sixball-top { display: contents; }
+  html[data-table="world"] body[data-game="47"] .sixball-opp { grid-area: 1 / 1 / 3 / 2; }
+  html[data-table="world"] body[data-game="47"] .mini-well { --mini: 8px; }
+  html[data-table="world"] body[data-game="47"] .sixball-next { grid-area: 1 / 3; align-self: end; --b: 34px; }
+  html[data-table="world"] body[data-game="47"] .sixball-tools { grid-area: 2 / 3; flex-direction: row; }
+  html[data-table="world"] body[data-game="47"] .sixball-tool { min-width: 0; padding-inline: 8px; }
+  html[data-table="world"] body[data-game="47"] .sixball-play { grid-area: 1 / 2 / 3 / 3; }
+  /* The result plaque floats over the free felt at the lower left, so the final well keeps its size. */
+  html[data-table="world"] body[data-game="47"] .desk { position: relative; }
+  html[data-table="world"] body[data-game="47"] #result {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 4;
+    width: min(30%, 210px);
+    margin: 0;
+    padding: 8px 10px;
+    border: 2px solid #d9bb7c;
+    border-radius: 12px;
+    background: linear-gradient(#24584b, #143c33);
+    box-shadow: inset 0 1px #fff3c86b, 0 3px 0 #5d4528, 0 8px 18px #000a;
+  }
+}
+
+/* ───────────── 48 · Sliding Puzzle ───────────── */
+/* Inlet (left) and outlet (right) of row 2 are drawn in the frame; the 16 tiles stay the only children. */
+html[data-table="world"] body[data-game="48"] .pipe-board {
+  position: relative;
+  padding: 8px 16px;
+  gap: 3px;
+  box-shadow: inset 2px 3px 6px #1b0f0899, 0 3px 0 #3c2919, 2px 8px 14px #0b1f1aa0;
+}
+html[data-table="world"] body[data-game="48"] .pipe-board::before,
+html[data-table="world"] body[data-game="48"] .pipe-board::after {
+  content: "";
+  position: absolute;
+  top: calc(8px + (100% - 16px) * 0.375);
+  width: 15px;
+  height: calc((100% - 16px) * 0.058);
+  translate: 0 -50%;
+  background: linear-gradient(#a7ece6, #3aa3a6 45%, #1f6f76);
+  box-shadow: inset 0 1px #e6fffb99, 0 1px 1px #0b2a2a99;
+  pointer-events: none;
+}
+html[data-table="world"] body[data-game="48"] .pipe-board::before { left: 0; border-radius: 0 2px 2px 0; }
+html[data-table="world"] body[data-game="48"] .pipe-board::after {
+  right: 0;
+  clip-path: polygon(0 0, 55% 0, 100% 50%, 55% 100%, 0 100%);
+}
+html[data-table="world"] body[data-game="48"] .pipe {
+  position: relative;
+  border-radius: 6px;
+}
+/* Tiles that sit on a tray are bevelled maple; the hole is a dark recess. */
+html[data-table="world"] body[data-game="48"] .pipe:not(.waterway--1) {
+  box-shadow: inset 1px 1px #fff4d0aa, inset -2px -3px #7a5438cc, 1px 2px 3px #1a0e0799;
+}
+/* Water already reaches this tile from the inlet. */
+html[data-table="world"] body[data-game="48"] .pipe.wet {
+  filter: saturate(1.25) brightness(1.04);
+  box-shadow: inset 0 0 0 3px #57c8c4b3, inset 1px 1px #fff4d0aa, 1px 2px 3px #1a0e0799;
+}
+html[data-table="world"] body[data-game="48"] .pipe.route {
+  box-shadow: inset 0 0 0 3px #8ff0ea, 0 0 10px 2px #6fe0d9aa;
+}
+/* Tiles that can slide: amber ring plus a chevron pointing at the hole. */
+/* (#surface .piece… outranks the generic card-hand .movable/.selected lift, which would move a tile off its slot.) */
+html[data-table="world"] body[data-game="48"] #surface .piece.pipe.movable { translate: none; filter: none; border-radius: 6px; outline: 3px solid #e3a531; outline-offset: -3px; }
+html[data-table="world"] body[data-game="48"] .pipe.movable::before {
+  content: "";
+  position: absolute;
+  width: 17%;
+  aspect-ratio: 1;
+  background: #ffd25e;
+  filter: drop-shadow(0 1px 1px #3a2208);
+  pointer-events: none;
+}
+html[data-table="world"] body[data-game="48"] .pipe.slide-e::before { right: 5%; top: 50%; translate: 0 -50%; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+html[data-table="world"] body[data-game="48"] .pipe.slide-w::before { left: 5%; top: 50%; translate: 0 -50%; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+html[data-table="world"] body[data-game="48"] .pipe.slide-s::before { bottom: 5%; left: 50%; translate: -50% 0; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+html[data-table="world"] body[data-game="48"] .pipe.slide-n::before { top: 5%; left: 50%; translate: -50% 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+/* The tile that just slid: a white-teal inner ring and a corner pin. It always sits next to the
+   hole (so it is also .movable); the ring and pin sit inside the amber outline, not instead of it. */
+html[data-table="world"] body[data-game="48"] .pipe.last-move {
+  box-shadow: inset 0 0 0 3px #fffbe8, inset 0 0 0 6px #3aa3a6b3, inset 0 0 14px 6px #bff3ee66, 1px 2px 3px #1a0e0799;
+}
+html[data-table="world"] body[data-game="48"] .pipe.last-move::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  top: 8%;
+  width: 15%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0 22%, #9ff0ea 40%, #1f6f76 78%);
+  box-shadow: 0 1px 2px #0b2a2acc, 0 0 0 2px #fffbe8;
+  pointer-events: none;
+}
+html[data-table="world"] body[data-game="48"] #surface .piece.pipe.refused { outline: 3px solid #d9553f; outline-offset: -3px; animation: ww-nudge 0.3s ease-out; }
+html[data-table="world"] body[data-game="48"] .pipe[data-table-pressed] { filter: brightness(1.12); }
+
+/* ───────────── 49 · Mahjong Solitaire ───────────── */
+/* Fixed 8×4 bed: rows never collapse as tiles leave, so nothing on the table moves. */
+html[data-table="world"] body[data-game="49"] .mahjong-stack {
+  width: min(100%, 560px);
+  /* Portrait has height to spare: taller tiles (about 42×64 at 375px) are bigger to hit. */
+  aspect-ratio: 1.26;
+  padding: 10px 3px 6px 6px;
+  gap: 2px;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+}
+html[data-table="world"] body[data-game="49"] .mahjong-stack .mah-tile {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 6px;
+}
+/* The face keeps its printed proportions at the top of a taller tile; the rest is tile body. */
+html[data-table="world"] body[data-game="49"] .mahjong-stack .engraved-tile::before { inset: 6% 10% auto; aspect-ratio: 0.74; }
+/* The upper layer stands clearly above the lower one: a thicker bottom-right edge and a dark
+   cast shadow onto the tiles beneath. */
+html[data-table="world"] body[data-game="49"] .mahjong-stack .mah-tile.layer-1 {
+  z-index: 2;
+  transform: translate(-11%, -13%);
+  box-shadow:
+    inset 1px 1px #fff,
+    1px 2px 0 #e2cca6,
+    2px 4px 0 #c9ad7d,
+    3px 6px 0 #9fb596,
+    4px 8px 0 #3f6553,
+    7px 13px 9px #06120dc4;
+}
+/* Blocked tiles sink into shadow; free tiles stay bright. */
+html[data-table="world"] body[data-game="49"] .mahjong-stack span.mah-tile { filter: brightness(0.78) saturate(0.7); }
+html[data-table="world"] body[data-game="49"] .mahjong-stack span.engraved-tile.layer-1 { filter: brightness(0.86) saturate(0.8); }
+html[data-table="world"] body[data-game="49"] #surface .mahjong-stack .piece.mah-tile.selected {
+  filter: none;
+  border-radius: 6px;
+  z-index: 4;
+  translate: 0 -5px;
+  outline: 3px solid #ffd25e;
+  outline-offset: 1px;
+  box-shadow: inset 1px 1px #fff, 0 2px #dac29c, 0 4px #39716a, 0 0 14px 4px #ffc94acc;
+}
+/* A free tile that matches the picked one: a light ring and a dot, like a legal destination. */
+html[data-table="world"] body[data-game="49"] .mahjong-stack .mah-tile.target {
+  z-index: 3;
+  outline: 3px solid #fff1c4;
+  outline-offset: 1px;
+  box-shadow: inset 1px 1px #fff, 0 2px #dac29c, 0 4px #39716a, 0 0 0 6px #ffd25e55;
+}
+html[data-table="world"] body[data-game="49"] .mahjong-stack .mah-tile.target::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  width: 14px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1f3a2e 0 45%, #fff0c8 50% 66%, #1f3a2e 70%);
+  pointer-events: none;
+}
+html[data-table="world"] body[data-game="49"] #surface .mahjong-stack .piece.mah-tile.refused { outline: 3px solid #d9553f; outline-offset: 0; animation: ww-nudge 0.3s ease-out; }
+/* Where the last pair lay: a faint outline that fades in from the lifted tile. */
+html[data-table="world"] body[data-game="49"] .mah-gone {
+  border: 1.5px dashed #fff0c870;
+  border-radius: 6px;
+  background: #0d2a2133;
+  pointer-events: none;
+  animation: ww-mah-gone 0.45s ease-out;
+}
+html[data-table="world"] body[data-game="49"] .mah-gone.layer-1 { z-index: 1; transform: translate(-11%, -13%); }
+/* Cleared table: the empty bed stays, with a plaque in the middle. */
+html[data-table="world"] body[data-game="49"] .mah-slot {
+  border: 1.5px dashed #fff0c85c;
+  border-radius: 6px;
+  background: #0d2a2124;
+  pointer-events: none;
+}
+html[data-table="world"] body[data-game="49"] .mah-slot.layer-1 {
+  z-index: 1;
+  transform: translate(-11%, -13%);
+  border-color: #ffd25e80;
+  background: #0d2a2140;
+  box-shadow: 3px 5px 8px #06120d66;
+}
+html[data-table="world"] body[data-game="49"] .mah-cheer {
+  z-index: 3;
+  grid-column: 1 / -1;
+  grid-row: 2 / 4;
+  align-self: center;
+  justify-self: center;
+  padding: 10px 18px;
+  border: 2px solid #fff1c4;
+  border-radius: 14px;
+  background: linear-gradient(#f8dc93, #e2b04f);
+  color: #2a1d10;
+  font: 800 clamp(16px, 4.6vmin, 22px) / 1.2 system-ui, sans-serif;
+  white-space: nowrap;
+  box-shadow: inset 0 1px #fff6d6, 0 3px 0 #8a6326, 0 10px 22px #000a, 0 0 0 6px #ffd25e33;
+  pointer-events: none;
+  animation: ww-mah-cheer 0.6s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+html[data-table="world"] body[data-game="49"] .mah-cheer::before,
+html[data-table="world"] body[data-game="49"] .mah-cheer::after { content: "✦"; margin: 0 8px; color: #9a5d12; }
+@keyframes ww-mah-cheer {
+  from { scale: 0.6; opacity: 0; }
+  to { scale: 1; opacity: 1; }
+}
+@keyframes ww-mah-gone {
+  from { background: #fff4dccc; border-color: #ffd25e; translate: 0 -6px; }
+  to { background: #0d2a2133; border-color: #fff0c870; translate: 0 0; }
+}
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  /* Height is the short side here: slightly squarer tiles buy back tap width. */
+  html[data-table="world"] body[data-game="49"] .mahjong-stack {
+    aspect-ratio: 1.62;
+    width: min(100%, calc((var(--play-height) - var(--result-h)) * 1.62));
+  }
+}
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  html[data-table="world"] body[data-game="48"] #surface > .pipe-board { width: min(100%, calc(var(--play-height) - var(--result-h))); }
+}
+
+/* ───────────── 50 Klondike · 51 Spider ───────────── */
+/* Tableau on top, tray (stock, waste, undo, foundations / sets) at the bottom under the thumb.
+   The tableau is a size container: card width comes from its width, strip heights from its height,
+   so a long column shrinks its strips instead of pushing the page. */
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) #surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  gap: 8px;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .solitaire {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  align-self: stretch;
+  gap: 3px;
+  container: sol-table / size;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-tray {
+  grid-area: 2 / 1;
+  display: grid;
+  gap: 3px;
+  container: sol-tray / inline-size;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .solitaire .stack {
+  --cw: calc((100cqw - (var(--cols) - 1) * 3px) / var(--cols));
+  --ch: min(calc(var(--cw) * 1.4), 100px, 46cqh);
+  --hd: clamp(5px, calc(var(--cw) * 0.27), 13px);
+  --hu: clamp(13px, calc((100cqh - var(--ch) - var(--down) * var(--hd)) / max(var(--up), 1)), 30px);
+  min-height: 0;
+}
+/* Strips: face-down slivers and face-up index strips; the last card is a whole card. */
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .stack .piece {
+  flex: none;
+  height: var(--hu);
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  padding: 2px 0 0 4px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  border-radius: 5px 5px 0 0;
+  font: 700 clamp(13px, calc(var(--cw) * 0.3), 17px) / 1 Georgia, serif;
+  box-shadow: inset 0 1px #fff, 0 -1px 2px #0d221a40;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .stack .card-back {
+  height: var(--hd);
+  padding: 0;
+  font-size: 12px;
+  color: transparent;
+  overflow: hidden;
+  border-top: 1px solid #e8d9b6;
+  box-shadow: 0 -1px 2px #0d221a59;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .stack > .piece:last-child {
+  height: var(--ch);
+  border-radius: 5px;
+  box-shadow: var(--tt-shadow-small);
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .stack .whole-card { padding: 0; overflow: visible; }
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .whole-card .card {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 5px;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .whole-card .corner {
+  font-size: clamp(12px, calc(var(--cw) * 0.28), 17px);
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .whole-card .corner small { font-size: 0.82em; }
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .whole-card .pips i {
+  font-size: clamp(12px, calc(var(--cw) * 0.22), 15px);
+}
+/* Narrow cards (under about 60px): pips and court panels would collide with the corner index,
+   so the index and one large suit (or the court figure) carry the card. */
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-big { display: none; }
+@container sol-table (max-width: 440px) {
+  html[data-table="world"] body[data-game="50"] .stack .whole-card :is(.pips, .center) { display: none; }
+  html[data-table="world"] body[data-game="50"] .stack .whole-card .sol-big { display: block; }
+}
+@container sol-table (max-width: 630px) {
+  html[data-table="world"] body[data-game="51"] .stack .whole-card :is(.pips, .center) { display: none; }
+  html[data-table="world"] body[data-game="51"] .stack .whole-card .sol-big { display: block; }
+}
+@container sol-tray (max-width: 440px) {
+  html[data-table="world"] body[data-game="50"] .sol-tray .whole-card :is(.pips, .center) { display: none; }
+  html[data-table="world"] body[data-game="50"] .sol-tray .whole-card .sol-big { display: block; }
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .whole-card .sol-big {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  translate: -50% -50%;
+  font: 400 clamp(18px, calc(var(--cw) * 0.62), 34px) / 1 Georgia, "Segoe UI Symbol", serif;
+  color: #18282a;
+  pointer-events: none;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .whole-card .red .sol-big { color: #b3262b; }
+
+/* Tray slots: one per tableau column, card shaped. */
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-tray > * {
+  --cw: calc((100cqw - (var(--cols) - 1) * 3px) / var(--cols));
+  position: relative;
+  height: min(calc(var(--cw) * 1.4), 84px);
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-stock.card-back {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 3px;
+  font: 700 14px/1.2 system-ui, sans-serif;
+  color: #fff6dc;
+  text-shadow: 0 1px 2px #000;
+  background:
+    linear-gradient(#0000 60%, #0c2a22e6 60%),
+    #124e41 url('art/worldwide/table/back.webp') center / 100% 100%;
+  border: 1px solid #e8d9b6;
+  box-shadow: var(--tt-pile);
+}
+html[data-table="world"] body[data-game="51"] .sol-stock.card-back::before { content: "새 줄 "; white-space: pre; font-weight: 500; }
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b2a2138;
+  border: 1.5px dashed #e9d6a880;
+  box-shadow: inset 1px 2px 5px #04140f80;
+  color: #f0dcae;
+  font: 700 22px/1 system-ui, sans-serif;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-undo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font: 700 22px/1 system-ui, sans-serif;
+  color: #fff0c8;
+  background: linear-gradient(#2e6a5c, #1d4b41);
+  border: 1px solid #8fb7a1;
+  box-shadow: inset 0 1px #ffffff2e, inset 0 -3px #0f2c26, 0 3px 4px #0008;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-undo::after { content: "무르기"; font: 600 12px/1 system-ui, sans-serif; }
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) span.sol-undo { opacity: 0.4; }
+html[data-table="world"] body[data-game="50"] .sol-found:not(.whole-card) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b2a2138;
+  border: 1.5px dashed #e9d6a880;
+  box-shadow: inset 1px 2px 5px #04140f80;
+  color: #f0dcaecc;
+  font: 400 26px/1 Georgia, serif;
+}
+html[data-table="world"] body[data-game="50"] .sol-found.red:not(.whole-card) { color: #f0a58fd9; }
+html[data-table="world"] body[data-game="50"] .sol-found.whole-card { background: none; border: 0; box-shadow: none; }
+html[data-table="world"] body[data-game="50"] .sol-waste.whole-card { background: none; border: 0; }
+
+/* Spider: stock and undo take two columns each; completed sets fill the other six. */
+html[data-table="world"] body[data-game="51"] .sol-stock,
+html[data-table="world"] body[data-game="51"] .sol-undo { grid-column: span 2; }
+html[data-table="world"] body[data-game="51"] .sol-sets {
+  grid-column: span 6;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  align-items: center;
+  gap: 2px;
+}
+html[data-table="world"] body[data-game="51"] .sol-set {
+  height: 70%;
+  border: 1px dashed #e9d6a866;
+  border-radius: 3px;
+}
+html[data-table="world"] body[data-game="51"] .sol-set.done {
+  border: 1px solid #c8b58e;
+  background: linear-gradient(130deg, #fffdf2, #efe2c4);
+  box-shadow: 1px 2px 2px #0b1f1a99;
+}
+html[data-table="world"] body[data-game="51"] .sol-set.done::before {
+  content: "K♠";
+  display: block;
+  padding: 2px 0 0 2px;
+  font: 700 12px/1 Georgia, serif;
+  color: #18282a;
+}
+
+/* State: picked-up run, legal destination, last move, refused tap. Rings never change layout. */
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) #surface :is(.stack, .sol-tray) .piece.selected {
+  filter: none;
+  z-index: 1;
+  translate: 0 -3px;
+  outline: 2px solid #ffd25e;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 999px #ffd76a30, 0 0 10px 2px #ffc94aa6;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .target {
+  z-index: 1;
+  outline: 3px solid #fff1c4;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 6px #ffd25e5c, var(--tt-shadow-small);
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.sol-empty, .sol-found:not(.whole-card)).target::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1f3a2ecc 0 50%, #fff0c8b3 53% 66%, transparent 69%);
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .last-move:not(.selected, .target) {
+  outline: 2px solid #c98d2ccc;
+  outline-offset: -2px;
+}
+/* A printed face covers its own button, so rings on whole cards are drawn by an overlay above it. */
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .whole-card:is(.last-move, .selected, .refused)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 5px;
+  pointer-events: none;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .whole-card.last-move:not(.selected, .target)::after {
+  box-shadow: inset 0 0 0 2px #d99a2b, inset 0 0 10px 2px #ffd25e66, 0 0 9px 2px #ffc94a8c;
+  animation: ww-sol-glow 0.9s ease-out;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) :is(.stack, .sol-tray) .whole-card.selected::after {
+  background: #ffd76a2e;
+  box-shadow: inset 0 0 0 2.5px #ffd25e;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) #surface :is(.stack, .sol-tray) .piece.whole-card.refused::after {
+  box-shadow: inset 0 0 0 3px #d9553f;
+}
+@keyframes ww-sol-glow {
+  from { box-shadow: inset 0 0 0 3px #ffd25e, inset 0 0 16px 6px #ffe8a8aa, 0 0 18px 6px #ffc94acc; }
+}
+/* While a card is picked up, every legal column glows as one target (a tap anywhere in it moves). */
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .solitaire .stack.dest {
+  border-radius: 6px;
+  background: linear-gradient(#ffd25e10, #ffd25e2e);
+  box-shadow: inset 0 0 0 2px #ffd25e70;
+  cursor: pointer;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) #surface :is(.stack, .sol-tray) .piece.refused {
+  outline: 3px solid #d9553f;
+  outline-offset: -3px;
+  animation: ww-nudge 0.3s ease-out;
+}
+html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-empty {
+  position: relative;
+  height: var(--ch);
+  min-height: 0;
+  padding: 0;
+  border-radius: 6px;
+  background: #0b2a2138;
+  border: 1.5px dashed #e9d6a880;
+  box-shadow: inset 1px 2px 5px #04140f80;
+}
+html[data-table="world"] body[data-game="50"] .sol-empty::before {
+  content: "K";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 700 20px/1 Georgia, serif;
+  color: #f0dcae66;
+}
+
+/* Short landscape: tableau left, tray as a side panel on the right (right thumb). */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  html[data-table="world"] body:is([data-game="50"], [data-game="51"]) #surface {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: start;
+  }
+  /* A very long column (late spider) may still not fit: the tableau scrolls, never the page. */
+  html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .solitaire {
+    grid-area: 1 / 1;
+    padding-top: 4px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .solitaire .stack {
+    --ch: min(calc(var(--cw) * 1.4), 34cqh);
+    --hd: clamp(4px, calc(var(--cw) * 0.2), 10px);
+    --hu: clamp(12px, calc((100cqh - var(--ch) - var(--down) * var(--hd)) / max(var(--up), 1)), 28px);
+  }
+  html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-tray {
+    grid-area: 1 / 2;
+    container-type: normal;
+    --cw: 50px;
+    grid-template-columns: repeat(4, var(--cw));
+  }
+  html[data-table="world"] body:is([data-game="50"], [data-game="51"]) .sol-tray > * { --cw: 50px; height: 70px; }
+  html[data-table="world"] body[data-game="50"] .sol-found { grid-row: 2; }
+  html[data-table="world"] body[data-game="51"] .sol-tray { grid-template-columns: repeat(2, var(--cw)); }
+  html[data-table="world"] body[data-game="51"] .sol-undo { height: 50px; }
+  html[data-table="world"] body[data-game="51"] .sol-sets {
+    grid-column: span 2;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: auto;
+    row-gap: 4px;
+  }
+  html[data-table="world"] body[data-game="51"] .sol-set { height: 32px; }
+  html[data-table="world"] body[data-game="50"] .sol-tray .whole-card :is(.pips, .center) { display: none; }
+  html[data-table="world"] body[data-game="50"] .sol-tray .whole-card .sol-big { display: block; }
+}

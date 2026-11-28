@@ -1,0 +1,659 @@
+/* Path and race tables: 6 Nine Men's Morris, 8 Checkers, 9 Hare and Hounds, 11 Dominoes,
+   12 Chinese Checkers, 13 Ludo, 14 Backgammon.
+   Light falls from the upper left like the rest of the world tables; pieces sit in the middle
+   of their cell; state uses the shared .movable / .selected / .target / .last-move language. */
+
+/* ---------- Shared: carved sockets and drilled holes ---------- */
+body:is([data-game="6"], [data-game="9"]) .board-grid .cell {
+  position: relative;
+  color: transparent;
+  background: radial-gradient(circle, #4a2e17 0 13%, #87582d 17%, #c7955d 22%, #e3bb83 25%, transparent 28%);
+}
+body:is([data-game="6"], [data-game="9"]) .board-grid .cell:is(.black-stone, .white-stone, .hare) { background: none; }
+/* Round sockets get round rings: outlines follow the border radius. */
+body:is([data-game="6"], [data-game="9"]) .board-grid .cell { border-radius: 50%; }
+/* "Can move now" must read at a glance on wood and on stones: brighter, thicker gold with a glow. */
+html[data-table="world"] body:is([data-game="6"], [data-game="8"], [data-game="9"]) .board-grid .cell.movable {
+  outline: 3px solid #ffcf4a;
+  outline-offset: -3px;
+  box-shadow: var(--tint), inset 0 0 9px 2px #ffcf4a99;
+}
+/* Score parts never break inside ("나 8" stays together); lines break only between parts. */
+#score .score-part { white-space: nowrap; }
+
+/* ---------- 6 Nine Men's Morris ---------- */
+/* Stones sit centred on the line crossings with a soft contact shadow. */
+body[data-game="6"] .mill .cell:is(.black-stone, .white-stone)::before {
+  width: 82%;
+  filter: drop-shadow(1px 2px 1px #24180fa0) drop-shadow(0 0 1px #24180f60);
+}
+/* Where I may place a stone: a gold ring around a faint ghost of my own (black) stone, so a
+   free spot never looks like one of the AI's ivory stones. */
+body[data-game="6"] .mill button.legal.empty:enabled::before {
+  content: "";
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #8a847f80 0 18%, #1c1816a6 64%);
+  box-shadow: 0 0 0 2.5px #ffd25e, 0 0 7px 3px #ffd25eaa;
+}
+body[data-game="6"] .mill button.legal.empty:enabled { outline: 0; }
+/* A stone that may be removed after a mill: red ring around it. */
+body[data-game="6"] .mill .cell.capture:enabled::after {
+  content: "";
+  position: absolute;
+  inset: 3%;
+  border-radius: 50%;
+  border: 3px solid #d2482fe6;
+  box-shadow: 0 0 0 2px #fff0c870, inset 0 0 0 2px #fff0c860;
+  pointer-events: none;
+  animation: paths-breathe 1.2s ease-in-out infinite alternate;
+}
+body[data-game="6"] .mill.removing { box-shadow: inset 0 1px 2px #fff0be, 0 0 0 3px #c9472f99, 0 4px 0 #5c3a22, 0 9px 12px #0c171a9c; }
+/* Lines a little darker so the rings read at a glance. */
+body[data-game="6"] .board-grid.mill { padding: 6px; }
+
+/* Reserve rails: the stones each side still has to place. */
+.stone-tray {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 540px);
+  min-height: 38px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: linear-gradient(#0000004d, #00000014 60%, #ffffff10), var(--walnut) center / 320px;
+  box-shadow: inset 0 2px 4px #000a, inset 0 -1px #ffffff1f, 0 1px #ffffff14;
+}
+.tray-label { flex: none; font: 600 12px/1.2 system-ui, sans-serif; color: #f2dcac; word-break: keep-all; }
+.tray-rail { flex: 1; display: flex; min-width: 0; align-items: center; }
+.tray-stone {
+  flex: none;
+  width: 26px;
+  aspect-ratio: 1;
+  margin-right: -7px;
+  background: url('art/worldwide/table/black-stone.webp') center / contain no-repeat;
+  filter: drop-shadow(1px 2px 1px #000a);
+}
+.stone-tray.white .tray-stone { background-image: url('art/worldwide/table/white-stone.webp'); }
+.tray-count {
+  flex: none;
+  min-width: 1.5em;
+  text-align: right;
+  font: 700 15px/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #fff4da;
+}
+/* The board cells are already about 50px wide in portrait, so 확대 has nothing to add there. */
+@media (orientation: portrait) {
+  html:not(.card-landscape) body[data-game="6"] #boardZoom { display: none; }
+}
+
+/* ---------- 8 Checkers ---------- */
+/* Dark squares in real walnut so the playing squares stand out from the maple ones. */
+body[data-game="8"] .checker .cell.dark {
+  background: linear-gradient(135deg, #8a5a3466, #4a2a1580), var(--walnut) center / 220px;
+}
+body[data-game="8"] .checker .cell.light {
+  background: linear-gradient(135deg, #fff6dcd0, #f3ddb2c0), var(--maple) center / 220px;
+}
+body[data-game="8"] .checker .cell:is(.black-stone, .white-stone, .black-king, .white-king)::before {
+  width: 84%;
+  filter: drop-shadow(1px 2px 1px #1d120ca8) drop-shadow(0 0 1px #1d120c70);
+}
+/* A king wears a gold crown in the middle of its disc. */
+body[data-game="8"] .checker .cell:is(.black-king, .white-king)::after {
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 700 clamp(15px, 4.4vmin, 28px) / 1 Georgia, serif;
+  color: #ffd36a;
+  text-shadow: 0 1px 1px #3a2210, 0 0 3px #1d120c;
+  pointer-events: none;
+  z-index: 1;
+}
+body[data-game="8"] .checker .cell.selected:is(.black-king, .white-king)::after { translate: 0 -6%; }
+
+/* ---------- 9 Hare and Hounds ---------- */
+body[data-game="9"] .hound .cell:is(.black-stone, .hare)::before {
+  filter: drop-shadow(1px 3px 2px #2c2119b0);
+}
+
+/* ---------- 12 Chinese Checkers ---------- */
+/* True star proportions: rows are sqrt(3)/2 of the hole spacing apart, so the six points are
+   regular and every marble sits on a hole. */
+body[data-game="12"] #surface > .board-grid.star {
+  aspect-ratio: 0.883;
+  width: min(100%, calc(var(--play-height) * 0.883));
+  height: auto;
+}
+body[data-game="12"] .zoom-frame > .board-grid.star { aspect-ratio: 0.883; }
+/* Holes of the two home triangles carry the owner's colour. */
+body[data-game="12"] .star .cell.goal-mine {
+  background: radial-gradient(ellipse at center, #2b3d5c 16%, #5b7fb0 30%, #e8ca9d 38%, transparent 46%);
+}
+body[data-game="12"] .star .cell.goal-theirs {
+  background: radial-gradient(ellipse at center, #5a2a20 16%, #b0604d 30%, #e8ca9d 38%, transparent 46%);
+}
+body[data-game="12"] .star .cell { position: relative; }
+body[data-game="12"] .star .cell:is(.black-stone, .white-stone)::before {
+  filter: drop-shadow(1px 2px 1px #24170fb0);
+}
+/* Legal landing holes: a gold bead inside a 34px gold ring, larger than the hole itself, so the
+   spot a finger should aim for is obvious. Taps near it snap to it (snapTaps). */
+html[data-table="world"] body[data-game="12"] .board-grid.star .cell.target.empty:not(.legal)::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  aspect-ratio: auto;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side, #fffbe9 0 14%, #f6c45c 20% 32%, #b97a1a 36%, #f6c45c00 40% 76%, #ffd25e 80% 92%, #ffd25e00 96%);
+  filter: drop-shadow(0 0 2px #2b1a0a);
+  pointer-events: none;
+  z-index: 3;
+}
+html[data-table="world"] body[data-game="12"] .star .cell.target { outline: 0; }
+html[data-table="world"] body[data-game="12"] .star .cell:is(.movable, .selected, .last-move) { outline-offset: -1px; }
+
+/* ---------- 11 Dominoes ---------- */
+body[data-game="11"] #surface { justify-content: flex-start; gap: 8px; }
+.domino-rack.theirs { gap: 0; min-height: 22px; }
+.domino-back {
+  width: 16px;
+  height: 28px;
+  margin: 0 1px;
+  border-radius: 3px;
+  background: linear-gradient(145deg, #3e7464, #1b4136);
+  border: 1px solid #d9c59a;
+  box-shadow: inset 0 1px #ffffff40, 0 2px 0 #b29a71, 1px 3px 3px #0008;
+}
+/* The line of play: smaller tiles, wrapping like a snake on the felt. */
+body[data-game="11"] .domino-line {
+  gap: 4px 3px;
+  padding: 8px 4px;
+  min-height: 52px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 40%, #ffffff0d, #0000 70%);
+}
+body[data-game="11"] .domino-line { margin-block: auto; }
+/* Snake: rows alternate direction (laid out by snake() in ww-paths.js). */
+body[data-game="11"] .domino-line.snake {
+  display: grid;
+  grid-template-columns: repeat(var(--snake-cols, 5), auto);
+  justify-content: center;
+  align-self: stretch;
+  gap: 4px 3px;
+}
+body[data-game="11"] .domino-draw { justify-content: center; }
+body[data-game="11"] .domino-line .domino[class*="face-"] { width: 58px; height: 32px; border-radius: 5px; }
+body[data-game="11"] .domino.last-move {
+  outline: 2px solid #f3c35a;
+  outline-offset: 2px;
+  box-shadow: inset 1px 1px white, 0 2px #c8b892, 1px 4px #8c7859, 0 0 10px 2px #f3c35a99;
+}
+/* Open ends: a passive label until a tile that fits both ends is chosen. */
+body[data-game="11"] .domino-ends { gap: 8px; flex-wrap: nowrap; }
+.domino-end {
+  flex: 1 1 0;
+  max-width: 180px;
+  min-height: 44px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px dashed #d8c49a88;
+  color: #f2dcac;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  background: #0f2b2440;
+}
+.domino-end.left::before { content: "◀ "; }
+.domino-end.right::after { content: " ▶"; }
+button.domino-end.target {
+  border: 2px solid #ffd25e;
+  background: linear-gradient(#f0dcb3, #d0b487);
+  color: #243b35;
+  font-weight: 700;
+  box-shadow: 0 0 0 3px #ffd25e40, 0 3px 6px #0008;
+}
+/* My hand stands upright on a rack near the thumb. */
+body[data-game="11"] .domino-rack.mine {
+  gap: 10px 6px;
+  padding: 10px 4px 8px;
+  border-radius: 12px;
+  background: linear-gradient(#00000040, #0000001a), var(--walnut) center / 300px;
+  box-shadow: inset 0 2px 5px #000b, 0 1px #ffffff1a;
+  margin-bottom: 4px;
+}
+body[data-game="11"] .domino-rack.mine .domino[class*="face-"] { width: 44px; height: 80px; border-radius: 6px; }
+body[data-game="11"] .domino-rack.mine .domino[class*="face-"]::before { inset: 3% 8% 50% 8%; border-right: 0; border-bottom: 1px solid #927854; }
+body[data-game="11"] .domino-rack.mine .domino[class*="face-"]::after { inset: 50% 8% 3% 8%; }
+body[data-game="11"] .domino-rack.mine .domino.movable { outline: 2px solid #d99a2ad0; outline-offset: 2px; }
+body[data-game="11"] .domino-rack.mine .domino.selected {
+  translate: 0 -8px;
+  outline: 3px solid #ffd25e;
+  outline-offset: 2px;
+  box-shadow: inset 1px 1px white, 0 2px #c8b892, 1px 4px #8c7859, 0 10px 12px #000a, 0 0 12px 3px #ffd25e88;
+}
+body[data-game="11"] .domino-rack.mine span.domino[data-why] { filter: saturate(0.6) brightness(0.72); }
+body[data-game="11"] .domino-rack.mine .domino.last-move:not(.selected) { outline: 2px solid #f3c35a; }
+
+/* ---------- 13 Ludo ---------- */
+/* Board plus a fixed control block (die tray 52px + 2x2 pawn buttons 96px) always fit. */
+body[data-game="13"] #surface > .ludo-board { width: min(100%, calc(var(--play-height) - 172px)); }
+/* Fixed square rows: a pawn square turning from a span into a button must not change the
+   board's height (it used to shrink 4px after each roll). */
+body[data-game="13"] .ludo-board { aspect-ratio: 1; grid-template-rows: repeat(15, minmax(0, 1fr)); }
+body[data-game="13"] .ludo-cell { position: relative; min-height: 0; }
+/* Pawn squares became buttons: keep them exactly one board square. */
+body[data-game="13"] button.ludo-cell {
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 0;
+}
+body[data-game="13"] .ludo-men i { position: relative; filter: var(--pawn-filter) drop-shadow(1px 2px 1px #1e140cb0); }
+body[data-game="13"] .jade-pawn { --pawn-filter: hue-rotate(111deg) saturate(1.6); }
+body[data-game="13"] .red-pawn { --pawn-filter: hue-rotate(325deg) saturate(2.4); }
+/* One full-size pawn per side; when both sides share a safe square they stand side by side. */
+body[data-game="13"] .ludo-men:not(.ludo-shared) i { flex: 0 0 100%; }
+/* My pawn's number (matches its button below the board). Neutral colours survive the hue filter. */
+body[data-game="13"] .ludo-men i[data-n]::after {
+  content: attr(data-n);
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  translate: -50% -50%;
+  font: 800 12px/1 system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 0 0 2px #000, 0 1px 1px #000;
+}
+/* A stack: one pawn with a "×N" badge. */
+body[data-game="13"] .ludo-men i[data-stack]::after {
+  content: attr(data-stack);
+  position: absolute;
+  right: -3px;
+  top: -4px;
+  padding: 1px 3px;
+  border-radius: 8px;
+  font: 800 12px/1.05 system-ui, sans-serif;
+  color: #1c1c1c;
+  background: #fff;
+  box-shadow: 0 1px 2px #000a;
+  z-index: 1;
+}
+body[data-game="13"] .ludo-men { overflow: visible; }
+/* The shared home in the middle: four triangles, one per arm, painted across the 3x3 squares. */
+body[data-game="13"] .ludo-cell.centre {
+  background: linear-gradient(145deg, #ffffff2e, #0000001a), conic-gradient(from -45deg, #d2a844 0 25%, #c5654b 0 50%, #5885a4 0 75%, #448e68 0);
+  background-size: 100% 100%, 300% 300%;
+  box-shadow: inset 0 1px #ffffff42;
+}
+/* A pawn I can move: lit ring and a slight bob. Taps near it snap to it (snapTaps). */
+body[data-game="13"] button.ludo-cell.movable {
+  overflow: visible;
+  z-index: 2;
+  outline: 2px solid #ffd25e;
+  outline-offset: -1px;
+  box-shadow: 0 0 8px 2px #ffd25ecc;
+}
+body[data-game="13"] button.ludo-cell.movable i { animation: paths-bob 0.9s ease-in-out infinite alternate; }
+/* Undo the card lift from ww-fit-cards.css: squares stay put, pawn buttons keep their own border. */
+html[data-table="world"] body[data-game="13"] #surface .piece.ludo-cell.movable {
+  translate: none;
+  filter: none;
+  border-radius: 0;
+  outline: 2px solid #ffd25e;
+  outline-offset: -1px;
+}
+html[data-table="world"] body[data-game="13"] #surface .piece.pawn-pick.movable {
+  translate: none;
+  filter: none;
+  border-radius: 10px;
+  outline: 0;
+}
+/* Where it would land: a gold bead; a red ring if it sends a rival pawn home. */
+body[data-game="13"] .ludo-dest::before {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, #fffbe9 0 30%, #f6c45c 40% 62%, #a06a1a 70%, #0000 74%);
+  pointer-events: none;
+  z-index: 1;
+}
+body[data-game="13"] .ludo-dest.ludo-men::before { inset: 4%; background: none; border: 3px solid #d2482f; box-shadow: 0 0 0 1px #fff0c8; }
+body[data-game="13"] .ludo-dest:not(.ludo-hit).ludo-men::before { border-color: #f6c45c; }
+body[data-game="13"] .ludo-cell.last-move { box-shadow: inset 0 0 0 999px #ffd76a52; outline: 2px solid #c98d2ccc; outline-offset: -2px; }
+.ludo-tray { gap: 12px; height: 52px; min-height: 52px; flex-wrap: nowrap; }
+.ludo-tray .die, .dice-tray .die { width: 46px; height: 46px; min-height: 0; padding: 0; flex: none; }
+.ludo-tray .die.idle {
+  font: 700 22px/1 Georgia, serif;
+  color: #8a7a5e;
+  border-radius: 9px;
+  opacity: 0.75;
+}
+.ludo-tray .primary, .dice-tray .primary { min-width: 136px; min-height: 48px; font-size: 16px; }
+body[data-game="13"] .ludo-pawns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 44px;
+  gap: 8px;
+  width: min(100%, 420px);
+  align-self: center;
+}
+.pawn-pick {
+  min-height: 44px;
+  min-width: 0;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  border-radius: 10px;
+  border: 1px solid #91a79270;
+  background: #1d413a;
+  color: #f8eacb;
+  white-space: nowrap;
+}
+.pawn-pick .pick-no {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  color: #1c1c1c;
+  font: 800 12px/1 system-ui, sans-serif;
+}
+.pawn-pick .pick-way { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pawn-pick::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 22px;
+  background: url('art/worldwide/table/ivory-p.webp') center / contain no-repeat;
+  filter: hue-rotate(111deg) saturate(1.6) drop-shadow(0 1px 1px #000a);
+}
+.pawn-pick.red::before { filter: hue-rotate(325deg) saturate(2.4) drop-shadow(0 1px 1px #000a); }
+button.pawn-pick.movable:enabled { border: 2px solid #ffd25e; background: #24524a; box-shadow: 0 0 0 2px #ffd25e33; }
+span.pawn-pick { opacity: 0.62; }
+
+/* ---------- 14 Backgammon ---------- */
+/* Portrait: a slim frame, bar and tray leave every point at least 26px wide (12 points in 375px). */
+body[data-game="14"] .backgammon {
+  --bar: 12px;
+  --tray: 18px;
+  --point-h: clamp(112px, 40vw, 172px);
+  width: min(100%, 620px);
+  border-width: 3px;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) var(--bar) repeat(6, minmax(0, 1fr)) var(--tray);
+  grid-template-rows: var(--point-h) var(--point-h);
+  row-gap: 12px;
+  column-gap: 0;
+  padding: 2px;
+  background:
+    linear-gradient(transparent calc(50% - 6px), #3a24168c calc(50% - 6px) calc(50% + 6px), transparent calc(50% + 6px)),
+    var(--walnut) center / cover;
+}
+body[data-game="14"] .point {
+  min-height: 0;
+  padding: 15px 0 0;
+  gap: 0;
+  border: 0;
+  overflow: visible;
+}
+body[data-game="14"] .point:nth-child(n+13) { padding: 0 0 15px; }
+body[data-game="14"] .point:nth-child(12n+6) { border-right: 0; }
+body[data-game="14"] .point::before { inset: 15px 6% 0; }
+body[data-game="14"] .point:nth-child(n+13)::before { inset: 0 6% 15px; }
+/* Point numbers at the outer edge, out of the checkers' way. */
+body[data-game="14"] .point::after {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: 700 12px/15px system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #4a2d17;
+  text-shadow: 0 1px #fff2cf80;
+}
+body[data-game="14"] .point:nth-child(n+13)::after { top: auto; bottom: 0; }
+/* An empty target point is :empty, and the shared `.target:empty::after` dot would replace the
+   number; keep the number and paint it above the target wash. */
+body[data-game="14"] .backgammon .point::after {
+  content: attr(data-place);
+  position: absolute;
+  width: auto;
+  aspect-ratio: auto;
+  background: none;
+  border-radius: 0;
+  z-index: 2;
+}
+body[data-game="14"] .point i,
+body[data-game="14"] .bar-slot i {
+  flex: none;
+  /* Five checkers always fit the point's length: size by width and by height. */
+  width: min(92%, 30px, calc((var(--point-h) - 15px) / 5.1));
+  height: auto;
+  aspect-ratio: 1;
+  margin: -1px 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 800 12px/1 system-ui, sans-serif;
+  color: #2b261d;
+  box-shadow: 0 1px 1px #2a1a0e99, 0 2px 2px #2a1a0e55;
+}
+body[data-game="14"] :is(.point, .bar-slot) .dark-chip { color: #fff4da; }
+body[data-game="14"] .bar-slot {
+  grid-area: 1 / 7 / 3 / 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #00000055, #0000 30% 70%, #00000055), var(--walnut) center / 200px;
+  box-shadow: inset 0 0 4px #000a;
+}
+/* Hit checkers may stand a little wider than the slim bar. */
+body[data-game="14"] .bar-slot { overflow: visible; z-index: 1; }
+body[data-game="14"] .bar-slot i { width: min(20px, calc((var(--point-h) - 15px) / 5.1)); }
+/* Bear-off trays: a groove at the right edge; borne-off checkers stand on edge. */
+body[data-game="14"] .bear-off {
+  grid-column: 14;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 1px;
+  min-height: 0;
+  padding: 3px 2px;
+  border: 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #00000066, #0000002a), var(--walnut) center / 200px;
+  box-shadow: inset 1px 2px 4px #000c;
+  position: relative;
+}
+body[data-game="14"] .bear-off.dark { grid-row: 1; }
+body[data-game="14"] .bear-off.light { grid-row: 2; justify-content: flex-end; }
+body[data-game="14"] .bear-off i { flex: none; height: 5px; border-radius: 2px; box-shadow: 0 1px #0007; }
+body[data-game="14"] .light-slab { background: linear-gradient(#fff8e6, #d8c59b); }
+body[data-game="14"] .dark-slab { background: linear-gradient(#5c5650, #24201c); }
+body[data-game="14"] .bear-off::after {
+  content: attr(data-count);
+  position: absolute;
+  left: 0;
+  right: 0;
+  font: 700 12px/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: #fff0c8;
+  text-shadow: 0 1px 2px #000;
+}
+body[data-game="14"] .bear-off.dark::after { bottom: 4px; }
+body[data-game="14"] .bear-off.light::after { top: 4px; }
+/* State language on points, bar and trays. Rings are inset shadows, so they stay inside the
+   board frame. Gold = mine to move; dashed cream = where it can go. */
+body[data-game="14"] :is(.point, .bar-slot, .bear-off):is(.movable, .selected, .target, .last-move) { outline: 0; }
+body[data-game="14"] :is(.point, .bar-slot, .bear-off).movable { box-shadow: inset 0 0 0 2px #e3a53a; }
+body[data-game="14"] :is(.point, .bar-slot, .bear-off).selected {
+  box-shadow: inset 0 0 0 3px #ffd25e, inset 0 0 14px 4px #ffc94aa6;
+  z-index: 1;
+}
+body[data-game="14"] :is(.point, .bar-slot, .bear-off).target {
+  outline: 2px dashed #fff1c4;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 999px #fff3c430;
+}
+body[data-game="14"] .point.target::before { filter: brightness(1.35) saturate(1.2); }
+/* ww-fit-cards.css lifts every non-board-grid .movable / .selected piece like a card (translate,
+   outline outside the box, drop shadow). Points, bar and trays are parts of the board and must not
+   move, so undo it here; the #surface id is needed to outrank that rule. */
+html[data-table="world"] body[data-game="14"] #surface .piece:is(.point, .bar-slot, .bear-off):is(.movable, .selected) {
+  translate: none;
+  filter: none;
+  border-radius: 0;
+  outline: 0;
+}
+html[data-table="world"] body[data-game="14"] #surface .piece:is(.point, .bar-slot, .bear-off).target {
+  outline: 2px dashed #fff1c4;
+  outline-offset: -2px;
+}
+body[data-game="14"] .point.selected i:not(.ghost-chip):last-of-type,
+body[data-game="14"] .point:nth-child(n+13).selected i:not(.ghost-chip):first-of-type { box-shadow: 0 0 0 2px #ffd25e, 0 3px 4px #2a1a0e99; }
+/* The last turn, in a colour nothing else uses (cool white): the checker that arrived wears a ring,
+   the point it left shows a dashed ghost checker, and the point itself a faint cool wash. */
+body[data-game="14"] :is(.point, .bear-off).moved-to:not(.selected):not(.target) { box-shadow: inset 0 0 0 999px #d8efff26; }
+body[data-game="14"] :is(.point, .bar-slot) i.moved {
+  box-shadow: 0 0 0 2px #f2fbff, 0 0 7px 3px #8fd0ffd9, 0 2px 2px #2a1a0e99;
+  z-index: 1;
+}
+body[data-game="14"] .point i.ghost-chip {
+  background: radial-gradient(circle, #e8f6ff30, #e8f6ff12) !important;
+  border: 2px dashed #eef9ffe0;
+  box-shadow: none;
+}
+body[data-game="14"] .bear-off.moved-to { box-shadow: inset 0 0 0 2px #f2fbff, inset 1px 2px 4px #000c; }
+.dice-tray { gap: 10px; min-height: 52px; }
+/* Two rows of chips, always reserved; more chips scroll inside the box. */
+body[data-game="14"] .move-list {
+  gap: 8px;
+  height: 96px;
+  align-content: flex-start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.move-chip {
+  min-width: 72px;
+  min-height: 44px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.move-chip.picked { border: 2px solid #ffd25e; background: #2d5a50; }
+
+/* ---------- Short landscape (plain, fullscreen or the quarter-turned view) ---------- */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  /* Morris: reserve rails stand beside the board instead of above and below it. */
+  body[data-game="6"] #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: center;
+    column-gap: 10px;
+  }
+  body[data-game="6"] #surface > .board-grid {
+    grid-column: 2;
+    grid-row: 1;
+    width: min(calc(100cqw - 150px), calc(var(--play-height) - 16px));
+  }
+  body[data-game="6"] .stone-tray { grid-row: 1; width: 58px; min-height: 0; flex-direction: column; padding: 8px 4px; border-radius: 18px; }
+  body[data-game="6"] .stone-tray.white { grid-column: 1; justify-self: end; }
+  body[data-game="6"] .stone-tray.black { grid-column: 3; justify-self: start; }
+  body[data-game="6"] .tray-label { text-align: center; }
+  body[data-game="6"] .tray-long { display: none; }
+  body[data-game="6"] .tray-rail { flex-direction: column; }
+  body[data-game="6"] .tray-stone { width: 22px; margin: 0 0 -9px; }
+  body[data-game="6"] .tray-count { text-align: center; margin-top: 10px; }
+
+  body[data-game="12"] #surface > .board-grid.star {
+    aspect-ratio: auto;
+    width: min(100%, calc(var(--play-height) * 1.1));
+    height: var(--play-height);
+  }
+
+  /* Dominoes: line of play on top, then the hand flanked by the two open ends. */
+  body[data-game="11"] #surface {
+    display: grid;
+    grid-template-columns: minmax(84px, auto) minmax(0, 1fr) minmax(84px, auto) auto;
+    grid-template-areas: "theirs theirs theirs theirs" "line line line line" "left mine right draw";
+    align-items: center;
+    gap: 5px 8px;
+  }
+  body[data-game="11"] .domino-rack.theirs { grid-area: theirs; min-height: 18px; }
+  body[data-game="11"] .domino-back { height: 20px; width: 12px; }
+  body[data-game="11"] .domino-line { grid-area: line; min-height: 0; padding: 2px; }
+  body[data-game="11"] .domino-line .domino[class*="face-"] { width: 44px; height: 24px; }
+  body[data-game="11"] .domino-ends { display: contents; }
+  body[data-game="11"] .domino-end.left { grid-area: left; }
+  body[data-game="11"] .domino-end.right { grid-area: right; }
+  body[data-game="11"] .domino-rack.mine { grid-area: mine; padding: 8px 4px 6px; gap: 6px; }
+  body[data-game="11"] .domino-rack.mine .domino[class*="face-"] { width: 34px; height: 62px; }
+  body[data-game="11"] .domino-draw { grid-area: draw; }
+
+  /* Ludo and backgammon: board on the left, die and moves on the right. */
+  body[data-game="13"] #surface { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 8px; }
+  body[data-game="13"] #surface > .ludo-board { grid-column: 1; grid-row: 1 / span 2; width: var(--play-height); max-width: 60cqw; }
+  body[data-game="13"] .ludo-tray { grid-column: 2; grid-row: 1; align-self: end; }
+  body[data-game="13"] .ludo-pawns { grid-column: 2; grid-row: 2; align-self: start; width: 100%; }
+  body[data-game="14"] #surface { grid-template-columns: minmax(0, 2.3fr) minmax(150px, 1fr); }
+  body[data-game="14"] #surface > .backgammon {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    --bar: 16px;
+    --tray: 24px;
+    border-width: 5px;
+    --point-h: calc((var(--play-height) - 30px) / 2);
+    width: min(100%, calc(var(--play-height) * 1.75));
+  }
+  body[data-game="14"] .bar-slot i { width: min(24px, calc((var(--point-h) - 15px) / 5.1)); }
+  body[data-game="14"] .dice-tray { grid-column: 2; grid-row: 1; align-self: end; }
+  body[data-game="14"] .move-list { grid-column: 2; grid-row: 2; align-self: start; height: auto; max-height: calc(var(--play-height) - 60px); overflow: auto; }
+  body[data-game="14"] .move-chip { min-width: 64px; padding-inline: 6px; }
+}
+
+@keyframes paths-breathe {
+  from { opacity: 0.65; }
+  to { opacity: 1; }
+}
+@keyframes paths-bob {
+  from { translate: 0 0; }
+  to { translate: 0 -10%; }
+}
+
+/* After the result is shown, controls that can no longer act fade out without moving anything. */
+.desk:has(#result:not([hidden])) :is(.dice-tray button, .ludo-tray, .move-list, .ludo-pawns, .domino-ends, .domino-draw) {
+  visibility: hidden;
+}
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  /* The result banner takes a line under the board; shrink the board instead of scrolling. */
+  body:is([data-game="6"], [data-game="8"], [data-game="9"], [data-game="11"], [data-game="12"], [data-game="13"], [data-game="14"]) .desk:has(#result:not([hidden])) {
+    --play-height: calc(100cqh - 160px);
+  }
+  body:is([data-game="6"], [data-game="8"], [data-game="9"], [data-game="11"], [data-game="12"], [data-game="13"], [data-game="14"]) #result:not([hidden]) {
+    margin-top: 4px;
+    padding-block: 4px;
+  }
+}

@@ -1,4 +1,4 @@
-import { register, range, neighbors, diag, random, shuffle, seats } from './ww-core.js';
+import { register, range, neighbors, diag, random, shuffle, seats, element } from './ww-core.js';
 // Source/destination selection is shared by movement games. The AI chooses a complete move.
 const lineImages = new Map();
 function pathsBehind(grid, cols, rows, edges, key) {
@@ -79,6 +79,82 @@ export function moveBoard(ui, cells, w, moves, chosen, setChosen, apply, style =
       slot.style.gridRow = Math.floor(i / w) + 1;
     }
   });
+  return grid;
+}
+// Fingers are wider than small holes and narrow points. A tap that lands on nothing playable resolves
+// to the nearest playable spot within reach (legal destinations first once a piece is picked up).
+// A tap well inside an occupied spot is left alone, so a piece that cannot act still says why.
+export function snapTaps(root, occupied = () => false, reach = 22) {
+  let down = null;
+  root.addEventListener('pointerdown', (e) => {
+    down = e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY, el: e.target } : null;
+  });
+  root.addEventListener('pointerup', (e) => {
+    const start = down;
+    down = null;
+    if (!start || start.id !== e.pointerId || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) return;
+    const { x, y } = start,
+      hit = start.el.closest?.('button, .piece');
+    if (hit?.matches('button:enabled')) return;
+    // How deep the tap sits inside an occupied spot; a snap has to come closer than that.
+    let depth = Infinity;
+    if (hit && root.contains(hit) && occupied(hit)) {
+      const r = hit.getBoundingClientRect();
+      depth = Math.max(0, Math.min(x - r.left, r.right - x, y - r.top, r.bottom - y));
+    }
+    const live = (sel) => [...root.querySelectorAll(sel)].filter((b) => b.matches('button:enabled'));
+    const tiers = root.querySelector('.selected') ? [live('.target'), live('button')] : [live('button')];
+    for (const tier of tiers) {
+      let best = null,
+        bestGap = Infinity;
+      for (const el of tier) {
+        const r = el.getBoundingClientRect(),
+          gap = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom)),
+          // Small spots reach further; a 44px square needs almost no help.
+          limit = Math.min(reach, Math.max(6, (48 - Math.min(r.width, r.height)) / 1.5 + 4));
+        if (gap <= limit && gap < bestGap) {
+          best = el;
+          bestGap = gap;
+        }
+      }
+      if (best && bestGap < depth) {
+        e.stopPropagation();
+        best.click();
+        return;
+      }
+    }
+  });
+  return root;
+}
+const figure = (el) => el.matches('.black-stone, .white-stone, .black-king, .white-king, .hare');
+// Score text that only breaks between its parts, so "나 8 · 상대 9" never splits inside a part.
+export function scoreParts(ui, ...parts) {
+  ui.score(parts.join(' · '));
+  document
+    .querySelector('#score')
+    .replaceChildren(
+      ...parts.flatMap((t, k) => [...(k ? [' '] : []), element('span', 'score-part', (k ? '· ' : '') + t)]),
+    );
+}
+// Give every own piece that cannot act now a reason, so a tap on it explains itself in #status.
+function explain(ui, grid, owned, why) {
+  if (ui.turn) return;
+  [...grid.children].forEach((cell, i) => {
+    if (owned(i) && !cell.matches('button')) ui.why(cell, why(i));
+  });
+}
+// Off-board reserve: the stones still waiting to be placed, laid out on a wooden rail.
+function reserveTray(label, count, tone) {
+  const tray = element('div', 'stone-tray ' + tone);
+  tray.setAttribute('aria-label', label + ' 남은 말 ' + count);
+  // "상대 남은 말" in portrait; the narrow landscape rail keeps only "상대" / "나".
+  const name = element('span', 'tray-label', label);
+  name.append(element('span', 'tray-long', ' 남은 말'));
+  tray.append(name);
+  const rail = element('span', 'tray-rail');
+  for (let k = 0; k < count; k++) rail.append(element('i', 'tray-stone'));
+  tray.append(rail, element('b', 'tray-count', String(count)));
+  return tray;
 }
 register(
   8,
@@ -110,16 +186,28 @@ register(
     }
     return () => {
       const p = ui.turn ? -1 : 1,
-        opts = moves(p, chain);
-      if (!opts.length) {
-        ui.victor(1 - ui.turn);
-        return;
-      }
-      moveBoard(
+        opts = moves(p, chain),
+        // No move left: the final position stays on the table under the result.
+        over = !opts.length;
+      const forced = opts.some((m) => m.cap !== undefined);
+      scoreParts(ui, '남은 말 나 ' + b.filter((v) => v > 0).length, '상대 ' + b.filter((v) => v < 0).length);
+      if (!ui.turn && !over)
+        ui.status(
+          chain !== null
+            ? '한 번 더 잡을 수 있어요. 같은 말로 계속 뛰어넘으세요.'
+            : selected !== null
+              ? forced
+                ? '점이 찍힌 칸으로 뛰어넘어 잡으세요.'
+                : '갈 칸(점 표시)을 고르세요.'
+              : forced
+                ? '잡을 수 있는 말이 있어요. 잡기는 의무예요.'
+                : '움직일 말을 고르세요',
+        );
+      const grid = moveBoard(
         ui,
         b.map((x) => ({ 1: '●', '-1': '○', 2: '♛', '-2': '♕' })[x] || ''),
         8,
-        opts,
+        over ? [] : opts,
         selected,
         (v) => (selected = v),
         (m) => {
@@ -141,6 +229,22 @@ register(
         },
         'checker',
         (i) => (((i % 8) + Math.floor(i / 8)) % 2 ? 'dark' : 'light'),
+      );
+      if (over) {
+        ui.victor(1 - ui.turn);
+        return;
+      }
+      snapTaps(grid, figure);
+      explain(
+        ui,
+        grid,
+        (i) => Math.sign(b[i]) === p,
+        () =>
+          chain !== null
+            ? '연속 잡기 중이에요. 표시된 말로 계속 잡으세요.'
+            : forced
+              ? '잡을 수 있는 다른 말이 있어요. 잡기는 의무예요.'
+              : '이 말은 지금 움직일 수 없어요.',
       );
     };
   },
@@ -167,15 +271,15 @@ register(
           if (dx && dy && (i % 2 === 0 || j % 2 === 0)) continue;
           opts.push({ from: i, to: j, weight: p === 2 ? -dx : dx });
         }
-      if (!opts.length) {
-        ui.victor(1 - ui.turn);
-        return;
-      }
-      moveBoard(
+      const over = !opts.length;
+      ui.score('옆걸음 ' + stalls + '/10');
+      if (!ui.turn && !over)
+        ui.status(selected === null ? '사냥개로 토끼를 가두세요' : '갈 자리(점 표시)를 고르세요');
+      const grid = moveBoard(
         ui,
         b.map((v, i) => (nodes.includes(i) ? ['', '●', '♘'][v] : null)),
         5,
-        opts,
+        over ? [] : opts,
         selected,
         (v) => (selected = v),
         (m) => {
@@ -191,6 +295,20 @@ register(
             ui.victor(1);
         },
         'hound',
+      );
+      if (over) {
+        ui.victor(1 - ui.turn);
+        return;
+      }
+      snapTaps(grid, figure);
+      explain(
+        ui,
+        grid,
+        (i) => b[i] > 0,
+        (i) =>
+          b[i] === 2
+            ? '토끼는 AI가 움직여요. 사냥개로 토끼를 가두세요.'
+            : '이 사냥개는 갈 수 있는 빈 자리가 없어요. 뒤로는 못 가요.',
       );
     };
   },
@@ -247,17 +365,18 @@ register(
       const p = ui.turn + 1,
         own = nodes.filter((i) => b[i] === p),
         enemy = nodes.filter((i) => b[i] === 3 - p);
-      ui.score('남은 배치　나 ' + remaining[0] + ' · 상대 ' + remaining[1]);
+      scoreParts(
+        ui,
+        '판 위 나 ' + nodes.filter((i) => b[i] === 1).length,
+        '상대 ' + nodes.filter((i) => b[i] === 2).length,
+      );
       const free = nodes.filter((i) => !b[i]),
         moves = [];
       if (!remaining[p - 1] && !capture)
         for (const i of own)
           for (const j of free)
             if (own.length === 3 || adj.get(i).has(j)) moves.push({ from: i, to: j });
-      if (!capture && !remaining[p - 1] && (own.length < 3 || !moves.length)) {
-        ui.victor(2 - p);
-        return;
-      }
+      const over = !capture && !remaining[p - 1] && (own.length < 3 || !moves.length);
       function place(j, i) {
         if (i !== undefined) b[i] = 0;
         else remaining[p - 1]--;
@@ -269,26 +388,58 @@ register(
         if (quiet >= 100) ui.victor(-1);
       }
       const display = b.map((v, i) => (nodes.includes(i) ? ['·', '●', '○'][v] : null));
+      // Stones still to be placed wait on rails above (AI) and below (me) the board.
+      const trays = (grid) => {
+        if (!remaining[0] && !remaining[1]) return;
+        grid.before(reserveTray('상대', remaining[1], 'white'));
+        grid.after(reserveTray('내', remaining[0], 'black'));
+      };
       if (!capture && !remaining[p - 1]) {
-        moveBoard(
+        if (!ui.turn && !over)
+          ui.status(
+            selected !== null
+              ? '옮길 자리(점 표시)를 고르세요.'
+              : own.length === 3
+                ? '말이 셋뿐이라 빈 자리 어디로든 날 수 있어요.'
+                : '옮길 말을 고르세요',
+          );
+        const grid = moveBoard(
           ui,
           display,
           7,
-          moves,
+          over ? [] : moves,
           selected,
           (v) => (selected = v),
           (m) => place(m.to, m.from),
           'mill',
+          (i) => (b[i] ? '' : 'empty'),
         );
+        trays(grid);
+        if (over) {
+          ui.victor(2 - p);
+          return;
+        }
+        snapTaps(grid, figure);
+        explain(ui, grid, (i) => b[i] === p, () => '이 말은 옮길 수 있는 빈 자리가 없어요.');
         return;
       }
-      ui.status(seats[p - 1] + (capture ? ' · 제거할 상대 말' : ' · 말을 놓으세요'));
-      const grid = ui.grid(7, 'board-grid mill'),
+      ui.status(
+        (ui.turn ? seats[p - 1] + ' · ' : '') +
+          (capture
+            ? ui.turn
+              ? '밀 완성! 내 말 하나를 가져가요'
+              : '밀 완성! 제거할 상대 말을 고르세요'
+            : ui.turn
+              ? '말을 놓는 중'
+              : '빈 자리에 말을 놓으세요'),
+      );
+      const grid = ui.grid(7, 'board-grid mill' + (capture ? ' removing' : '')),
         outside = enemy.filter((i) => !mill(i));
       millLines(grid);
+      trays(grid);
       display.forEach((v, i) => {
         const legal = capture ? (outside.length ? outside : enemy).includes(i) : free.includes(i);
-        ui.button(
+        const cell = ui.button(
           grid,
           v || '',
           legal
@@ -303,10 +454,24 @@ register(
                 ui.paint(2 - p);
               }
             : null,
-          v === null ? 'void' : 'cell ' + (legal ? 'legal ' : '') +
-            (v === '●' ? 'black-stone' : v === '○' ? 'white-stone' : ''),
+          v === null
+            ? 'void'
+            : 'cell ' +
+                (legal ? 'legal ' : '') +
+                (capture && legal ? 'capture ' : '') +
+                (v === '●' ? 'black-stone' : v === '○' ? 'white-stone' : 'empty'),
         );
+        if (v === null || legal || ui.turn) return;
+        if (capture)
+          ui.why(
+            cell,
+            b[i] === 3 - p
+              ? '세 줄(밀)에 든 말은 다른 말이 남아 있으면 제거할 수 없어요.'
+              : '제거할 상대 말(표시된 말)을 고르세요.',
+          );
+        else ui.why(cell, '빈 자리에만 놓을 수 있어요.');
       });
+      snapTaps(grid, figure);
     };
   },
 );
@@ -379,7 +544,10 @@ register(
               (!goals[p - 1].includes(i) && goals[p - 1].includes(j) ? 2 : 0),
           });
       }
-      moveBoard(
+      const home = (q) => goals[q - 1].filter((i) => b[i] === q).length;
+      if (!ui.turn) ui.status(selected === null ? '파란 구슬을 골라 위쪽 별끝으로' : '금색 고리로 옮기세요');
+      scoreParts(ui, '도착 나 ' + home(1), '상대 ' + home(2) + '/10');
+      const grid = moveBoard(
         ui,
         b.map((v, i) => (nodes.has(i) ? ['·', '●', '○'][v] : null)),
         25,
@@ -394,10 +562,50 @@ register(
           if (goals[p - 1].every((i) => b[i] === p)) ui.victor(p - 1);
         },
         'star',
+        (i) =>
+          (b[i] ? '' : 'empty ') +
+          (goals[0].includes(i) ? 'goal-mine' : goals[1].includes(i) ? 'goal-theirs' : ''),
       );
+      snapTaps(grid, figure);
+      explain(ui, grid, (i) => b[i] === p, () => '이 구슬은 지금 갈 수 있는 자리가 없어요.');
     };
   },
 );
+// The line of play runs like a snake: left to right, then right to left on the next row, so
+// every tile touches the one it matches. Odd rows show their tiles mirrored to keep pips joined.
+let snakeWatch = null;
+function snake(track) {
+  const layout = () => {
+    const tiles = [...track.children];
+    if (!tiles.length || !track.isConnected) return;
+    const w = tiles[0].offsetWidth,
+      gap = 3,
+      room = track.clientWidth - 8,
+      cols = Math.max(1, Math.floor((room + gap) / (w + gap)));
+    track.style.setProperty('--snake-cols', Math.min(cols, tiles.length));
+    tiles.forEach((tile, k) => {
+      const row = Math.floor(k / cols),
+        back = row % 2 === 1,
+        col = back ? cols - 1 - (k % cols) : k % cols;
+      tile.style.gridRow = row + 1;
+      tile.style.gridColumn = Math.min(cols, tiles.length) > col ? col + 1 : 'auto';
+      const [a, b] = back ? [tile.dataset.b, tile.dataset.a] : [tile.dataset.a, tile.dataset.b];
+      tile.className = tile.className.replace(/\bface-\d\b/, 'face-' + a).replace(/\bend-\d\b/, 'end-' + b);
+      tile.classList.toggle('turned', back);
+    });
+  };
+  track.classList.add('snake');
+  layout();
+  if (typeof ResizeObserver === 'undefined') return;
+  snakeWatch?.disconnect();
+  let width = track.clientWidth;
+  snakeWatch = new ResizeObserver(() => {
+    if (track.clientWidth === width) return;
+    width = track.clientWidth;
+    layout();
+  });
+  snakeWatch.observe(track);
+}
 register(
   11,
   '같은 눈끼리 잇도록 도미노를 줄의 한쪽 끝에 놓습니다. 놓을 수 없으면 타일을 뽑습니다. 먼저 비우거나 교착 시 남은 눈의 합이 작으면 승리합니다.',
@@ -405,57 +613,112 @@ register(
     const bag = shuffle(range(7).flatMap((a) => range(a + 1).map((b) => [a, b]))),
       hands = [bag.splice(0, 7), bag.splice(0, 7)],
       chain = [bag.pop()];
-    let passes = 0;
+    let passes = 0,
+      picked = null,
+      placed = null,
+      drawn = null;
     return () => {
       const p = ui.turn,
         hand = hands[p],
         ends = [chain[0][0], chain.at(-1)[1]];
-      ui.score(
-        '나 ' + hands[0].length + '장 · 상대 ' + hands[1].length + '장 · 더미 ' + bag.length,
-      );
-      const track = ui.row();
+      scoreParts(ui, '나 ' + hands[0].length + '장', '상대 ' + hands[1].length + '장', '더미 ' + bag.length);
       const tileClass = (t) => 'domino face-' + t[0] + ' end-' + t[1];
-      chain.forEach((t) => ui.button(track, t.join('│'), null, tileClass(t)));
-      let count = 0;
-      for (const side of [0, 1]) {
-        ui.section(side ? '오른쪽 끝 ' + ends[1] : '왼쪽 끝 ' + ends[0]);
-        const row = ui.row();
-        hand.forEach((tile, i) => {
-          const legal = tile.includes(ends[side]);
-          if (legal) count++;
-          ui.button(
-            row,
-            p ? '▧' : tile.join('│'),
-            legal
-              ? () => {
-                  const t = hand.splice(i, 1)[0];
-                  if (t[side ? 0 : 1] !== ends[side]) t.reverse();
-                  if (side) chain.push(t);
-                  else chain.unshift(t);
-                  passes = 0;
-                  ui.paint(1 - p);
-                  if (!hand.length) ui.victor(p);
-                }
-              : null,
-            p ? 'domino' : tileClass(tile),
-            tile[0] + tile[1],
-          );
-        });
+      function play(i, side) {
+        const t = hand.splice(i, 1)[0];
+        if (t[side ? 0 : 1] !== ends[side]) t.reverse();
+        if (side) chain.push(t);
+        else chain.unshift(t);
+        passes = 0;
+        picked = drawn = null;
+        placed = side;
+        ui.paint(1 - p);
+        if (!hand.length) ui.victor(p);
       }
-      if (!count)
-        ui.button(ui.row(), bag.length ? '한 장 뽑기' : '패스', () => {
+      const fits = (t) => [0, 1].filter((side) => t.includes(ends[side]));
+      // The opponent's tiles lie face down at the far edge of the table.
+      const theirs = ui.row();
+      theirs.classList.add('domino-rack', 'theirs');
+      theirs.setAttribute('aria-label', '상대 도미노 ' + hands[1].length + '장');
+      hands[1].forEach(() => theirs.append(element('i', 'domino-back')));
+      const track = ui.row();
+      track.classList.add('domino-line');
+      chain.forEach((t, k) => {
+        const tile = ui.button(track, t.join('│'), null, tileClass(t), 0, t[0] + '-' + t[1]);
+        tile.dataset.a = t[0];
+        tile.dataset.b = t[1];
+        if (placed !== null && k === (placed ? chain.length - 1 : 0)) tile.classList.add('last-move');
+      });
+      snake(track);
+      const count = hand.reduce((n, t) => n + fits(t).length, 0);
+      const choice = picked !== null && !p ? hands[0][picked] : null;
+      // End pickers: active only when the chosen tile fits both open ends.
+      const endRow = ui.row();
+      endRow.classList.add('domino-ends');
+      [0, 1].forEach((side) => {
+        const open = choice && fits(choice).includes(side);
+        const end = ui.button(
+          endRow,
+          (side ? '오른쪽 끝 ' : '왼쪽 끝 ') + ends[side],
+          open ? () => play(picked, side) : null,
+          'domino-end ' + (side ? 'right' : 'left') + (open ? ' target' : ''),
+        );
+        if (!open && !p)
+          ui.why(end, count ? '손에서 놓을 도미노를 먼저 고르세요.' : '맞는 도미노가 없어요. 아래 버튼으로 한 장 뽑으세요.');
+      });
+      // My hand is always face up; on the AI turn its moves are offered off-table.
+      const mine = ui.row();
+      mine.classList.add('domino-rack', 'mine');
+      const offTable = element('div');
+      hands[0].forEach((tile, i) => {
+        const sides = p ? [] : fits(tile);
+        let act = null;
+        if (sides.length === 1 || (sides.length === 2 && ends[0] === ends[1]))
+          act = () => play(i, sides.at(-1));
+        else if (sides.length === 2)
+          act = () => {
+            picked = picked === i ? null : i;
+            ui.paint();
+          };
+        const el = ui.button(
+          mine,
+          tile.join('│'),
+          act,
+          tileClass(tile) +
+            (picked === i && !p ? ' selected' : sides.length ? ' movable' : '') +
+            (drawn === i ? ' last-move' : ''),
+          tile[0] + tile[1],
+          tile[0] + '-' + tile[1],
+        );
+        if (!act && !p)
+          ui.why(el, '이 도미노는 양 끝(' + ends[0] + ', ' + ends[1] + ')에 맞지 않아요.');
+      });
+      if (p)
+        hand.forEach((tile, i) => {
+          for (const side of fits(tile))
+            ui.button(offTable, '', () => play(i, side), 'domino', tile[0] + tile[1]);
+        });
+      if (!p) ui.status(picked !== null ? '어느 쪽 끝에 놓을까요? 끝 버튼을 누르세요.' : '테두리가 빛나는 도미노를 눌러 놓으세요');
+      if (!count) {
+        if (!p) ui.status('맞는 도미노가 없어요. ' + (bag.length ? '한 장 뽑으세요.' : '패스하세요.'));
+        const drawRow = ui.row();
+        drawRow.classList.add('domino-draw');
+        ui.button(drawRow, bag.length ? '한 장 뽑기' : '패스', () => {
           if (bag.length) {
             hand.push(bag.pop());
+            drawn = p ? null : hand.length - 1;
+            picked = null;
             ui.paint();
             return;
           }
           passes++;
+          picked = drawn = null;
           ui.paint(1 - p);
           if (passes === 2) {
             const a = hands.map((h) => h.flat().reduce((s, n) => s + n, 0));
             ui.victor(a[0] === a[1] ? -1 : a[0] < a[1] ? 0 : 1);
           }
-        });
+        }, 'primary');
+      }
     };
   },
 );

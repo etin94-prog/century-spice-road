@@ -1,0 +1,443 @@
+/* Touch fit and visual polish for the Worldwide arcade tables (36, 37, 39-46).
+   ww-arcade.js marks the table: #surface.arcade (all), .turnable (top-down fields that may turn
+   a quarter turn in portrait), .crop with --crop (side-view fields drawn wider than the table in
+   portrait, edges cropped), .has-hud (an HTML scoreboard between field and pads), .is-over (the
+   game has ended; the pad row holds only .replay, 새 판 시작), .arcade-pads (the studio button
+   row) and .arcade-hud. Loaded after ww-fit-core.css. */
+
+/* ---- Thumb pads: carved ivory keys on a brass edge, the same in every orientation. ---- */
+html[data-table="world"] #surface.arcade > .arcade-pads {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+  flex: none;
+}
+html[data-table="world"] #surface.arcade .studio-key {
+  position: relative;
+  min-height: 56px;
+  padding: 6px 8px;
+  border: 1px solid #7d5a35;
+  border-radius: 12px;
+  background: linear-gradient(172deg, #fbf0d6, #e4c99b 55%, #cfae7c);
+  box-shadow: inset 0 1px #fffbea, inset 0 -3px #b18c5a6e, 0 3px 0 #6d4f30, 0 6px 9px #0b1b1585;
+  color: #2b2a1f;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px #fff7;
+  word-break: keep-all;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: box-shadow 0.12s, filter 0.12s;
+}
+html[data-table="world"] #surface.arcade .studio-key[data-table-pressed],
+html[data-table="world"] #surface.arcade .studio-key:active:not(:disabled) {
+  translate: 0 2px;
+  filter: brightness(1.1);
+  box-shadow: inset 0 1px #fffbea, inset 0 -2px #b18c5a6e, 0 1px 0 #6d4f30, 0 2px 4px #0b1b1585;
+}
+html[data-table="world"] #surface.arcade .studio-key:focus-visible { outline: 3px solid #ffd25e; outline-offset: 2px; }
+/* The pad that wants the next touch. */
+html[data-table="world"] #surface.arcade .studio-key.is-hot {
+  background: linear-gradient(172deg, #fff6dc, #f3d38c 55%, #e0b25f);
+  box-shadow: inset 0 1px #fffbea, inset 0 -3px #b18c5a6e, 0 3px 0 #6d4f30, 0 0 0 3px #ffd25ecc, 0 6px 14px #ffcf5a55;
+  animation: arcade-call 1.4s ease-in-out infinite;
+}
+/* A toggle that is on (slot-car throttle). */
+html[data-table="world"] #surface.arcade .studio-key[aria-pressed="true"] {
+  background: linear-gradient(172deg, #ffe0cf, #eea47f 55%, #d8794f);
+  border-color: #8e3f22;
+}
+/* Still pressable but nothing to do now: it explains itself when tapped. */
+html[data-table="world"] #surface.arcade .studio-key.is-idle {
+  background: linear-gradient(172deg, #d9d2bf, #b9ad91);
+  color: #4a4636;
+  font-size: 15px;
+}
+html[data-table="world"] #surface.arcade .studio-key:disabled {
+  opacity: 0.5;
+  filter: saturate(0.35);
+  box-shadow: inset 0 1px #fffbea80, 0 1px 0 #6d4f30;
+  translate: 0 2px;
+}
+/* Punch recovery: a bar drains along the bottom edge while the glove comes back. */
+html[data-table="world"] #surface.arcade .studio-key.cooling::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 5px;
+  height: 4px;
+  border-radius: 2px;
+  background: #7a3b22;
+  transform-origin: left;
+  animation: arcade-cool 0.43s linear forwards;
+  pointer-events: none;
+}
+html[data-table="world"] #surface.arcade .studio-key.cooling { filter: brightness(0.93); }
+/* After the end the spent pads step aside and the thumb pad starts the next game. */
+html[data-table="world"] #surface.arcade.is-over .studio-key:not(.replay) { display: none; }
+html[data-table="world"] #surface.arcade .studio-key.replay { grid-column: 1 / -1; }
+/* ww-fit-precision.css hides `.arena + .row` once #result shows (its own 새 판 key lives in
+   #result). The arcade pad row carries 새 판 시작 instead, so it stays. */
+@media (orientation: portrait) {
+  html:not(.card-landscape)[data-table="world"] .desk:has(#result:not([hidden])) #surface.arcade > .arcade-pads { display: grid; }
+}
+/* The result already reads twice on an arcade table: on the field's 경기 종료 veil and in the
+   status rail. The result plate would only shrink the field at the final whistle, so it folds
+   away (it stays in the page for the scripts and keeps its text; #status announces it). */
+html[data-table="world"] .desk:has(> #surface.arcade.is-over) #result { display: none; }
+html[data-table="world"] .desk:has(> #surface.arcade.is-over) #status:not(.is-rejected) { color: #ffe3a4; font-weight: 800; }
+
+/* ---- Status rail on arcade tables: short hints break at spaces, the score never wraps. ---- */
+html[data-table="world"] .desk:has(> #surface.arcade) #status { word-break: keep-all; overflow-wrap: break-word; }
+html[data-table="world"] .desk:has(> #surface.arcade) #score { flex: none; max-width: none; white-space: nowrap; }
+/* The HTML scoreboard already shows the score in full, so the rail keeps only the status. */
+html[data-table="world"] .desk:has(> #surface.arcade.has-hud) #score { display: none; }
+@keyframes arcade-call {
+  50% { box-shadow: inset 0 1px #fffbea, inset 0 -3px #b18c5a6e, 0 3px 0 #6d4f30, 0 0 0 5px #ffd25e88, 0 6px 18px #ffcf5a77; }
+}
+@keyframes arcade-cool {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* ---- The field: a framed table with a contact shadow from the upper-left light. ---- */
+html[data-table="world"] #surface.arcade > .arena {
+  border-color: #b39970;
+  box-shadow: 0 0 0 2px #b89762, 0 0 0 5px #463124, inset 0 0 0 1px #00000040, 3px 8px 14px #10261e9c;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---- HTML scoreboards (boxing, baseball, shooting gallery). ---- */
+html[data-table="world"] #surface.arcade > .arcade-hud {
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #c9ad7466;
+  background: linear-gradient(160deg, #1f4a40ee, #12322bee), var(--felt, none);
+  box-shadow: inset 0 1px #fff3c833, inset 0 -2px 6px #0005, 0 3px 8px #0006;
+  color: #fff4da;
+  font-variant-numeric: tabular-nums;
+}
+html[data-table="world"] .arcade-hud p { margin: 0; }
+/* Boxing: two health bars and the call of the moment. */
+html[data-table="world"] .arcade-hud.fight { display: grid; gap: 8px; }
+html[data-table="world"] .fight .hp {
+  display: grid;
+  grid-template-columns: 3.2em minmax(0, 1fr) 4.2em;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+html[data-table="world"] .fight .hp b {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: #0d1f1b;
+  box-shadow: inset 0 2px 3px #000a, 0 1px #ffffff1f;
+  overflow: hidden;
+}
+html[data-table="world"] .fight .hp i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--hp, 1) * 100%);
+  border-radius: inherit;
+  background: linear-gradient(#7fd6dc, #2f8f99);
+  box-shadow: inset 0 1px #ffffff80;
+  transition: width 0.25s;
+}
+html[data-table="world"] .fight .hp.them i { background: linear-gradient(#ffab95, #c4513d); }
+html[data-table="world"] .fight .hp.low i { background: linear-gradient(#ffd27a, #d9553f); }
+html[data-table="world"] .fight .hp em { font-style: normal; text-align: right; font-size: 14px; color: #f7dba9; }
+html[data-table="world"] .fight .call {
+  justify-self: center;
+  min-height: 34px;
+  padding: 5px 14px;
+  border-radius: 17px;
+  background: #0f2a24;
+  box-shadow: inset 0 1px #fff2;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+html[data-table="world"] .fight .call.hot { background: #8e2f22; color: #fff6ee; }
+html[data-table="world"] .fight .call.safe { background: #1f6047; }
+/* Baseball: inning, runs, count lamps and the bases. */
+html[data-table="world"] .arcade-hud.scoreboard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "inning diamond" "runs diamond" "count diamond";
+  align-items: center;
+  gap: 4px 14px;
+  background: linear-gradient(160deg, #24332fee, #121d1aee);
+}
+html[data-table="world"] .scoreboard .inning { grid-area: inning; display: flex; gap: 10px; align-items: baseline; font-size: 14px; color: #cfe2d6; }
+html[data-table="world"] .scoreboard .inning b { font-size: 18px; color: #fff4da; }
+html[data-table="world"] .scoreboard .runs { grid-area: runs; display: flex; gap: 12px; align-items: center; font-size: 14px; }
+html[data-table="world"] .scoreboard .runs b { font: 800 28px/1.1 Georgia, serif; color: #ffe3a4; letter-spacing: 0.04em; }
+html[data-table="world"] .scoreboard .count { grid-area: count; display: flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 700; }
+html[data-table="world"] .scoreboard .count span:not(:first-child) { margin-left: 8px; }
+html[data-table="world"] .scoreboard .count i {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #33413d;
+  box-shadow: inset 0 1px 2px #000a;
+}
+html[data-table="world"] .scoreboard .count i.on { background: radial-gradient(circle at 35% 35%, #fff4c4, #f0b43c 60%, #b47a1c); box-shadow: 0 0 6px #f3c85a; }
+html[data-table="world"] .scoreboard .count i:nth-of-type(n + 3).on { background: radial-gradient(circle at 35% 35%, #ffd0c4, #e0603c 60%, #9b3220); box-shadow: 0 0 6px #e0603c; }
+html[data-table="world"] .scoreboard .diamond {
+  grid-area: diamond;
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+html[data-table="world"] .scoreboard .diamond i {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  rotate: 45deg;
+  background: #3a4743;
+  border: 2px solid #8fa79d;
+}
+html[data-table="world"] .scoreboard .diamond i.on { background: #f3cf7a; border-color: #fff4da; box-shadow: 0 0 8px #f3cf7a; }
+html[data-table="world"] .scoreboard .diamond i:nth-child(1) { right: 2px; top: 23px; }
+html[data-table="world"] .scoreboard .diamond i:nth-child(2) { left: 23px; top: 2px; }
+html[data-table="world"] .scoreboard .diamond i:nth-child(3) { left: 2px; top: 23px; }
+/* Shooting gallery: total, the last shot on a small paper target, and twenty shot lamps. */
+html[data-table="world"] .arcade-hud.shots {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "tally last" "pips pips";
+  gap: 8px 14px;
+  align-items: center;
+}
+html[data-table="world"] .shots .tally { grid-area: tally; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px; }
+html[data-table="world"] .shots .tally b { font: 800 30px/1 Georgia, serif; color: #ffe3a4; }
+html[data-table="world"] .shots .tally span { font-size: 14px; }
+html[data-table="world"] .shots .tally small { flex-basis: 100%; font-size: 13px; color: #cfe2d6; }
+html[data-table="world"] .shots .last { grid-area: last; display: flex; align-items: center; gap: 8px; }
+html[data-table="world"] .shots .last .ring {
+  position: relative;
+  width: 44px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  /* The scoring rings: 5 inside 9, 3 inside 20, 1 inside 30 table units. */
+  background: radial-gradient(circle closest-side, #c94a32 0 30%, #f4e1ba 30% 66%, #c94a32 66% 100%);
+  box-shadow: 0 0 0 2px #f4e1ba, 0 2px 5px #0009;
+}
+html[data-table="world"] .shots .last .ring i {
+  position: absolute;
+  left: calc(50% + var(--dx, 0%) - 5px);
+  top: calc(50% + var(--dy, 0%) - 5px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #1b1d1f;
+  box-shadow: 0 0 0 2px #fff8dd;
+  opacity: 0;
+}
+html[data-table="world"] .shots .last[class*=" p"] .ring i { opacity: 1; }
+html[data-table="world"] .shots .last em { font-style: normal; font-size: 15px; font-weight: 800; min-width: 4.5em; color: #fff4da; }
+html[data-table="world"] .shots .last.p5 em { color: #ffd56a; }
+html[data-table="world"] .shots .last.p0 em { color: #f0a08e; }
+html[data-table="world"] .shots .pips { grid-area: pips; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; justify-items: center; }
+html[data-table="world"] .shots .pips i {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 20px;
+  border-radius: 50%;
+  background: #f4e1ba;
+  box-shadow: inset 0 -2px #b9a27a, 0 1px 2px #0008;
+}
+html[data-table="world"] .shots .pips i.p0 { background: #3a4743; box-shadow: inset 0 1px 2px #000a; }
+html[data-table="world"] .shots .pips i.p1 { background: #c9895a; }
+html[data-table="world"] .shots .pips i.p3 { background: #d8dde0; box-shadow: inset 0 -2px #8d979c, 0 1px 2px #0008; }
+html[data-table="world"] .shots .pips i.p5 { background: #f3c85a; box-shadow: 0 0 6px #f3c85a, inset 0 -2px #a87a1c; }
+
+/* ---- Portrait phones: the table fills the space between status rail and dock. ---- */
+@media (orientation: portrait) {
+  html:not(.card-landscape)[data-table="world"] #surface.arcade {
+    container: arcade / size;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 8px;
+    min-height: 0;
+    padding-bottom: 2px;
+  }
+  html:not(.card-landscape)[data-table="world"] #surface.arcade > .arena {
+    flex: none;
+    align-self: center;
+    max-width: none;
+    width: min(100cqw, (100cqh - 72px) * 5 / 3);
+    height: auto;
+  }
+  /* Side-view tables (boxing, baseball, gallery): the field and its scoreboard form one block,
+     centred in the room above the pads; the pads stay at the bottom under the thumb. */
+  html:not(.card-landscape)[data-table="world"] #surface.arcade.has-hud { gap: 10px; }
+  html:not(.card-landscape)[data-table="world"] #surface.arcade.has-hud > .arena {
+    width: min(100cqw, (100cqh - 260px) * 5 / 3);
+    margin-top: auto;
+  }
+  /* Boxing and baseball: the empty outer edges (ring posts, outer stands) are cropped so the
+     action is drawn larger. The canvas is --crop times the table width and its centre shows;
+     ww-arcade.js sets --crop (1.5 for boxing, 1.2 for baseball) and keeps labels inside. */
+  html:not(.card-landscape)[data-table="world"] #surface.arcade.crop {
+    overflow: clip;
+    overflow-clip-margin: 8px;
+  }
+  html:not(.card-landscape)[data-table="world"] #surface.arcade.crop > .arena {
+    --w: min(var(--crop, 1.5) * 100cqw, (100cqh - 260px) * 5 / 3);
+    width: var(--w);
+    margin-inline: calc((100cqw - var(--w)) / 2);
+    align-self: auto;
+  }
+  html:not(.card-landscape)[data-table="world"] #surface.arcade > .arcade-hud {
+    flex: none;
+    margin-block: 0 auto;
+    display: grid;
+    align-content: center;
+    min-height: 0;
+  }
+  html:not(.card-landscape)[data-table="world"] #surface.arcade > .arcade-pads { margin-top: auto; }
+  html:not(.card-landscape)[data-table="world"] #surface.arcade.has-hud > .arcade-pads { margin-top: 0; }
+  /* Button-driven tables get controller-sized pads under the thumb. */
+  html:not(.card-landscape)[data-table="world"] #surface.arcade.has-hud .studio-key { min-height: clamp(64px, 12cqh, 88px); font-size: 18px; }
+  html:not(.card-landscape)[data-table="world"] .arcade-hud.fight { gap: 12px; padding: 14px 16px; }
+  html:not(.card-landscape)[data-table="world"] .fight .hp { font-size: 17px; }
+  html:not(.card-landscape)[data-table="world"] .fight .hp em { font-size: 16px; }
+  html:not(.card-landscape)[data-table="world"] .fight .hp b { height: 20px; border-radius: 10px; }
+  html:not(.card-landscape)[data-table="world"] .fight .call { font-size: 19px; min-height: 42px; padding: 8px 20px; border-radius: 21px; }
+  html:not(.card-landscape)[data-table="world"] .arcade-hud.scoreboard { padding: 14px 16px; gap: 6px 16px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .inning { font-size: 15px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .inning b { font-size: 22px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .runs { font-size: 15px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .runs b { font-size: 36px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .count { font-size: 15px; gap: 7px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .count i { width: 17px; height: 17px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .diamond { width: 96px; height: 96px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .diamond i { width: 28px; height: 28px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .diamond i:nth-child(1) { right: 3px; top: 34px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .diamond i:nth-child(2) { left: 34px; top: 3px; }
+  html:not(.card-landscape)[data-table="world"] .scoreboard .diamond i:nth-child(3) { left: 3px; top: 34px; }
+  html:not(.card-landscape)[data-table="world"] .arcade-hud.shots { padding: 14px 16px; gap: 12px 16px; }
+  html:not(.card-landscape)[data-table="world"] .shots .tally b { font-size: 40px; }
+  html:not(.card-landscape)[data-table="world"] .shots .tally span { font-size: 16px; }
+  html:not(.card-landscape)[data-table="world"] .shots .tally small { font-size: 15px; }
+  html:not(.card-landscape)[data-table="world"] .shots .last .ring { width: 64px; }
+  html:not(.card-landscape)[data-table="world"] .shots .last .ring i { width: 12px; height: 12px; margin: -1px; }
+  html:not(.card-landscape)[data-table="world"] .shots .last em { font-size: 18px; }
+  html:not(.card-landscape)[data-table="world"] .shots .pips { gap: 8px; }
+  html:not(.card-landscape)[data-table="world"] .shots .pips i { max-width: 24px; }
+
+  /* A tall surface turns top-down fields a quarter turn: my side (the left edge of the
+     600 x 360 table) comes to the bottom, next to the thumb. ww-arcade.js maps touches back.
+     The layout box is the unturned field; the margins give the flex column its turned size. */
+  @container arcade (max-aspect-ratio: 4/5) {
+    html:not(.card-landscape)[data-table="world"] #surface.arcade.turnable > .arena {
+      --long: min(100cqh - var(--pad-reserve, 72px), 100cqw * 5 / 3);
+      width: var(--long);
+      height: calc(var(--long) * 0.6);
+      aspect-ratio: auto;
+      margin: calc(var(--long) * 0.2) calc(var(--long) * -0.2);
+      rotate: -90deg;
+      /* Offsets are in the field's own axes; this lands the shadow down and to the right. */
+      box-shadow: 0 0 0 2px #b89762, 0 0 0 5px #463124, inset 0 0 0 1px #00000040, -8px 3px 14px #10261e9c;
+    }
+  }
+  /* Short phones (360 x 640 and the like): a slimmer pad and status rail give the turned field
+     the height instead. */
+  @container arcade (max-height: 480px) {
+    html:not(.card-landscape)[data-table="world"] #surface.arcade > .arena { --pad-reserve: 58px; }
+    html:not(.card-landscape)[data-table="world"] #surface.arcade:not(.has-hud) .studio-key { min-height: 48px; padding-block: 4px; }
+  }
+}
+@media (orientation: portrait) and (max-height: 700px) {
+  html:not(.card-landscape)[data-table="world"] .desk:has(> #surface.arcade) .rail { min-height: 46px; margin-bottom: 4px; padding-bottom: 3px; }
+  html:not(.card-landscape)[data-table="world"] .desk:has(> #surface.arcade) #status { font-size: 15px; padding-block: 1px; }
+}
+
+/* ---- Short landscape (plain landscape, fullscreen and the quarter-turned 가로 view). ---- */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  html[data-table="world"] #surface.arcade {
+    container: arcade / size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(132px, 26%, 200px);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "field hud" "field pads";
+    gap: 8px 10px;
+    align-items: center;
+    min-height: 0;
+  }
+  html[data-table="world"] #surface.arcade > .arena {
+    grid-area: field;
+    width: min(100%, 100cqh * 5 / 3);
+    max-width: none;
+    justify-self: center;
+    align-self: center;
+  }
+  /* One status line of fixed height: a long refusal is cut with an ellipsis instead of
+     growing the rail and pushing the field down. */
+  html[data-table="world"] .desk:has(> #surface.arcade) .rail { height: 30px; min-height: 30px; max-height: 30px; }
+  html[data-table="world"] .desk:has(> #surface.arcade) #status {
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: none;
+  }
+  /* The scoreboard stays inside its own row even when #result shortens the table. */
+  html[data-table="world"] #surface.arcade > .arcade-hud { grid-area: hud; align-self: end; max-height: 100%; overflow: hidden; padding: 7px 8px; }
+  html[data-table="world"] #surface.arcade > .arcade-pads {
+    grid-area: pads;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+  }
+  html[data-table="world"] #surface.arcade:not(.has-hud) > .arcade-pads { grid-row: 1 / -1; align-self: center; }
+  html[data-table="world"] #surface.arcade .studio-key { min-height: 50px; font-size: 16px; width: 100%; }
+  html[data-table="world"] #surface.arcade.has-hud .studio-key { min-height: 46px; }
+  html[data-table="world"] .arcade-hud.fight { gap: 5px; }
+  html[data-table="world"] .fight .hp { grid-template-columns: 2.4em minmax(0, 1fr) 3.4em; gap: 5px; font-size: 13px; }
+  html[data-table="world"] .fight .hp em { font-size: 13px; }
+  html[data-table="world"] .fight .hp b { height: 10px; }
+  html[data-table="world"] .fight .call { font-size: 13px; min-height: 0; padding: 3px 8px; }
+  html[data-table="world"] .arcade-hud.scoreboard { grid-template-columns: 1fr; grid-template-areas: "inning" "runs" "count"; gap: 2px; }
+  html[data-table="world"] .scoreboard .diamond { display: none; }
+  html[data-table="world"] .scoreboard .inning { font-size: 13px; gap: 6px; }
+  html[data-table="world"] .scoreboard .inning b { font-size: 15px; }
+  html[data-table="world"] .scoreboard .runs { font-size: 13px; gap: 8px; }
+  html[data-table="world"] .scoreboard .runs b { font-size: 21px; }
+  html[data-table="world"] .scoreboard .count { gap: 4px; }
+  html[data-table="world"] .scoreboard .count span:not(:first-child) { margin-left: 4px; }
+  html[data-table="world"] .scoreboard .count i { width: 11px; height: 11px; }
+  html[data-table="world"] .arcade-hud.shots { gap: 6px 8px; }
+  html[data-table="world"] .shots .tally b { font-size: 24px; }
+  html[data-table="world"] .shots .tally small { font-size: 12px; }
+  html[data-table="world"] .shots .last { flex-direction: column; gap: 2px; }
+  html[data-table="world"] .shots .last .ring { width: 34px; }
+  html[data-table="world"] .shots .last .ring i { width: 8px; height: 8px; margin: 1px; }
+  html[data-table="world"] .shots .last em { font-size: 13px; min-width: 0; text-align: center; }
+  html[data-table="world"] .shots .pips { gap: 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-table="world"] #surface.arcade .studio-key { transition: none; }
+  html[data-table="world"] #surface.arcade .studio-key.is-hot { animation: none; }
+  html[data-table="world"] .fight .hp i { transition: none; }
+}

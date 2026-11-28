@@ -1,0 +1,769 @@
+/* Touch fit and visual polish for the Worldwide chess tables. Loaded after ww-tabletop.css.
+   16 체스 · 17 쇼기 · 18 미니 쇼기 · 19 하나후다 · 20 리치 마작.
+   Boards lie flat (no tilt). Rings are outlines, tints go through --tint (ww-fit-core.css). */
+
+/* ww-fit-cards.css lifts every selected .piece outside a board by 12px with a gold outline.
+   These tables have their own selection looks, so they win here (same id weight, more classes). */
+html[data-table="world"] body[data-game="19"] #surface .hana-hand .piece.hana-card.selected { translate: 0 -6px; outline: none; filter: none; border-radius: 6px; }
+html[data-table="world"] body:is([data-game="17"], [data-game="18"]) #surface .komadai .piece.koma-hand.selected {
+  translate: 0 -4px;
+  outline: 3px solid #ffd25e;
+  outline-offset: 1px;
+  border-radius: 4px;
+  filter: drop-shadow(1px 6px 3px #1d120c90);
+}
+html[data-table="world"] body[data-game="20"] #surface .mj-actions .piece.riichi-toggle.selected { translate: none; outline: none; filter: none; border-radius: 8px; }
+
+/* Status lines in Korean break between words, not inside them. */
+html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"], [data-game="19"], [data-game="20"]) #status { word-break: keep-all; }
+
+/* ---------- 16 Chess ---------- */
+html[data-table="world"] .board-grid.chess {
+  gap: 0;
+  padding: 6px;
+  border-width: 4px;
+  border-radius: 9px;
+}
+html[data-table="world"] .board-grid.chess .cell { border-radius: 0; }
+/* Light and dark squares: maple and walnut, darker squares keep enough contrast for ivory men. */
+html[data-table="world"] .board-grid.chess .light { background-image: linear-gradient(#fff4d6c4, #f6e3bcb8), var(--maple); background-size: auto, 220px; }
+html[data-table="world"] .board-grid.chess .dark { background-image: linear-gradient(#9c7a58d0, #8a6a4bd6), var(--walnut); background-size: auto, 220px; }
+/* Contact shadow under each figure: a soft ellipse at its foot, lit from the upper left. */
+html[data-table="world"] .board-grid.chess .cell[class*="man-"]::before {
+  filter: drop-shadow(1px 2px 1px #271c1690) drop-shadow(2px 3px 2px #1d120c45);
+}
+html[data-table="world"] .board-grid.chess .cell.in-check {
+  --tint: inset 0 0 0 999px #0000;
+  background-image: radial-gradient(circle at 50% 52%, #ff6a4ad9 0 26%, #d8402c99 48%, transparent 72%), linear-gradient(#9c7a58d0, #8a6a4bd6), var(--walnut);
+  outline: 2px solid #d8402c; outline-offset: -2px;
+}
+html[data-table="world"] .board-grid.chess .light.in-check {
+  background-image: radial-gradient(circle at 50% 52%, #ff6a4ad9 0 26%, #d8402c99 48%, transparent 72%), linear-gradient(#fff4d6c4, #f6e3bcb8), var(--maple);
+}
+/* Coordinates in the square corners, on an overlay that never takes a tap. */
+.chess-coords {
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  pointer-events: none;
+  z-index: 1;
+}
+.chess-coords i {
+  font: 700 12px / 1 system-ui, sans-serif;
+  font-style: normal;
+  color: #7b5634;
+  opacity: 0.9;
+  padding: 2px 3px;
+}
+.chess-coords i.on-dark { color: #f6e3bc; }
+.chess-coords .file { align-self: end; justify-self: end; }
+.chess-coords .rank { align-self: start; justify-self: start; }
+html[data-table="world"] .board-grid.chess { container-type: inline-size; }
+
+/* Captured men beside the side that took them. */
+.chess-tray {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 540px, 66dvh);
+  min-height: 36px;
+  align-self: center;
+  padding: 4px 10px;
+  border-radius: 9px;
+  background: linear-gradient(#2b1c12d9, #1d130cd9), var(--walnut) center / 300px;
+  box-shadow: inset 0 1px #ffe6b23a, inset 0 -1px #0007, 0 2px 4px #0b161280;
+  color: #ead7b0;
+}
+.chess-tray.to-move { box-shadow: inset 0 -4px #efc675, inset 0 1px #ffe6b23a, 0 2px 4px #0b161280; }
+.chess-tray.to-move .tray-seat { color: #ffe09a; }
+.chess-tray .tray-seat { flex: none; font: 600 13px/1.2 system-ui, sans-serif; white-space: nowrap; }
+.chess-tray .tray-men { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+.chess-tray .tray-group { display: inline-flex; }
+/* Ebony men taken by me sit in a light maple well so they read against the dark tray. */
+.chess-tray.mine .tray-men:not(:empty) {
+  flex: 0 1 auto;
+  padding: 2px 8px 2px 10px;
+  border-radius: 6px;
+  background: linear-gradient(#f3e2bf, #e2c896);
+  box-shadow: inset 0 1px 2px #6b4a2a80, 0 1px #ffe6b23a;
+}
+.chess-tray.mine .tray-men i { filter: drop-shadow(1px 1px 0.5px #5a3c2299); }
+.chess-tray .tray-men i {
+  width: 17px;
+  height: 24px;
+  margin-left: -5px;
+  background: var(--man) center bottom / contain no-repeat;
+  filter: drop-shadow(1px 1px 1px #000a);
+}
+.chess-tray .tray-group i:first-child { margin-left: 0; }
+.chess-tray .tray-balance { flex: none; font: 700 13px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; color: #ffe09a; }
+
+/* Portrait: the board reaches into the desk padding and its frame slims down, so an 8×8
+   board gets 44px squares on a 375px phone (9×9 shogi gets 39px). Zoomed boards are left alone. */
+@media (orientation: portrait) {
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"]) #surface > .board-grid:is(.chess, .shogi) {
+    width: calc(100% + 6px);
+    max-width: none;
+    margin-inline: -3px;
+    padding: 2px;
+    border-width: 2px;
+  }
+}
+
+/* Promotion: the four choices as real figures, thumb sized. */
+.chess-promo { gap: 10px; }
+html[data-table="world"] .chess-promo .promo-choice {
+  width: 58px;
+  height: 58px;
+  color: transparent;
+  text-shadow: none;
+  font-size: 20px;
+  border-radius: 10px;
+  border: 2px solid #ffd25e;
+  background: var(--man) center 55% / 70% no-repeat, linear-gradient(#fff4d6, #e9cf9f), var(--maple) center / 200px;
+  box-shadow: inset 0 1px #fff, 0 2px 0 #8b5d34, 0 5px 8px #0b1612a0;
+}
+
+/* Most men can move at the start, so "can act" is a quiet amber foot line, not a ring. */
+html[data-table="world"] .board-grid:is(.chess, .shogi) .cell.movable {
+  outline: none;
+  --tint: inset 0 -3px 0 #e2a93bb8;
+  box-shadow: var(--tint);
+}
+html[data-table="world"] .board-grid:is(.chess, .shogi) .cell.movable.last-move { --tint: inset 0 0 0 999px #ffd76a52, inset 0 -3px 0 #e2a93bb8; outline: 2px solid #c98d2ccc; outline-offset: -2px; }
+
+/* ---------- 17 Shogi · 18 Mini shogi ---------- */
+/* The wedge covers the square's foot line, so shogi marks "can act" with a fine amber ring. */
+html[data-table="world"] .board-grid.shogi .cell.movable:not(.last-move) { outline: 2px solid #e2a93b99; outline-offset: -2px; }
+html[data-table="world"] .board-grid.shogi {
+  container-type: inline-size;
+  gap: 0;
+  padding: 6px;
+  border-width: 4px;
+  border-radius: 9px;
+}
+/* Kanji scale with the square (they were a fixed 14px on large squares). */
+html[data-table="world"] .board-grid.shogi .cell {
+  --koma: 0.5;
+  font-size: calc(100cqi / var(--cols) * var(--koma));
+  font-weight: 800;
+  line-height: 1;
+}
+/* Pieces are sized by rank like a real set: king largest, pawn smallest. The kanji sits in
+   the optical middle of the wedge, a little below the square's centre. */
+html[data-table="world"] .board-grid.shogi .engraved { padding: 9% 0 0; }
+html[data-table="world"] .board-grid.shogi .koma-K { --koma: 0.54; }
+html[data-table="world"] .board-grid.shogi .koma-K::before { inset: 1% 3%; }
+html[data-table="world"] .board-grid.shogi :is(.koma-R, .koma-B) { --koma: 0.52; }
+html[data-table="world"] .board-grid.shogi :is(.koma-R, .koma-B)::before { inset: 3% 5%; }
+html[data-table="world"] .board-grid.shogi :is(.koma-G, .koma-S)::before { inset: 5% 7%; }
+html[data-table="world"] .board-grid.shogi :is(.koma-N, .koma-L) { --koma: 0.47; }
+html[data-table="world"] .board-grid.shogi :is(.koma-N, .koma-L)::before { inset: 7% 9%; }
+html[data-table="world"] .board-grid.shogi .koma-P { --koma: 0.45; }
+html[data-table="world"] .board-grid.shogi .koma-P::before { inset: 9% 12%; }
+/* Promoted pieces are written in red, as on a real set. */
+html[data-table="world"] .board-grid.shogi .promoted { color: #a8261c; }
+html[data-table="world"] .board-grid.shogi .cell.in-check {
+  background-image: radial-gradient(circle at 50% 55%, #ff6a4acc 0 24%, #d8402c88 50%, transparent 74%), linear-gradient(#fff2ca52, #ffe1ae4d), var(--maple);
+  outline: 2px solid #d8402c;
+  outline-offset: -2px;
+}
+/* The picked-up piece lifts; its square stays put. */
+html[data-table="world"] .board-grid.shogi .cell.selected::before { translate: 0 -5%; filter: drop-shadow(1px 6px 3px #1d120c70); }
+
+/* Komadai: the stand for captured pieces, on each player's side of the board. */
+.komadai {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px 8px;
+  width: min(100%, 540px, 66dvh);
+  min-height: 56px;
+  align-self: center;
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: linear-gradient(#5a3a22c9, #3d2615d9), var(--walnut) center / 300px;
+  box-shadow: inset 0 1px #ffe6b23a, inset 0 -1px #0007, 0 2px 4px #0b161280;
+}
+.komadai.to-move { box-shadow: inset 0 -4px #efc675, inset 0 1px #ffe6b23a, 0 2px 4px #0b161280; }
+.komadai .komadai-seat { flex: none; min-width: 64px; font: 600 13px/1.2 system-ui, sans-serif; color: #ead7b0; }
+.komadai.to-move .komadai-seat { color: #ffe09a; }
+.komadai .komadai-empty { font: 13px/1.2 system-ui, sans-serif; color: #c9b48e; opacity: 0.85; }
+html[data-table="world"] .komadai .koma-hand {
+  position: relative;
+  isolation: isolate;
+  width: 44px;
+  min-height: 50px;
+  padding: 9px 0 3px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: #291c12;
+  font: 800 19px/1.05 serif;
+  white-space: pre-line;
+  filter: drop-shadow(1px 2px 1px #2e1c0e99);
+}
+html[data-table="world"] .komadai .koma-hand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('art/worldwide/table/shogi-wedge.webp') center / 100% 100% no-repeat;
+}
+html[data-table="world"] .komadai .koma-hand.rotated { transform: rotate(180deg); }
+html[data-table="world"] .komadai button.koma-hand:enabled { outline: 2px solid #e2a93bb8; outline-offset: 1px; border-radius: 4px; }
+html[data-table="world"] .komadai .koma-hand.selected {
+  outline: 3px solid #ffd25e;
+  outline-offset: 1px;
+  translate: 0 -4px;
+  filter: drop-shadow(1px 6px 3px #1d120c90);
+}
+/* Count of a kind: a round badge at the wedge's corner. On the AI's upside-down stand the
+   badge is counter-rotated so it still reads upright at the top right. */
+html[data-table="world"] .komadai .koma-count {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  border-radius: 9px;
+  background: #8e2f22;
+  color: #fff;
+  font: 700 12px/18px system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 0 0 1.5px #f3dfb6, 0 1px 2px #0009;
+}
+html[data-table="world"] .komadai .koma-hand.rotated .koma-count { top: auto; right: auto; bottom: -5px; left: -7px; rotate: 180deg; }
+/* One Japanese serif for every piece, so 歩 does not fall back to a heavier font. */
+html[data-table="world"] :is(.board-grid.shogi .cell, .komadai .koma-hand) {
+  font-family: "Yu Mincho", YuMincho, "Hiragino Mincho ProN", "Noto Serif JP", "Noto Serif CJK JP", "Source Han Serif JP", serif;
+  font-weight: 800;
+}
+/* An empty stand is a slim strip, so it does not hold a tall bar of felt. */
+.komadai:has(> .komadai-empty) { min-height: 36px; padding-block: 3px; }
+.shogi-promo { gap: 10px; }
+html[data-table="world"] .shogi-promo button { min-height: 48px; min-width: 112px; font-size: 16px; }
+
+/* ---------- Landscape: board in the middle, trays and status at its sides ---------- */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) .desk {
+    --board: min(calc(100cqh - 84px), calc(100cqw - 330px));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 6px;
+    align-items: start;
+  }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) .rail {
+    grid-area: 1 / 1;
+    flex-direction: column;
+    align-items: stretch;
+    max-height: none;
+    min-height: 0;
+    border-bottom: 0;
+  }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #status { -webkit-line-clamp: 4; text-wrap: balance; }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #score { max-width: none; text-align: left; }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #surface { display: contents; }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #surface > .board-grid:is(.chess, .shogi) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    width: var(--board);
+    margin-inline: 0;
+    padding: 6px;
+    border-width: 4px;
+  }
+  /* Small squares: file letters and rank numbers move off the squares into the frame, so they
+     never sit under a figure. Left and bottom frame are wider by the same amount, so the
+     squares stay square. */
+  html[data-table="world"] body[data-game="16"] #surface > .board-grid.chess { padding: 3px 3px 14px 14px; }
+  html[data-table="world"] body[data-game="16"] #surface > .board-grid.chess .chess-coords i { padding: 0; color: #f3dfb6; opacity: 1; text-shadow: 0 1px 1px #1d120c; }
+  html[data-table="world"] body[data-game="16"] #surface > .board-grid.chess .chess-coords .file { align-self: end; justify-self: center; translate: 0 calc(100% + 1px); }
+  html[data-table="world"] body[data-game="16"] #surface > .board-grid.chess .chess-coords .rank { align-self: center; justify-self: start; translate: calc(-100% - 3px) 0; }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #surface > .zoom-frame {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: var(--board);
+    max-height: var(--board);
+  }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #surface > :is(.chess-tray, .komadai).theirs { grid-area: 2 / 1; align-self: start; }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #surface > :is(.chess-tray, .komadai).mine { grid-area: 2 / 3; align-self: end; }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #surface > :is(.chess-promo, .shogi-promo) { grid-area: 1 / 3; align-self: start; }
+  html[data-table="world"] body:is([data-game="16"], [data-game="17"], [data-game="18"]) #result { grid-area: 1 / 3; margin: 0; align-self: start; }
+  html[data-table="world"] body[data-game="16"] .chess-tray { width: 100%; flex-wrap: wrap; align-content: flex-start; padding: 6px 8px; }
+  html[data-table="world"] body[data-game="16"] .chess-tray .tray-seat { flex-basis: 100%; }
+  html[data-table="world"] body[data-game="16"] .chess-tray .tray-balance { margin-left: auto; }
+  html[data-table="world"] body:is([data-game="17"], [data-game="18"]) .komadai { width: 100%; align-content: flex-start; padding: 6px 8px; }
+  html[data-table="world"] body:is([data-game="17"], [data-game="18"]) .komadai .komadai-seat { flex-basis: 100%; }
+  html[data-table="world"] .chess-promo { display: grid; grid-template-columns: repeat(2, 50px); justify-content: center; gap: 8px; }
+  html[data-table="world"] .chess-promo .promo-choice { width: 50px; height: 50px; }
+}
+
+/* ---------- 19 Hanafuda Koi-Koi ---------- */
+/* Card stock: the art fills the card, a lacquer-black rim, contact shadow from the upper left. */
+html[data-table="world"] .hana-card {
+  --hw: 62px;
+  position: relative;
+  width: var(--hw);
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 0.64;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #3a2417;
+  border-radius: 6px;
+  background-color: #efe2c4;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  text-shadow: none;
+  box-shadow: inset 0 0 0 1px #f6e3b866, 0 1px #e0b36d, 0 3px #513524, 2px 5px 6px #0c261c8c;
+}
+.hana-card .hana-month {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 2px 3px;
+  background: linear-gradient(#132b2500, #132b25e6 55%);
+  font: 600 12px/1.1 system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+}
+.hana-card .hana-kind {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font: 700 12px/1.2 system-ui, sans-serif;
+  color: #fff;
+  background: #5b574e;
+  box-shadow: 0 1px 2px #0008;
+}
+.hana-card.kindL .hana-kind { background: #e4b24a; color: #2f210f; }
+.hana-card.kindA .hana-kind { background: #2f5d86; }
+.hana-card.kindR .hana-kind { background: #b3362b; }
+/* Same-month cards: the tapped hand card lifts, the field cards it can take glow and rise. */
+html[data-table="world"] .hana-card.match {
+  translate: 0 -4px;
+  border-color: #ffd25e;
+  box-shadow: 0 0 0 2px #ffd25e, 0 0 14px 2px #ffd25e99, 0 3px #513524, 2px 7px 8px #0c261c8c;
+}
+html[data-table="world"] .hana-card.selected {
+  translate: 0 -6px;
+  scale: 1.04;
+  z-index: 1;
+  border-color: #ffd25e;
+  box-shadow: 0 0 0 3px #ffd25e, 0 3px #513524, 2px 10px 9px #0c261caa;
+}
+/* Field cards the lifted card can take: a breathing white-gold halo and a "잡기" chip, so
+   "can take" never looks like the solid gold ring of the card in my hand. */
+html[data-table="world"] .hana-field .hana-card.match {
+  border-color: #fff3c8;
+  box-shadow: 0 0 0 2px #fff3c8, 0 0 0 4px #ffd25e8c, 0 0 14px 3px #ffd25e88, 0 3px #513524, 2px 7px 8px #0c261c8c;
+  animation: hana-take 1.4s ease-in-out infinite;
+}
+html[data-table="world"] .hana-field .hana-card.match::after {
+  content: "잡기";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #fff3c8;
+  color: #3a2417;
+  font: 700 12px/1.2 system-ui, sans-serif;
+  box-shadow: 0 1px 2px #0008;
+}
+html[data-table="world"] .hana-field .hana-card.match .hana-kind { display: none; }
+@keyframes hana-take {
+  0%, 100% { box-shadow: 0 0 0 2px #fff3c8, 0 0 0 4px #ffd25e8c, 0 0 10px 2px #ffd25e66, 0 3px #513524, 2px 7px 8px #0c261c8c; }
+  50% { box-shadow: 0 0 0 2px #fff3c8, 0 0 0 5px #ffd25eb0, 0 0 18px 5px #ffd25eaa, 0 3px #513524, 2px 7px 8px #0c261c8c; }
+}
+html[data-table="world"] .hana-card.has-match::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ffd25e;
+  box-shadow: 0 0 0 2px #3a2417, 0 0 6px #ffd25e;
+}
+html[data-table="world"] .hana-card.fresh:not(.match):not(.selected) { box-shadow: 0 0 0 2px #fff3c8b0, 0 1px #e0b36d, 0 3px #513524, 2px 5px 6px #0c261c8c; }
+html[data-table="world"] .hana-card[data-table-pressed] { filter: brightness(1.1); }
+
+.hana-field, .hana-hand { gap: 6px; justify-content: center; }
+html[data-table="world"] body[data-game="19"] #surface { gap: 6px; }
+html[data-table="world"] .hana-field .hana-card { --hw: 54px; }
+html[data-table="world"] .hana-hand .hana-card { --hw: 64px; }
+/* My hand on its own walnut rail, with a small header, directly above my seat bar. */
+.hana-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px 6px 8px;
+  border-radius: 10px;
+  background: linear-gradient(#3a2617c9, #24170ed9), var(--walnut) center / 300px;
+  box-shadow: inset 0 1px #ffe6b23a, inset 0 -1px #0007, 0 2px 5px #0b161280;
+}
+.hana-rail-head { padding: 0 2px; font: 600 13px/1.3 system-ui, sans-serif; color: #ead7b0; }
+/* Row gap is larger than the lift, so a lifted card never covers the label of the card above. */
+.hana-hand { padding-top: 6px; row-gap: 12px; }
+html[data-table="world"] body[data-game="19"] #score { flex: none; white-space: nowrap; max-width: none; }
+.hana-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 0 4px;
+  color: #f2dcac;
+  font: 13px/1.35 system-ui, sans-serif;
+}
+.hana-head .hana-title { font-size: 14px; }
+.hana-head .hana-stock { padding: 0 6px; border-radius: 6px; background: #0c241d99; color: #ead7b0; font-variant-numeric: tabular-nums; }
+.hana-head .hana-log {
+  flex: 1 1 100%;
+  min-width: 0;
+  color: #fff4da;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Seats: name and points, the AI's hidden hand, and captured cards grouped by kind. */
+.hana-seat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: linear-gradient(#2b1c12d9, #1d130cd9), var(--walnut) center / 300px;
+  box-shadow: inset 0 1px #ffe6b23a, inset 0 -1px #0007, 0 2px 4px #0b161280;
+  color: #ead7b0;
+}
+.hana-seat.to-move { box-shadow: inset 0 -4px #efc675, inset 0 1px #ffe6b23a, 0 2px 4px #0b161280; }
+.hana-seat .hana-who { display: flex; gap: 6px; align-items: baseline; font: 600 13px/1.25 system-ui, sans-serif; white-space: nowrap; }
+.hana-seat.to-move .hana-who b { color: #ffe09a; }
+.hana-seat .hana-points { font-size: 13px; font-weight: 700; color: #ffe09a; font-variant-numeric: tabular-nums; }
+.hana-backs { display: flex; padding-left: 9px; }
+html[data-table="world"] .hana-back {
+  width: 20px;
+  min-width: 0;
+  height: 30px;
+  min-height: 0;
+  margin-left: -9px;
+  padding: 0;
+  border: 1px solid #e3d1ae;
+  border-radius: 3px;
+  font-size: 0;
+  color: transparent;
+  box-shadow: 1px 1px 2px #0009;
+}
+.hana-won { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 4px 10px; min-width: 0; }
+.hana-group { display: inline-flex; align-items: center; padding-left: 7px; }
+.hana-group i {
+  width: 16px;
+  height: 25px;
+  margin-left: -7px;
+  border: 1px solid #3a2417;
+  border-radius: 2px;
+  background: #efe2c4 center / cover;
+  box-shadow: 1px 1px 2px #0008;
+}
+.hana-group i.fresh { outline: 2px solid #ffd25e; }
+.hana-group small { margin-left: 4px; font: 600 12px/1 system-ui, sans-serif; color: #ead7b0; white-space: nowrap; }
+.hana-group.none small { opacity: 0.55; }
+
+.hana-prompt { flex-wrap: wrap; gap: 8px 10px; padding: 10px; border-radius: 10px; background: #0c241dcc; box-shadow: inset 0 0 0 1px #c9ad7466; }
+.hana-prompt .hana-prompt-title { flex-basis: 100%; margin: 0; text-align: center; font: 700 16px/1.3 system-ui, sans-serif; color: #ffe09a; }
+html[data-table="world"] .hana-prompt button { min-height: 48px; padding-inline: 14px; font-size: 16px; }
+
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  html[data-table="world"] body[data-game="19"] #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: "them me" "head hand" "field hand";
+    gap: 5px 10px;
+    align-content: start;
+  }
+  html[data-table="world"] body[data-game="19"] .hana-seat { padding: 3px 8px; gap: 2px 8px; }
+  html[data-table="world"] body[data-game="19"] #surface { gap: 5px 10px; }
+  html[data-table="world"] body[data-game="19"] .hana-seat.theirs { grid-area: them; }
+  html[data-table="world"] body[data-game="19"] .hana-seat.mine { grid-area: me; }
+  html[data-table="world"] body[data-game="19"] .hana-head { grid-area: head; }
+  html[data-table="world"] body[data-game="19"] .hana-head .hana-log { -webkit-line-clamp: 1; }
+  html[data-table="world"] body[data-game="19"] .hana-field { grid-area: field; align-content: flex-start; gap: 5px; }
+  html[data-table="world"] body[data-game="19"] :is(.hana-rail, .hana-prompt) { grid-area: hand; align-self: center; align-content: center; }
+  html[data-table="world"] body[data-game="19"] .hana-prompt ~ .hana-rail { visibility: hidden; }
+  html[data-table="world"] body[data-game="19"] .hana-field .hana-card { --hw: 50px; }
+  html[data-table="world"] body[data-game="19"] .hana-hand .hana-card { --hw: 52px; }
+  html[data-table="world"] body[data-game="19"] .hana-hand { padding-top: 9px; gap: 9px 5px; }
+  html[data-table="world"] body[data-game="19"] #surface .hana-hand .piece.hana-card.selected { translate: 0 -3px; scale: 1.02; }
+  html[data-table="world"] body[data-game="19"] .hana-rail-head { line-height: 1.2; }
+  html[data-table="world"] body[data-game="19"] .hana-rail { padding: 2px 5px 6px; }
+}
+
+
+/* ---------- 20 Riichi mahjong ---------- */
+/* The table around me: across on top, 상가 on the left, 하가 on the right, my river above my
+   hand, and a centre plaque with the round, dora and the wall count. */
+html[data-table="world"] body[data-game="20"] #surface { gap: 6px; }
+html[data-table="world"] body[data-game="20"] #score { flex: none; white-space: nowrap; max-width: none; }
+html[data-table="world"] body[data-game="20"] #status { word-break: keep-all; }
+.mj-table {
+  flex: 1 0 auto;
+  align-content: center;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
+  grid-template-areas: "top top top" "left center right" "me me me";
+  gap: 5px;
+  padding: 5px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 30% 20%, #ffffff12, transparent 62%), #08201a59;
+  box-shadow: inset 0 0 0 1px #c9ad7438, inset 1px 2px 8px #0007;
+}
+.mj-seat {
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 5px 5px;
+  border-radius: 9px;
+  background: linear-gradient(#0d2a22b3, #0a211bcc);
+  box-shadow: inset 0 0 0 1px #c9ad7440, 0 2px 4px #0b161266;
+}
+.mj-seat.seat-top { grid-area: top; }
+.mj-seat.seat-left { grid-area: left; }
+.mj-seat.seat-right { grid-area: right; }
+.mj-seat.seat-me { grid-area: me; }
+.mj-seat.mine { background: linear-gradient(#173f33c2, #0f3127d1); }
+.mj-seat.to-move { box-shadow: inset 0 -4px #efc675, inset 0 0 0 1px #efc67566, 0 2px 4px #0b161266; }
+.mj-seat.winner { box-shadow: inset 0 0 0 2px #ffd25e, 0 0 12px #ffd25e66; }
+.mj-seat-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px 5px;
+  min-width: 0;
+  margin-bottom: 3px;
+  font: 600 13px/1.3 system-ui, sans-serif;
+  color: #ead7b0;
+}
+.mj-seat-head .mj-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mj-seat.to-move .mj-seat-head b { color: #ffe09a; }
+.mj-wind { flex: none; padding: 0 4px; border-radius: 4px; background: #ead7b0; color: #23433d; font-size: 12px; box-shadow: 0 1px #0006; }
+.mj-points { flex: none; margin-left: auto; font-weight: 700; color: #ffe09a; font-variant-numeric: tabular-nums; }
+.mj-riichi { flex: none; padding: 0 4px; border-radius: 4px; background: #b3362b; color: #fff; font-size: 12px; }
+.mj-delta { flex: none; padding: 0 5px; border-radius: 9px; font: 700 12px/1.4 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.mj-delta.up { background: #2f7a4a; color: #eaffef; }
+.mj-delta.down { background: #8e2f22; color: #ffece6; }
+.mj-rank { flex: none; padding: 0 5px; border-radius: 9px; background: #ead7b0; color: #3a2417; font: 700 12px/1.4 system-ui, sans-serif; }
+.mj-river { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 2px; }
+.mj-seat:is(.seat-top, .seat-me) .mj-river { min-height: 58px; }
+.mj-seat:is(.seat-left, .seat-right) .mj-river { min-height: 118px; }
+.mj-more { align-self: center; padding: 0 3px; font: 600 12px/1 system-ui, sans-serif; color: #c9b48e; }
+html[data-table="world"] body[data-game="20"] .mj-river .river-tile.engraved-tile {
+  width: 21px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 3px;
+  box-shadow: inset 1px 1px 1px #fff, inset -1px -2px #bda680, 0 2px #c1ab83, 1px 3px 3px #102e269c;
+}
+html[data-table="world"] body[data-game="20"] .mj-river .riichi-tile { rotate: 90deg; margin-inline: 4px; }
+html[data-table="world"] body[data-game="20"] .mj-river .called { opacity: 0.4; }
+html[data-table="world"] body[data-game="20"] .mj-river .latest { outline: 2px solid #ffd25e; outline-offset: 1px; box-shadow: 0 0 10px 2px #ffd25e99; }
+.mj-melds { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.mj-meld { display: inline-flex; gap: 1px; }
+html[data-table="world"] body[data-game="20"] .meld-tile.engraved-tile { width: 17px; height: 23px; min-height: 0; padding: 0; border-radius: 2px; box-shadow: 0 1px #c1ab83, 1px 2px 2px #102e269c; }
+
+/* Centre plaque: a small walnut block in the middle of the four rivers. */
+.mj-center {
+  grid-area: center;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 3px;
+  border-radius: 9px;
+  background: linear-gradient(#2b1c12e6, #1d130ce6), var(--walnut) center / 300px;
+  box-shadow: inset 0 1px #ffe6b23a, inset 0 -1px #0007, 0 3px 6px #0b1612a0;
+  color: #ead7b0;
+  font: 600 12px/1.25 system-ui, sans-serif;
+  text-align: center;
+}
+.mj-center .mj-round { font-size: 13px; color: #ffe09a; white-space: nowrap; }
+.mj-center .mj-wall, .mj-center .mj-sticks { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mj-dora { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 3px; }
+.mj-dora small { flex-basis: 100%; font: 600 12px/1.2 system-ui, sans-serif; color: #c9b48e; }
+html[data-table="world"] body[data-game="20"] .dora-tile.engraved-tile { width: 20px; height: 27px; min-height: 0; padding: 0; border-radius: 3px; box-shadow: inset 1px 1px 1px #fff, 0 2px #c1ab83, 1px 3px 3px #0009; }
+
+/* Red fives: the face is inked red like a real aka-dora tile, with a small red pip in the
+   corner. The old glyph over the numeral is gone (the label still says it). */
+html[data-table="world"] body[data-game="20"] .red-five::before { filter: sepia(1) saturate(6) hue-rotate(-42deg) brightness(0.82) contrast(1.15); }
+html[data-table="world"] body[data-game="20"] .red-five::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c0392b;
+  box-shadow: 0 0 0 1px #fff8e9;
+  font-size: 0;
+}
+
+/* The hand's result lies on the table; rivers step aside so all four scores stay in view. */
+.mj-table.settled .mj-river, .mj-table.settled .mj-melds, .mj-table.settled .mj-center { display: none; }
+.mj-table.settled {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.3fr) minmax(0, 1fr);
+  grid-template-areas: ". top ." "left panel right" ". me .";
+  align-items: center;
+}
+.mj-table.settled .mj-seat-head { margin: 0; }
+.mj-outcome {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: #0c241de6;
+  box-shadow: inset 0 0 0 1px #c9ad7466, 0 3px 8px #0009;
+  text-align: center;
+  color: #fff4da;
+  font: 13px/1.35 system-ui, sans-serif;
+  word-break: keep-all;
+}
+.mj-outcome .mj-outcome-title { font-size: 16px; color: #ffe09a; }
+.mj-outcome .mj-outcome-sub { font-weight: 600; color: #ead7b0; }
+.mj-win-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; }
+.mj-win-hand .mj-meld { margin-left: 4px; }
+html[data-table="world"] body[data-game="20"] .win-tile.engraved-tile { width: 17px; height: 23px; min-height: 0; padding: 0; border-radius: 2px; box-shadow: inset 1px 1px #fff, 0 1px #c1ab83, 1px 2px 2px #0009; }
+html[data-table="world"] body[data-game="20"] .win-tile.winning { margin-left: 4px; outline: 2px solid #ffd25e; outline-offset: 1px; }
+
+/* My hand: two rows of seven on a phone held upright, the drawn tile in the last slot. */
+html[data-table="world"] body[data-game="20"] .mj-hand {
+  display: grid;
+  grid-template-columns: repeat(6, 44px) 52px;
+  justify-content: center;
+  gap: 4px 3px;
+  padding-top: 6px;
+}
+html[data-table="world"] body[data-game="20"] .mj-hand .hand-tile.engraved-tile {
+  width: 44px;
+  height: 60px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 5px;
+  box-shadow: inset 1px 1px 1px #fff, inset -1px -3px #bda680, 0 3px #c1ab83, 0 5px #39716a, 1px 7px 5px #102e269c;
+}
+html[data-table="world"] body[data-game="20"] .mj-hand .hand-tile.drawn { grid-column: 7; justify-self: end; }
+html[data-table="world"] body[data-game="20"] .mj-hand button.hand-tile[data-table-pressed] { translate: 0 -6px; filter: brightness(1.05); }
+html[data-table="world"] body[data-game="20"] .mj-hand:has(button.hand-tile) span.hand-tile { filter: brightness(0.78) saturate(0.7); }
+html[data-table="world"] body[data-game="20"] .mj-hand .riichi-ok { translate: 0 -5px; outline: 2px solid #ffd25e; outline-offset: 1px; }
+
+.mj-actions { gap: 8px; min-height: 48px; margin-top: 4px; }
+html[data-table="world"] .desk:has(#result:not([hidden])) .mj-actions { display: none; }
+html[data-table="world"] body[data-game="20"] .mj-call { min-height: 48px; min-width: 64px; padding: 4px 12px; gap: 6px; font: 700 16px/1.1 system-ui, sans-serif; }
+html[data-table="world"] body[data-game="20"] .mj-call.win { background: linear-gradient(#ffcf6a, #e39a37); color: #3a1b0c; box-shadow: 0 0 0 2px #fff3c8, 0 3px 8px #0009; }
+html[data-table="world"] body[data-game="20"] .riichi-toggle { background: linear-gradient(#c9493b, #9a2c22); color: #fff; }
+html[data-table="world"] body[data-game="20"] .riichi-toggle.selected { box-shadow: 0 0 0 3px #ffd25e; }
+
+/* Short landscape: the table on the left, declarations in a column on the right, and the
+   hand along the bottom edge where the thumbs are. */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  html[data-table="world"] body[data-game="20"] #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 108px;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "table actions" "hand hand";
+    gap: 5px 8px;
+    align-content: stretch;
+    justify-content: stretch;
+  }
+  html[data-table="world"] body[data-game="20"] .mj-table {
+    grid-area: table;
+    align-self: stretch;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas: "left top right" "left center right" "left me right";
+    gap: 4px;
+    padding: 4px;
+  }
+  html[data-table="world"] body[data-game="20"] .mj-table.settled { grid-template-areas: "left top right" "left panel right" "left me right"; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr) minmax(0, 1fr); }
+  html[data-table="world"] body[data-game="20"] .mj-seat { padding: 2px 4px 3px; }
+  html[data-table="world"] body[data-game="20"] .mj-seat-head { margin-bottom: 2px; line-height: 1.2; }
+  html[data-table="world"] body[data-game="20"] .mj-seat:is(.seat-left, .seat-right) { align-self: stretch; }
+  html[data-table="world"] body[data-game="20"] .mj-table.settled .mj-seat { align-self: center; }
+  /* Across and me: the name plate stands at the left of the river, which saves a row. */
+  html[data-table="world"] body[data-game="20"] .mj-table:not(.settled) .mj-seat:is(.seat-top, .seat-me) {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 4px;
+    align-items: start;
+  }
+  html[data-table="world"] body[data-game="20"] .mj-table:not(.settled) .mj-seat:is(.seat-top, .seat-me) .mj-seat-head { grid-row: 1 / span 2; align-content: flex-start; margin: 0; }
+  html[data-table="world"] body[data-game="20"] .mj-table:not(.settled) .mj-seat:is(.seat-top, .seat-me) .mj-points { margin-left: 0; }
+  html[data-table="world"] body[data-game="20"] .mj-seat:is(.seat-top, .seat-me) .mj-river { min-height: 52px; }
+  html[data-table="world"] body[data-game="20"] .mj-seat:is(.seat-left, .seat-right) .mj-river { min-height: 80px; }
+  html[data-table="world"] body[data-game="20"] .mj-river .river-tile.engraved-tile { width: 19px; height: 25px; }
+  html[data-table="world"] body[data-game="20"] .mj-center { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 2px 8px; padding: 3px 6px; }
+  html[data-table="world"] body[data-game="20"] .mj-dora small { flex-basis: auto; }
+  html[data-table="world"] body[data-game="20"] .dora-tile.engraved-tile { width: 17px; height: 23px; }
+  html[data-table="world"] body[data-game="20"] .mj-melds { margin-top: 2px; gap: 3px; }
+  html[data-table="world"] body[data-game="20"] .meld-tile.engraved-tile { width: 14px; height: 19px; }
+  html[data-table="world"] body[data-game="20"] .mj-outcome { padding: 5px; gap: 3px; }
+  html[data-table="world"] body[data-game="20"] .mj-outcome .mj-outcome-title { font-size: 15px; }
+  html[data-table="world"] body[data-game="20"] .win-tile.engraved-tile { width: 15px; height: 20px; }
+  html[data-table="world"] body[data-game="20"] .mj-win-hand .mj-meld { margin-left: 3px; }
+  html[data-table="world"] body[data-game="20"] .mj-outcome .mj-yaku { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  /* Game over: the result bar takes the hand's room, so the last hand sits a little lower. */
+  html[data-table="world"] .desk:has(#result:not([hidden])) body[data-game="20"] .mj-hand .hand-tile.engraved-tile,
+  html[data-table="world"] body[data-game="20"] .desk:has(#result:not([hidden])) .mj-hand .hand-tile.engraved-tile { width: 36px; height: 44px; }
+  html[data-table="world"] body[data-game="20"] .mj-hand {
+    grid-area: hand;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0;
+    padding-top: 4px;
+  }
+  /* 14 tiles on one row: 44px tiles that touch, like a real hand on its rack. */
+  html[data-table="world"] body[data-game="20"] .mj-hand .hand-tile.engraved-tile { width: 44px; height: 54px; flex: none; }
+  html[data-table="world"] body[data-game="20"] .mj-hand .hand-tile.drawn { margin-left: 8px; }
+  html[data-table="world"] body[data-game="20"] .mj-actions {
+    grid-area: actions;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: 6px;
+    min-height: 0;
+    margin: 0;
+    overflow-y: auto;
+  }
+  html[data-table="world"] body[data-game="20"] .mj-call { min-height: 44px; min-width: 0; padding: 4px 6px; justify-content: center; }
+}

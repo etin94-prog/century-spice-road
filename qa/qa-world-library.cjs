@@ -90,7 +90,16 @@ const ids = requested.length ? requested : Array.from({ length: 51 }, (_, i) => 
             active = page.locator('#surface button:enabled');
           if (await arena.count()) {
             await arena.tap();
-            if (await active.count()) await active.first().tap();
+            // A canvas tap can start a shot; the table then rests its keys until the balls
+            // stop, so a key that turns disabled after it was found is expected.
+            await page.waitForTimeout(120);
+            if (await active.count())
+              await active
+                .first()
+                .tap({ timeout: 3000 })
+                .catch((e) => {
+                  if (!/not enabled/.test(e.message)) throw e;
+                });
           } else {
             await active.first().waitFor({ state: 'visible' });
             await active.first().tap();

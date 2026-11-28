@@ -1,0 +1,699 @@
+/* Card tables: 21 Last Card, 24 President, 25 Sevens, 26 Speed, 27 Matching, 28 War,
+   29 Takoyaki, 30 Pig's Tail. Layout language (classes come from ww-cards.js):
+   .seat-strip (opponents, top) / .card-zone (shared table, middle) / .hand (my cards, bottom)
+   / .card-actions (primary action under the thumb). Cards lie flat; light comes from the
+   upper left like the rest of the table, and every card has a contact shadow. */
+
+html[data-table="world"] {
+  --hand-card: clamp(54px, 17vw, 78px);
+  --lane-card: clamp(44px, 13vw, 60px);
+  --pile-card: clamp(72px, 24vw, 100px);
+}
+
+/* ---------- Opponents ---------- */
+html[data-table="world"] .seat-strip {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+html[data-table="world"] .seat-chip {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 180px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 6px;
+  padding: 5px 8px 7px;
+  border: 1px solid #c9ad7455;
+  border-radius: 10px;
+  background: linear-gradient(#0e2a21d9, #0a1f18d9);
+  box-shadow: inset 0 1px #ffffff17, 0 2px 4px #0005;
+  font-size: 13px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: #f4e4bf;
+}
+html[data-table="world"] .seat-chip b { font-weight: 700; white-space: nowrap; }
+html[data-table="world"] .seat-chip.is-turn {
+  border-color: #efc675;
+  box-shadow: inset 0 -4px #efc675, 0 0 0 1px #efc67555, 0 2px 6px #0007;
+}
+html[data-table="world"] .seat-chip.is-out { opacity: 0.62; }
+html[data-table="world"] .seat-count { font-weight: 700; color: #fff3d3; white-space: nowrap; }
+html[data-table="world"] .seat-note {
+  flex-basis: 100%;
+  text-align: center;
+  font: 700 12px/1.25 system-ui, sans-serif;
+  color: #f3d391;
+}
+html[data-table="world"] .seat-note.warn { color: #ffb09a; }
+html[data-table="world"] .mini-fan { display: inline-flex; padding-left: 6px; }
+html[data-table="world"] .mini-fan i {
+  width: 11px;
+  height: 16px;
+  margin-left: -6px;
+  border: 1px solid #e8d9b6;
+  border-radius: 2px;
+  background: #124e41 url('art/worldwide/table/back.webp') center / 100% 100%;
+  box-shadow: 1px 1px 1px #0007;
+}
+
+/* ---------- The shared table ---------- */
+html[data-table="world"] .card-zone {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 6px;
+  border-radius: 22px;
+  /* A lighter oval of felt marks the play area; light falls from the upper left. */
+  background: radial-gradient(ellipse 70% 60% at 45% 42%, #fff6d814, transparent 72%);
+  box-shadow: inset 0 0 0 1px #f3dfae1a;
+}
+html[data-table="world"] .table-caption { margin: 0; text-align: center; }
+html[data-table="world"] .last-note {
+  max-width: 100%;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #0a1c16b3;
+  color: #f6e2b4;
+  font: 600 13px/1.35 system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+html[data-table="world"] .empty-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--pile-card);
+  aspect-ratio: 5 / 7;
+  min-height: 0;
+  border: 2px dashed #d7bd8a99;
+  border-radius: 8px;
+  background: #0b231b55;
+  color: #e9d3a4;
+  font: 700 14px/1.2 system-ui, sans-serif;
+  box-shadow: none;
+}
+html[data-table="world"] .pile-pair { display: flex; align-items: center; justify-content: center; gap: 18px; }
+/* A face-down pile: stacked card edges, count on a tab under it. */
+html[data-table="world"] .deck-pile {
+  position: relative;
+  flex: none;
+  width: calc(var(--pile-card) * 0.8);
+  aspect-ratio: 5 / 7;
+  border: 2px solid #e8d9b6;
+  border-radius: 6px;
+  background: #124e41 url('art/worldwide/table/back.webp') center / 100% 100%;
+  box-shadow: 1px 1px 0 #e8dab5, 2px 2px 0 #8e795c, 3px 3px 0 #e4d6b6, 4px 4px 0 #82725a, 4px 8px 9px #08160f99;
+}
+html[data-table="world"] .deck-pile.is-empty { background: #0b231b55; border-style: dashed; box-shadow: none; }
+html[data-table="world"] .deck-pile::after {
+  content: attr(data-count);
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  translate: -50% 0;
+  padding: 0 7px;
+  border: 1px solid #c3a678;
+  border-radius: 9px;
+  background: #2b2018;
+  color: #fff0cc;
+  font: 700 13px/1.45 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- Cards in hand ---------- */
+html[data-table="world"] .hand-label {
+  flex: none;
+  margin: 0;
+  padding: 0 4px;
+  font: 600 13px/1.3 system-ui, sans-serif;
+  color: #f2dcac;
+}
+html[data-table="world"] #surface > .hand {
+  flex: none;
+  gap: 8px 6px;
+  padding-top: 7px;
+  align-content: flex-start;
+}
+html[data-table="world"] .hand .illustrated .card,
+html[data-table="world"] .ring-pen .illustrated .card { --card: var(--hand-card); }
+html[data-table="world"] .hand .illustrated .corner { font-size: clamp(12px, calc(var(--hand-card) * 0.22), 17px); }
+html[data-table="world"] .hand .illustrated .pips i { font-size: clamp(12px, calc(var(--hand-card) * 0.18), 14px); }
+html[data-table="world"] .card-zone .illustrated .pips i { font-size: clamp(12px, calc(var(--card) * 0.16), 16px); }
+/* The corner suit is what tells cards apart in a fan: keep it at 12px or more. */
+html[data-table="world"] #surface .illustrated .corner small { font-size: max(12px, 0.8em); }
+html[data-table="world"] :is(.hand, .card-zone, .ring-cards) .piece { position: relative; }
+/* Every printed card throws a short contact shadow toward the lower right. */
+html[data-table="world"] #surface :is(.hand, .card-zone, .ring-center) .illustrated .card {
+  box-shadow: inset 0 1px #fff, 0 1px 0 #c0aa88, 1px 3px 4px #0b1a1466;
+}
+/* Playable now: lifted a little with an amber rim. Lifting uses translate, never layout. */
+html[data-table="world"] #surface .movable:not(.board-grid .cell) {
+  translate: 0 -6px;
+  outline: 2px solid #e8ab3ce6;
+  outline-offset: 2px;
+  border-radius: 7px;
+  filter: drop-shadow(0 6px 4px #06130e80);
+}
+html[data-table="world"] #surface .unplayable { filter: saturate(0.55) brightness(0.74); }
+html[data-table="world"] #surface .piece.selected:not(.board-grid .cell) {
+  translate: 0 -12px;
+  outline: 3px solid #ffd25e;
+  outline-offset: 2px;
+  border-radius: 7px;
+  filter: drop-shadow(0 0 7px #ffc94a99) drop-shadow(0 9px 5px #06130e80);
+  z-index: 1;
+}
+html[data-table="world"] #surface .piece.refused:not(.board-grid .cell) {
+  outline: 3px solid #d9553f;
+  outline-offset: 2px;
+  border-radius: 7px;
+  animation: ww-nudge 0.3s ease-out;
+}
+html[data-table="world"] #surface .piece.movable[data-table-pressed] { translate: 0 -3px; }
+/* An AI is playing: my cards stay visible but step back a little. */
+html[data-table="world"] #surface :is(.hand, .ring-pen).waiting > .piece { filter: saturate(0.8) brightness(0.84); }
+/* A card that just arrived on a pile drops in from above (none under reduced motion). */
+html[data-table="world"] .landed { animation: ww-card-land 0.32s ease-out; }
+@keyframes ww-card-land {
+  from { translate: 0 -16px; opacity: 0.35; }
+  to { translate: 0 0; opacity: 1; }
+}
+
+/* ---------- Primary action, under the thumb ---------- */
+html[data-table="world"] #surface > .card-actions {
+  flex: none;
+  min-height: 52px;
+  gap: 8px;
+  justify-content: center;
+  align-content: center;
+}
+html[data-table="world"] .card-actions button { min-height: 48px; min-width: 112px; padding-inline: 16px; }
+html[data-table="world"] .card-actions .count-pick { flex: 1 1 0; min-width: 0; max-width: 140px; padding-inline: 6px; }
+html[data-table="world"] .card-actions .hint { color: #e9d4a6; font: 13px/1.35 system-ui, sans-serif; }
+
+/* ---------- 21 Last Card ---------- */
+html[data-table="world"] .lc-hand .season-face,
+html[data-table="world"] .lc-colors .season-face { width: var(--hand-card); min-width: 0; max-width: none; min-height: 0; }
+html[data-table="world"] .lc-table .pile-top { width: var(--pile-card); min-width: 0; max-width: none; min-height: 0; }
+html[data-table="world"] .lc-table .deck-pile { width: var(--pile-card); aspect-ratio: 2 / 3; border-radius: 8px; }
+html[data-table="world"] .season-face::before { font-size: clamp(16px, calc(var(--hand-card) * 0.3), 26px); }
+html[data-table="world"] .season-face.long-mark::before { font-size: clamp(12px, calc(var(--hand-card) * 0.2), 16px); white-space: nowrap; margin-top: 18%; }
+html[data-table="world"] .pile-top.season-face::before { font-size: clamp(20px, calc(var(--pile-card) * 0.32), 30px); }
+html[data-table="world"] .pile-top.season-face.long-mark::before { font-size: clamp(13px, calc(var(--pile-card) * 0.18), 18px); }
+/* The colour is printed on the card too, not only in the art. */
+html[data-table="world"] .season-face[data-hue]::after {
+  content: attr(data-hue);
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  translate: -50% 0;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: #140d08b8;
+  color: #fff4d6;
+  font: 700 12px/1.4 system-ui, sans-serif;
+  white-space: nowrap;
+}
+/* Skip and reverse: a large symbol, the word printed under it. */
+html[data-table="world"] .season-face .mark-word {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52%;
+  font: 700 12px/1.2 system-ui, sans-serif;
+  color: #fff4d6;
+  text-align: center;
+  text-shadow: 0 1px 2px #1a0f06;
+  white-space: nowrap;
+  pointer-events: none;
+}
+html[data-table="world"] .pile-top.season-face .mark-word { font-size: 13px; }
+html[data-table="world"] .lc-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border: 1px solid #d2b37a66;
+  border-radius: 999px;
+  background: #0a1c16c7;
+  font: 14px/1.3 system-ui, sans-serif;
+}
+html[data-table="world"] .lc-swatch { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 1px #fff6, 0 0 0 2px #f3e2bc; }
+html[data-table="world"] .lc-dir { color: #e9d4a6; font-size: 13px; }
+html[data-table="world"] .lc-debt { padding: 0 7px; border-radius: 8px; background: #a1352a; color: #fff; font-weight: 700; font-size: 13px; }
+html[data-table="world"] #surface > .lc-colors { flex: none; gap: 8px; }
+html[data-table="world"] .lc-colors .season-face::before { font-size: 15px; margin-top: 40%; background: #140d08a6; padding: 0 5px; border-radius: 4px; }
+
+/* ---------- 24 President ---------- */
+html[data-table="world"] .trick-fan { display: flex; justify-content: center; }
+html[data-table="world"] .trick-fan .illustrated .card { --card: var(--pile-card); }
+html[data-table="world"] .trick-fan .piece + .piece { margin-left: calc(var(--pile-card) * -0.55); }
+html[data-table="world"] .trick-fan .illustrated .corner { font-size: 15px; }
+html[data-table="world"] .pres-group.illustrated { position: relative; display: inline-flex; padding: 0; }
+html[data-table="world"] .pres-group .card + .card { margin-left: calc(var(--hand-card) * -0.62); }
+/* Room above the hand for the lift, so a selected group never covers the hand label. */
+html[data-table="world"] #surface > .pres-hand { padding-top: 14px; }
+html[data-table="world"] .trick { --pile-card: clamp(64px, 20vw, 88px); }
+html[data-table="world"] #surface .pres-hand .piece.selected:not(.board-grid .cell) { translate: 0 -8px; }
+html[data-table="world"] #surface .pres-hand .piece.movable[data-table-pressed] { translate: 0 -3px; }
+html[data-table="world"] .pres-group[data-count]::after {
+  content: attr(data-count);
+  position: absolute;
+  top: -8px;
+  right: -5px;
+  padding: 0 6px;
+  border: 1px solid #c3a678;
+  border-radius: 8px;
+  background: #3b3026;
+  color: #fff3cd;
+  font: 700 12px/1.5 system-ui, sans-serif;
+  pointer-events: none;
+}
+
+/* ---------- 25 Sevens ---------- */
+html[data-table="world"] .sevens-table .suit-lanes { width: min(100%, 460px); gap: 6px; }
+html[data-table="world"] .suit-lane { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+html[data-table="world"] .lane-cards { display: flex; justify-content: center; }
+html[data-table="world"] .lane-cards .illustrated .card { --card: var(--lane-card); }
+html[data-table="world"] .lane-cards .illustrated + .illustrated { margin-left: calc(var(--lane-card) * -0.52); }
+html[data-table="world"] .lane-cards .last-move { z-index: 2; }
+html[data-table="world"] .lane-cards .last-move .card { outline: 2px solid #e8ab3c; outline-offset: 1px; box-shadow: 0 0 0 4px #ffd76a40, 1px 3px 4px #0b1a1466; }
+html[data-table="world"] .suit-lane .foundation {
+  width: var(--lane-card);
+  aspect-ratio: 5 / 7;
+  min-height: 0;
+  padding: 0;
+  border: 2px dashed #c6ac7999;
+  background: #13332566;
+  box-shadow: none;
+  color: #e5c999;
+  font-size: 22px;
+}
+html[data-table="world"] .suit-lane .foundation.red { color: #f0a58f; }
+html[data-table="world"] .lane-next { display: block; text-align: center; font: 600 12px/1.25 system-ui, sans-serif; color: #e9c98d; }
+html[data-table="world"] .lane-range {
+  font: 700 13px/1.2 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #f3dfb3;
+  white-space: nowrap;
+}
+
+/* ---------- 26 Speed ---------- */
+html[data-table="world"] .speed-table { flex-direction: row; align-items: center; gap: clamp(16px, 7vw, 40px); }
+/* Piles keep their place: one-line captions, tops aligned, only the landing card moves. */
+html[data-table="world"] .speed-pile { align-self: center; justify-content: flex-start; }
+html[data-table="world"] .speed-pile .last-note { white-space: nowrap; }
+html[data-table="world"] body[data-game="26"] .seat-chip { min-height: 52px; }
+html[data-table="world"] .speed-pile { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+html[data-table="world"] .speed-pile .illustrated .card { --card: var(--pile-card); }
+html[data-table="world"] .speed-pile .illustrated .corner { font-size: 16px; }
+html[data-table="world"] .speed-pile .pile-top.target { outline: 3px solid #fff0c4; outline-offset: 4px; border-radius: 8px; filter: drop-shadow(0 0 8px #ffe3a0aa); }
+html[data-table="world"] .speed-hand { --hand-card: clamp(60px, 19vw, 84px); }
+
+/* ---------- 27 Matching ---------- */
+html[data-table="world"] .memory-grid .piece { position: relative; }
+html[data-table="world"] .memory-grid .gone::before {
+  content: "";
+  visibility: visible;
+  position: absolute;
+  inset: 4%;
+  border: 2px dashed #e5c99940;
+  border-radius: 7px;
+}
+/* A flipped card glows inside its own cell: no lift, no scale, so it never covers a neighbour. */
+html[data-table="world"] #surface .memory-grid .piece.selected:not(.board-grid .cell) {
+  translate: none;
+  outline: 3px solid #ffd25e;
+  outline-offset: 0;
+  border-radius: 6px;
+  filter: drop-shadow(0 0 5px #ffc94a88);
+}
+html[data-table="world"] .memory-note { flex: none; align-self: center; min-height: 1.35em; white-space: nowrap; }
+html[data-table="world"] .memory-note.is-quiet { background: none; color: #e9d4a6; font-weight: 500; }
+@media (orientation: portrait) {
+  /* Portrait: 4 × 5 larger cards sized from the free height, instead of 5 × 4 small ones. */
+  html:not(.card-landscape)[data-table="world"] body[data-game="27"] #surface > .memory-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: min(100%, calc((var(--play-height) - 64px) * 0.5714 + 18px));
+    gap: 6px;
+  }
+  html:not(.card-landscape)[data-table="world"] body[data-game="27"] #surface > .memory-grid > .piece { max-width: none; }
+}
+
+/* ---------- 28 War ---------- */
+html[data-table="world"] .war-table { gap: 14px; --pile-card: clamp(74px, 25vw, 100px); }
+html[data-table="world"] .war-side { display: grid; grid-template-columns: 2.6em auto auto auto; align-items: center; gap: 12px; }
+/* Cards won so far: a face-down pile turned a little, with a gold tab. */
+html[data-table="world"] .war-side .won-pile { width: calc(var(--pile-card) * 0.72); rotate: 5deg; }
+html[data-table="world"] .war-side .won-pile::after { background: #5a4216; border-color: #e2c27a; color: #ffeebf; rotate: -5deg; }
+html[data-table="world"] .war-side .deck-pile:not(.won-pile) { width: calc(var(--pile-card) * 0.72); }
+html[data-table="world"] .war-name { font: 700 14px/1.2 system-ui, sans-serif; color: #f2dcac; text-align: right; }
+html[data-table="world"] .war-slot .piece { width: var(--pile-card); aspect-ratio: 5 / 7; min-height: 0; padding: 0; }
+html[data-table="world"] .war-slot .illustrated .card { --card: var(--pile-card); width: 100%; }
+html[data-table="world"] .war-slot .illustrated .corner { font-size: 16px; }
+html[data-table="world"] .war-slot .won { filter: drop-shadow(0 0 9px #ffd25ecc); outline: 3px solid #ffd25e; outline-offset: 2px; border-radius: 7px; }
+html[data-table="world"] .war-slot .lost { filter: saturate(0.6) brightness(0.78); }
+html[data-table="world"] .war-slot .tie { outline: 3px dashed #f0c27a; outline-offset: 2px; border-radius: 7px; }
+html[data-table="world"] .war-table .pot { color: #ffd6a0; font: 700 14px/1.3 system-ui, sans-serif; }
+
+/* ---------- 29 Takoyaki ---------- */
+html[data-table="world"] body[data-game="29"] #surface { gap: 6px; }
+html[data-table="world"] body[data-game="29"] #surface > .tk-board { width: min(100%, 340px); }
+html[data-table="world"] body[data-game="29"] #surface > .tk-board.theirs { width: min(72%, 260px); gap: 4px; }
+html[data-table="world"] .tk-label { margin: 0; text-align: center; font-size: 13px; }
+html[data-table="world"] .tk-label.is-turn { text-decoration: underline 3px #efc675; text-underline-offset: 5px; }
+html[data-table="world"] .tk-board .card-back[data-slot]::before { font-size: 13px; }
+html[data-table="world"] .tk-board .card-back.target { outline: 3px solid #ffd25e; outline-offset: 1px; }
+html[data-table="world"] .tk-middle { flex-direction: row; flex-wrap: wrap; gap: 8px 14px; padding-block: 6px; }
+html[data-table="world"] .tk-middle { --pile-card: clamp(56px, 16vw, 80px); }
+html[data-table="world"] .tk-held .illustrated .card,
+html[data-table="world"] .tk-middle .tk-discard .card { --card: var(--pile-card); width: var(--card); }
+html[data-table="world"] .tk-middle .tk-discard { opacity: 0.8; }
+html[data-table="world"] .tk-held .won { outline: 2px solid #e8ab3c; outline-offset: 2px; border-radius: 6px; }
+html[data-table="world"] .tk-held .lost { outline: 2px solid #d9553f; outline-offset: 2px; border-radius: 6px; }
+html[data-table="world"] .tk-middle .last-note { flex-basis: 100%; order: 9; }
+html[data-table="world"] .tk-middle .deck-pile { width: calc(var(--pile-card) * 0.86); }
+html[data-table="world"] .tk-held .empty-slot { width: var(--pile-card); }
+
+/* ---------- 30 Pig's Tail ---------- */
+/* Landscape and wide screens: a 12×5 ring whose middle row holds [pile | info] and my penalty
+   strip side by side. Portrait phones: a 7×10 ring with the pile in its hole and the penalty
+   strip as its own row under the ring, so ring cards can never cover a penalty card.
+   Each back is drawn at card proportions inside a full-cell target. */
+html[data-table="world"] body[data-game="30"] #surface > .ring-cards.tiles {
+  flex: 1 1 auto;
+  width: min(100%, 720px);
+  min-height: 0;
+  align-self: center;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(44px, 1fr));
+  gap: 4px;
+  padding: 4px;
+}
+html[data-table="world"] body[data-game="30"] .ring-cards > .card-back {
+  grid-column: var(--lx);
+  grid-row: var(--ly);
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+html[data-table="world"] body[data-game="30"] .ring-cards > .card-back::before {
+  content: "";
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 5 / 7;
+  border: 2px solid #e8d8b4;
+  border-radius: 5px;
+  background: #124e41 url('art/worldwide/table/back.webp') center / 100% 100%;
+  box-shadow: 1px 2px 0 #9a8662, 2px 4px 5px #08160f99;
+}
+html[data-table="world"] body[data-game="30"] .ring-cards > .ring-center {
+  grid-area: 3 / 3 / 4 / 6;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+}
+html[data-table="world"] .ring-pile { flex: none; height: 100%; display: flex; align-items: center; }
+html[data-table="world"] .ring-pile .illustrated .card { --card: var(--pile-card); }
+html[data-table="world"] .ring-pile .empty-slot { font-size: 13px; }
+html[data-table="world"] .ring-info { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; font: 13px/1.3 system-ui, sans-serif; pointer-events: none; }
+html[data-table="world"] .ring-info b { font-size: 14px; color: #fff1cc; }
+html[data-table="world"] .ring-warn { color: #ffcfaa; font-weight: 600; }
+/* My penalty cards: one scrolling row with its own place in the ring grid. */
+html[data-table="world"] body[data-game="30"] .ring-cards > .ring-pen-strip {
+  grid-area: 3 / 6 / 4 / 11;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: #0a1c1666;
+  box-shadow: inset 0 0 0 1px #f3dfae22;
+}
+html[data-table="world"] .ring-pen-label { flex: none; font: 600 12px/1.3 system-ui, sans-serif; color: #f2dcac; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-table="world"] .ring-pen {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: safe center;
+  gap: 6px;
+  padding: 3px 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+/* More cards than fit: the right edge fades out and there is room to scroll the last card clear. */
+html[data-table="world"] .ring-pen-strip.scrolls .ring-pen {
+  justify-content: flex-start;
+  padding-right: 28px;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+html[data-table="world"] .ring-pen-empty { margin: auto; color: #e9d4a6; font: 12px/1.3 system-ui, sans-serif; text-align: center; }
+html[data-table="world"] .ring-pen .illustrated .card { --card: 46px; }
+html[data-table="world"] .ring-pen .piece { flex: none; min-width: 48px; min-height: 44px; justify-content: center; }
+/* Inside a scrolling strip the playable rim stays in the box: no lift that would be clipped. */
+html[data-table="world"] #surface .ring-pen .piece.movable:not(.board-grid .cell) { translate: none; outline-offset: 0; filter: none; }
+html[data-table="world"] #surface .ring-pen .piece.movable[data-table-pressed] { translate: none; filter: brightness(0.9); }
+html[data-table="world"] .ring-pen .danger { outline: 2px solid #d9553f; outline-offset: 0; border-radius: 6px; }
+html[data-table="world"] .ring-pen .danger::after {
+  content: "!";
+  position: absolute;
+  top: 1px;
+  right: 0;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #b33b2c;
+  box-shadow: 0 0 0 1px #fff3;
+  color: #fff;
+  font: 700 12px/17px system-ui, sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+html[data-table="world"] body[data-game="30"] { --pile-card: clamp(60px, 18vw, 86px); --hand-card: 44px; }
+
+@media (orientation: portrait) {
+  html:not(.card-landscape)[data-table="world"] body[data-game="30"] #surface > .ring-cards.tiles {
+    width: 100%;
+    flex: none;
+    height: max(540px, var(--play-height));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-rows: repeat(10, minmax(40px, 1fr)) auto;
+  }
+  html:not(.card-landscape)[data-table="world"] body[data-game="30"] .ring-cards > .card-back { grid-column: var(--px); grid-row: var(--py); }
+  html:not(.card-landscape)[data-table="world"] body[data-game="30"] .ring-cards > .ring-center {
+    grid-area: 3 / 3 / 9 / 6;
+    flex-direction: column;
+    gap: 10px;
+  }
+  html:not(.card-landscape)[data-table="world"] body[data-game="30"] .ring-pile { height: auto; --pile-card: 82px; }
+  html:not(.card-landscape)[data-table="world"] body[data-game="30"] .ring-cards > .ring-pen-strip {
+    grid-area: 11 / 1 / 12 / -1;
+    margin-top: 4px;
+    padding: 4px 4px 2px;
+  }
+  /* The strip keeps one card height even while empty, so the ring never jumps when the first penalty arrives. */
+  html:not(.card-landscape)[data-table="world"] body[data-game="30"] .ring-pen { min-height: 72px; }
+  /* The ring is empty when the round ends: the result sits over its lower rows, clear of the strip. */
+  html:not(.card-landscape)[data-table="world"] body[data-game="30"] #result { bottom: 118px; }
+}
+
+/* ---------- Short landscape, fullscreen and the quarter-turned view ---------- */
+@container phone-table (min-aspect-ratio: 1/1) and (max-height: 560px) {
+  /* Container queries style the container's descendants only, so the sizes live on #surface. */
+  html[data-table="world"] #surface {
+    --hand-card: clamp(42px, 15cqh, 52px);
+    --pile-card: clamp(48px, 22cqh, 72px);
+    --lane-card: clamp(36px, 15cqh, 48px);
+  }
+  /* 21, 24, 25, 26: the shared table fills the left column; the right column holds the
+     opponents at the top and my hand, sized from the free room, at the bottom by the action. */
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    align-content: stretch;
+    gap: 4px 12px;
+  }
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) #surface > .seat-strip { grid-column: 2; grid-row: 1; }
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) #surface > .card-zone { grid-column: 1; grid-row: 1 / -1; align-self: stretch; padding: 4px; gap: 6px; }
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) #surface > .hand-label { grid-column: 2; grid-row: 3; align-self: end; text-align: left; }
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) #surface > .hand {
+    grid-column: 2;
+    grid-row: 4;
+    align-self: end;
+    padding-top: 8px;
+    gap: 6px 5px;
+    /* The hand measures its own width; the script says how many cards share a row. */
+    container-type: inline-size;
+    --hand-card: clamp(44px, calc((100cqw - (var(--per-row, 6) - 1) * 5px) / var(--per-row, 6)), var(--hand-cap, 76px));
+  }
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) #surface > .hand[data-rows="2"] { --hand-cap: 50px; }
+  html[data-table="world"] body[data-game="24"] #surface > .pres-hand { padding-top: 14px; justify-content: flex-start; }
+  html[data-table="world"] body[data-game="24"] #surface > .pres-hand[data-rows="2"] { --hand-cap: 48px; }
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) #surface > .card-actions { grid-column: 2; grid-row: 5; min-height: 46px; }
+  html[data-table="world"] body[data-game="21"] #surface > .lc-colors { grid-column: 2; grid-row: 2; align-self: end; }
+  html[data-table="world"] .card-actions button { min-height: 44px; }
+  html[data-table="world"] .seat-strip { gap: 4px; }
+  html[data-table="world"] .seat-chip { padding: 3px 5px 6px; }
+  html[data-table="world"] .mini-fan { display: none; }
+  html[data-table="world"] .seat-note { flex-basis: auto; }
+  html[data-table="world"] body[data-game="26"] .seat-chip { min-height: 0; }
+  html[data-table="world"] .lc-colors .season-face { width: 48px; }
+  html[data-table="world"] .lc-colors .season-face::before { margin-top: 30%; font-size: 12px; }
+  html[data-table="world"] .lc-hand .season-face::before { margin-top: 8%; }
+  /* Two rows of small cards: the colour tab and the word under a symbol would not fit. */
+  html[data-table="world"] .lc-hand[data-rows="2"] .season-face[data-hue]::after,
+  html[data-table="world"] .lc-hand[data-rows="2"] .season-face .mark-word { display: none; }
+  html[data-table="world"] .lc-table { --pile-card: clamp(60px, 24cqh, 88px); }
+  /* The result sits over the empty bottom of the table column, clear of the hand. */
+  html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"]) .desk > #result {
+    left: 10px;
+    bottom: 10px;
+    translate: none;
+    width: calc((100% - 32px) * 0.418);
+    font-size: 15px;
+    word-break: keep-all;
+    text-wrap: balance;
+  }
+  html[data-table="world"] .speed-table { gap: 16px; align-items: flex-start; padding-top: 18px; }
+  html[data-table="world"] .lane-range { font-size: 12px; }
+
+  /* 25 Sevens: four lanes in a 2 x 2 grid with a gutter, each with its own faint outline. */
+  html[data-table="world"] .sevens-table .suit-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; width: 100%; }
+  html[data-table="world"] .sevens-table .suit-lane { padding: 5px 2px 4px; border-radius: 10px; box-shadow: inset 0 0 0 1px #f3dfae26; background: #0a1c1633; }
+
+  /* 28 War: the two sides face each other across the table. */
+  html[data-table="world"] .war-table { flex-direction: row; gap: 22px; --pile-card: clamp(56px, 26cqh, 92px); }
+  html[data-table="world"] .war-side { grid-template-columns: auto auto auto; justify-items: center; gap: 8px 12px; }
+  html[data-table="world"] .war-name { grid-column: 1 / -1; order: -1; text-align: center; }
+  html[data-table="world"] .war-side.theirs .won-pile { order: 0; }
+  html[data-table="world"] .war-side.theirs .deck-pile:not(.won-pile) { order: 1; }
+  html[data-table="world"] .war-side.theirs .war-slot { order: 2; }
+  html[data-table="world"] .war-side.mine .war-slot { order: 0; }
+  html[data-table="world"] .war-side.mine .deck-pile:not(.won-pile) { order: 1; }
+  html[data-table="world"] .war-side.mine .won-pile { order: 2; }
+  html[data-table="world"] .war-table .pot { position: absolute; bottom: 6px; }
+  html[data-table="world"] .war-table { position: relative; }
+
+  /* 29 Takoyaki: the two boards side by side at the same card size; the drawn card, its
+     caption and the action share the row under them. */
+  html[data-table="world"] body[data-game="29"] #surface {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 14px;
+    /* Card width: what two rows can take from the height, capped by the column width. */
+    --tk-card: clamp(36px, calc((var(--play-height) - 118px) / 2 * 0.714), 64px);
+  }
+  html[data-table="world"] body[data-game="29"] #surface > .tk-label { grid-row: 1; grid-column: 1; text-align: center; }
+  html[data-table="world"] body[data-game="29"] #surface > .tk-label:nth-of-type(2) { grid-column: 2; }
+  html[data-table="world"] body[data-game="29"] #surface > .tk-board,
+  html[data-table="world"] body[data-game="29"] #surface > .tk-board.theirs {
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: center;
+    width: min(100%, calc(var(--tk-card) * 5 + 24px));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  html[data-table="world"] body[data-game="29"] #surface > .tk-board.mine { grid-column: 2; }
+  /* Every slot, face up or down, has the same explicit card size: a row of face-up cards
+     no longer has to size itself from its content. */
+  html[data-table="world"] body[data-game="29"] #surface > .tk-board > .piece {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    aspect-ratio: 5 / 7;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    justify-self: stretch;
+  }
+  html[data-table="world"] body[data-game="29"] #surface > .tk-board > .piece .card { --card: 100%; width: 100%; }
+  html[data-table="world"] body[data-game="29"] #surface > .tk-middle {
+    grid-row: 3;
+    grid-column: 1;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    padding: 2px 6px;
+    gap: 10px;
+    --pile-card: 46px;
+  }
+  html[data-table="world"] body[data-game="29"] #surface > .tk-middle .last-note { flex-basis: auto; order: 0; }
+  html[data-table="world"] body[data-game="29"] #surface > .card-actions { grid-row: 3; grid-column: 2; min-height: 46px; justify-content: flex-start; }
+  html[data-table="world"] .tk-middle .tk-discard,
+  html[data-table="world"] .tk-middle .deck-pile { display: none; }
+
+  /* 30 Pig's Tail: the 12x5 ring fills the table height; the middle row holds
+     [pile | info] and my penalty strip, side by side and never overlapping. */
+  html[data-table="world"] body[data-game="30"] #surface > .ring-cards.tiles {
+    width: min(100%, calc(var(--play-height) * 2.6));
+    height: var(--play-height);
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: 3px;
+    padding: 2px;
+  }
+  html[data-table="world"] body[data-game="30"] #surface { --pile-card: 34px; }
+  html[data-table="world"] body[data-game="30"] .ring-cards > .ring-center { justify-content: flex-start; gap: 6px; padding-left: 2px; }
+  html[data-table="world"] body[data-game="30"] .ring-cards > .ring-pen-strip { padding: 0 2px; }
+  html[data-table="world"] .ring-pen { padding: 2px 3px; gap: 4px; }
+  html[data-table="world"] .ring-pen-label { display: none; }
+  html[data-table="world"] .ring-pen .illustrated .card { --card: 32px; }
+  html[data-table="world"] .ring-pen .piece { min-width: 44px; min-height: 44px; }
+  html[data-table="world"] .ring-info { align-items: flex-start; gap: 1px; font-size: 12px; line-height: 1.2; text-align: left; }
+  html[data-table="world"] .ring-info b { font-size: 13px; }
+  html[data-table="world"] .ring-info .last-note { padding: 0 6px; font-size: 12px; line-height: 1.3; }
+  /* At the end the ring is empty: the result sits over its top rows. */
+  html[data-table="world"] body[data-game="30"] .desk > #result { bottom: auto; top: 52px; }
+}
+
+.ai-tray[hidden] { display: none !important; }
+
+/* The result plaque floats over the bottom of the table instead of pushing it down, so the
+   final position stays on screen without scrolling in either orientation. */
+html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"], [data-game="27"], [data-game="28"], [data-game="29"], [data-game="30"]) .desk { position: relative; }
+html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"], [data-game="27"], [data-game="28"], [data-game="29"], [data-game="30"]) #result {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 4;
+  width: min(calc(100% - 24px), 440px);
+  margin: 0;
+  translate: -50% 0;
+  padding: 10px 14px;
+  border: 2px solid #d9bb7c;
+  border-radius: 12px;
+  background: linear-gradient(#24584b, #143c33);
+  box-shadow: inset 0 1px #fff3c86b, 0 3px 0 #5d4528, 0 8px 18px #000a;
+  font-weight: 700;
+  animation: ww-card-land 0.32s ease-out;
+}
+/* The status pill (and its red refusal state) stays inside the felt's rounded edge. */
+html[data-table="world"] body:is([data-game="21"], [data-game="24"], [data-game="25"], [data-game="26"], [data-game="27"], [data-game="28"], [data-game="29"], [data-game="30"]) #status { margin-left: 0; }

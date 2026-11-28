@@ -76,7 +76,7 @@ input:focus-visible {
 }
 button:active:not(:disabled) {
   filter: brightness(1.18);
-  transform: translateY(1px);
+  translate: 0 1px;
 }
 button:disabled {
   cursor: default;

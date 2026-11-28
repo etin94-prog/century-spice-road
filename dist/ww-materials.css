@@ -23,14 +23,18 @@ html[data-table="world"] body {
 .checker .light, .shogi .cell { background:linear-gradient(#fff2ca52,#ffe1ae4d),var(--maple) center / 220px; }
 .chess .cell { position:relative; isolation:isolate; }
 .chess .cell[class*="man-"] { color:transparent; text-shadow:none; }
+/* Each figure is centred on its square: the sprite's middle is the square's middle.
+   --man-h sets the figure height by rank so pawns stay smaller than the king. */
 .chess .cell[class*="man-"]::before {
-  content:""; position:absolute; inset:1% 7% 5%; pointer-events:none;
-  background:var(--man) center bottom / contain no-repeat;
-  filter:drop-shadow(1px 2px 1px #271c1677);
+  content:""; position:absolute; pointer-events:none;
+  left:6%; right:6%; top:calc(50% - var(--man-h,80%) / 2); height:var(--man-h,80%);
+  background:var(--man) center / contain no-repeat;
+  filter:drop-shadow(1px 2px 1px #271c1680) drop-shadow(0 0 1px #271c1640);
 }
-.chess .cell.man-p::before { top:20%; }
-.chess .cell.man-r::before { top:13%; }
-.chess .cell.man-n::before, .chess .cell.man-b::before { top:8%; }
+.chess .cell.man-p { --man-h:62%; }
+.chess .cell.man-r { --man-h:70%; }
+.chess .cell.man-n, .chess .cell.man-b { --man-h:76%; }
+.chess .cell.man-q, .chess .cell.man-k { --man-h:84%; }
 .shogi .engraved { position:relative; isolation:isolate; text-shadow:0 1px #fff0bf; }
 .shogi .engraved::before {
   content:""; position:absolute; z-index:-1; inset:5% 10%;
@@ -176,12 +180,16 @@ html[data-table="world"] body {
   linear-gradient(125deg,#ffffff39,transparent 48%,#1823234d); }
 .last-face.shade4 { background-image:conic-gradient(#406e88,#95713e,#a64849,#326f61,#406e88); }
 
-.board-grid:is(.checker,.goban,.shogi,.reversi), .mancala {
-  transform:perspective(920px) rotateX(7deg);
-  transform-origin:center 58%;
+/* Boards lie flat in the page plane so squares, pieces, highlights and hit areas share one
+   coordinate space (no perspective tilt). Depth comes from the bevelled frame, the upper-left
+   light wash below and the pieces' contact shadows. */
+.board-grid:is(.checker,.goban,.shogi,.reversi), .mancala { transform:none; }
+.board-grid:is(.checker,.goban,.shogi,.reversi) { position:relative; isolation:isolate; }
+.board-grid:is(.checker,.goban,.shogi,.reversi)::after {
+  content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
+  background:linear-gradient(135deg,#fff6dc2e 0%,transparent 38%,transparent 62%,#1d0e0626 100%);
 }
-.zoom-frame .board-grid { transform:none; }
-.board-grid button:active:not(:disabled) { filter:brightness(1.12); transform:none; }
+.board-grid button:active:not(:disabled) { filter:brightness(1.12); translate:none; }
 .shogi button.rotated:active:not(:disabled) { transform:rotate(180deg); }
 .dots { background:linear-gradient(#fff8e4ad,#f2e3bab3), var(--paper) center / cover; border-radius:7px; }
 .dots .dot { color:#573e30; text-shadow:0 1px #fff9db; }

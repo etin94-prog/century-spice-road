@@ -1,5 +1,5 @@
 import { miniature, material } from './ww-scenery.js';
-import { range, random } from './ww-core.js';
+import { range, random, games } from './ww-core.js';
 import {
   sport,
   ball,
@@ -15,15 +15,254 @@ import {
 } from './ww-studio.js';
 const red = '#e06c57',
   blue = '#389aa3',
-  cream = '#f4e1ba';
+  cream = '#f4e1ba',
+  gold = '#f3cf7a';
+const calm = matchMedia('(prefers-reduced-motion: reduce)');
+
+// ---------------------------------------------------------------------------------------------
+// Phone kit shared by the arcade tables.
+// - In a tall (portrait) surface ww-fit-arcade.css turns top-down fields a quarter turn so the
+//   player's side sits at the bottom, under the thumb. Touches and arrow keys are mapped back
+//   into table coordinates here, so the rules keep their 600 × 360 field.
+// - Rejected input explains itself through the table's ui.reject.
+// - A tap ring, a finished-game veil and upright labels are drawn over every field.
+// ---------------------------------------------------------------------------------------------
+let liveUi = null;
+// turnable: a top-down field that may turn a quarter turn in portrait.
+// crop: for a side-view field, how much wider than the table it may be drawn in portrait; the
+// empty outer edges are cropped so the action is drawn larger (1 = no crop).
+function arcade(id, rules, setup, turnable = false, crop = 1) {
+  sport(id, rules, (a) => {
+    enhance(a, liveUi, turnable, crop);
+    const game = setup(a);
+    const paint = game.draw;
+    game.draw = (g) => {
+      a.frame();
+      paint(g);
+      a.overlay(g);
+    };
+    return game;
+  });
+  // The studio passes the table's ui only to its own closure; keep it for the kit above.
+  const def = games.get(id),
+    start = def.start;
+  def.start = (ui) => {
+    liveUi = ui;
+    return start(ui);
+  };
+}
+const turnKeys = { ArrowUp: 'ArrowRight', ArrowDown: 'ArrowLeft', ArrowLeft: 'ArrowUp', ArrowRight: 'ArrowDown' };
+// After the end the thumb pad becomes 새 판 시작. The table's own 새 판 path is reused: its dialog
+// starts a new table when it closes with 'restart'. A finished game has nothing to lose, so the
+// confirmation is skipped; without that dialog the 새 판 button is pressed instead.
+function replay() {
+  const dialog = document.querySelector('#dialog');
+  if (dialog && !dialog.open && typeof dialog.onclose === 'function' && dialog.showModal) {
+    dialog.returnValue = '';
+    dialog.showModal();
+    dialog.close('restart');
+  } else document.querySelector('#restart')?.click();
+}
+function enhance(a, ui, turnable, crop) {
+  const canvas = a.canvas,
+    board = canvas.parentElement,
+    pads = canvas.nextElementSibling;
+  board.classList.add('arcade');
+  board.classList.toggle('turnable', turnable);
+  board.classList.toggle('crop', crop > 1);
+  if (crop > 1) board.style.setProperty('--crop', crop);
+  else board.style.removeProperty('--crop');
+  board.classList.remove('has-hud', 'is-over');
+  pads?.classList.add('arcade-pads');
+  let turned = false,
+    tapFx = null,
+    over = null,
+    scale = 1;
+  const isTurned = () => turnable && /^-90/.test(getComputedStyle(canvas).rotate || '');
+  a.holding = false;
+  a.turned = () => turned;
+  a.over = () => over !== null;
+  a.calm = () => calm.matches;
+  // Table units for n CSS pixels on screen (the field is 600 units long in every orientation).
+  a.px = (n) => n / scale;
+  // The part of the 600-unit width that is visible when the field is cropped (boxing in portrait).
+  a.view = () => {
+    if (crop <= 1 || !canvas.clientWidth) return [0, 600];
+    const half = Math.min(300, (300 * board.clientWidth) / canvas.clientWidth);
+    return [300 - half, 300 + half];
+  };
+  a.reject = (message, el) => ui?.reject?.(message, el);
+  a.keys = () => [...(pads?.querySelectorAll('.studio-key') || [])];
+  a.hud = (cls) => {
+    const el = document.createElement('div');
+    el.className = 'arcade-hud ' + cls;
+    if (pads) pads.before(el);
+    else board.append(el);
+    board.classList.add('has-hud');
+    return el;
+  };
+  // Draw something that should read upright on screen (labels, standing figures).
+  a.upright = (g, x, y, paint) => {
+    if (!turned) return paint(x, y);
+    g.save();
+    g.translate(x, y);
+    g.rotate(Math.PI / 2);
+    const drawn = paint(0, 0);
+    g.restore();
+    return drawn;
+  };
+  // A point d table units above (x, y) as seen on screen, in either orientation.
+  a.above = (x, y, d) => (turned ? [x + d, y] : [x, y - d]);
+  // A label on a soft pill, upright in either orientation. It never reads smaller than 13 CSS px,
+  // however small the field is drawn.
+  a.tag = (g, text, x, y, wanted = 18, color = '#fff8dd', back = '#10241ecc') =>
+    a.upright(g, x, y, (px, py) => {
+      const size = Math.max(wanted, a.px(13));
+      g.save();
+      g.font = '700 ' + size + 'px system-ui, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      if (back) {
+        const w = (g.measureText(text)?.width || text.length * size * 0.6) + size * 0.9,
+          h = size * 1.45;
+        g.fillStyle = back;
+        g.beginPath();
+        g.roundRect(px - w / 2, py - h / 2, w, h, h / 2);
+        g.fill();
+      }
+      g.shadowColor = '#0009';
+      g.shadowBlur = 3;
+      g.shadowOffsetY = 1;
+      g.fillStyle = color;
+      g.fillText(text, px, py + 1);
+      g.restore();
+    });
+  // Soft breathing value for invitations; steady when the player asked for less motion.
+  a.pulse = (speed = 4) => (calm.matches ? 0.6 : 0.5 + 0.5 * Math.sin(a.time * speed));
+  const finish = a.finish;
+  a.finish = (message) => {
+    if (ui?.ended) return;
+    over = message;
+    finish(message);
+    // Taps after the end get the table's "game over" reason instead of nothing.
+    canvas.dataset.why = '경기가 끝났어요.';
+    a.keys().forEach((k) => (k.dataset.why = '경기가 끝났어요.'));
+    // The spent pads step aside; the thumb pad now starts the next game.
+    if (pads) {
+      const again = document.createElement('button');
+      again.type = 'button';
+      again.className = 'studio-key replay is-hot';
+      again.textContent = '새 판 시작';
+      again.setAttribute('aria-label', '새 판 시작하기');
+      again.addEventListener('click', replay);
+      pads.append(again);
+      board.classList.add('is-over');
+    }
+    const outcome = /^(나|우리 팀)/.test(message)
+      ? 'win'
+      : /^(상대|상대 팀)/.test(message)
+        ? 'loss'
+        : /무승부/.test(message)
+          ? 'draw'
+          : null;
+    if (outcome && typeof cardAudio !== 'undefined') cardAudio.result(outcome);
+  };
+  a.frame = () => {
+    turned = isTurned();
+    scale = canvas.clientWidth / 600 || 1;
+  };
+  a.overlay = (g) => {
+    if (tapFx) {
+      const k = (a.time - tapFx.t) / 0.4;
+      if (k >= 1 || k < 0) tapFx = null;
+      else {
+        g.save();
+        g.globalAlpha = 1 - k;
+        circle(g, tapFx.x, tapFx.y, calm.matches ? 16 : 10 + 22 * k, '#fff6dc', true);
+        g.restore();
+      }
+    }
+    if (over) {
+      g.save();
+      g.fillStyle = '#0d1d18a6';
+      g.fillRect(0, 0, 600, 360);
+      g.restore();
+      a.tag(g, '경기 종료', ...a.above(300, 180, 30), 30, gold, null);
+      a.tag(g, over, ...a.above(300, 180, -22), 20, '#fff8dd', '#173a31e6');
+    }
+  };
+  // Map touches on the quarter-turned field back into table coordinates. The studio
+  // attaches its handlers right after setup, so wrap them on the next microtask.
+  queueMicrotask(() => {
+    const remap = (e) => {
+      if (!isTurned() || typeof e.clientX !== 'number') return e;
+      const r = canvas.getBoundingClientRect(),
+        across = (r.bottom - e.clientY) / r.height,
+        down = (e.clientX - r.left) / r.width;
+      return {
+        clientX: r.left + across * r.width,
+        clientY: r.top + down * r.height,
+        pointerId: e.pointerId,
+        isPrimary: e.isPrimary,
+      };
+    };
+    for (const k of ['onpointerdown', 'onpointermove', 'onpointerup']) {
+      const handler = canvas[k];
+      if (typeof handler !== 'function') continue;
+      canvas[k] = (e) => {
+        const result = handler(remap(e));
+        if (k === 'onpointerdown' && !ui?.ended && e.isPrimary !== false) {
+          a.holding = true;
+          tapFx = { x: a.aim.x, y: a.aim.y, t: a.time };
+        }
+        if (k === 'onpointerup') a.holding = false;
+        return result;
+      };
+    }
+    canvas.addEventListener('pointercancel', () => (a.holding = false));
+    canvas.addEventListener('lostpointercapture', () => (a.holding = false));
+    const keys = canvas.onkeydown;
+    if (typeof keys === 'function')
+      canvas.onkeydown = (e) =>
+        isTurned() && turnKeys[e.key]
+          ? keys({ key: turnKeys[e.key], preventDefault: () => e.preventDefault() })
+          : keys(e);
+  });
+  return a;
+}
+// Fading copies of a moving ball make its direction readable at a glance.
+function trail(g, points, r, color) {
+  points.forEach((p, i) => {
+    g.save();
+    g.globalAlpha = ((i + 1) / (points.length + 1)) * 0.35;
+    circle(g, p.x, p.y, r * (0.55 + (0.45 * i) / points.length), color);
+    g.restore();
+  });
+}
+function remember(points, b, n = 6) {
+  points.push({ x: b.x, y: b.y });
+  if (points.length > n) points.shift();
+}
+function glowRing(g, x, y, r, color = gold, width = 3) {
+  g.save();
+  g.shadowColor = color;
+  g.shadowBlur = 8;
+  g.lineWidth = width;
+  g.strokeStyle = color;
+  g.beginPath();
+  g.arc(x, y, r, 0, Math.PI * 2);
+  g.stroke();
+  g.restore();
+}
+
 for (const id of [36, 37, 41])
-  sport(
+  arcade(
     id,
     id === 36
-      ? '코트 왼쪽을 터치하거나 끌어서 라켓을 움직이세요. 공을 받아 상대 라켓 너머로 보내세요. 7점 이상에서 두 점 앞서면 타이브레이크 승리입니다.'
+      ? '내 코트(세로 화면은 아래쪽, 가로 화면은 왼쪽)를 터치하거나 끌어서 라켓을 움직이세요. 공을 받아 상대 라켓 너머로 보내세요. 7점 이상에서 두 점 앞서면 타이브레이크 승리입니다.'
       : id === 37
-        ? '터치한 높이로 내 선수 줄을 옮기세요. 공을 밀어 상대 골대에 5골을 먼저 넣으면 승리합니다.'
-        : '왼쪽 절반에서 손가락으로 말렛을 움직여 퍽을 칩니다. 상대 골대에 5골을 먼저 넣으세요.',
+        ? '화면을 터치하거나 끌어 내 선수 줄을 옮기세요(세로 화면은 아래쪽, 가로 화면은 왼쪽 팀). 공을 밀어 상대 골대에 5골을 먼저 넣으면 승리합니다.'
+        : '내 쪽 절반(세로 화면은 아래, 가로 화면은 왼쪽)에서 손가락으로 말렛을 움직여 퍽을 칩니다. 상대 골대에 5골을 먼저 넣으세요.',
     (a) => {
       const hockey = id === 41,
         football = id === 37,
@@ -32,28 +271,39 @@ for (const id of [36, 37, 41])
       const me = { x: 65, y: 180 },
         ai = { x: 535, y: 180 };
       let started = false,
-        pause = 0;
+        pause = 0,
+        flash = null;
+      const path = [],
+        hint = hockey ? '끌어서 말렛 이동' : football ? '끌어서 선수 줄 이동' : '끌어서 라켓 이동';
       a.aim = { ...me };
       a.status('터치해서 시작하세요');
       function info() {
-        a.score('나 ' + score[0] + '　·　상대 ' + score[1]);
+        a.score('나 ' + score[0] + ' · 상대 ' + score[1]);
       }
       function serve(side) {
         Object.assign(b, { x: 300, y: 180, vx: side * 205, vy: random(140) - 70 });
         pause = 0.55;
+        path.length = 0;
         info();
       }
       function start() {
         if (!started) {
           started = true;
           serve(-1);
-          a.status('화면을 눌러 위치를 바꾸세요');
+          a.status(hint);
+          key.textContent = '경기 중';
+          key.classList.add('is-idle');
+          key.classList.remove('is-hot');
         }
       }
-      a.button('서브 · 시작', start);
+      const key = a.button('서브 · 시작', () =>
+        started ? a.reject('경기 중 · ' + hint, key) : start(),
+      );
+      key.classList.add('is-hot');
       info();
       function goal(p) {
         score[p]++;
+        flash = { p, t: a.time };
         info();
         if (score[p] >= (id === 36 ? 7 : 5) && (id !== 36 || score[p] - score[1 - p] >= 2)) {
           a.finish((p ? '상대' : '나') + ' 승리 · ' + score.join(' : '));
@@ -86,6 +336,7 @@ for (const id of [36, 37, 41])
             return;
           }
           advance(b, dt);
+          remember(path, b);
           if (b.y < b.r || b.y > 360 - b.r) {
             b.y = clamp(b.y, b.r, 360 - b.r);
             b.vy *= -1;
@@ -139,36 +390,86 @@ for (const id of [36, 37, 41])
             g.strokeRect(95, 53, 410, 254);
             line(g, 95, 180, 505, 180, '#e7e4c9aa');
             for (let y = 45; y <= 315; y += 6) line(g, 295, y, 303, y, '#d7dacbcc', 1);
-            for (const x of [295,299,303]) line(g, x, 45, x, 315, '#e3dfcb', 1);
-            for (const y of [42,318]) disc(g, ball(299, y, 5, '#785739'));
+            for (const x of [295, 299, 303]) line(g, x, 45, x, 315, '#e3dfcb', 1);
+            for (const y of [42, 318]) disc(g, ball(299, y, 5, '#785739'));
           }
-          if (football) {
-            for (const x of [105, 260, 340, 495]) {
-              line(g, x + 2, 0, x + 2, 360, '#13292155', 5);
-              line(g, x, 0, x, 360, '#74807b', 3);
-              line(g, x - 1, 0, x - 1, 360, '#ddd9c3', 1);
-            }
+          // Big faint score on each half: readable without looking up at the status rail.
+          g.save();
+          g.globalAlpha = hockey ? 0.22 : 0.3;
+          a.tag(g, String(score[0]), 200, 180, 54, hockey ? '#24485a' : '#fff8dd', null);
+          a.tag(g, String(score[1]), 400, 180, 54, hockey ? '#24485a' : '#fff8dd', null);
+          g.restore();
+          // Before the serve: show which half is mine and invite the first touch.
+          if (!started) {
+            g.save();
+            g.globalAlpha = 0.16 + 0.12 * a.pulse(3);
+            g.fillStyle = '#ffe7a3';
+            g.fillRect(12, 12, 286, 336);
+            g.restore();
+            a.tag(g, '내 쪽 · 터치해서 시작', a.turned() ? 190 : 175, a.turned() ? 180 : 318, 19, '#fff8dd', '#173a31e0');
+          }
+          // Where my finger is steering: a guide across my half.
+          if (started && a.holding && !a.over()) {
+            g.save();
+            g.setLineDash([6, 6]);
+            if (hockey) circle(g, clamp(a.aim.x, 18, 290), clamp(a.aim.y, 15, 345), 24, '#1d4f63aa', true);
+            else line(g, 14, clamp(a.aim.y, 15, 345), 296, clamp(a.aim.y, 15, 345), '#fff3c477', 2);
+            g.restore();
+          }
+          // Goal flash: the scoring side lights up briefly.
+          // (Not on the final frame: the result veil reads alone.)
+          if (flash && a.time - flash.t < 0.9 && !a.over()) {
+            const k = 1 - (a.time - flash.t) / 0.9;
+            g.save();
+            g.globalAlpha = 0.35 * k;
+            g.fillStyle = flash.p ? '#d9553f' : '#ffd76a';
+            g.fillRect(flash.p ? 0 : 300, 0, 300, 360);
+            g.restore();
+            a.tag(g, flash.p ? '실점' : '득점!', flash.p ? 150 : 450, 180, 26, '#fff8dd', flash.p ? '#8e2f22e0' : '#7a5a18e0');
           }
           for (const p of [0, 1])
             for (const o of players(p)) {
+              if (!p) {
+                g.save();
+                g.globalAlpha = 0.55;
+                if (id === 36) {
+                  g.fillStyle = '#ffd76a55';
+                  g.beginPath();
+                  g.ellipse(o.x, o.y, 15, 38, 0, 0, Math.PI * 2);
+                  g.fill();
+                } else glowRing(g, o.x, o.y, hockey ? 23 : 18, gold, 2);
+                g.restore();
+              }
               if (id === 36) {
                 if (miniature(g, p ? 'red-paddle' : 'jade-paddle', o.x, o.y, 27, 64)) continue;
                 g.fillStyle = p ? red : cream;
                 g.beginPath();
                 g.roundRect(o.x - 5, o.y - 32, 10, 64, 5);
                 g.fill();
-              } else if (!miniature(g, hockey ? (p ? 'red-mallet' : 'teal-mallet') :
-                (p ? 'red-player' : 'blue-player'), o.x, o.y, hockey ? 40 : 32, hockey ? 40 : 44)) {
+              } else if (
+                !a.upright(g, o.x, o.y, (x, y) =>
+                  miniature(
+                    g,
+                    hockey ? (p ? 'red-mallet' : 'teal-mallet') : p ? 'red-player' : 'blue-player',
+                    x,
+                    y,
+                    hockey ? 40 : 32,
+                    hockey ? 40 : 44,
+                  ),
+                )
+              ) {
                 disc(g, ball(o.x, o.y, hockey ? 20 : 14, p ? red : blue));
                 circle(g, o.x, o.y, hockey ? 9 : 5, p ? '#784b45' : '#246372');
               }
             }
+          if (pause <= 0) trail(g, path, b.r, hockey ? '#223b49' : '#fff6dc');
           if (!football || !miniature(g, 'football', b.x, b.y, b.r * 2, b.r * 2)) disc(g, b);
         },
       };
     },
+    true,
   );
-sport(
+arcade(
   39,
   '하이·로우 펀치를 알맞은 타이밍에 누르세요. 같은 높이의 가드는 펀치를 막습니다. 상대가 공격을 준비하는 자세를 보고 가드를 바꾸세요. 체력이 먼저 바닥나면 KO입니다.',
   (a) => {
@@ -184,8 +485,36 @@ sport(
       aiSwing = 0,
       last = -1,
       done = false;
-    const info = () =>
+    const hud = a.hud('fight');
+    hud.innerHTML =
+      '<div class="hp me"><span>나</span><b><i></i></b><em></em></div>' +
+      '<p class="call" aria-live="off"></p>' +
+      '<div class="hp them"><span>상대</span><b><i></i></b><em></em></div>';
+    const [mine, call, theirs] = hud.children;
+    function sync() {
+      for (const [el, v] of [
+        [mine, hp[0]],
+        [theirs, hp[1]],
+      ]) {
+        const n = Math.max(0, v);
+        el.style.setProperty('--hp', n / 12);
+        el.classList.toggle('low', n <= 4);
+        el.querySelector('em').textContent = n + ' HP';
+      }
+      const text = done
+        ? '경기 종료'
+        : strike
+        ? '상대 ' + gloves[tell] + ' 펀치! ' + (guard === tell ? '가드 OK' : '가드 바꾸기')
+        : '내 가드 · ' + gloves[guard];
+      if (call.textContent !== text) call.textContent = text;
+      call.classList.toggle('hot', !done && !!strike && guard !== tell);
+      call.classList.toggle('safe', !done && !!strike && guard === tell);
+      if (guardKey) guardKey.textContent = '가드 · ' + gloves[guard];
+    }
+    const info = () => {
       a.score('나 ' + Math.max(0, hp[0]) + ' HP · 상대 ' + Math.max(0, hp[1]) + ' HP');
+      sync();
+    };
     function start() {
       if (!begun) {
         begun = true;
@@ -194,9 +523,13 @@ sport(
     }
     function punch(n) {
       start();
-      if (a.time - last < 0.43) return;
+      if (a.time - last < 0.43) {
+        a.reject('숨 고르는 중 · 잠깐 뒤에 치세요', a.keys()[n]);
+        return;
+      }
       last = a.time;
       mySwing = a.time + 0.25;
+      cool(a.keys()[n]);
       if (n !== aiGuard) {
         hp[1] -= 2;
         a.status(gloves[n] + ' 적중');
@@ -205,15 +538,26 @@ sport(
       info();
       if (hp[1] <= 0) {
         done = true;
+        sync();
         a.finish('나 · KO 승리');
       }
     }
+    function cool(el) {
+      if (!el) return;
+      el.classList.remove('cooling');
+      void el.offsetWidth;
+      el.classList.add('cooling');
+      setTimeout(() => el.classList.remove('cooling'), 430);
+    }
     for (const [n, name] of gloves.entries()) a.button(name + ' 펀치', () => punch(n));
-    a.button('가드 높이 전환', () => {
+    const guardKey = a.button('가드 높이 전환', () => {
       start();
       guard = 1 - guard;
       a.status(gloves[guard] + ' 가드');
+      sync();
     });
+    guardKey.setAttribute('aria-label', '가드 높이 전환');
+    guardKey.classList.add('guard');
     info();
     a.status('펀치를 눌러 시작하세요');
     return {
@@ -223,6 +567,7 @@ sport(
           tell = random(2);
           strike = a.time + 0.65;
           a.status('상대 ' + gloves[tell] + ' 펀치 준비');
+          sync();
         }
         if (strike && a.time >= strike) {
           aiSwing = a.time + 0.27;
@@ -234,8 +579,10 @@ sport(
           strike = 0;
           ready = a.time + 0.55 + Math.random() * 0.55;
           aiGuard = random(2);
+          sync();
           if (hp[0] <= 0) {
             done = true;
+            sync();
             a.finish('상대 · KO 승리');
           }
         }
@@ -245,7 +592,7 @@ sport(
         g.fillStyle = '#798aa2';
         g.fillRect(25, 155, 550, 150);
         material(g, 'boxing-ring', 1);
-        for (const x of [25,575]) {
+        for (const x of [25, 575]) {
           line(g, x, 109, x, 291, '#926d48', 12);
           line(g, x - 2, 110, x - 2, 290, '#e6c294', 3);
         }
@@ -258,6 +605,13 @@ sport(
             reach = (p ? aiSwing : mySwing) > a.time ? 76 : 0,
             high = p ? (strike ? tell : aiGuard) : guard;
           const lunging = reach > 0;
+          // A soft contact shadow under each boxer, light from the upper left.
+          g.save();
+          g.fillStyle = '#10182466';
+          g.beginPath();
+          g.ellipse(x + 8, y + 60, 46, 9, 0, 0, Math.PI * 2);
+          g.fill();
+          g.restore();
           const drawn = miniature(g, p ? 'red-boxer' : 'teal-boxer',
             x + s * (lunging ? 18 : 0), y - (high ? 12 : 8), 102, high ? 139 : 127);
           if (drawn) {
@@ -275,12 +629,38 @@ sport(
           disc(g, ball(x + s * (30 + reach), y - (high ? 5 : 35), 18, c));
           disc(g, ball(x - s * 18, y - 28, 15, c));
         }
-        if (strike) label(g, gloves[tell], 375, 105, 18);
+        if (done) return;
+        // Labels stay inside the visible part of the ring when portrait crops its edges.
+        const [x0, x1] = a.view();
+        // My guard height, at the height it covers.
+        a.tag(g, (guard ? '▼ ' : '▲ ') + '가드 ' + gloves[guard], Math.max(120, x0 + 62), guard ? 250 : 180, 17,
+          '#e9fbff', '#1d5560dd');
+        if (strike) {
+          // The incoming punch with a countdown ring: how long until it lands.
+          const left = clamp((strike - a.time) / 0.65, 0, 1),
+            safe = guard === tell,
+            rx = Math.min(470, x1 - 34);
+          g.save();
+          g.lineWidth = 5;
+          g.strokeStyle = '#00000055';
+          g.beginPath();
+          g.arc(rx, tell ? 250 : 180, 24, 0, Math.PI * 2);
+          g.stroke();
+          g.strokeStyle = safe ? '#8fe0b0' : '#ff8a6b';
+          g.beginPath();
+          g.arc(rx, tell ? 250 : 180, 24, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left);
+          g.stroke();
+          g.restore();
+          a.tag(g, gloves[tell] + '!', rx, tell ? 250 : 180, 15, '#fff8dd', null);
+          a.tag(g, '상대 ' + gloves[tell] + ' 펀치', Math.min(375, x1 - 80), 100, 18, '#fff8dd', safe ? '#1f6047e6' : '#8e2f22e6');
+        }
       },
     };
   },
+  false,
+  1.5,
 );
-sport(
+arcade(
   40,
   '3이닝 동안 공격과 수비를 번갈아 합니다. 공격에서는 공이 타석의 띠에 닿을 때 스윙하세요. 수비에서는 완급을 골라 던집니다. 3스트라이크는 아웃이고 3아웃이면 공수가 교대됩니다.',
   (a) => {
@@ -292,9 +672,43 @@ sport(
       bases = [0, 0, 0],
       speed = 1,
       note = '투구를 불러 타석에 서세요',
-      cpuSwing = 1;
+      cpuSwing = 1,
+      shout = null;
     const runs = [0, 0],
-      target = 465;
+      target = 465,
+      path = [];
+    const hud = a.hud('scoreboard');
+    hud.innerHTML =
+      '<p class="inning"><b></b><span></span></p>' +
+      '<p class="runs"><span>나</span><b></b><span>상대</span></p>' +
+      '<p class="count"><span>S</span><i></i><i></i><span>O</span><i></i><i></i></p>' +
+      '<p class="diamond" aria-hidden="true"><i></i><i></i><i></i></p>';
+    const [inningEl, runsEl, countEl, diamond] = hud.children;
+    const why = {
+      slow: '느린 공은 투구 차례에만 던져요',
+      swing: '지금은 투구 차례 · 직구나 느린 공',
+    };
+    function sync() {
+      inningEl.querySelector('b').textContent = inning + '회' + (batting ? '말' : '초');
+      inningEl.querySelector('span').textContent = batting ? '수비 · 투구' : '공격 · 타격';
+      runsEl.querySelector('b').textContent = runs[0] + ' : ' + runs[1];
+      const dots = countEl.querySelectorAll('i');
+      dots.forEach((d, i) => d.classList.toggle('on', i < 2 ? i < strikes : i - 2 < outs));
+      diamond.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', !!bases[i]));
+      const [pitchKey, slowKey, swingKey] = a.keys();
+      if (!pitchKey) return;
+      pitchKey.textContent = batting ? '직구' : '투구 요청';
+      for (const [key, off, reason] of [
+        [slowKey, !batting, why.slow],
+        [swingKey, !!batting, why.swing],
+      ]) {
+        if (a.ended) break;
+        key.disabled = off;
+        if (off) key.dataset.why = reason;
+        else delete key.dataset.why;
+      }
+      swingKey.classList.toggle('is-hot', !batting && pitch >= 0);
+    }
     function info() {
       a.score(
         inning +
@@ -311,10 +725,12 @@ sport(
           '스트라이크',
       );
       a.status(note);
+      sync();
     }
     function start(fast = false) {
       if (pitch >= 0) return;
       pitch = 0;
+      path.length = 0;
       speed = batting ? (fast ? 1.45 : 0.78) : 0.75 + Math.random() * 0.55;
       cpuSwing = (target - 85) / 355 + (Math.random() - 0.5) * (fast ? 0.58 : 0.45);
       note = batting ? '상대 타석' : '공을 보고 스윙하세요';
@@ -347,6 +763,7 @@ sport(
           else bases[i + steps - 1] = 1;
         });
       }
+      shout = { text: note, good: (note === '홈런' || note === '2루타' || note === '안타') !== !!batting, t: a.time };
       if (outs === 3) {
         if (batting && inning === 3) {
           info();
@@ -365,18 +782,30 @@ sport(
       }
       info();
     }
-    a.button('투구 / 직구', () => start(true));
+    const flying = () => a.reject('공이 날아가는 중 · 끝나면 다시');
+    const pitchKey = a.button('투구 / 직구', () => (pitch >= 0 ? flying() : start(true)));
     a.button('느린 공', () => {
-      if (batting) start(false);
+      if (!batting) a.reject(why.slow);
+      else if (pitch >= 0) flying();
+      else start(false);
     });
     a.button('스윙', () => {
       if (!batting) swing();
+      else a.reject(why.swing);
     });
+    pitchKey.classList.add('primary-key');
+    a.ended = false;
+    const finish = a.finish;
+    a.finish = (m) => {
+      a.ended = true;
+      finish(m);
+    };
     info();
     return {
       tap: () => {
         if (batting) {
           if (pitch < 0) start();
+          else a.reject('상대가 치는 중 · 끝나면 다음 공');
         } else swing();
       },
       step(dt) {
@@ -384,6 +813,7 @@ sport(
           pitch += dt * speed;
           if ((batting && pitch >= cpuSwing) || pitch > 1.48) swing();
         }
+        sync();
       },
       draw(g) {
         surface(g, '#326b55', '#1e453c');
@@ -398,41 +828,65 @@ sport(
           g.fillRect(12, 12, 101, 101);
           g.restore();
         }
-        const markers = park ? [[404,210],[298,145],[187,210]] : [[389,162],[300,73],[211,162]];
-        markers.forEach(([x,y], i) => {
+        const markers = park ? [[404, 210], [298, 145], [187, 210]] : [[389, 162], [300, 73], [211, 162]];
+        markers.forEach(([x, y], i) => {
+          if (bases[i]) glowRing(g, x, y, 12, gold, 2);
           if (bases[i] || !park) disc(g, ball(x, y, 8, bases[i] ? red : cream));
         });
         g.fillStyle = '#172719ab';
         g.fillRect(63, 259, 482, 62);
         miniature(g, 'bat', target, 327, 73, 18);
         line(g, 75, 290, 535, 290, '#d2dfcaaa', 2);
-        g.fillStyle = '#e5ce8466';
+        // The hitting band glows as the ball reaches it; the centre line is the perfect swing.
+        const x = 85 + pitch * 355,
+          near = pitch >= 0 ? clamp(1 - Math.abs(x - target) / 120, 0, 1) : 0;
+        g.fillStyle = '#e5ce84' + (near > 0.05 ? 'aa' : '66');
         g.fillRect(target - 18, 265, 36, 50);
+        if (near > 0) glowRing(g, target, 290, 26 + 6 * near, '#ffe08a', 2 + 2 * near);
+        line(g, target, 263, target, 317, '#fff6d8', 2);
         if (pitch >= 0) {
-          const x = 85 + pitch * 355, y = 290 - 20 * Math.sin(pitch * Math.PI);
+          const y = 290 - 20 * Math.sin(pitch * Math.PI);
+          remember(path, { x, y }, 5);
+          trail(g, path, 8, '#fff6dc');
           if (!miniature(g, 'baseball', x, y, 18, 18)) disc(g, ball(x, y, 9, cream));
         }
+        if (shout && a.time - shout.t < 1.1 && !a.over())
+          a.tag(g, shout.text, 300, 92, 24, '#fff8dd', shout.good ? '#7a5a18e6' : '#3b4752e6');
       },
     };
   },
+  false,
+  1.2,
 );
-sport(
+arcade(
   42,
-  '가속 버튼을 눌러 속도를 올리고 다시 눌러 감속합니다. 커브에서 너무 빠르면 미끄러져 시간을 잃습니다. 세 바퀴를 먼저 완주하세요.',
+  '가속 버튼(또는 화면)을 눌러 속도를 올리고 다시 눌러 감속합니다. 주황색 커브 구간에서 속도계가 빨간 칸에 있으면 미끄러져 시간을 잃습니다. 세 바퀴를 먼저 완주하세요.',
   (a) => {
     let go = false,
       fast = false,
       s = 0,
       cpu = 0,
       v = 0.03,
-      skid = 0;
+      skid = 0,
+      recover = false;
     function toggle() {
       fast = !fast;
       go = true;
+      recover = false;
       a.status(fast ? '가속 중 · 커브 전에 감속' : '감속 중');
+      sync();
     }
-    a.button('가속 / 감속', toggle);
+    const key = a.button('가속 / 감속', toggle);
+    key.classList.add('is-hot');
+    function sync() {
+      key.textContent = fast ? '감속하기' : '가속하기';
+      key.setAttribute('aria-pressed', String(fast));
+      // Glows before the start and after a skid, until the throttle is pressed again.
+      key.classList.toggle('is-hot', !go || (recover && !fast));
+    }
+    sync();
     a.status('가속을 눌러 출발');
+    const curveArc = Math.acos(0.84);
     return {
       tap: toggle,
       step(dt) {
@@ -446,7 +900,9 @@ sport(
           if (curve && v > 0.156) {
             skid = 0.55;
             fast = false;
+            recover = true;
             a.status('미끄러짐 · 다시 가속하세요');
+            sync();
           }
         }
         s += v * dt;
@@ -462,8 +918,8 @@ sport(
       },
       draw(g) {
         surface(g, '#62876c', '#3b614e');
-        miniature(g, 'pines', 80, 49, 80, 66);
-        miniature(g, 'rocks', 480, 316, 82, 52);
+        a.upright(g, 80, 49, (x, y) => miniature(g, 'pines', x, y, 80, 66));
+        a.upright(g, 480, 316, (x, y) => miniature(g, 'rocks', x, y, 82, 52));
         for (const r of [0, 1]) {
           g.beginPath();
           g.ellipse(300, 180, 225 + r * 18, 100 + r * 15, 0, 0, 2 * Math.PI);
@@ -474,19 +930,33 @@ sport(
           g.strokeStyle = '#a39f8e';
           g.stroke();
         }
-        for (let j = 0; j < 32; j++) {
-          const start = j * Math.PI / 16;
+        // Curve zones on my lane: too fast here means a skid.
+        for (const mid of [0, Math.PI]) {
           g.beginPath();
-          g.ellipse(300,180,256,127,0,start,start+Math.PI/16);
-          g.lineWidth = 5; g.strokeStyle = j % 2 ? '#ad503c' : '#ead5b1'; g.stroke();
+          g.ellipse(300, 180, 225, 100, 0, mid - curveArc, mid + curveArc);
+          g.lineWidth = 15;
+          g.strokeStyle = fast && v > 0.13 ? '#e0603c88' : '#f0a43a66';
+          g.stroke();
         }
+        for (let j = 0; j < 32; j++) {
+          const start = (j * Math.PI) / 16;
+          g.beginPath();
+          g.ellipse(300, 180, 256, 127, 0, start, start + Math.PI / 16);
+          g.lineWidth = 5;
+          g.strokeStyle = j % 2 ? '#ad503c' : '#ead5b1';
+          g.stroke();
+        }
+        a.tag(g, '커브', 300 + 190, 180, 14, '#fff1d6', '#8a4a1fd0');
+        a.tag(g, '커브', 300 - 190, 180, 14, '#fff1d6', '#8a4a1fd0');
         [s, cpu].forEach((n, i) => {
-          const angle = n * Math.PI * 2;
+          const angle = n * Math.PI * 2,
+            cx = 300 + (225 + i * 18) * Math.cos(angle),
+            cy = 180 + (100 + i * 15) * Math.sin(angle);
+          if (!i) {
+            glowRing(g, cx, cy, 19, skid > 0 ? '#ff6b4a' : gold, skid > 0 ? 4 : 2);
+          }
           g.save();
-          g.translate(
-            300 + (225 + i * 18) * Math.cos(angle),
-            180 + (100 + i * 15) * Math.sin(angle),
-          );
+          g.translate(cx, cy);
           g.rotate(Math.atan2(100 * Math.cos(angle), -225 * Math.sin(angle)));
           if (!miniature(g, i ? 'red-car' : 'cream-car', 0, 0, 33, 21)) {
             g.fillStyle = i ? red : cream;
@@ -496,12 +966,37 @@ sport(
           }
           g.restore();
         });
-        label(g, '3 LAPS', 300, 188, 25);
+        // Speed gauge in the infield: the red end is too fast for a curve.
+        a.upright(g, 300, 180, (x, y) => {
+          const w = 150,
+            left = x - w / 2,
+            k = clamp((v - 0.052) / (0.2 - 0.052), 0, 1),
+            limit = (0.156 - 0.052) / (0.2 - 0.052);
+          g.save();
+          g.fillStyle = '#10241ecc';
+          g.beginPath();
+          g.roundRect(left - 12, y - 38, w + 24, 76, 14);
+          g.fill();
+          g.fillStyle = '#3b4a44';
+          g.fillRect(left, y + 4, w, 12);
+          g.fillStyle = '#c94a32';
+          g.fillRect(left + w * limit, y + 4, w * (1 - limit), 12);
+          g.fillStyle = k > limit ? '#ff8a6b' : '#8fe0b0';
+          g.fillRect(left, y + 6, w * k, 8);
+          g.fillStyle = '#fff8dd';
+          g.fillRect(left + w * k - 2, y, 4, 20);
+          g.font = '700 ' + Math.max(16, a.px(13)) + 'px system-ui, sans-serif';
+          g.textAlign = 'center';
+          g.textBaseline = 'middle';
+          g.fillText(Math.min(3, Math.floor(s) + 1) + ' / 3 LAPS', x, y - 18);
+          g.restore();
+        });
       },
     };
   },
+  true,
 );
-sport(
+arcade(
   43,
   '수면을 터치해 찌를 던지세요. 물고기가 다가와 찌가 잠기면 챔질하세요. 여덟 번의 캐스팅 동안 잡은 물고기의 무게를 합산합니다.',
   (a) => {
@@ -510,7 +1005,9 @@ sport(
       weight = 0,
       at = { x: 320, y: 180 },
       bite = 0,
-      note = '수면을 터치해 던지세요';
+      note = '수면을 터치해 던지세요',
+      catchFx = null,
+      late = false;
     function cast(pt) {
       if (phase === 'idle') {
         at = pt;
@@ -522,14 +1019,29 @@ sport(
         const ok = phase === 'bite';
         const fish = ok ? 300 + random(1700) : 0;
         weight += fish;
-        note = ok ? fish + 'g 낚았습니다' : '물고기가 달아났습니다';
+        // A miss says whether the strike came too early or too late.
+        note = ok
+          ? fish + 'g 낚았습니다'
+          : late
+            ? '늦었어요 · 잠기면 바로 챔질'
+            : '너무 일찍 · 찌가 잠기면 챔질';
+        catchFx = { ...at, text: ok ? '+' + fish + 'g' : late ? '놓침' : '너무 일찍!', ok, t: a.time };
         phase = 'idle';
+        late = false;
         if (count === 8) a.finish('낚시 종료 · 총 ' + (weight / 1000).toFixed(2) + 'kg');
       }
       a.status(note);
       a.score(count + ' / 8회　' + (weight / 1000).toFixed(2) + 'kg');
+      sync();
     }
-    a.button('던지기 / 챔질', () => cast(a.aim));
+    const key = a.button('던지기 / 챔질', () => cast(a.aim));
+    function sync() {
+      key.textContent = phase === 'idle' ? '던지기' : phase === 'bite' ? '지금 챔질!' : '기다리는 중…';
+      key.classList.toggle('is-hot', phase === 'bite');
+      // Still pressable while waiting (an early strike is a rule), but it does not invite it.
+      key.classList.toggle('is-idle', phase === 'wait');
+    }
+    sync();
     a.status(note);
     return {
       tap: cast,
@@ -537,9 +1049,11 @@ sport(
         if (phase === 'wait' && a.time >= bite) {
           phase = 'bite';
           a.status('지금 챔질!');
+          sync();
         }
         if (phase === 'bite' && a.time > bite + 0.92) {
           phase = 'wait';
+          late = true;
           cast(at);
         }
       },
@@ -552,45 +1066,68 @@ sport(
           line(g, x, y, x + 20, y, '#c3e7d32e');
         }
         if (phase !== 'idle') {
+          const biting = phase === 'bite';
           for (let i = 0; i < 3; i++) {
             g.beginPath();
             g.ellipse(
               at.x,
               at.y,
-              9 + i * 10 + Math.sin(a.time * 4) * 2,
-              4 + i * 4,
-              0,
+              (biting ? 14 + i * 14 : 9 + i * 10) + (calm.matches ? 0 : Math.sin(a.time * (biting ? 12 : 4)) * 2),
+              (biting ? 6 + i * 6 : 4 + i * 4),
+              // Ripples lie flat on screen in either orientation.
+              a.turned() ? Math.PI / 2 : 0,
               0,
               2 * Math.PI,
             );
-            g.strokeStyle = '#cae8d966';
+            g.lineWidth = biting ? 3 : 1;
+            g.strokeStyle = biting ? '#fff6dccc' : '#cae8d966';
             g.stroke();
           }
           if (phase === 'wait') {
-            line(g, at.x, at.y, at.x, at.y - 18, cream, 4);
-            if (!miniature(g, 'float', at.x, at.y - 8, 17, 26)) circle(g, at.x, at.y - 17, 4, red);
-          }
+            // A ring about 26 px across on screen keeps the small float easy to watch.
+            g.save();
+            g.globalAlpha = 0.45 + 0.25 * a.pulse(2.5);
+            g.setLineDash([5, 4]);
+            circle(g, ...a.above(at.x, at.y, 6), Math.max(16, a.px(13)), '#fff6dc', true);
+            g.restore();
+            // The float stands upright on screen in either orientation.
+            line(g, at.x, at.y, ...a.above(at.x, at.y, 18), cream, 4);
+            if (!a.upright(g, ...a.above(at.x, at.y, 8), (x, y) => miniature(g, 'float', x, y, 17, 26)))
+              circle(g, ...a.above(at.x, at.y, 17), 4, red);
+          } else a.tag(g, '챔질!', ...a.above(at.x, at.y, 34), 20, '#fff8dd', '#b0412be6');
         } else {
           g.fillStyle = '#36545c88';
           for (const i of [1, 2, 3]) {
             g.beginPath();
-            const x = (i * 115 + a.time * 12) % 580, y = 70 + i * 60;
+            const x = (i * 115 + a.time * 12) % 580,
+              y = 70 + i * 60;
             if (miniature(g, 'trout', x, y, 52, 24)) continue;
             g.ellipse(x, y, 19, 6, -0.3, 0, Math.PI * 2);
             g.fill();
           }
+          // Where the 던지기 button will cast: the last touched spot.
+          g.save();
+          g.globalAlpha = 0.5 + 0.3 * a.pulse(3);
+          circle(g, a.aim.x, a.aim.y, 14, '#fff6dc', true);
+          line(g, a.aim.x - 20, a.aim.y, a.aim.x - 8, a.aim.y, '#fff6dc', 2);
+          line(g, a.aim.x + 8, a.aim.y, a.aim.x + 20, a.aim.y, '#fff6dc', 2);
+          g.restore();
         }
+        if (catchFx && a.time - catchFx.t < 1.2 && !a.over())
+          a.tag(g, catchFx.text, ...a.above(catchFx.x, catchFx.y, 30 + 20 * (calm.matches ? 0 : a.time - catchFx.t)), 20,
+            '#fff8dd', catchFx.ok ? '#7a5a18e6' : '#3b4752e6');
       },
     };
   },
+  true,
 );
 for (const [id, team] of [
   [44, false],
   [45, true],
 ])
-  sport(
+  arcade(
     id,
-    '미니어처 전차를 움직여 상대 팀에 페인트를 맞히세요. 빈 곳을 누르면 이동하고 상대 말을 누르면 그쪽으로 발사합니다. 먼저 ' +
+    '미니어처 전차를 움직여 상대 팀에 페인트를 맞히세요. 빈 곳을 누르면 이동하고 상대 말(빨간 점선 원 안)을 누르면 그쪽으로 발사합니다. 먼저 ' +
       (team ? 8 : 5) +
       '점을 얻으면 승리합니다.',
     (a) => {
@@ -605,7 +1142,8 @@ for (const [id, team] of [
         blocks = [
           { x: 220, y: 110, r: 32 },
           { x: 390, y: 250, r: 35 },
-        ];
+        ],
+        splats = [];
       let ready = false,
         last = -1;
       const me = units[0];
@@ -616,22 +1154,27 @@ for (const [id, team] of [
         u.angle = Math.atan2(b.vy, b.vx);
         shots.push(b);
       }
+      const reloading = () => a.reject('재장전 중 · 잠깐 뒤에 쏘세요');
       function tap(pt) {
         ready = true;
         if (units.some((u) => u.p && dist(u, pt) < 45)) {
           if (a.time - last > 0.36) {
             fire(me, pt);
             last = a.time;
-          }
-        } else target = pt;
+          } else reloading();
+        } else {
+          target = pt;
+          if (blocks.some((b) => dist(b, pt) < b.r + 13))
+            a.reject('바위·타이어 위로는 못 가요 · 앞에서 멈춰요');
+        }
       }
-      a.button('가장 가까운 상대에 발사', () => {
+      a.button('가까운 상대에 발사', () => {
         ready = true;
         if (a.time - last > 0.36) {
           const e = units.filter((u) => u.p).sort((a, b) => dist(a, me) - dist(b, me))[0];
           fire(me, e);
           last = a.time;
-        }
+        } else reloading();
       });
       a.status('빈 곳은 이동 · 상대는 페인트 발사');
       a.score('0 : 0');
@@ -669,6 +1212,8 @@ for (const [id, team] of [
             advance(b, dt);
             const hit = units.find((u) => u.p !== b.p && dist(u, b) < 15);
             if (hit) {
+              splats.push({ x: hit.x, y: hit.y, c: b.color, r: 9 + random(6), t: a.time });
+              if (splats.length > 24) splats.shift();
               scores[b.p]++;
               a.score(scores.join(' : '));
               Object.assign(hit, { x: hit.p ? 520 : 70, y: 70 + random(220) });
@@ -691,10 +1236,64 @@ for (const [id, team] of [
         },
         draw(g) {
           surface(g, '#adb493', '#777e69', true);
+          // Paint splats stay on the ground where tanks were hit.
+          for (const sp of splats) {
+            g.save();
+            g.globalAlpha = 0.55;
+            g.fillStyle = sp.c;
+            g.beginPath();
+            for (let k = 0; k < 9; k++) {
+              const ang = (k / 9) * Math.PI * 2,
+                rr = sp.r * (k % 2 ? 0.65 : 1.1);
+              g.lineTo(sp.x + Math.cos(ang) * rr, sp.y + Math.sin(ang) * rr);
+            }
+            g.closePath();
+            g.fill();
+            g.restore();
+          }
           blocks.forEach((t, i) => {
-            if (!miniature(g, i % 2 ? 'rocks' : 'tire', t.x, t.y, 2*t.r, 2*t.r)) disc(g, ball(t.x, t.y, t.r, '#778779'));
+            if (!a.upright(g, t.x, t.y, (x, y) => miniature(g, i % 2 ? 'rocks' : 'tire', x, y, 2 * t.r, 2 * t.r)))
+              disc(g, ball(t.x, t.y, t.r, '#778779'));
           });
+          // Move order: a dashed path to the destination marker.
+          if (dist(me, target) > 4) {
+            const blocked = blocks.some((b) => dist(b, target) < b.r + 13);
+            g.save();
+            g.setLineDash([7, 7]);
+            line(g, me.x, me.y, target.x, target.y, blocked ? '#c94a32cc' : '#fff6dccc', 2);
+            g.restore();
+            const c = blocked ? '#c94a32' : '#fff6dc';
+            line(g, target.x - 8, target.y - 8, target.x + 8, target.y + 8, c, 3);
+            line(g, target.x - 8, target.y + 8, target.x + 8, target.y - 8, c, 3);
+          }
+          // Enemy tanks: the dashed ring is the area a tap fires into.
+          for (const u of units)
+            if (u.p) {
+              g.save();
+              g.setLineDash([5, 5]);
+              circle(g, u.x, u.y, 45, '#c94a3299', true);
+              g.restore();
+            }
           for (const u of units) {
+            g.save();
+            g.fillStyle = '#1a1d1655';
+            g.beginPath();
+            g.ellipse(u.x + 3, u.y + 5, 22, 15, 0, 0, Math.PI * 2);
+            g.fill();
+            g.restore();
+            if (u === me) {
+              glowRing(g, u.x, u.y, 27, gold, 3);
+              const k = clamp((a.time - last) / 0.36, 0, 1);
+              if (k < 1) {
+                g.save();
+                g.lineWidth = 4;
+                g.strokeStyle = '#fff6dc';
+                g.beginPath();
+                g.arc(u.x, u.y, 32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k);
+                g.stroke();
+                g.restore();
+              }
+            }
             g.save();
             g.translate(u.x, u.y);
             g.rotate(u.angle);
@@ -707,30 +1306,69 @@ for (const [id, team] of [
               circle(g, 0, 0, 7, u.p ? '#974e47' : '#316770');
             }
             g.restore();
+            if (u === me) a.tag(g, '나', ...a.above(u.x, u.y, 38), 14, '#2a2a1f', '#f3cf7ae6');
+            else if (!u.p) a.tag(g, '팀', ...a.above(u.x, u.y, 34), 13, '#e9fbff', '#1d5560dd');
           }
           shots.forEach((b) => disc(g, b));
         },
       };
     },
+    true,
   );
-sport(
+arcade(
   46,
   '움직이는 표적을 직접 터치하세요. 중앙을 맞힐수록 높은 점수를 얻습니다. 스무 번 쏜 뒤 총점을 확인합니다.',
   (a) => {
     let n = 0,
       points = 0,
       hit = null;
+    const hud = a.hud('shots');
+    hud.innerHTML =
+      '<p class="tally"><b>0</b><span>점</span><small>남은 20발</small></p>' +
+      '<p class="last" aria-hidden="true"><span class="ring"><i></i></span><em>첫 발</em></p>' +
+      '<p class="pips"></p>';
+    const tally = hud.querySelector('.tally b'),
+      left = hud.querySelector('.tally small'),
+      lastRing = hud.querySelector('.last'),
+      lastText = hud.querySelector('.last em'),
+      pips = hud.querySelector('.pips');
+    for (const i of range(20)) pips.append(document.createElement('i'));
     function targets() {
       return range(5).map((i) => ({
         x: 55 + ((i * 135 + a.time * (20 + i * 5)) % 500),
         y: 70 + (i % 3) * 87 + Math.sin(i + a.time) * 17,
       }));
     }
-    function fire(pt) {
+    // Touch tolerance on a small field: a tap just outside a target's rim is pulled onto the
+    // outer ring (worth 1), so a near miss by a fingertip is not a lost shot. The pull is drawn.
+    function steady(pt) {
+      if (a.px(1) <= 1 / 0.75) return pt;
+      const t = targets().sort((p, q) => dist(p, pt) - dist(q, pt))[0],
+        d = dist(t, pt);
+      if (d < 30 || d >= 30 + Math.min(16, a.px(8))) return pt;
+      const k = 29 / d;
+      return { x: t.x + (pt.x - t.x) * k, y: t.y + (pt.y - t.y) * k, from: pt };
+    }
+    function fire(touch) {
       n++;
+      const pt = steady(touch);
+      const near = targets().sort((p, q) => dist(p, pt) - dist(q, pt))[0];
       const d = Math.min(...targets().map((t) => dist(t, pt)));
-      points += d < 9 ? 5 : d < 20 ? 3 : d < 30 ? 1 : 0;
-      hit = { ...pt, t: a.time };
+      const got = d < 9 ? 5 : d < 20 ? 3 : d < 30 ? 1 : 0;
+      points += got;
+      hit = { ...pt, t: a.time, got };
+      const pip = pips.children[n - 1];
+      if (pip) pip.className = 'p' + got;
+      tally.textContent = points;
+      left.textContent = '남은 ' + (20 - n) + '발';
+      // The last shot on a small paper target: where it landed against the rings.
+      const f = Math.min(1.18, d / 30),
+        ang = Math.atan2(pt.y - near.y, pt.x - near.x);
+      lastRing.style.setProperty('--dx', (Math.cos(ang) * f * 50).toFixed(1) + '%');
+      lastRing.style.setProperty('--dy', (Math.sin(ang) * f * 50).toFixed(1) + '%');
+      lastRing.className = 'last p' + got;
+      lastText.textContent = got === 5 ? '정중앙 +5' : got ? '+' + got : '빗나감';
+      a.status(got === 5 ? '정중앙! +5' : got ? '명중 +' + got : '빗나감 · 가운데를 노려요');
       a.score(points + '점 · 남은 ' + (20 - n) + '발');
       if (n === 20) a.finish('사격 종료 · ' + points + '점');
     }
@@ -753,8 +1391,28 @@ sport(
           ])
             circle(g, t.x, t.y, r, c);
         }
+        // Crosshair: where 조준점에 발사 will shoot.
+        g.save();
+        g.globalAlpha = a.holding ? 0.95 : 0.55;
+        circle(g, a.aim.x, a.aim.y, 12, '#fff6dc', true);
+        line(g, a.aim.x - 20, a.aim.y, a.aim.x - 6, a.aim.y, '#fff6dc', 2);
+        line(g, a.aim.x + 6, a.aim.y, a.aim.x + 20, a.aim.y, '#fff6dc', 2);
+        line(g, a.aim.x, a.aim.y - 20, a.aim.x, a.aim.y - 6, '#fff6dc', 2);
+        line(g, a.aim.x, a.aim.y + 6, a.aim.x, a.aim.y + 20, '#fff6dc', 2);
+        g.restore();
+        if (hit?.from && a.time - hit.t < 0.9) {
+          // A fingertip near miss pulled onto the rim: show where the touch was and where it counted.
+          g.save();
+          g.setLineDash([3, 3]);
+          line(g, hit.from.x, hit.from.y, hit.x, hit.y, '#fff6dccc', 2);
+          g.restore();
+          circle(g, hit.from.x, hit.from.y, 3, '#fff6dcaa');
+        }
         if (hit && a.time - hit.t < 0.4)
           circle(g, hit.x, hit.y, 10 + 30 * (a.time - hit.t), '#fff', true);
+        if (hit && a.time - hit.t < 0.9 && !a.over())
+          a.tag(g, hit.got ? '+' + hit.got : '빗나감', hit.x, hit.y - 26, 18, '#fff8dd',
+            hit.got === 5 ? '#7a5a18e6' : hit.got ? '#1f6047e6' : '#3b4752e6');
       },
     };
   },
