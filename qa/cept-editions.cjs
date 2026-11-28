@@ -6740,7 +6740,7 @@ for(const edition of ['dc','ps1','saturn']){
   assert.equal(archives.maps.length,41);
   assert.deepEqual(archives.maps.find(m=>m.name==='Dunnan'),{name:'Dunnan',section:'story',goal:6000,die:6,areas:1,tiles:18,start:200,lap:200,forts:'S',fortBonus:100});
   assert.ok(catalog.every(c=>!c.editionArt));
-  assert.equal(names.length,5);
+  assert.equal(names.length,6);
   assert.ok(Object.values(C.presets).every(C.validBook));
   assert.equal(new Set(Object.values(C.presets).map(book=>book.join(','))).size,Object.keys(C.presets).length);
   const online=playerBooks.find(([, ,source])=>source==='956-c3ds-playerdecks-osf20130125');
@@ -6773,7 +6773,7 @@ for(const edition of ['dc','ps1','saturn']){
     for(let n=0;n<limit&&s.phase!=='over';n++)assert.ok(C.play(s,C.ai(s)),mapId+' '+s.phase);
     assert.equal(s.phase,'over',mapId+' '+count+' seats');
   }
-  for(const key of ['3ds-original-alder-pass','3ds-original-palm-canals']){
+  for(const key of ['3ds-original-alder-pass','3ds-original-palm-canals','3ds-original-terraced-valleys']){
     const map=C.maps[key],connected=new Set([0]);
     assert.equal(new Set(map.position.map(String)).size,map.types.length);
     assert.equal(map.types.length,map.areas.length);
@@ -6792,6 +6792,15 @@ for(const edition of ['dc','ps1','saturn']){
   assert.ok(C.play(crossing,['route',24]));
   assert.deepEqual([crossing.phase,crossing.players[0].pos,crossing.tiles[12].area,crossing.lastMove.path],['land',12,1,[3,24,12]]);
 
+  const valleys=C.start(4,4,0,'3ds-original-terraced-valleys',undefined,undefined,3,'teams');
+  assert.deepEqual([valleys.target,valleys.prices.length,C.board(valleys).forts],[9000,12,[5,17,30]]);
+  for(const [from,prior,bridge,dest,area] of [[4,3,36,23,1],[8,7,38,25,2]]){
+    Object.assign(valleys,{phase:'fork',die:2,remaining:2,visited:[]});
+    Object.assign(valleys.players[0],{pos:from,previous:prior});
+    assert.ok(C.choices(valleys).some(([kind,at])=>kind==='route'&&at===bridge));
+    assert.ok(C.play(valleys,['route',bridge]));
+    assert.deepEqual([valleys.phase,valleys.players[0].pos,valleys.tiles[dest].area,valleys.lastMove.path],['land',dest,area,[from,bridge,dest]]);
+  }
   const base=C.start(4,4,0,intro);
   assert.deepEqual([base.edition,base.target,base.players[0].cash,base.prices.length],['3ds',6000,200,4]);
   base.phase='roll';assert.ok(C.play(base,['roll']));
@@ -7555,5 +7564,5 @@ for(const edition of ['dc','ps1','saturn']){
   }})`,worker);
   assert.equal(samples.at(-1).done,true);
   assert.deepEqual([...samples.at(-1).finished],[160,160]);
-  console.log('2012 3DS five native-rule arenas, exact starter and archive decks, 15 AI finishes, alliance economy, spell thresholds, all nine Revenge cards, all 27 territory abilities and 320 seat-rotation samples OK');
+  console.log('2012 3DS six native-rule arenas, exact starter and archive decks, 18 AI finishes, alliance economy, spell thresholds, all nine Revenge cards, all 27 territory abilities and 320 seat-rotation samples OK');
 }

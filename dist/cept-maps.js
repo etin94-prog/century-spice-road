@@ -140,12 +140,25 @@ const CepterMaps=(()=>{
     ...loop(12),...loop(12).map(([a,b])=>[a+12,b+12]),
     [3,24],[24,12],[6,25],[25,21]
   ],[...Array(12).fill(0),...Array(12).fill(1),0,1],250);
+  const terracedValleys=map('세 고개 분지 · 창작 지도',[
+    ...sanctuaryLoop,...sanctuaryLoop.map(([r,c])=>[r,c+5]),...sanctuaryLoop.map(([r,c])=>[r+5,c]),
+    [2,5],[4,5],[5,2],[5,4]
+  ],[
+    '성',2,0,3,1,'북쪽 요새',2,0,3,1,0,2,
+    3,1,3,2,0,'동쪽 요새',1,'신전',0,3,1,2,
+    1,0,2,3,0,2,'남쪽 요새',1,'신전',3,2,0,
+    3,1,2,0
+  ],[5,17,30],100,8,[
+    ...[0,12,24].flatMap(offset=>loop(12).map(([a,b])=>[a+offset,b+offset])),
+    [4,36],[36,23],[6,37],[37,21],[8,38],[38,25],[6,39],[39,27]
+  ],[...Array(12).fill(0),...Array(12).fill(1),...Array(12).fill(2),0,1,0,2],260);
   const handheldPractice={
     '3ds-original-bend':{...handheldBend,areaCount:1,section:'arena',graph:true,startCash:200,fortBonus:100,defaultGoal:6000},
     '3ds-original-market':{...handheldMarket,areaCount:1,section:'arena',graph:true,startCash:250,fortBonus:100,defaultGoal:7000},
     '3ds-original-shore':{...handheldShore,areaCount:2,section:'arena',graph:true,startCash:250,fortBonus:120,defaultGoal:8000},
     '3ds-original-alder-pass':{...alderPass,areaCount:1,section:'arena',graph:true,startCash:200,fortBonus:100,defaultGoal:5000},
-    '3ds-original-palm-canals':{...palmCanals,areaCount:2,section:'arena',graph:true,startCash:250,fortBonus:120,defaultGoal:8000}
+    '3ds-original-palm-canals':{...palmCanals,areaCount:2,section:'arena',graph:true,startCash:250,fortBonus:120,defaultGoal:8000},
+    '3ds-original-terraced-valleys':{...terracedValleys,areaCount:3,section:'arena',graph:true,startCash:300,fortBonus:100,defaultGoal:9000}
   };
   const layouts=typeof module==='undefined'?CepterLayouts:require('./cept-layouts.js');
   // PS2 story battle goals, in archive map order. Other maps use the free-match goal.
