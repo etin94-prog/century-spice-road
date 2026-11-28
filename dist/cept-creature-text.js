@@ -524,6 +524,14 @@ const CepterCreatureText=(()=>{
     if(card.criticalBaseSTAtLeast!=null)pieces.push('기본 ST가 '+card.criticalBaseSTAtLeast+' 이상인 상대에게 일반 공격이 강타합니다.');
     if(firstEdition&&card.noLapHeal)pieces.push('주회 보상으로 HP가 회복되지 않습니다.');
     if(firstEdition&&card.reviveForm==='dragonfly')pieces.push('전투에서 격파되면 드래곤플라이로 변해 부활합니다.');
+    if(card.splitReflect)pieces.push('일반 공격 피해의 절반을 반사하고 나머지를 받습니다.');
+    if(card.randomHandBreak)pieces.push('전투에서 살아남으면 상대 손패 한 장을 무작위로 파괴합니다.');
+    if(card.battleEvolution)pieces.push('세 번의 전투에서 살아남으면 플레임 로드로 변신합니다.');
+    if(card.instantKill){
+      const races=card.instantKill.races.map(r=>({rh:'인간',rb:'야수'})[r]).join('·');
+      pieces.push('일반 공격으로 피해를 준 '+races+' 종족을 '+Math.round(card.instantKill.rate*100)+'% 확률로 즉사시킵니다.');
+    }
+    if(card.selfDestructAfterBattle)pieces.push('전투가 끝날 때 자괴합니다.');
     if(card.entryST!=null)pieces.push('손패에서 영지에 배치되면 기본 ST가 '+card.entryST+'이 됩니다.');
     if(card.battleGrowth)pieces.push('전투 종료 시 생존하면 최대 HP가 '+card.battleGrowth+' 증가합니다. 상한은 80입니다.');
     if(firstEdition&&card.tollFactor)pieces.push('이 영지의 통행료는 '+card.tollFactor+'배입니다.');

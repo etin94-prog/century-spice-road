@@ -733,7 +733,9 @@ const CepterEditions=(()=>{
     ambermosquito:{basicBattle:false},doppelganger:{basicBattle:false},madclown:{basicBattle:false},nue:{basicBattle:false},
     elderdragon:{battleFee:100},flamelord:{scrollCritical:true,battleFee:200},dagon:{scrollCritical:true,battleFee:200},
     darkmaster:{scrollCritical:true,battleFee:200},beelzebub:{scrollCritical:true,battleFee:200},
-    juggernaut:{criticalBaseSTAtLeast:40,noLapHeal:true},myrmecoleo:{last:true,reviveForm:'dragonfly'}
+    juggernaut:{criticalBaseSTAtLeast:40,noLapHeal:true},myrmecoleo:{last:true,reviveForm:'dragonfly'},
+    bandicoot:{splitReflect:true},hedgehog:{splitReflect:true},acheron:{randomHandBreak:true},
+    homunculus:{battleEvolution:{count:3,form:'flamelord'}},wraith:{},mantrap:{}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1114,6 +1116,14 @@ const CepterEditions=(()=>{
       if(first&&kind==='creature'&&Object.hasOwn(firstBattleCreatures,slug)){
         Object.assign(c,{catalogOnly:false,basicBattle:true},firstBattleCreatures[slug]);
         if(edition==='ps1'&&c.battleFee===200)c.battleFee=100;
+        if(slug==='wraith'){
+          c.instantKill={races:['rh','rb'],rate:edition==='ps1'?.6:.3};
+          if(edition==='ps1')c.selfDestructAfterBattle=true;
+        }
+        if(slug==='mantrap'){
+          if(edition==='ps1')c.instantKill={races:['rh'],rate:.6};
+          else c.criticalRaces=['rh'];
+        }
       }
       if(first&&['knight','darkelf','elf'].includes(slug))c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
       if(first&&['pan','hornet'].includes(slug))c.statusRaces=['rh','rb','rd'];
@@ -1178,6 +1188,11 @@ const CepterEditions=(()=>{
         court[court.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyCourt=court;
+      const evolution=court.slice();
+      for(const [from,to] of [['wolf',edition==='ps1'?'bandicoot':'hedgehog'],['giantrat','wraith'],['kobold','homunculus'],['pillarofflame','acheron'],['wallofstone','mantrap']]){
+        evolution[evolution.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyEvolution=evolution;
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

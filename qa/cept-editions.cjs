@@ -8580,3 +8580,58 @@ for(const edition of ['ps1','saturn']){
   assert.deepEqual([lap.tiles[sites[0]].unit.hp,lap.tiles[sites[1]].unit.hp],[15,23]);
 }
 console.log('Classic transformations, revival, boost scope, lord battle fees, critical threshold and lap immunity checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),early=edition==='saturn';
+  const id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+  const reflect=early?'hedgehog':'bandicoot',threshold=early?.3:.6;
+  function fight({attacker='fighter',guard='goblin',guardUnit={},invHP,atkGear,seed=.5,hand=[],type=1}={}){
+    const s=C.start(2,2,7000,edition+'-original-marsh-paths'),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    const t=s.tiles[at];
+    Object.assign(t,{type,owner:1,unit:{id:id(guard),hp:C.cards[id(guard)].hp,...guardUnit}});
+    s.phase='attack';s.battle={at,inv:id(attacker),invHP,atkItem:null,defItem:null};
+    s.players.forEach(p=>{p.cash=1000;p.hand=[];});
+    s.players[0].hand=[...(atkGear?[id(atkGear)]:[]),...hand.map(id)];
+    const random=Math.random;
+    try{Math.random=()=>seed;assert.ok(C.play(s,atkGear?['equip',0]:['bare']));assert.ok(C.play(s,['bare']));}
+    finally{Math.random=random;}
+    return {s,b:s.battle,t};
+  }
+  assert.ok(C.validBook(C.presets.legacyEvolution));
+  for(const creature of [reflect,'wraith','acheron','homunculus','mantrap','flamelord'])
+    assert.ok(C.presets.legacyEvolution.includes(id(creature)),creature);
+  const split=fight({guard:reflect});
+  assert.deepEqual(split.b.strikes[0].hp,[20,10]);
+  assert.match(split.b.strikes[0].notes.join(' '),/반사 20/);
+  const paralyzed=fight({guard:reflect,guardUnit:{enchant:'paralysis'}});
+  assert.deepEqual(paralyzed.b.strikes[0].hp,[40,0]);
+  const scroll=fight({guard:reflect,atkGear:'nuclearfusion'});
+  assert.deepEqual(scroll.b.strikes[0].hp,[40,0]);
+  const first=fight({attacker:'wraith',seed:threshold-.01}).b;
+  assert.deepEqual(first.finalHP,[early?30:0,0]);
+  const second=fight({attacker:'wraith',seed:threshold}).b;
+  assert.deepEqual(second.finalHP,[early?10:0,20]);
+  assert.ok(fight({attacker:'wraith',guard:'wallofstone',seed:0}).b.finalHP[1]>0);
+  const trap=fight({guard:'mantrap',type:2,seed:.59}).b;
+  assert.equal(trap.finalHP[0],early?10:0);
+  assert.ok(fight({guard:'mantrap',type:2,seed:.6}).b.finalHP[0]>0);
+  const hand=['fighter','goblin','wallofstone'];
+  const surviving=fight({guard:'acheron',hand,seed:.5});
+  assert.deepEqual(surviving.s.players[0].hand.slice(0,2),['fighter','wallofstone'].map(id));
+  assert.match(surviving.b.lines.join(' '),/상대 손패 한 장 파괴/);
+  const defeated=fight({guard:'acheron',guardUnit:{hp:1},hand});
+  assert.deepEqual(defeated.s.players[0].hand,hand.map(id));
+  let progress={hp:30};
+  for(let count=1;count<=3;count++){
+    const evolved=fight({attacker:'goblin',guard:'homunculus',guardUnit:progress,type:0});
+    progress=JSON.parse(JSON.stringify(evolved.t.unit));
+    assert.equal(evolved.s.players[1].cash,1000);
+    if(count<3)assert.deepEqual([progress.id,progress.battleCount],[id('homunculus'),count]);
+    else assert.deepEqual([progress.id,progress.battleCount,progress.hp],[id('flamelord'),undefined,C.cards[id('flamelord')].hp]);
+    progress.hp=C.cards[id('homunculus')].hp;
+  }
+  const dead=fight({guard:'homunculus',guardUnit:{hp:1,battleCount:2}});
+  assert.equal(dead.b.finalForms[1],id('homunculus'));
+  assert.equal(dead.b.finalHP[1],0);
+}
+console.log('First editions: split reflection, scroll bypass, race-specific kill rates, hand removal, and persistent evolution checked.');

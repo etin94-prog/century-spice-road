@@ -983,7 +983,8 @@ function createCepter(edition="ps2"){
         a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,blocksFirst:false,criticalMHP:0,battleHP:0,invadeST:0,doubleAttack:false,
           criticalElements:[],criticalRaces:[],pierceElements:[],pierceAll:false,reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false,neutralizeRaces:[],
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
-          criticalBaseSTAtLeast:null,battleFee:0,reviveForm:null};
+          criticalBaseSTAtLeast:null,battleFee:0,reviveForm:null,splitReflect:false,instantKill:null,
+          selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1218,8 +1219,9 @@ function createCepter(edition="ps2"){
         if(!orb&&d.g==='towershield')damage=Math.floor(damage/2);
         if(!orb&&revolt&&d.g==='wondercharm')damage=Math.floor(damage/5);
         if(!orb&&d.c.half)damage=Math.floor(damage/2);
-        if(!orb&&(['spikeshield','spikedshield'].includes(d.g)||edition==='saga'&&d.n==='spinyagama')){
+        if(!orb&&(d.c.splitReflect||['spikeshield','spikedshield'].includes(d.g)||edition==='saga'&&d.n==='spinyagama')){
           const reflected=Math.floor(damage/2);reflectNormal(a,reflected);damage-=reflected;
+          if(d.c.splitReflect&&reflected)lines.push(d.c.name+' · 반사 '+reflected);
         }
       }
       if(scroll&&guard?.halveScroll)damage=Math.floor(damage/2);
@@ -1248,6 +1250,9 @@ function createCepter(edition="ps2"){
       const blocksAttackBonus=revolt&&(d.n==='scylla'||d.g==='squidmantle');
       if(damage>0&&!scroll&&!muted&&!blocksAttackBonus&&(edition!=='ps2'||a.hp>0)){
         const creatureEffects=!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits,attacker=creatureEffects?a.n:null;
+        if(creatureEffects&&d.hp>0&&!s.predict&&a.c.instantKill?.races.includes(d.c.catalog?.race)&&Math.random()<a.c.instantKill.rate){
+          d.hp=0;lines.push(a.c.name+' · 즉사');
+        }
         if(revolt&&d.hp>0&&(attacker==='saint'&&d.element===-1||attacker==='samurai'&&fx.strength(d.u)>=40&&!s.predict&&Math.random()<.7)){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
@@ -1506,6 +1511,7 @@ function createCepter(edition="ps2"){
         if(hand.length){hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);lines.push('불리미아 · 손패 1장 파괴');}
       }
       if(itemEnd&&a.g==='death'&&!s.predict&&Math.random()<.4)a.hp=0;
+      if(creatureEnd&&a.c.selfDestructAfterBattle&&a.hp>0){a.hp=0;lines.push(a.c.name+' · 전투 종료 시 자괴');}
       if(itemEnd&&a.g==='dynamite'||a.n==='wraith'||!revolt&&!muted&&(edition!=='saga'||!basalt)&&a.u.enchant==='senility')a.hp=0;
       const plow=itemEnd&&a.g==='silverplow'&&(!begins||a.hp>0);
       if(!fx.levelLocked(t,s)&&(revolt?a.hp>0:a.hp>0||d.hp>0)&&(a.n==='leshy'||plow)){
@@ -1759,6 +1765,22 @@ function createCepter(edition="ps2"){
         const rival=s.players[(a===A?D:A).seat],before=rival.hand.length;
         destroyHighestCostHandCard(rival);
         if(rival.hand.length<before)lines.push(a.gear.name+' · 상대의 고비용 카드 파괴');
+      }
+    }
+    if(creatureEnd)for(const a of sides){
+      if(a.hp<=0)continue;
+      if(a.c.randomHandBreak&&!s.predict){
+        const hand=s.players[(a===A?D:A).seat].hand;
+        if(hand.length){
+          hand.splice(Math.floor(Math.random()*hand.length),1);
+          lines.push(a.c.name+' · 상대 손패 한 장 파괴');
+        }
+      }
+      const evolution=a.c.battleEvolution;
+      if(evolution&&!a.original){
+        a.u.battleCount=(a.u.battleCount??0)+1;
+        if(a.u.battleCount>=evolution.count)extra.transform(a,extra.ids.get(evolution.form));
+        else lines.push(a.c.name+' · 변신까지 '+(evolution.count-a.u.battleCount)+'전');
       }
     }
     const onLand=a=>a.hp>0&&a.away==null&&!a.stolen&&!a.returned;
