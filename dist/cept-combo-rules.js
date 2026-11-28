@@ -44,10 +44,10 @@ const CepterCombos = (() => {
     const strength=u=>u.st??cards[u.id].st;
     const name=u=>names[u?.id]??key(cards[u?.id]);
     const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n&&(s.edition!=='saga'||t.unit.enchant!=='paralysis'));
-    const immuneHP=t=>t.unit?.enchant==='phantasm'||name(t.unit)==='odradek'||!!cards[t.unit?.id]?.immutableHP;
+    const immuneHP=t=>['phantasm','holyasylum'].includes(t.unit?.enchant)||name(t.unit)==='odradek'||!!cards[t.unit?.id]?.immutableHP;
     const landLevelLocked=(t,s)=>levelLocked(t)||name(t.unit)==='trampleweed'||s?.players[t.owner]?.status==='sagadrought';
     const terrainLocked=(s,t)=>s.edition==='begins'&&name(t.unit)==='barong'&&t.unit.enchant!=='paralysis';
-    const blockedLevel=(s,t)=>landLevelLocked(t,s)||terrainLocked(s,t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
+    const blockedLevel=(s,t,lower=true)=>lower&&t.unit?.enchant==='holyasylum'||landLevelLocked(t,s)||terrainLocked(s,t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
     const isDefensive=u=>cards[u.id].stationary||u.enchant==='magicshelter';
     function targetable(s,t,category='sflash',dispel=false){
       if(!t.unit)return false;
@@ -55,7 +55,8 @@ const CepterCombos = (() => {
       const ward=!(s.edition==='begins'&&t.unit.enchant==='paralysis')&&
         (cards[t.unit.id].spellWard||['peri','caitsith','pegasus','grimalkin','blynx','battlegearalpha','bundlegear'].includes(n));
       return (dispel||!['landprotection','magicshelter'].includes(t.unit.enchant)&&!s.players[t.owner].invisible&&
-        !(activeWorld(s)==='darkworld'&&enchanted(t.unit)))&&
+        !(activeWorld(s)==='darkworld'&&enchanted(t.unit))&&
+        !(s.players[t.owner].status==='holdcurse'&&category==='senchant'&&enchanted(t.unit)))&&
         !(s.edition==='saga'&&n==='warlock')&&!ward&&!(n==='colossus'&&s.edition!=='begins'&&category==='senchant');
     }
     function death(s,id,count=true){
@@ -272,7 +273,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={dragonsegg:100,dragonewt:120,hardrockdragon:80,lightningdragon:80,aquahorn:30,mistwing:30,spriggan:80,armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
+    const sagaTerritory={nil:100,hivequeen:20,peluda:100,assassin:80,cloudgizmo:20,sleipnir:60,dragonsegg:100,dragonewt:120,hardrockdragon:80,lightningdragon:80,aquahorn:30,mistwing:30,spriggan:80,armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
       possession:80,lordofbane:60,bonegolem:60,ahuizotl:80,nobleshaman:50,brancharmy:50,quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
@@ -296,11 +297,12 @@ const CepterCombos = (() => {
     function territoryMoveExits(s,from,adjacentOnly=false){
       const links=board(s).links,adjacent=links[from],src=s.tiles[from];
       if(adjacentOnly&&['thornfetter','magicshelter'].includes(src.unit.enchant))return [];
-      const exits=adjacentOnly?adjacent:[...new Set([...adjacent,...adjacent.flatMap(i=>links[i])])];
+      const twoSteps=adjacent.flatMap(i=>links[i]);
+      const exits=adjacentOnly?adjacent:[...new Set(s.edition==='saga'?twoSteps:[...adjacent,...twoSteps])];
       return exits.filter(i=>{
         const dst=s.tiles[i];
         return i!==from&&territoryType(dst.type)&&!allied(s,src.owner,dst.owner)&&dst.unit?.enchant!=='peace'&&
-          (!adjacentOnly||canOccupy(cards[src.unit.id],dst));
+          (!adjacentOnly&&s.edition!=='saga'||canOccupy(cards[src.unit.id],dst));
       });
     }
     function territoryTargets(s,from,borrowed=false){
@@ -312,6 +314,11 @@ const CepterCombos = (() => {
           const forms=quicksilverForms(s);
           return forms.some(id=>id!==tile.unit.id)&&forms.every(id=>!cards[id].catalogOnly)?[['abilitySelf',from]]:[];
         }
+        if(n==='nil'||n==='peluda')return [['abilitySelf',from]];
+        if(n==='hivequeen')return hasHandSpace(s.players[s.turn])?[['abilitySelf',from]]:[];
+        if(n==='cloudgizmo')return idol(s,'graniteidol')?[]:s.players.flatMap((q,j)=>q.hand.length&&q.status!=='barrier'?[['abilityPlayer',j]]:[]);
+        if(n==='assassin')return s.tiles.flatMap((v,j)=>j!==from&&v.unit&&max(v.unit)-v.unit.hp>=20&&targetable(s,v)?[['abilityLand',j]]:[]);
+        if(n==='sleipnir')return s.tiles.flatMap((v,j)=>v.owner===s.turn&&targetable(s,v)&&!isDefensive(v.unit)&&v.unit.enchant!=='thornfetter'&&territoryMoveExits(s,j).length?[['abilityLand',j]]:[]);
         if(n==='heraldspirit'||n==='nobleshaman'||n==='dragonsegg')return [['abilitySelf',from]];
         if(n==='lordofbane')return idol(s,'graniteidol')?[]:s.players.flatMap((q,j)=>!allied(s,j,s.turn)&&q.status!=='barrier'?[['abilityPlayer',j]]:[]);
         if(n==='swampspawn')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
@@ -331,7 +338,7 @@ const CepterCombos = (() => {
         if(n==='fay'||n==='lichenoid')return s.tiles.flatMap((v,j)=>targetable(s,v)&&
           (n==='fay'?strength(v.unit)<100:!immuneHP(v)&&max(v.unit)<100)?[['abilityLand',j]]:[]);
         if(n==='lamia')return s.tiles.flatMap((v,j)=>targetable(s,v,'senchant')?[['abilityLand',j]]:[]);
-        if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v)?[['abilityLand',j]]:[]);
+        if(n==='gogma')return s.tiles.flatMap((v,j)=>v.level===1&&targetable(s,v)&&!blockedLevel(s,v,false)?[['abilityLand',j]]:[]);
         if(n==='warlock')return s.players.flatMap((q,j)=>q.status!=='barrier'?[['abilityPlayer',j]]:[]);
       }
       if(s.edition==='begins'){
@@ -403,6 +410,22 @@ const CepterCombos = (() => {
           const forms=quicksilverForms(s),id=forms[Math.floor(Math.random()*forms.length)];
           src.unit={id,hp:cards[id].hp};return;
         }
+        if(n==='nil'){
+          for(const t of s.tiles)if(t.unit)damage(s,t,Math.floor(max(t.unit)/2));
+          if(src.unit)destroy(s,src);
+          return;
+        }
+        if(n==='peluda'){
+          for(const t of s.tiles)if(t.unit&&[-1,1,2,3].some(e=>hasElement(cards[t.unit.id],e)))damage(s,t,10);
+          return;
+        }
+        if(n==='hivequeen'){p.hand.push(ids.get('hiveworker'));return;}
+        if(n==='assassin'){destroy(s,v);returnToHand(s,src);return;}
+        if(n==='cloudgizmo'){
+          if(q.antiMagic){delete q.antiMagic;return;}
+          s.spellTarget=x;s.cloudGizmo=true;return 'bookWorm';
+        }
+        if(n==='sleipnir'){s.teleFrom=x;s.territoryMove=true;return 'teleMove';}
         if(n==='heraldspirit'){
           clearCepter(p);p.status='enlightenment';p.enchantDeadline=(s.round+1)*s.players.length+s.turn;
           return;

@@ -203,6 +203,10 @@ const CepterExtraBattle=(()=>{
       if(s.edition==='saga'){
         const count=e=>s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],e)).length;
         if(a.n==='brancharmy')a.st+=count(2)*5;
+        if(a.n==='hiveworker'){
+          const amount=10*s.tiles.filter(v=>fx.name(v.unit)==='hiveworker').length;
+          a.st+=amount;a.hp+=amount;
+        }
         if(a.n==='metalshambler'&&s.players[a.seat].cash<s.players[d.seat].cash){a.st+=30;a.hp-=30;}
         if(a.n==='ogrelord'){
           if(onBoard('redogre')||onBoard('yellowogre'))a.st+=30;
@@ -300,13 +304,18 @@ const CepterExtraBattle=(()=>{
       if(n==='nymph'&&fx.max(d.u)<=30&&s.players[a.seat].hand.length<6&&chance(.4)){
         d.stolen=true;s.players[a.seat].hand.push(d.u.id);lines.push('상대 크리처를 손패로 획득');
       }
+      if(s.edition==='saga'&&n==='cherub'&&fx.max(d.u)>=50&&chance(.6)){
+        const hand=s.players[d.seat].hand;
+        if(hand.length<6){hand.push(d.u.id);d.returned=true;lines.push('상대 크리처를 손패로 돌려보냄');}
+        else{d.hp=0;lines.push('상대 손패가 가득 차 크리처 격파');}
+      }
       if(n==='barrowwight'){combo.clear(d.u);d.u.enchant='sleep';}
       if(['ghoul','hugespider','livingclaw'].includes(n)||s.edition==='saga'&&a.g==='livingclaw'){combo.clear(d.u);d.u.enchant='paralysis';}
       if(n==='hunbaba'){combo.clear(d.u);d.u.poisoned=true;}
       if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
         s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(s.edition==='begins'?.4:.5)||
         n==='yeti'&&combo.hasElement(d,0)&&chance(.6)||n==='dhampir'&&combo.hasElement(d,2)&&chance(.6)||
-        s.edition==='saga'&&n==='saint'&&combo.hasElement(d,-1)&&chance(.8)){
+        s.edition==='saga'&&(n==='saint'&&combo.hasElement(d,-1)&&chance(.8)||n==='nil'&&chance(.5)||n==='unnameable'&&chance(.7))){
         d.hp=0;lines.push('즉사');
       }
       if(s.edition==='revolt'&&a.gear?.instantDeathElements?.some(e=>combo.hasElement(d,e))&&d.hp>0&&chance(.6)){
@@ -331,6 +340,7 @@ const CepterExtraBattle=(()=>{
           }
         }
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
+        if(s.edition==='saga'&&a.n==='nil'){s.players[a.seat].cash-=100;lines.push('닐 · 전투 종료 100G 상실');}
         if(a.n==='fungonoid')grow(a,10);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
         const leveller=['begins','3ds','saga'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
@@ -362,6 +372,13 @@ const CepterExtraBattle=(()=>{
         if(a.n==='mattocktail'&&t.level<5&&!fx.levelLocked(t)){t.level++;lines.push(a.c.name+' · 영지 Lv.'+t.level);}
       }
       const p=s.players[a.seat],other=s.players[d.seat],symbol=t.area*4+t.type;
+      if(s.edition==='saga'&&a.n==='unnameable'&&d.defeatedByOpponent&&!s.predict){
+        const removed=other.hand.length+other.book.length;
+        other.hand=other.hand.filter(id=>id!==d.u.id);other.book=other.book.filter(id=>id!==d.u.id);
+        for(const player of s.players)if(player.peek?.seat===d.seat)delete player.peek;
+        const count=removed-other.hand.length-other.book.length;
+        if(count)lines.push(a.c.name+' · 격파한 카드와 같은 카드 '+count+'장 파괴');
+      }
       if(typeof t.type==='number'&&s.prices[symbol]!=null){
         if(a.n==='sanctumguard')p.symbols[symbol]+=5;
         if(s.edition!=='begins'&&a.g==='coinofpiety')p.symbols[symbol]+=10;

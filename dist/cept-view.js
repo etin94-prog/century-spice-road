@@ -447,7 +447,7 @@ function setMapCamera(root,x,y,zoom){
 function selectingSpellMapTarget(){
   if(C.edition==='begins'&&s?.spellEffect==='telekinesis'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
-  if(C.edition==='saga'&&s?.phase==='spellTarget'&&['trade','intrusion','reflection','replace'].includes(s.spellEffect))return true;
+  if(C.edition==='saga'&&s?.phase==='spellTarget'&&['trade','intrusion','reflection','replace','holyasylum','lunaticlight'].includes(s.spellEffect))return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
     ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
   return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong','metalform','temptation','beginspolymorph'].includes(s.spellEffect);
@@ -832,7 +832,7 @@ function render(){
   placeHandPanel();
   map();$('who').textContent=over?winLabel():p.name+' 차례';
   const endSummary=s.endReason==='roundLimit'?'제한 라운드 종료':s.endReason==='suddenDeath'?'서든데스 · 마력 고갈':null;
-  $('hint').textContent=over?(endSummary?endSummary+(C.outcome(s).tie?' · 총마력 동률이라 승자가 없습니다.':' · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):selectingSecretPlayer()?'비술을 적용할 적 셉터를 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='magicalleap'?'지도에서 이동할 칸을 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='trade'?(s.tradeFrom==null?'교환할 내 영지를 누르세요.':'지도에서 같은 레벨의 적 영지를 누르세요.'):hints[s.phase];
+  $('hint').textContent=over?(endSummary?endSummary+(C.outcome(s).tie?' · 총마력 동률이라 승자가 없습니다.':' · 총마력으로 순위를 결정했습니다.'):'목표 총마력을 가지고 성에 귀환했습니다.'):pending?'다음 셉터에게 기기를 건네세요.':C.isComputer(s,i)?'AI가 행동을 선택하고 있습니다.':room&&room.seat!==i?p.name+'의 입력을 기다립니다.':selectingTerritoryMove()?(s.territoryMove?'지도에서 이동할 땅을 누르세요.':'지도에서 이동시킬 내 크리처를 누르세요.'):selectingSecretPlayer()?'비술을 적용할 적 셉터를 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='magicalleap'?'지도에서 이동할 칸을 고르세요.':s.phase==='spellTarget'&&s.spellEffect==='trade'?(s.tradeFrom==null?'교환할 내 영지를 누르세요.':'지도에서 같은 레벨의 적 영지를 누르세요.'):s.phase==='bookWorm'&&s.cloudGizmo?'대상 셉터의 손패에서 교체할 카드 한 장을 고르세요.':hints[s.phase];
   if(local&&s.immediateAt!=null)$('hint').textContent=(s.immediateAt+1)+'번 영지 · 즉시 능력으로 영지 명령을 사용할 수 있습니다.';
   if(local&&s.phase==='spell'&&s.doublecast==='ready')$('hint').textContent='연속 주문 사용 가능 · 주문을 더 쓰거나 주사위를 굴리세요.';
   if(room?.busy)$('hint').textContent='선택을 반영하고 있습니다.';

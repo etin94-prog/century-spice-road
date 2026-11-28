@@ -963,6 +963,137 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
   }
   console.log('Saga Intrusion paid once, remote attack and Immediate resumed the roll; all seven Zeromn powers checked');
+  const queen=fromTerritory('hivequeen');
+  queen.players[0].hand=Array(6).fill(id('goblin'));
+  assert.ok(!C.choices(queen).some(([action])=>action==='ability'));
+  queen.players[0].hand.pop();
+  assert.ok(C.play(queen,['ability',2]));
+  assert.deepEqual([queen.players[0].cash,queen.players[0].hand.at(-1)],[580,id('hiveworker')]);
+  const workers=fight('hiveworker','dwarf','무속성',null,s=>{
+    unit(s,4,'hiveworker',0,0);unit(s,5,'hiveworker',1,1);
+  });
+  assert.deepEqual([workers.battle.attackST,workers.battle.startHP[0]],[40,40]);
+  const nil=fromTerritory('nil');
+  unit(nil,3,'dwarf',1,0,1,31);
+  unit(nil,6,'fighter',0,1,1,25);
+  assert.ok(C.play(nil,['ability',2]));
+  assert.deepEqual([nil.players[0].cash,nil.tiles[2].unit,nil.tiles[3].unit.hp,nil.tiles[6].unit.hp],[500,null,6,5]);
+  const peluda=fromTerritory('peluda');
+  unit(peluda,1,'flammefleur',1,2);
+  unit(peluda,3,'redogre',1,0);
+  unit(peluda,6,'dwarf',0,1);
+  assert.ok(C.play(peluda,['ability',2]));
+  assert.deepEqual([1,2,3,6].map(at=>peluda.tiles[at].unit.hp),[30,30,40,40]);
+  const assassin=fromTerritory('assassin');
+  unit(assassin,3,'dwarf',1,0,1,30);
+  unit(assassin,6,'dwarf',1,1,1,31);
+  assert.ok(C.play(assassin,['ability',2]));
+  assert.deepEqual(C.choices(assassin),[['abilityLand',3]]);
+  assert.ok(C.play(assassin,['abilityLand',3]));
+  assert.deepEqual([assassin.tiles[2].unit,assassin.tiles[3].unit,assassin.players[0].hand.at(-1)],[null,null,id('assassin')]);
+  const sleipnir=fromTerritory('sleipnir');
+  unit(sleipnir,3,'goblin',0,0,2,21);
+  assert.ok(C.play(sleipnir,['ability',2])&&C.play(sleipnir,['abilityLand',3]));
+  assert.deepEqual(C.choices(sleipnir),[['teleTo',1]]);
+  assert.ok(C.play(sleipnir,['teleTo',1]));
+  assert.deepEqual([sleipnir.players[0].cash,sleipnir.tiles[3].unit,sleipnir.tiles[1].unit.hp],[540,null,21]);
+  const gizmo=C.start(4,4,8000,'saga-original-crosswind');
+  unit(gizmo,2,'cloudgizmo',0,2);
+  Object.assign(gizmo.players[0],{cash:500,hand:[],pos:2});
+  Object.assign(gizmo.players[1],{hand:[id('goblin'),id('trade')],book:[id('manna'),id('dwarf')]});
+  gizmo.phase='land';
+  assert.ok(C.play(gizmo,['ability',2])&&C.play(gizmo,['abilityPlayer',1]));
+  for(const seat of [0,1,2,3]){
+    assert.deepEqual(room.view(C,gizmo,seat).game.players[1].hand,seat<2?gizmo.players[1].hand:[]);
+    assert.deepEqual(room.view(C,gizmo,seat).choices,seat===0?[['wormDiscard',0],['wormDiscard',1]]:[]);
+    assert.equal(room.view(C,gizmo,seat).game.players[1].book,undefined);
+  }
+  assert.ok(C.play(gizmo,['wormDiscard',1]));
+  assert.deepEqual([gizmo.players[0].cash,gizmo.players[1].hand],[480,[id('goblin'),id('dwarf'),id('manna')]]);
+  for(const [attacker,defender] of [['fighter','flyingpuffer'],['flyingpuffer','goblin']]){
+    const result=fight(attacker,defender,'무속성',null,s=>{if(defender==='goblin')s.tiles[1].unit.hp=10;});
+    assert.equal(result.tiles[1].unit,null);
+    assert.equal(result.battle.won,false);
+  }
+  const priorRandom=Math.random;
+  try{
+    Math.random=()=>0;
+    const nilBattle=fight('nil','dwarf','무속성',null,s=>{
+      Object.assign(s.tiles[1].unit,{st:0,hp:100,mhp:100});
+    });
+    assert.deepEqual([nilBattle.battle.won,nilBattle.players[0].cash],[true,400]);
+    for(const full of [false,true]){
+      const cherub=fight('cherub','dwarf','무속성',null,s=>{s.players[1].hand=full?Array(6).fill(id('goblin')):[];});
+      assert.equal(cherub.players[1].hand.includes(id('dwarf')),!full);
+      assert.equal(cherub.tiles[1].unit.id,id('cherub'));
+    }
+    const unnameable=fight('unnameable','goblin','무속성',null,s=>{
+      Object.assign(s.tiles[1].unit,{hp:100,mhp:100,st:0});
+      Object.assign(s.players[1],{hand:[id('goblin'),id('fighter')],book:[id('dwarf'),id('goblin')]});
+      s.players[0].book=[id('goblin')];
+    });
+    assert.deepEqual([unnameable.battle.won,unnameable.players[1].hand,unnameable.players[1].book,unnameable.players[0].book],
+      [true,[id('fighter')],[id('dwarf')],[id('goblin')]]);
+  }finally{Math.random=priorRandom;}
+  console.log('Saga ten new creatures: hive, board damage, private Cloud Gizmo redraw, two-link Sleipnir and battle triggers checked');
+  const disaster=sagaCast('disaster',s=>{
+    unit(s,2,'goblin',0,2,1,39);s.tiles[2].unit.mhp=60;
+    unit(s,3,'dwarf',1,0,1,41);s.tiles[3].unit.mhp=59;
+    unit(s,6,'fighter',1,1,1,39);Object.assign(s.tiles[6].unit,{mhp:60,enchant:'phantasm'});
+    unit(s,8,'clayidol',1,3);
+  });
+  assert.deepEqual([2,3,6].map(at=>disaster.tiles[at].unit.hp),[19,41,39]);
+  const asylum=sagaCast('holyasylum',s=>unit(s,2,'dwarf',0,2,3,25));
+  assert.ok(C.play(asylum,['targetLand',2]));
+  function followSagaSpell(s,spell,seat){
+    s.turn=seat;s.phase='spell';s.players[seat].hand=[id(spell),id('goblin')];
+    assert.ok(C.play(s,['cast',0]),spell);
+  }
+  followSagaSpell(asylum,'locust',1);
+  assert.deepEqual(C.choices(asylum),[['fizzle']]);
+  followSagaSpell(asylum,'magicbolt',1);
+  assert.ok(C.play(asylum,['targetLand',2]));
+  assert.equal(asylum.tiles[2].unit.hp,25);
+  asylum.turn=0;asylum.players[0].pos=2;asylum.phase='land';
+  assert.ok(C.choices(asylum).some(([action,at])=>action==='level'&&at===2));
+  const hold=sagaCast('holdcurse',s=>{
+    unit(s,2,'dwarf',1,2);s.tiles[2].unit.enchant='peace';
+    unit(s,3,'fighter',0,0);s.tiles[3].unit.enchant='fog';
+    unit(s,6,'dwarf',1,1);
+  });
+  assert.ok(C.play(hold,['targetPlayer',1]));
+  assert.equal(hold.players[1].enchantDeadline,16);
+  followSagaSpell(hold,'holyasylum',0);
+  assert.deepEqual(C.choices(hold),[['targetLand',3],['targetLand',6]]);
+  followSagaSpell(hold,'massphantasm',0);
+  assert.ok(C.play(hold,['comboArea',hold.tiles[2].area]));
+  assert.equal(hold.tiles[2].unit.enchant,'phantasm');
+  const lunatic=sagaCast('lunaticlight',s=>{
+    unit(s,2,'dwarf',1,2,1,42);s.tiles[2].unit.st=37;
+  });
+  assert.equal(lunatic.phase,'sacrifice');
+  assert.ok(C.play(lunatic,C.choices(lunatic)[0])&&C.play(lunatic,['targetLand',2]));
+  assert.deepEqual(lunatic.tiles[2].unit,{id:id('dwarf'),st:42,hp:37,mhp:37});
+  const revoltSpell=sagaCast('revolt',s=>{
+    unit(s,2,'goblin',0,2,1,15);s.tiles[2].unit.poisoned=true;
+    unit(s,3,'goblin',1,0,1,15);s.tiles[3].unit.enchant='holyasylum';
+    unit(s,6,'goblin',1,1,1,15);
+  });
+  assert.deepEqual([2,3,6].map(at=>[revoltSpell.tiles[at].unit.hp,revoltSpell.tiles[at].unit.mhp]),[[25,40],[15,undefined],[15,undefined]]);
+  let otherArea;
+  const tide=sagaCast('timetide',s=>{
+    otherArea=s.tiles.findIndex(t=>t.area!==s.tiles[2].area&&typeof t.type==='number');
+    assert.ok(otherArea>=0);
+    for(const at of [2,3,otherArea]){
+      unit(s,at,'dwarf',at===2?0:1,s.tiles[at].type,1,22);
+      Object.assign(s.tiles[at].unit,{st:60,mhp:65,enchant:at===3?'holyasylum':'disease'});
+    }
+  });
+  assert.ok(C.choices(tide).some(([action,area])=>action==='comboArea'&&area===tide.tiles[otherArea].area));
+  assert.ok(C.play(tide,['comboArea',tide.tiles[2].area]));
+  assert.deepEqual(tide.tiles[2].unit,{id:id('dwarf'),hp:50,enchant:'disease'});
+  assert.deepEqual([3,otherArea].map(at=>tide.tiles[at].unit.hp),[22,22]);
+  console.log('Saga Disaster HP threshold, Holy Asylum, Hold Curse single-target immunity, Lunatic Light, Revolt and Time Tide checked');
   const boosts=fight('fighter','dwarf','무속성',null,s=>{
     unit(s,4,'ares',1,0);unit(s,5,'poseidon',0,1);
   });

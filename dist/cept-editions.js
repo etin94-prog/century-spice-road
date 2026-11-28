@@ -144,7 +144,8 @@ const CepterEditions=(()=>{
       iksear:'sagaiksear',terrair:'sagaterrair',bistair:'sagabistair',selenear:'sagaselenear',
       comet:'comet',crusherstorm:'crusherstorm',desolation:'desolation',elevation:'elevation',erosion:'erosion',
       fame:'fame',frostneedle:'frostneedle',venomousboil:'venomousboil',refuge:'refuge',gift:'sagagift',refresh:'refresh',holyblight:'holyblight',
-      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi',trade:'trade',intrusion:'intrusion',drought:'sagadrought',float:'sagafloat',innocence:'innocence',reflection:'reflection',selection:'sagaselection',rouetsoleil:'rouetsoleil',zeromn:'zeromn'},
+      hunterssong:'hunterssong',trespass:'trespass',replace:'replace',spartoi:'spartoi',trade:'trade',intrusion:'intrusion',drought:'sagadrought',float:'sagafloat',innocence:'innocence',reflection:'reflection',selection:'sagaselection',rouetsoleil:'rouetsoleil',zeromn:'zeromn',
+      disaster:'sagadisaster',holyasylum:'holyasylum',holdcurse:'holdcurse',lunaticlight:'lunaticlight',revolt:'sagaRevolt',timetide:'sagatimetide'},
     revolt:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',burninghail:'burninghail',
@@ -781,6 +782,7 @@ const CepterEditions=(()=>{
     greatfossil:{stationary:true,freeToll:true,reviveForm:'tyrannosaurus'},littlefossil:{stationary:true,freeToll:true,reviveForm:'giantrat'},
     humbaba:{poison:true},metalshambler:{},ogrelord:{scrollCritical:true},taotieh:{},leveller:{},lukoie:{entryEnchant:'landprotection'},
     doodlebeetle:{stationary:true,entryEnchant:'quicksand'},mirage:{entryEnchant:'simulacrum'},mutitan:{entryEnchant:'senility'},pulgasari:{},
+    hiveworker:{},unnameable:{last:true},cherub:{},flyingpuffer:{},
     leoknight:{},sanctumguard:{first:true},trojanhorse:{support:true},anubias:{},
     lilith:{first:true},gargoyle:{first:true},odradek:{support:true},nightfiend:{first:true},
     nike:{first:true},pegasus:{first:true,spellWard:true,neutralizeScroll:true},soulcollector:{},
@@ -794,6 +796,7 @@ const CepterEditions=(()=>{
     possession:{},lordofbane:{},bonegolem:{regenerate:true},ahuizotl:{},nobleshaman:{scrollCritical:true},
     dragonsegg:{},dragonewt:{neutralizeScroll:true},hardrockdragon:{first:true,neutralizes:[2]},lightningdragon:{first:true,neutralizes:[3]},
     aquahorn:{neutralizes:[2,3]},mistwing:{neutralizes:[0,1]},spriggan:{},
+    nil:{},hivequeen:{},peluda:{},assassin:{},cloudgizmo:{},sleipnir:{},
     lamia:{entryEnchant:'spiritwalk'},sylph:{blocksLarge:true},spudfolk:{},spinyagama:{},seismodon:{},fortress:{stationary:true},helltic:{},hellpyron:{},burnacle:{stationary:true}
   };
   const sagaTerritoryIdols=new Set(['basaltidol','graniteidol','clayidol','ebonyidol','goldidol','ironidol','ivoryidol','jadeidol','leadidol','opalidol']);
