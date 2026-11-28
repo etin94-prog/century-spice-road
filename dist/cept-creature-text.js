@@ -608,6 +608,11 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='mycoron'?'생존하면 HP를 회복합니다. 상대가 피해를 주었다면 무작위 빈 영지에 마이코론을 배치합니다.':
       C.edition==='revolt'&&key==='coatlicue'?'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 20씩 오릅니다.':
       ['begins','revolt','3ds'].includes(C.edition)&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
+      C.edition==='3ds'&&key==='bloodypudding'?'전투 시작 시 지원 크리처의 HP만큼 최대 HP를 올립니다. 최대 HP 상한은 100입니다.':
+      C.edition==='3ds'&&key==='chonchon'?'일반 공격으로 피해를 준 상대에게 지형 효과 무효를 부여합니다.':
+      C.edition==='3ds'&&key==='rustcrawler'?'장비를 사용하지 않고 싸우면 전투 시작 시 상대의 장비를 파괴합니다.':
+      C.edition==='3ds'&&key==='werewolf'?'일반 공격으로 피해를 준 상대가 살아 있으면 울프로 바꿉니다.':
+      C.edition==='3ds'&&key==='battlegearbeta'?'배틀 기어 α를 지원으로 쓰면 번들 기어로 합체하면서 반사 인챈트를 이어받습니다.':
       C.edition==='3ds'&&key==='apsaras'?'레벨 3 이상 영지에서 일반 공격을 무효화합니다.':
       C.edition==='3ds'&&key==='aspidochelone'?'현재 라운드 수만큼 전투 ST와 HP가 각각 오릅니다.':
       C.edition==='3ds'&&key==='sludgetitan'?'현재 HP가 최대 HP보다 낮으면 전투 시작 시 자괴합니다. 살아남으면 HP를 회복합니다.':

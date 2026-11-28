@@ -998,7 +998,8 @@ function createCepter(edition="ps2"){
       for(const [a,d] of [[A,D],[D,A]]){
         extra.itemStart(a,d);
         const ability=battleAbility(a);
-        const destroy=ability==='gremlin'||['talisman','gremlinamulet'].includes(a.g)||a.g==='stinkbottle'&&(d.gear?.kind==='creature'||edition!=='dc'&&d.gear?.category==='tool');
+        const rustCrawler=handheld&&ability==='rustcrawler'&&(a.defending?b.defItem:b.atkItem)==null;
+        const destroy=rustCrawler||ability==='gremlin'||['talisman','gremlinamulet'].includes(a.g)||a.g==='stinkbottle'&&(d.gear?.kind==='creature'||edition!=='dc'&&d.gear?.category==='tool');
         const target=d.gear?.category;
         const penguin=revolt&&a.n==='kaiserpenguin'&&(target==='tool'||target==='scroll'||d.gear?.kind==='creature');
         const monarch=ability==='abyssalmonarch'&&d.gear?.kind==='item'&&['weapon','tool'].includes(target);
@@ -1008,7 +1009,7 @@ function createCepter(edition="ps2"){
         const revoltBreak=revolt&&d.gear&&(a.g==='reactivearmor'&&target==='weapon'||a.g==='gremlinseye'&&d.gear.catalog?.rarity!=='N');
         const beginsBreak=begins&&(a.g==='corrosiverobe'&&['weapon','scroll'].includes(target)||a.g==='corrosivespear'&&['armor','tool'].includes(target));
         if((destroy||gremlin||monarch||duchess||penguin||revoltBreak||beginsBreak)&&!protection(d)){
-          if(d.gear&&(duchess||revoltBreak||beginsBreak||begins&&ability==='gremlin'))lines.push((mimic(a)?.name||a.gear?.name||a.c.name)+' · '+d.gear.name+' 파괴');
+          if(d.gear&&(rustCrawler||duchess||revoltBreak||beginsBreak||begins&&ability==='gremlin'))lines.push((mimic(a)?.name||a.gear?.name||a.c.name)+' · '+d.gear.name+' 파괴');
           useGear(d);
         }
       }
@@ -1035,7 +1036,7 @@ function createCepter(edition="ps2"){
       if(!begins&&a.n==='sonascetic'&&a.gear?.kind==='creature')a.n=a.g;
       const count=(e)=>s.tiles.filter(v=>v.owner===a.seat&&v.type===e).length;
       if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){
-        const max=fx.max(a.u),gain=Math.max(0,Math.min(begins||revolt||edition==='saga'?100:80,max+a.gear.hp)-max);
+        const max=fx.max(a.u),gain=Math.max(0,Math.min(begins||revolt||handheld||edition==='saga'?100:80,max+a.gear.hp)-max);
         a.u.mhp=max+gain;a.u.hp+=gain;
       }
       if(edition==='ps2'&&a.g==='belloflaw')destroyHighestCostHandCard(other);
@@ -1510,8 +1511,8 @@ function createCepter(edition="ps2"){
       const hpLoss=creatureEnd&&a.c.battleEndHPLoss;
       if(a.hp>0&&(hpLoss||a.n==='zombie')){
         const loss=hpLoss||20;
-        a.hp=(begins?Math.min(a.hp,a.u.hp):a.hp)-loss;
-        if(begins)lines.push('좀비 · 기본 HP 20 감소');
+        a.hp=(begins||handheld?Math.min(a.hp,a.u.hp):a.hp)-loss;
+        if(begins||handheld)lines.push('좀비 · 기본 HP 20 감소');
         else if(hpLoss)lines.push(a.c.name+' · 전투 종료 HP '+loss+' 감소');
       }
       const needsSurvivor=(revolt||begins||edition==='saga')&&a.n==='baal'||(begins||edition==='saga')&&a.n==='behemoth';
@@ -1663,7 +1664,7 @@ function createCepter(edition="ps2"){
     }
     if(D.hp>0)for(const a of sides){
       if(a.hp<=0||muted)continue;
-      const enchant=creatureEnd?(a.n==='suiko'?'vitality':!a.gear?({wendigo:begins?null:'fog',chonchon:'antielement',giantrattler:'disease'})[a.n]:null):null;
+      const enchant=creatureEnd?(a.n==='suiko'?'vitality':!a.gear?({wendigo:begins?null:'fog',chonchon:handheld?null:'antielement',giantrattler:'disease'})[a.n]:null):null;
       if(enchant){combo.clear(D.u);D.u.enchant=enchant;lines.push('방어 영지 · '+enchant);}
       if(a.g==='talisman'){combo.clear(D.u);D.u.enchant='landprotection';}
     }
@@ -1710,6 +1711,12 @@ function createCepter(edition="ps2"){
           const gain=a.ordinaryDamage*5;
           owner.cash+=gain;lines.push('젤라티너스 월 · '+gain+'G 획득');
         }
+      }
+      if(handheld&&creatureEnd&&a.n==='gelatinouswall'&&a.hp>0&&a.ordinaryDamage>0){
+        const gain=a.ordinaryDamage*5;
+        s.players[a.seat].cash+=gain;
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]-=gain;}
+        lines.push(a.c.name+' · '+gain+'G 획득');
       }
       if(revolt&&a.g==='gelatinousarmor'&&itemEnd&&a.hp>0&&a.ordinaryDamage>0){
         const gain=a.ordinaryDamage*5;

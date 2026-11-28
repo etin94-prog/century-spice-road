@@ -8857,3 +8857,80 @@ console.log('Dreamcast Baldanders, Protean Ring and Polymorph: form selection, s
   }
 }
 console.log('2012 3DS Soltis ownership and four elements, five wall forms, randomized forms and battle rulings verified.');
+
+{
+  const C=ps2.createEdition('3ds'),map='3ds-original-bend';
+  const id=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  const start=()=>C.start(2,2,7000,map,C.presets.handheldFusion,C.presets.handheldFusion,1);
+  const atFor=s=>s.tiles.findIndex(t=>C.territoryType(t.type));
+  assert.ok(C.validBook(C.presets.handheldFusion));
+  for(const n of ['bundlegear','carbunfly']){
+    assert.ok(C.cards[id(n)].generatedOnly);
+    assert.ok(!C.validBook([id(n),...C.presets.handheldFusion.slice(1)]));
+  }
+  function fight(a,d,{atkGear,defGear,type='무속성',level=1,guard={},invHP,extra,seed=.5}={}){
+    const s=start(),at=atFor(s),tile=s.tiles[at],alt=s.tiles.findIndex((t,i)=>i!==at&&!C.board(s).links[at].includes(i)&&C.territoryType(t.type));
+    Object.assign(tile,{type,level,owner:1,unit:{id:id(d),hp:C.cards[id(d)].hp,...guard}});
+    if(extra)Object.assign(s.tiles[alt],{owner:1,unit:{id:id(extra[0]),hp:C.cards[id(extra[0])].hp,...extra[1]}});
+    s.players.forEach((p,i)=>{p.hand=[atkGear,defGear][i]?[id([atkGear,defGear][i])]:[];p.cash=1000;});
+    s.phase='attack';s.battle={at,inv:id(a),invHP,atkItem:null,defItem:null};
+    const rand=Math.random;
+    try{
+      Math.random=()=>seed;
+      assert.ok(C.play(s,atkGear?['equip',0]:['bare']));
+      assert.ok(C.play(s,defGear?['equip',0]:['bare']));
+    }finally{Math.random=rand;}
+    return {s,at,tile,b:s.battle};
+  }
+  for(const [body,support] of [['battlegearalpha','battlegearbeta'],['battlegearbeta','battlegearalpha']]){
+    const result=fight(body,'goblin',{atkGear:support});
+    assert.deepEqual([result.b.forms[0],result.b.attackST,result.b.startHP[0]],[id('bundlegear'),70,70]);
+    assert.deepEqual([result.tile.owner,result.tile.unit.id],[0,id('bundlegear')]);
+    assert.deepEqual(result.s.players[0].hand,[]);
+    const failed=fight(body,'gremlin',{atkGear:support});
+    assert.equal(failed.b.forms[0],id(body));
+  }
+  const reflects=fight('fighter','battlegearbeta',{defGear:'battlegearalpha',guard:{enchant:'reflection',expires:4}});
+  assert.equal(reflects.b.forms[1],id('bundlegear'));
+  assert.equal(reflects.b.strikes[0].effect,'reflect');
+  assert.deepEqual([reflects.tile.unit.id,reflects.tile.unit.enchant,reflects.tile.unit.expires],[id('bundlegear'),'reflection',4]);
+  const protectedGear=fight('fighter','battlegearalpha',{atkGear:'nuclearfusion',defGear:'battlegearbeta'});
+  assert.equal(protectedGear.b.strikes[0].effect,'block');
+  const dragon=fight('fighter','carbuncle',{atkGear:'nuclearfusion',defGear:'dragonfly',invHP:80});
+  assert.equal(dragon.b.forms[1],id('carbunfly'));
+  assert.equal(dragon.b.strikes[0].side,1);
+  assert.equal(dragon.b.strikes[1].effect,'reflect');
+  const revived=fight('fighter','carbuncle',{atkGear:'longsword',defGear:'dragonfly',invHP:80});
+  assert.equal(revived.b.forms[1],id('carbunfly'));
+  assert.equal(revived.tile.unit.id,id('carbuncle'));
+  const pudding=fight('goblin','bloodypudding',{defGear:'tyrannosaurus',guard:{mhp:90,hp:90,st:0}});
+  assert.equal(pudding.tile.unit.mhp,100);
+  assert.equal(pudding.tile.unit.hp,100);
+  const terrain=fight('trojanhorse','dwarf',{atkGear:'fighter',type:2,level:3});
+  assert.match(terrain.b.lines.join(' '),/지형 보너스 관통/);
+  assert.equal(terrain.b.strikes[0].hp[1],10);
+  assert.equal(fight('goblin','gelatinouswall').s.players[1].cash,1100);
+  assert.equal(fight('fighter','gelatinouswall',{atkGear:'nuclearfusion',guard:{hp:100,mhp:100}}).s.players[1].cash,1000);
+  assert.equal(fight('fighter','gelatinouswall',{atkGear:'longsword'}).s.players[1].cash,1000);
+  const zombie=fight('goblin','zombie',{defGear:'scalearmor'});
+  assert.equal(zombie.tile.unit.hp,30);
+  const root=fight('chonchon','fighter',{type:2});
+  assert.equal(root.b.strikes[0].side,0);
+  assert.equal(root.tile.unit.enchant,'antielement');
+  const rusty=fight('rustcrawler','fighter',{defGear:'longsword'});
+  assert.equal(rusty.b.defendST,40);
+  assert.equal(fight('rustcrawler','fighter',{atkGear:'mace',defGear:'longsword'}).b.defendST,70);
+  assert.equal(fight('rustcrawler','fighter',{defGear:'wingedboots'}).b.strikes[0].side,1);
+  const baseline=fight('fighter','goblin').b.attackST;
+  assert.equal(fight('fighter','goblin',{extra:['nue']}).b.attackST,baseline-10);
+  assert.equal(fight('fighter','goblin',{extra:['nue',{enchant:'paralysis'}]}).b.attackST,baseline);
+  assert.equal(fight('lizardman','goblin',{extra:['quetzalcoatl']}).b.attackST,C.cards[id('lizardman')].st+10);
+  assert.equal(fight('fighter','goblin',{atkGear:'wingedboots',extra:['quetzalcoatl']}).b.attackST,baseline);
+  assert.equal(fight('fighter','gigantherium',{guard:{enchant:'greed'}}).b.startHP[1],40);
+  assert.equal(fight('werewolf','wallofstone',{seed:.999}).tile.unit.id,id('wolf'));
+  const gray=fight('littlegray','wallofstone',{seed:.1});
+  assert.ok(gray.s.tiles.some((t,i)=>i!==gray.at&&t.owner===1&&t.unit?.id===id('wallofstone')));
+  const leo=fight('fighter','leoknight',{extra:['goblin']});
+  assert.deepEqual([leo.b.defendST,leo.b.startHP[1]],[0,20]);
+}
+console.log('2012 3DS support, fusion, generated forms, enchant inheritance, damage and equipment effects checked.');

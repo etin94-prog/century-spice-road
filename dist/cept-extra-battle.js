@@ -51,15 +51,15 @@ const CepterExtraBattle=(()=>{
     // Another copy elsewhere can still provide the same non-stacking bonus.
     const sources=s.tiles.filter((v,j)=>v.unit&&j!==b.at&&j!==b.from);
     function boost(n,a,ownOnly=false){
-      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(!['revolt','saga','begins'].includes(s.edition)||v.unit.enchant!=='paralysis'));
+      return sources.some(v=>(!ownOnly||v.owner===a.seat)&&fx.name(v.unit)===n&&(!['revolt','saga','begins','3ds'].includes(s.edition)||v.unit.enchant!=='paralysis'));
     }
-    function transform(a,id,temporary=false){
+    function transform(a,id,temporary=false,label='변신'){
       if(id==null)return;
       if(temporary)a.original={...a.u};
       else delete a.original;
       const c=cards[id],u={id,hp:c.hp};
       Object.assign(a,{u,c,n:c.basicBattle?null:combo.key(c),element:c.element,elements:c.elements,hp:c.hp,st:c.st,land:0});
-      lines.push(c.name+' 변신');
+      lines.push(c.name+' '+label);
     }
     function protectedGear(a){return ['archbishop','sage'].includes(a.n)||a.c.protectGear||a.gear?.protectItem||protectedItem(a.g)&&!((s.edition==='dc'||firstEdition)&&['iksear','terrair'].includes(a.g));}
     function convert(target,name){
@@ -108,7 +108,10 @@ const CepterExtraBattle=(()=>{
         if(fusion){form=ids.get(fusion);consume=true;temporary=false;}
       }
       if(form!=null){
-        transform(a,form,temporary);
+        const preserveReflection=s.edition==='3ds'&&!temporary&&form===ids.get('bundlegear')&&a.u.enchant==='reflection';
+        const {enchant,expires,enchantDeadline,caster}=a.u;
+        transform(a,form,temporary,s.edition==='3ds'&&!temporary?'합체':'변신');
+        if(preserveReflection)Object.assign(a.u,{enchant,expires,enchantDeadline,caster});
         if(s.edition==='begins'&&a.mimicked)consume=true;
       }
       if(!consume&&gear==='metamorphosebelt'){
@@ -215,7 +218,7 @@ const CepterExtraBattle=(()=>{
         case 'kraken':if(lands.some(v=>v.type===0))a.hp-=20;break;
         case 'grassstrider':a.st+=s.players[d.seat].hand.length*10;break;
         case 'gargoyle':if(a.defending)a.st=50;break;
-        case 'chonchon':if(!a.gear)a.hp+=20;break;
+        case 'chonchon':if(s.edition!=='3ds'&&!a.gear)a.hp+=20;break;
         case 'soulcollector':a.st+=5*(s.destroyedCount||0);break;
         case 'bia':if(d.gear?.kind==='creature'){a.st+=30;a.hp+=30;}break;
         case 'burningtitan':if(lands.length>=5){a.st-=30;a.hp-=30;}break;
@@ -346,7 +349,10 @@ const CepterExtraBattle=(()=>{
         const alteredForm={werewolf:'wolf',medusa:'statue',cockatrice:'wallofstone'}[n];
         if(alteredForm)transform(d,ids.get(alteredForm));
       }else{
-        if(n==='werewolf'&&chance(.6))convert(d,'wolf');
+        if(n==='werewolf'&&(s.edition==='3ds'||chance(.6)))convert(d,'wolf');
+        if(s.edition==='3ds'&&n==='chonchon'){
+          combo.clear(d.u);d.u.enchant='antielement';lines.push(a.c.name+' · 상대 지형 효과 무효');
+        }
         if(n==='medusa')convert(d,'statue');
         if(n==='cockatrice'){
           if(s.edition==='revolt')transform(d,ids.get('wallofstone'));

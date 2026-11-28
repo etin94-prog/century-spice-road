@@ -645,6 +645,11 @@ const CepterEditions=(()=>{
         watershield:3,magicshield:2,magussmirror:1,spikedshield:2,countershield:2,powercrown:1,holygrail:1,
         manna:3,windofhope:3,sink:2,relief:2,lifestream:2,peace:1,barrier:2,landdrain:1
       },
+      handheldFusion:{
+        battlegearalpha:3,battlegearbeta:3,carbuncle:3,dragonfly:3,trojanhorse:2,bloodypudding:3,gelatinouswall:3,woodfolk:2,werewolf:2,
+        countershield:2,chainmail:2,gremlinamulet:2,vorpalsword:2,magicshield:2,
+        manna:3,windofhope:3,holyword6:2,relief:2,barrier:2,turntothewall:2,lifestream:2
+      },
       handheldFourElements:{
         baldanders:2,cleric:2,minotaur:3,pillarofflame:2,apsaras:2,nessie:2,giantamoeba:2,woodfolk:3,wallofstone:2,harpy:3,tengu:2,
         proteanring:2,chainmail:2,countershield:1,vorpalsword:2,magicshield:2,
@@ -912,7 +917,12 @@ const CepterEditions=(()=>{
     trapezon:{},proteanring:{protectItem:true},abyssaltome:{st:20},coinofpiety:{st:20},doomneedle:{st:20},mindshock:{st:30},
     necroscarab:{},neutralcloak:{hp:40},migoalblessing:{st:20,hp:20,criticalElements:[1,2],neutralizes:[0,3]}
   };
+  const handheldFusionNames={battlegearalpha:'배틀 기어 α',battlegearbeta:'배틀 기어 β',bundlegear:'번들 기어',carbunfly:'카번플라이'};
   const handheldSpecial={
+    battlegearalpha:{support:true,spellWard:true},battlegearbeta:{support:true,neutralizeScroll:true},
+    bundlegear:{spellWard:true,neutralizeScroll:true,generatedOnly:true},carbunfly:{first:true,generatedOnly:true},
+    trojanhorse:{pierceAll:true,support:true},bloodypudding:{support:true},gelatinouswall:{stationary:true},zombie:{},
+    gigantherium:{},nue:{},chonchon:{first:true},rustcrawler:{},leoknight:{},werewolf:{},littlegray:{},quetzalcoatl:{},
     baldanders:{},proteanring:{st:0,hp:0},apsaras:{},aspidochelone:{},charon:{},hydra:{},kraken:{},leviathan:{},sludgetitan:{regenerate:true},vampire:{first:true},yeti:{},
     nessie:{terrainLevelHP:{element:1,perLevel:10}},cleric:{support:true,basicBattle:true,instantKill:{elements:[-1],rate:1}},
     samurai:{basicBattle:true,instantKill:{minimumBaseST:40,rate:.7}},
@@ -1019,11 +1029,12 @@ const CepterEditions=(()=>{
       const simple=basicCreature||basicGear;
       const variant=first&&['dragon','pan','hornet','holyword1','holyword6','magicbolt','steamgear','golem','sorcerer','manticore','armadillo','coati','darkelf','elf','knight','samurai','deathgaze','goldengoose','wallofice','giantspider','giantsnake','stonehail','cure'].includes(slug);
       const compatible=!!base&&!base.catalogOnly&&(r.shared||variant);
-      const name=base?.name||r.name.replace(/([a-z])([A-Z])/g,'$1 $2');
+      const localized=edition==='3ds'?handheldFusionNames[slug]:null;
+      const name=localized||base?.name||r.name.replace(/([a-z])([A-Z])/g,'$1 $2');
       const pair=edition==='saga'?sagaPairs[slug]:null;
       const element=pair?-2:battleElements.indexOf(category);
       const format=(arr,lookup)=>arr.map(k=>lookup[k]).filter(Boolean).join(',');
-      const catalog={name:base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:edition==='3ds'?handheldRefs.cards:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
+      const catalog={name:localized||base?.catalog.name||name,path,category,rarity:r.rarity,number:i+1,source:edition==='3ds'?handheldRefs.cards:modernSets[edition]?'https://culdceptcentral.com/'+modernSets[edition]+'/'+modernSets[edition]+'-card-lists/'+modernSets[edition]+'-complete-card-list':'https://card.culdcept.net/'+({dc:'2nd',saturn:'1st',ps1:'1ex'}[edition])+'/'+encodeURIComponent(r.name)+'/',stats:(kind==='creature'?'ST '+r.st+' · HP '+r.hp+' · ':'')+r.cost+'G',
         ability:r.shared&&base?base.catalog.ability:r.ability,additionalCost:format(r.req,land),placement:format(r.land,land),equipment:format(r.ban,equipment),race:r.race};
       const c={...(compatible?base:{}),name,catalog,element,kind,category,cost:r.cost,ban:r.ban.map(k=>equipment[k].toLowerCase()),catalogOnly:!(compatible||variant||simple),unlisted:false,hasArt:!!base,...(modernSets[edition]?{editionArt:r.image}:{firstArt:r.image})};
       if(kind==='spell'){
