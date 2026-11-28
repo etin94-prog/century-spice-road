@@ -28,6 +28,7 @@ const CepterExtraSpells=(()=>{
     bountyhunt:'land',release:'global',homeground:'global',senseofwild:'global',uniformity:'player',clusterburst:'global',subsidenceMass:'global',
     fluxion:'player',thunderclap:'land',suddenimpact:'land',quietude:'global',rayofpurge:'global',formportal:'global',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
+    aetherflash:'global',pilgrim:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30,thunderclap:30};
@@ -409,7 +410,7 @@ const CepterExtraSpells=(()=>{
           case 'asteroidStrong':t.level=1;break;
           case 'diselement':
             combo.clear(u);u.enchant='antielement';draw(p,s);break;
-          case 'meteor':t.level=s.edition==='begins'&&chain(s,t)>1?Math.max(1,t.level-2):1;break;
+          case 'meteor':t.level=['begins','3ds'].includes(s.edition)&&chain(s,t)>1?Math.max(1,t.level-2):1;break;
           case 'sagapolymorph':case 'beginspolymorph':case 'polymorph':{
             const id=sample(s.edition==='saga'?fx.sagaFormChoices(u.id):
               creaturePool.filter(id=>id!==u.id&&(s.edition!=='begins'||cards[id].catalog.rarity!=='E')));
@@ -512,6 +513,7 @@ const CepterExtraSpells=(()=>{
           case 'holyword2':case 'holyword8':clearCepter(q);q.word=e==='holyword2'?2:8;break;
           case 'backward':clearCepter(q);q.reverse=true;break;
           case 'barrier':setStatus(s,q,e,s.edition==='ps1'?6:s.edition==='saturn'?3:duration.barrier);break;
+          case 'bind':setStatus(s,q,e);if(s.edition==='3ds')q.cash+=150;break;
           case 'chargingstep':setStatus(s,q,e);q.hasteRolls=2;break;
           case 'subsidence':lowerHighest(s,x);break;
           default:setStatus(s,q,e);if(e==='babble')p.book.unshift(ids.get(e));
@@ -520,6 +522,12 @@ const CepterExtraSpells=(()=>{
         if(Object.hasOwn(leap,e))return warp(s,nearest(s,p,t=>t.type===leap[e]));
         const land=s.tiles.filter(t=>t.unit);
         switch(e){
+          case 'aetherflash':
+            for(const q of s.players)setStatus(s,q,e,6);
+            break;
+          case 'pilgrim':
+            if(s.tiles.some(tile=>tile.type==='신전')){s.pilgrimTemple=true;return 'temple';}
+            draw(p,s);break;
           case 'escape':return warp(s,nearest(s,p,t=>territoryType(t.type)&&!t.unit));
           case 'formportal':{
             const gates=board(s).gates;
@@ -734,7 +742,8 @@ const CepterExtraSpells=(()=>{
           case 'selenear':p.cash+=100*owning(s,s.turn).filter(t=>t.type===2).length;break;
           case 'soltis':return 'soltisPower';
           case 'spartoi':{const v=sample(s.tiles.filter(t=>territoryType(t.type)&&!t.unit));if(v){const id=ids.get('skeleton');claim(v,s.turn,{id,hp:cards[id].hp});delete v.enchant;}break;}
-          case 'triumph':case 'mistletoe':case 'soulsteal':setStatus(s,p,e);break;
+          case 'soulsteal':setStatus(s,p,e,s.edition==='3ds'?4:duration.soulsteal);break;
+          case 'triumph':case 'mistletoe':setStatus(s,p,e);break;
           default:throw Error('알 수 없는 주문 '+e);
         }
       }
@@ -972,6 +981,13 @@ const CepterExtraSpells=(()=>{
         const amount=massDamage(s,e,v);
         return sum+(!amount||e!=='energyflash'&&fx.immuneHP(v)?0:(enemy(s,v.owner)?1:-1)*(amount/8+(amount>=v.unit.hp?4*v.level:0)));
       },0);
+      if(e==='aetherflash'){
+        return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*q.hand.reduce((benefit,id)=>{
+          const card=cards[id];
+          return benefit+(card.kind==='creature'?(card.cost-90)/14+(card.catalog?.additionalCost?5:0):0);
+        },0),0);
+      }
+      if(e==='pilgrim')return s.tiles.some(t=>t.type==='신전')?(p.cash>=200&&mine.length>=2?12:0):p.hand.length<5?5:0;
       if(e==='release')return p.status===e?-12:p.hand.filter(id=>cards[id].kind==='creature'&&(cards[id].catalog?.placement||cards[id].ban?.length)).length*6;
       if(e==='assemblecards')return assembled(p)?43:10;
       if(e==='flatland')return levelTwo(s,s.turn).length>=5?45:-15;

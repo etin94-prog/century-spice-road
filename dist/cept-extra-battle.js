@@ -373,7 +373,13 @@ const CepterExtraBattle=(()=>{
         }
       }
       if(itemEnd&&a.g==='venom'&&d.hp>0){d.hp=Math.min(d.u.hp,d.hp)-Math.floor(fx.max(d.u)/2);}
-      if(s.edition!=='revolt'&&a.u.enchant==='thornfetter'&&a.hp>0)a.hp=Math.min(a.hp,a.u.hp)-20;
+      if(s.edition!=='revolt'&&a.u.enchant==='thornfetter'&&a.hp>0){
+        if(s.edition==='3ds'){
+          a.u.mhp=Math.max(0,fx.max(a.u)-20);a.u.hp=Math.min(a.u.hp,a.u.mhp);
+          if(!a.u.hp)a.hp=0;
+          lines.push('쏜 페터 · 최대 HP −20');
+        }else a.hp=Math.min(a.hp,a.u.hp)-20;
+      }
       if(a.u.enchant==='parasite')s.players[a.seat].cash-=100;
       if(['3ds','begins'].includes(s.edition)&&a.g==='offeringdoll'&&a.hp>0&&a.element>=0){
         const i=t.area*4+a.element;

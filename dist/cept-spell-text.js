@@ -312,6 +312,15 @@ const describeCepterSpell=(()=>{
     }
     if(edition==='3ds'&&['antielement','drought','fog','heal','weakness'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
     if(edition==='3ds'&&['camouflage','dispelmagic','removecurse'].includes(e))return text[e]+' 사용한 주문은 북으로 돌아갑니다.';
+    if(edition==='3ds'&&e==='aetherflash')return '6라운드 동안 모든 셉터의 크리처 소환 비용을 90G로 고정하고 영지 및 제물 조건을 무시합니다.';
+    if(edition==='3ds'&&e==='pilgrim')return '신전이 있는 지도에서는 즉시 호부를 한 번 거래합니다. 신전이 없으면 카드 한 장을 뽑습니다.';
+    if(edition==='3ds'&&e==='bind')return '적 셉터를 한 라운드 동안 행동할 수 없게 하고 그 셉터에게 150G를 줍니다.';
+    if(edition==='3ds'&&e==='invisibility')return '6라운드 동안 내 영지를 주문과 영지 능력의 단일 대상으로 고를 수 없습니다. 인챈트 제거 효과는 적용됩니다.';
+    if(edition==='3ds'&&e==='reflection')return '고른 크리처의 전투 ST를 0으로 만들고 일반 공격 피해를 반사합니다.';
+    if(edition==='3ds'&&e==='thornfetter')return '고른 크리처의 일반 영지 이동을 막고 전투가 끝날 때마다 최대 HP를 20 낮춥니다.';
+    if(edition==='3ds'&&e==='scourge')return '인챈트가 걸린 모든 셉터가 현재 마력의 40%를 잃습니다.';
+    if(edition==='3ds'&&e==='soulsteal')return '4라운드 동안 크리처가 파괴될 때마다 내가 50G를 얻습니다.';
+    if(edition==='3ds'&&e==='meteor')return '고른 영지의 레벨을 2 낮춥니다. 연쇄가 없는 영지는 레벨 1로 내립니다.';
     if(edition==='3ds'&&e==='growthbody')return '고른 크리처의 최대 HP를 최대 100까지 10 올립니다.';
     if(edition==='3ds'&&e==='massgrowth')return '모든 크리처의 최대 HP를 최대 100까지 5 올립니다.';
     if(edition==='3ds'&&e==='quintessence')return '레벨 4 이하인 고른 영지를 복합 속성 영지로 바꿉니다.';

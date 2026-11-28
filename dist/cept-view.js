@@ -460,7 +460,7 @@ function selectingSpellMapTarget(){
   if(C.edition==='revolt'&&['outrage','thrustblow'].includes(s?.spellEffect)&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(C.edition==='revolt'&&s?.phase==='spellTarget'&&['asteroid','asteroidStrong','diselement','dominantgrowth','hyperactive','bountyhunt','revoltExchange','revoltTemptation'].includes(s.spellEffect))return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
-    ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
+    ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation','reflection','meteor','replace','thornfetter','influence'].includes(s.spellEffect))return true;
   return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong','metalform','temptation','beginspolymorph'].includes(s.spellEffect);
 }
 function selectingSecretPlayer(){

@@ -192,7 +192,10 @@ const CepterCombos = (() => {
           if(e==='reinforce')a.st=Math.max(strength(a),Math.min(s.edition==='saga'?100:80,strength(a)+10));
           if(e==='insectswarm'&&a.hp<max(a))spellHarm(s,v,20);
           if(e==='massphantasm'||e==='desertstorm'){clear(a);a.enchant=e==='massphantasm'?'phantasm':e;if(e==='desertstorm')a.expires=s.round+2;}
-          if(e==='exorcism'&&enchanted(a)){clear(a);if(!immuneHP(v)){a.mhp=max(a)+10;a.hp+=10;}}
+          if(e==='exorcism'&&enchanted(a)){
+            clear(a);
+            if(!immuneHP(v)){const gain=s.edition==='3ds'?Math.min(10,100-max(a)):10;a.mhp=max(a)+gain;a.hp+=gain;}
+          }
           if(e==='sculpture'&&max(a)<=30)v.unit=morph(a,'statue');
         }
       }else if(type[e]==='player'){
@@ -251,7 +254,10 @@ const CepterCombos = (() => {
         if(e==='goblinslair'){const v=s.tiles[p.pos];if(!v.unit&&territoryType(v.type))claim(v,i,morph(null,'goblin'));p.hand.push(ids.get(e));}
         if(e==='permission')p.flags=[...(board(s).checkpoints||board(s).forts)];
         if(e==='windofhope'){draw(p,s);draw(p,s);}
-        if(e==='invisibility'){clearCepter(p);p.invisible=true;}
+        if(e==='invisibility'){
+          clearCepter(p);p.invisible=true;
+          if(s.edition==='3ds')p.enchantDeadline=(s.round-1+6)*s.players.length+s.turn;
+        }
         if(e==='dreamterrain'){
           clearCepter(p);p.dream=true;
           if(['revolt','begins','3ds'].includes(s.edition))p.enchantDeadline=(s.round-1+5)*s.players.length+s.turn;
@@ -260,7 +266,8 @@ const CepterCombos = (() => {
         if(e==='aurora'||e==='pressure')s.prices=s.prices.map(n=>Math.max(1,Math.floor(n*(e==='aurora'?1.2:.7))));
         for(const a of s.players){
           if(e==='gravity'){clearCepter(a);a.word=1;}
-          if(e==='scourge'&&(a.word!=null||a.status||a.dream||a.invisible))a.cash-=Math.floor(a.cash*.3);
+          if(e==='scourge'&&(a.word!=null||a.status||a.dream||a.invisible||s.edition==='3ds'&&(a.antiMagic||a.reverse||a.chooseDirection)))
+            a.cash-=Math.floor(a.cash*(s.edition==='3ds'?.4:.3));
           if(e==='disbelief')a.cash=Math.max(0,a.cash-5*a.symbols.reduce((sum,n)=>sum+n,0));
           if(e==='chaospanic'){clearCepter(a);a.reverse=true;}
         }
@@ -1041,7 +1048,10 @@ const CepterCombos = (() => {
       if(e==='goblinslair'){const t=s.tiles[p.pos];return !t.unit&&territoryType(t.type)?20:-10;}
       if(e==='demonictrade')return friendly.length?friendly.reduce((v,t)=>v+(['goblin','powdereater','gooba'].includes(fx.name(t.unit))?12:2),0):-10;
       if(e==='gravity')return names.includes('scourge')?12:2;
-      if(e==='scourge')return s.players.reduce((v,q)=>v+(friend(s.players.indexOf(q))?-1:1)*(q.status||q.word!=null||q.dream||q.invisible?q.cash*.035:0),0);
+      if(e==='scourge')return s.players.reduce((v,q,i)=>{
+        const affected=q.status||q.word!=null||q.dream||q.invisible||s.edition==='3ds'&&(q.antiMagic||q.reverse||q.chooseDirection);
+        return v+(friend(i)?-1:1)*(affected?q.cash*(s.edition==='3ds'?.047:.035):0);
+      },0);
       if(['aurora','shine','pressure','disbelief'].includes(e)){
         const own=p.symbols.reduce((a,b)=>a+b,0),op=Math.max(...s.players.filter(q=>q!==p).map(q=>q.symbols.reduce((a,b)=>a+b,0)));
         return (['pressure','disbelief'].includes(e)?op-own:own-op)+(names.includes('grace')&&Math.max(own,op)>0?8:0);

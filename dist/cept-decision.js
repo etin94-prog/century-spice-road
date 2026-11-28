@@ -169,7 +169,7 @@ function openTurnPicker(entries,title,preferred=-1){
     option.setAttribute('aria-pressed','false');
     if(card){
       const art=cardSeal(entry.id);art.alt='';option.prepend(art);
-      const kind=entry.action[0],noExtraCost=['runeCard','lemuresCard','circleCast','replaceCard','intrusionCard','metamorphCard'].includes(kind)||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
+      const kind=entry.action[0],noExtraCost=['runeCard','lemuresCard','circleCast','replaceCard','intrusionCard','metamorphCard'].includes(kind)||['begins','3ds'].includes(C.edition)&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
       const cost=kind==='buyCard'?C.shopCost(entry.id):noExtraCost?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s,kind!=='equip'):card.cost):null;
       if(Number.isFinite(cost)&&!['wormDiscard','clairvoyanceDone'].includes(kind))option.append(el('small',cost+'G','card-cost'));
       if(card.kind==='creature')option.append(el('small','ST '+card.st+' · HP '+card.hp,'card-power'));

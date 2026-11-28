@@ -7247,6 +7247,76 @@ for(const edition of ['dc','ps1','saturn']){
     const place=(s,at,name,owner,level=1)=>Object.assign(s.tiles[at],{type:0,owner,level,unit:{id:id(name),hp:C.cards[id(name)].hp}});
     const cast=(s,...action)=>assert.ok(C.play(s,['cast',0])&&(!action.length||C.play(s,action)));
 
+    const targeted=spell('antimagic');
+    cast(targeted,'targetPlayer',0);
+    assert.equal(targeted.players[0].antiMagic,true);
+    targeted.turn=1;targeted.phase='spell';targeted.players[1].hand=[id('drainmagic')];
+    assert.ok(C.play(targeted,['cast',0])&&C.play(targeted,['targetPlayer',0]));
+    assert.deepEqual([targeted.players[0].cash,targeted.players[0].antiMagic,targeted.phase],[950,undefined,'roll']);
+
+    const bound=spell('bind');bound.players[0].hand.push(id('fly'));
+    assert.ok(C.play(bound,['cast',0])&&C.play(bound,['sacrifice',1])&&C.play(bound,['targetPlayer',1]));
+    assert.deepEqual([bound.players[1].cash,bound.players[1].status,bound.players[1].enchantDeadline],[1150,'bind',4]);
+
+    const tolls=spell('uniformity');place(tolls,1,'minotaur',1,3);
+    cast(tolls,'targetPlayer',1);
+    assert.deepEqual([C.toll(tolls,tolls.tiles[1]),tolls.players[1].enchantDeadline],[200,12]);
+
+    const voided=spell('lifeforce');
+    cast(voided,'targetPlayer',0);
+    assert.equal(C.price(voided.players[0],C.cards[id('minotaur')],voided),0);
+    assert.equal(C.price(voided.players[0],C.cards[id('battleaxe')],voided,false),0);
+    voided.phase='spell';voided.players[0].hand=[id('windofhope')];
+    cast(voided);
+    assert.deepEqual([voided.players[0].status,voided.players[0].hand,voided.players[0].book],[undefined,[],[id('fly')]]);
+
+    const hidden=spell('invisibility');place(hidden,1,'minotaur',0);
+    cast(hidden);assert.equal(hidden.players[0].enchantDeadline,24);
+    hidden.turn=1;hidden.phase='spell';hidden.players[1].hand=[id('magicbolt')];cast(hidden);
+    assert.deepEqual(C.choices(hidden),[['fizzle']]);
+    hidden.turn=0;hidden.phase='spell';hidden.players[0].hand=[id('windofhope')];cast(hidden);
+    assert.equal(hidden.players[0].invisible,true);
+
+    const meteor=spell('meteor');meteor.players[0].hand.push(id('fly'));
+    place(meteor,1,'minotaur',1,5);place(meteor,2,'minotaur',1,4);
+    assert.ok(C.play(meteor,['cast',0])&&C.play(meteor,['sacrifice',1])&&C.play(meteor,['targetLand',1]));
+    assert.deepEqual([meteor.tiles[1].level,meteor.tiles[2].level],[3,4]);
+
+    const scourged=spell('scourge');scourged.players[0].hand.push(id('fly'));
+    scourged.players[1].antiMagic=true;scourged.players[2].status='barrier';
+    assert.ok(C.play(scourged,['cast',0])&&C.play(scourged,['sacrifice',1]));
+    assert.deepEqual(scourged.players.map(p=>p.cash),[920,600,600,1000]);
+
+    const mind=spell('poisonmind');mind.players[1].book=[id('manna'),id('goblin'),id('fly')];
+    cast(mind,'targetPlayer',1);
+    const roomView=require('../dist/cept-room-state').view;
+    const seen=roomView(C,mind,0),other=roomView(C,mind,2);
+    assert.deepEqual(seen.choices.map(x=>x[2]),[id('fly'),id('goblin'),id('manna')]);
+    assert.deepEqual(other.choices,[]);assert.equal(other.game.players[1].book,undefined);
+    assert.ok(C.play(mind,seen.choices[1]));assert.deepEqual(mind.players[1].book,[id('manna'),id('fly')]);
+
+    const ether=spell('aetherflash');cast(ether);
+    assert.ok(ether.players.every(p=>p.status==='aetherflash'&&p.enchantDeadline===24));
+    const dragon=id('dragon');
+    ether.phase='land';ether.players[0].pos=1;ether.players[0].hand=[dragon];
+    assert.ok(C.play(ether,['summon',0]));
+    assert.deepEqual([ether.tiles[1].unit.id,ether.players[0].cash],[dragon,860]);
+
+    const shrineTrade=spell('pilgrim');
+    const market=C.start(4,4,0,'3ds-original-market',undefined,undefined,2,'teams');
+    market.players[0].cash=1000;market.players[0].hand=[id('pilgrim')];cast(market);
+    assert.equal(market.phase,'temple');assert.ok(C.play(market,['buySymbol',0,1]));
+    assert.deepEqual([market.phase,market.players[0].pos,market.players[0].symbols[0]],['roll',0,1]);
+    cast(shrineTrade);assert.deepEqual(shrineTrade.players[0].hand,[id('fly')]);
+    console.log('2012 3DS timed curses, sacrifice, hidden book choices, chained Meteor, alternate summoning costs and remote temple verified');
+
+    const tournament=C.presets['handheld-943-c3ds-playerdecks-ajcc20124th'];
+    assert.ok(C.validBook(tournament));assert.ok(tournament.includes(id('yowie')));
+    const tollTest=spell('manna');place(tollTest,3,'yowie',1);
+    const range=C.tollRange(tollTest,tollTest.tiles[3]);
+    assert.deepEqual(range,[C.toll(tollTest,tollTest.tiles[3],5),C.toll(tollTest,tollTest.tiles[3],25)]);
+    assert.ok(range[0]<range[1]);
+
     const shifts=spell('turnover');
     for(const [at,st] of [[1,30],[2,40],[3,50],[5,80]]){place(shifts,at,'goblin',at%4);shifts.tiles[at].unit.st=st;}
     cast(shifts);

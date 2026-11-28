@@ -129,7 +129,13 @@ const CepterEditions=(()=>{
       antielement:'antielement',permission:'permission',wordofrecall:'castlerecall',dreamterrain:'dreamterrain',earthshaker:'earthshaker',
       charity:'charity',landtransfer:'landtransfer',mutation:'mutation',turnover:'turnover',
       camouflage:'camouflage',cure:'heal',dispelmagic:'dispelmagic',exile:'exile',
-      massgrowth:'massgrowth',punisher:'punisher',quintessence:'quintessence',removecurse:'removecurse',weakness:'weakness'
+      massgrowth:'massgrowth',punisher:'punisher',quintessence:'quintessence',removecurse:'removecurse',weakness:'weakness',
+      antimagic:'antimagic',bind:'bind',catastrophe:'catastrophe',eclipse:'eclipse',erasure:'erasure',exorcism:'exorcism',
+      goblinslair:'goblinslair',influence:'influence',invisibility:'invisibility',lifeforce:'revoltLifeForce',meteor:'meteor',
+      replace:'replace',scourge:'scourge',soulsteal:'soulsteal',subsidence:'subsidence',teleport:'teleport',tempest:'beginstempest',
+      thornfetter:'thornfetter',blacksmith:'blacksmith',discord:'discord',elementalwrath:'elementalwrath',
+      poisonmind:'beginspoisonmind',reflection:'reflection',reform:'reform',tyranny:'tyranny',uniformity:'uniformity',
+      aetherflash:'aetherflash',pilgrim:'pilgrim'
     },
     saga:{capture:'capture',theft:'theft',chariot:'chariot',bravesong:'bravesong',toughsong:'toughsong',magicbolt:'bolt',holyword8:'holyword8',find:'find',burninghail:'burninghail',freezecyclone:'freezecyclone',elementalrage:'elementalrage',
       reincarnation:'reincarnation',cleanse:'removecurse',crusher:'shatter',debility:'weakness',fistfight:'vortex',
@@ -793,6 +799,7 @@ const CepterEditions=(()=>{
     necroscarab:{},neutralcloak:{hp:40},migoalblessing:{st:20,hp:20,criticalElements:[1,2],neutralizes:[0,3]}
   };
   const handheldSpecial={
+    yowie:{criticalElements:[-1],randomToll:true},
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},
     madclown:{},hornet:{poison:true},medusa:{},vodyanoi:{first:true},gargoyle:{first:true},odradek:{support:true,immutableHP:true},dhampir:{neutralizes:[2]},soulcollector:{},
     colossus:{},decoy:{},dryad:{support:true},nike:{first:true},sprite:{blocksLarge:true},humbaba:{},jackalope:{support:true},neutralcloak:{st:0,hp:40},

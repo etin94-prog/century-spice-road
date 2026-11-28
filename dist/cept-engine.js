@@ -84,9 +84,9 @@ function createCepter(edition="ps2"){
     const land=['fire','water','earth','air'][terrain]||(color==='N'?'neutral':null);
     return c.landBan!==terrain&&!banned.includes(color)&&!(land&&words.includes('no'+land));
   }
-  const allowed=(s,i,c,t)=>canOccupy(c,t,s.players[i].status==='release')&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')||
+  const allowed=(s,i,c,t)=>canOccupy(c,t,s.players[i].status==='release')&&(s.players[i].status==='aetherflash'||combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')||
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>(handheld?allied(s,i,t.owner):t.owner===i)&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
-  const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')));
+  const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&(s.players[s.turn].status==='aetherflash'||combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')));
   const canEquip=(unit,gear,active,unlock=false)=>gear.kind==='item'?(unlock||!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')))&&
     !((begins||revolt)&&active?.enchant==='metalform'&&gear.category==='armor'):
     gear.kind==='creature'&&(gear.itemCreature||unit.support&&(!unit.supportElements||unit.supportElements.some(e=>combo.hasElement(gear,e)))||['livingshield','livingspear','livingsword'].includes(key(gear)));
@@ -445,6 +445,7 @@ function createCepter(edition="ps2"){
     s.phase=!discardAtEnd&&p.hand.length>6?'discard':'spell';s.fixed=0;s.die=0;delete s.rollSum;s.visited=[];
   }
   function price(p,c,s,summoning=true){
+    if(p.status==='aetherflash'&&c.kind==='creature'&&summoning)return 90;
     if(p.status==='sagaMagicEra'||p.status==='revoltLifeForce'&&c.kind!=='spell')return 0;
     if(summoning&&s&&p.status==='conspiracy'&&c.kind==='creature'&&s.tiles.some(t=>t.unit&&cards[t.unit.id].cost>c.cost))return 0;
     const status=c.kind==='spell'?1:({waste:2,lifeforce:.5,sagaDeduction:.3,sagaInflation:1.3}[p.status]??1);
@@ -1080,7 +1081,7 @@ function createCepter(edition="ps2"){
         }
         if(!a.gear&&a.c.innateScroll)a.st=a.c.innateScroll==='base'?fx.strength(a.u):a.c.innateScroll;
         if(!firstEdition&&a.n==='sorcerer'&&!a.gear)a.st=20;
-        if(['reflect','nullify'].includes(a.gear?.effect))a.st=0;
+        if(['reflect','nullify'].includes(a.gear?.effect)||handheld&&a.u.enchant==='reflection')a.st=0;
       }
       if(!handheld&&!begins&&a.g==='powerbracelet')a.st*=2;
       if(a.g==='petrifystone'){a.st=0;a.hp=80+a.land;}
@@ -1925,7 +1926,10 @@ function createCepter(edition="ps2"){
       }
       case 'leaveShop':s.phase='land';break;
       case 'buySymbol':case 'sellSymbol':{
-        const count=k==='buySymbol'?y:-y;p.cash-=count*s.prices[x];p.symbols[x]+=count;resumeMove(s);break;
+        const count=k==='buySymbol'?y:-y;p.cash-=count*s.prices[x];p.symbols[x]+=count;
+        if(s.pilgrimTemple){delete s.pilgrimTemple;s.phase='roll';}
+        else resumeMove(s);
+        break;
       }
       case 'buyGem':case 'sellGem':case 'stealGem':{
         const quote=gemQuote(s,a);
@@ -1939,7 +1943,10 @@ function createCepter(edition="ps2"){
         break;
       }
       case 'leaveGem':if(s.remaining)resumeMove(s);else s.phase='land';break;
-      case 'leaveTemple':resumeMove(s);break;
+      case 'leaveTemple':
+        if(s.pilgrimTemple){delete s.pilgrimTemple;s.phase='roll';}
+        else resumeMove(s);
+        break;
       case 'liquidate':p.cash+=s.prices[x]*y;p.symbols[x]-=y;debt(s);break;
       case 'shrineChoice':shrine.choose(s,x);break;
       case 'zeromnPower':{
@@ -1971,7 +1978,7 @@ function createCepter(edition="ps2"){
         if(c.doublecast)s.doublecast='pending';else delete s.doublecast;
         p.lastCast={name:key(c),round:s.round};
         if(revolt)s.spellCategory=c.category;
-        delete p.invisible;
+        if(!handheld)delete p.invisible;
         if(p.status==='revoltLifeForce'){
           fx.clearCepter(p);
           mapEffect('cast','라이프 포스 · 주문 무효',p.pos,{title:c.name});break;
