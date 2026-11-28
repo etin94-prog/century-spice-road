@@ -800,6 +800,11 @@ const CepterEditions=(()=>{
   };
   const handheldSpecial={
     yowie:{criticalElements:[-1],randomToll:true},
+    basaltidol:{stationary:true},brassidol:{stationary:true},bronzeidol:{stationary:true},clayidol:{stationary:true},ebonyidol:{stationary:true},
+    goldidol:{stationary:true},graniteidol:{stationary:true},ironidol:{stationary:true},ivoryidol:{stationary:true},jadeidol:{stationary:true},silveridol:{stationary:true},
+    hurricane:{stationary:true,first:true},hornedchameleon:{anyTerrain:true},livingshield:{itemCreature:true},livingspear:{itemCreature:true},livingsword:{itemCreature:true},
+    steamgear:{tollFactor:.5},mummy:{stationary:true},undine:{neutralizes:[1]},wizard:{support:true,scrollCritical:true},
+    angostura:{stationary:true},ambermosquito:{},blynx:{spellWard:true},fungonoid:{regenerate:true},succubus:{},wraith:{},soulblast:{st:30},
     gascloud:{half:true},statue:{stationary:true},doppelganger:{},sanctumguard:{first:true},squonk:{support:true},barrowwight:{},
     madclown:{},hornet:{poison:true},medusa:{},vodyanoi:{first:true},gargoyle:{first:true},odradek:{support:true,immutableHP:true},dhampir:{neutralizes:[2]},soulcollector:{},
     colossus:{},decoy:{},dryad:{support:true},nike:{first:true},sprite:{blocksLarge:true},humbaba:{},jackalope:{support:true},neutralcloak:{st:0,hp:40},

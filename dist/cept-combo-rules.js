@@ -93,7 +93,7 @@ const CepterCombos = (() => {
       owner.hand.push(t.unit.id);vacate(t);
     }
     function damageAmount(s,t,n){
-      return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,s.edition==='saga'?'clayidol':'crayidol')?10:0)));
+      return immuneHP(t)?0:Math.min(t.unit.hp,Math.max(0,n-(idol(s,['saga','3ds'].includes(s.edition)?'clayidol':'crayidol')?10:0)));
     }
     function damage(s,t,n,caster=s.turn,fromSpell=false){
       t.unit.hp-=damageAmount(s,t,n);

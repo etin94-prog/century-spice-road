@@ -44,6 +44,7 @@ const CepterCreatureText=(()=>{
     berserker:'일반 공격으로 피해를 주면 자신이 혼란에 빠집니다.',
     borgess:'전투에 참여하지 않은 채 맵에 있으면 무속성 크리처의 전투 HP를 20 올립니다.',
     brassidol:'맵에 있으면 모든 셉터가 턴 시작 드로우에서 카드 한 장을 더 뽑습니다.',
+    bronzeidol:'맵에 있으면 크리처의 지원 능력을 사용할 수 없습니다. 장비형 크리처는 계속 장착할 수 있습니다.',
     cleric:'일반 공격으로 피해를 준 무속성 상대를 80% 확률로 즉사시킵니다.',
     colossus:'주회 보너스로 HP를 회복하지 않습니다. 단일 지속 주문과 같은 유형의 영지 능력의 대상이 되지 않습니다.',
     coaloid:'내 화 영지 한 곳당 전투 ST와 HP가 10 오릅니다. 주문이나 영지 능력으로 파괴되면 화 영지 한 곳당 50G를 얻습니다.',
@@ -536,6 +537,8 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='redcap'?'배치된 고블린 한 마리당 자신의 전투 ST와 HP가 20씩 오릅니다. 자신이 전투에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
       C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
       C.edition==='begins'&&key==='ambermosquito'?'전투에서 티라노사우루스와 자이언트 래트 중 하나로 같은 확률로 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
+      C.edition==='3ds'&&key==='wraith'?'일반 공격이 명중하면 상대를 60% 확률로 즉사시킵니다. 전투가 끝나면 자신도 파괴됩니다.':
+      C.edition==='3ds'&&key==='fungonoid'?'전투에서 생존하면 최대 HP가 10 오르고 HP가 회복됩니다. 최대 HP 상한은 100입니다.':
       C.edition==='revolt'&&key==='enchantress'?'단일 인챈트 주문을 받으면 같은 인챈트를 동맹 크리처에 옮긴 뒤 피로 상태가 됩니다.':
       C.edition==='revolt'&&key==='doomdevourer'?'자기 차례에 이동 주사위가 1~3이면 기본 ST와 최대 HP가 각각 10 오릅니다. 상한은 100입니다.':
       C.edition==='revolt'&&key==='id'?'크리처 카드를 합성 재료로 버리면 그 크리처로 변신합니다. 두루마리 공격을 무효화합니다.':
@@ -576,7 +579,7 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='halfling'?'모든 속성 영지에서 지형 HP 보너스를 받습니다.':
       C.edition==='revolt'&&key==='cactuswall'?'수·풍 속성 상대와 싸울 때 전투 HP가 50 오릅니다.':
       C.edition==='revolt'&&key==='tigerweta'?'전투 영지에 인접한 내 영지가 있으면 전투 ST와 HP가 20씩 오릅니다.':
-      C.edition==='revolt'&&key==='mummy'?'전투에서 격파되면 이번 주회 번호 × 40G를 얻습니다.':
+      ['revolt','3ds'].includes(C.edition)&&key==='mummy'?'전투에서 격파되면 이번 주회 번호 × 40G를 얻습니다.':
       C.edition==='revolt'&&key==='creepingcoin'?'전투가 끝나거나 전투 및 주문으로 파괴되면 100G를 얻습니다.':
       C.edition==='revolt'&&key==='scylla'?'상대의 공격 성공 시 효과가 발동하지 않습니다. 생존하면 전투가 끝날 때 상대 크리처의 영지 통행료를 무효화합니다.':
       C.edition==='revolt'&&key==='phoenix'?'전투에서 격파되면 손패에 돌아옵니다. 이미 10장이면 파괴됩니다.':

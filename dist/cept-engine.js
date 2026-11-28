@@ -87,9 +87,9 @@ function createCepter(edition="ps2"){
   const allowed=(s,i,c,t)=>canOccupy(c,t,s.players[i].status==='release')&&(s.players[i].status==='aetherflash'||combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')||
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>(handheld?allied(s,i,t.owner):t.owner===i)&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
   const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&(s.players[s.turn].status==='aetherflash'||combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')));
-  const canEquip=(unit,gear,active,unlock=false)=>gear.kind==='item'?(unlock||!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')))&&
+  const canEquip=(unit,gear,active,unlock=false,state)=>gear.kind==='item'?(unlock||!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor')))&&
     !((begins||revolt)&&active?.enchant==='metalform'&&gear.category==='armor'):
-    gear.kind==='creature'&&(gear.itemCreature||unit.support&&(!unit.supportElements||unit.supportElements.some(e=>combo.hasElement(gear,e)))||['livingshield','livingspear','livingsword'].includes(key(gear)));
+    gear.kind==='creature'&&(gear.itemCreature||unit.support&&!(handheld&&state&&fx.idol(state,'bronzeidol'))&&(!unit.supportElements||unit.supportElements.some(e=>combo.hasElement(gear,e)))||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
   const bookSize=edition==='begins'?40:50;
   const openingHandSize=edition==='begins'?5:4;
@@ -885,7 +885,7 @@ function createCepter(edition="ps2"){
         const unit=cards[s.phase==='attack'?s.battle.inv:tile.unit.id];
         p.hand.forEach((id,j)=>{const gear=cards[id];
           if((p.status!=='sagaBreak'||gear.kind!=='item')&&(!begins||p.status!=='silence'||gear.kind!=='creature')&&
-            price(p,gear,s,false)<=p.cash&&canEquip(unit,gear,fighter,p.status==='release')&&
+            price(p,gear,s,false)<=p.cash&&canEquip(unit,gear,fighter,p.status==='release',s)&&
             !(p.status==='mesozoicsong'&&fighter?.enchant!=='paralysis'&&gear.category==='scroll'))options.push(['equip',j]);
         });options.push(['bare']);break;
       }
@@ -1171,6 +1171,12 @@ function createCepter(edition="ps2"){
         if(!scroll)d.hitByOpponent=true;
       }
       trackDamage(d,damage,!scroll);
+      if(handheld&&a.g==='soulblast'&&damage>0){
+        const amount=(s.players[a.seat].lap+1)*40;
+        s.players[a.seat].cash+=amount;s.players[d.seat].cash-=amount;
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]-=amount;b.magicLoss[+d.defending]+=amount;}
+        lines.push(a.gear.name+' · '+amount+'G 탈취');
+      }
       if(begins&&!muted&&a.g==='mindshock'&&damage>0&&d.hp>0){
         combo.clear(d.u);d.u.enchant='sleep';lines.push(a.gear.name+' · 상대에게 수면 부여');
       }
@@ -1236,7 +1242,7 @@ function createCepter(edition="ps2"){
           }
         }
         if(a.g==='rathunter'&&d.hp>0)extra.convert(d,'giantrat');
-        if(attacker==='wraith'&&!s.predict&&Math.random()<.5)d.hp=0;
+        if(attacker==='wraith'&&!s.predict&&Math.random()<(handheld?.6:.5)){d.hp=0;if(handheld)lines.push(a.c.name+' · 즉사');}
       }
     }
     function reduceBattleMhp(a,loss){
@@ -1495,7 +1501,7 @@ function createCepter(edition="ps2"){
       if(revolt&&revive(a))continue;
       const p=s.players[a.seat];
       if(creatureEnd&&a.n==='cornfolk')p.cash+=200;
-      if(creatureEnd&&a.n==='mummy')p.cash+=(revolt?40:50)*(p.lap+1);
+      if(creatureEnd&&a.n==='mummy')p.cash+=(revolt||handheld?40:50)*(p.lap+1);
       if(revolt&&creatureEnd&&a.n==='creepingcoin')p.cash+=100;
       if(revolt&&creatureEnd&&a.n==='chironex'&&a.defeatedByOpponent){p.cash-=100;lines.push(a.c.name+' · 격파 후 −100G');}
       if(edition==='saga'&&creatureEnd&&a.n==='spudfolk'&&a.defeatedByOpponent){
@@ -2246,7 +2252,7 @@ function createCepter(edition="ps2"){
       const base=p.hand[cardIndex],discard=p.hand[discardIndex],invUnit=synthesizedUnit(base,discard),inv=invUnit.id;
       const tile=s.tiles[at],tower=s.phase==='towerDeploy'||s.pendingCard?.phase==='towerDeploy',c=cards[base];
       const canUseItem=discardIndex!=null||!sacrificeRequired(s,c)||p.hand.length>=3;
-      const items=canUseItem?p.hand.filter((id,i)=>i!==cardIndex&&i!==discardIndex&&price(p,cards[id],s,false)+price(p,c,s)<=p.cash&&canEquip(cards[inv],cards[id],null,p.status==='release')):[];
+      const items=canUseItem?p.hand.filter((id,i)=>i!==cardIndex&&i!==discardIndex&&price(p,cards[id],s,false)+price(p,c,s)<=p.cash&&canEquip(cards[inv],cards[id],null,p.status==='release',s)):[];
       return Math.max(...[null,...items].map(item=>{
         return evaluateGear({at,inv,invUnit,tower},item,false,true,discardIndex==null?[base]:[base,discard],battle=>
           (battle.won?value(s,tile)+100:battle.noToll&&!tower?toll(s,tile):-60)-price(p,c,s)*.5-(cards[item]?.cost||0)*.5);
@@ -2468,7 +2474,7 @@ function createCepter(edition="ps2"){
       const hp=tile.unit.hp+landBonus(cards[tile.unit.id],tile);
       if(remote&&skill>=2){
         const attack={at,inv:id,tower:true};
-        const win=Math.max(...[null,...p.hand.filter(card=>card!==id&&canEquip(c,cards[card])&&price(p,cards[card],s,false)+price(p,c,s)<=p.cash)].map(gear=>forecast(attack,gear,false,true).won?value(s,tile)+15-(cards[gear]?.cost||0):0));
+        const win=Math.max(...[null,...p.hand.filter(card=>card!==id&&canEquip(c,cards[card],null,false,s)&&price(p,cards[card],s,false)+price(p,c,s)<=p.cash)].map(gear=>forecast(attack,gear,false,true).won?value(s,tile)+15-(cards[gear]?.cost||0):0));
         return win?win/3-price(p,c,s)/6:-20;
       }
       return c.st+(p.hand.some(id=>cards[id].kind==='item'&&cards[id].st&&cards[id].cost+c.cost<=p.cash)?30:0)>=hp?40:-2;

@@ -7317,6 +7317,38 @@ for(const edition of ['dc','ps1','saturn']){
     assert.deepEqual(range,[C.toll(tollTest,tollTest.tiles[3],5),C.toll(tollTest,tollTest.tiles[3],25)]);
     assert.ok(range[0]<range[1]);
 
+    const guarded=spell('magicbolt');
+    place(guarded,2,'clayidol',1);place(guarded,3,'minotaur',1);
+    cast(guarded,'targetLand',3);assert.equal(guarded.tiles[3].unit.hp,30);
+    const protectedPlayers=spell('drainmagic');place(protectedPlayers,2,'graniteidol',1);
+    cast(protectedPlayers);assert.deepEqual(C.choices(protectedPlayers),[['fizzle']]);
+    const premium=spell('manna');place(premium,2,'ivoryidol',1);
+    const rare=C.cards[id('meteor')];
+    assert.equal(C.price(premium.players[0],rare,premium),rare.cost*2);
+
+    const equipment=spell('manna');
+    place(equipment,2,'bronzeidol',1);place(equipment,3,'minotaur',1);
+    equipment.players[0].hand=[id('goblin'),id('livingshield')];
+    equipment.battle={at:3,inv:id('wizard'),atkItem:null,defItem:null};equipment.phase='attack';
+    assert.deepEqual(C.choices(equipment),[['equip',1],['bare']]);
+    assert.ok(C.play(equipment,['equip',1])&&C.play(equipment,['bare']));
+    assert.equal(equipment.battle.startHP[0],60);
+
+    const soul=fight('minotaur','soulblast',null,null,s=>{s.players[0].lap=2;});
+    assert.ok(soul.battle.lines.some(line=>line.includes('120G 탈취')));
+    assert.equal(soul.players[0].cash,1080);
+    const mummy=fight('minotaur','battleaxe',null,null,asDefender('mummy'));
+    assert.equal(mummy.players[1].cash,1040);
+    const basalt=fight('minotaur','battleaxe',null,null,s=>{
+      asDefender('mummy')(s);place(s,5,'basaltidol',1);
+    });
+    assert.equal(basalt.players[1].cash,1000);
+    const hurricane=fight('minotaur',null,null,null,asDefender('hurricane'));
+    assert.equal(hurricane.battle.strikes[0].side,1);
+    const restoredFungus=fight('goblin',null,null,null,asDefender('fungonoid',{hp:36}));
+    assert.deepEqual([restoredFungus.tiles[3].unit.mhp,restoredFungus.tiles[3].unit.hp],[50,50]);
+    console.log('2012 3DS map Idols, restricted living equipment, lap rewards, scroll magic and regeneration checked');
+
     const shifts=spell('turnover');
     for(const [at,st] of [[1,30],[2,40],[3,50],[5,80]]){place(shifts,at,'goblin',at%4);shifts.tiles[at].unit.st=st;}
     cast(shifts);

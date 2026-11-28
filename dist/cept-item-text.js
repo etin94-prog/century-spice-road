@@ -128,6 +128,7 @@ const describeCepterItem=(()=>{
     const baseStatsBracelet=['3ds','begins'].includes(C.edition)&&key==='powerbracelet';
     if(baseStatsBracelet)pieces.push('전투의 기본 ST는 기본 ST의 두 배, 기본 HP는 최대 HP의 두 배로 계산합니다.');
     if(['3ds','begins'].includes(C.edition)&&key==='holygrail')pieces.push('두루마리와 일반 공격을 무효화합니다. 일반 공격을 막으면 막은 피해량 × 3G의 마력을 잃습니다.');
+    if(C.edition==='3ds'&&key==='soulblast')pieces.push('두루마리 공격이 명중하면 주회 번호 × 40G를 상대에게서 빼앗습니다.');
     if(C.edition==='3ds'&&key==='tearinghalo')pieces.push('장착 크리처가 유속성이면 두루마리 공격이 강타합니다.');
     if(C.edition==='3ds'&&key==='mindripper')pieces.push('설욕 시 전투 상대 셉터의 손패에서 무작위로 두 장을 파괴합니다.');
     if(C.edition==='3ds'&&key==='soulcorrupter')pieces.push('설욕 시 상대 셉터가 가장 많이 보유한 종류의 호부 30%를 빼앗습니다.');
