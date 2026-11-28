@@ -24,7 +24,12 @@ function card(id,action){
   const title=c.ability?specialText[c.ability]:gemNames[c.color];
   const fort=g.forts?.[id];
   const ribbon=fort?name(fort.seat)+' 성채 '+fort.n:({pair:'복제',chain1:'복제 +Ⅰ',chain2:'무료 Ⅱ',gold:'황금 ×2',sacrifice:'할인 반납'}[c.ability]||title);
-  return '<button class="card" data-'+action+'="'+id+'" style="--art:url(art/guild/'+id+'.webp)" aria-label="'+(c.tier+1)+'단계 '+title+' 개발 카드 '+c.vp+'점"><span class="face"><b>'+c.vp+'점</b>'+(c.color>=0?gem(c.color,c.ability==='double'?2:''):'')+'</span>'+(c.ability||fort?'<small class="ability">'+ribbon+'</small>':'')+'<span class="cost">'+chips(c.cost)+'</span></button>';
+  return '<button class="card tt-card tt-tilt tier'+c.tier+(c.ability?' special':'')+'" data-'+action+'="'+id+'" style="--art:url(art/guild/'+id+'.webp)" aria-label="'+(c.tier+1)+'단계 '+title+' 개발 카드 '+c.vp+'점"><span class="face"><b class="vp'+(c.vp?'':' nil')+'">'+c.vp+'<small>점</small></b>'+(c.color>=0?gem(c.color,c.ability==='double'?2:''):'')+'</span>'+(c.ability||fort?'<small class="ability">'+ribbon+'</small>':'')+'<span class="cost">'+chips(c.cost)+'</span></button>';
+}
+// A face-down draw pile: printed back, thickness that thins as it runs out, remaining count.
+function drawPile(t,mark){
+  const n=g.decks[t].length;
+  return '<button class="deck tt-card tier'+t+(n?n<=5?' low':'':' empty')+'" data-deck="'+t+'"><b class="mark">'+mark+'</b><small>'+n+'장</small></button>';
 }
 function bind(attr,fn){document.querySelectorAll('[data-'+attr+']').forEach(b=>b.onclick=()=>fn(Number(b.getAttribute('data-'+attr))));}
 function seatTableau(p, i){
@@ -47,22 +52,22 @@ function render(){
   announcePlayerTurn(myTurn());
   el('status').textContent=g.over?'대국 종료':(g.last?'마지막 라운드':g.round+'라운드')+' · '+name(flightActor??g.turn)+' 차례';
   el('seats').innerHTML=g.players.map(seatTableau).join('');
-  el('market').innerHTML=[2,1,0].map(t=>'<div class="row"><button class="deck" data-deck="'+t+'">'+['Ⅰ','Ⅱ','Ⅲ'][t]+'<small>'+g.decks[t].length+'장</small></button>'+g.market[t].map(id=>card(id,'card')).join('')+'</div>').join('');
-  el('patrons').innerHTML=g.nobles.map(n=>'<span class="patron guildPatron nobleTile" style="--scene:url(art/guild-'+Math.floor(n/5)+'-'+(n%5)+'.webp)"><b>3점</b><span class="nobleCost">'+chips(patrons[n])+'</span></span>').join('')||'모두 방문했습니다';
+  el('market').innerHTML=[2,1,0].map(t=>'<div class="row">'+drawPile(t,['Ⅰ','Ⅱ','Ⅲ'][t])+g.market[t].map(id=>card(id,'card')).join('')+'</div>').join('');
+  el('patrons').innerHTML=g.nobles.map(n=>'<span class="patron guildPatron nobleTile tt-card" style="--scene:url(art/guild-'+Math.floor(n/5)+'-'+(n%5)+'.webp)"><b>3점</b><span class="nobleCost">'+chips(patrons[n])+'</span></span>').join('')||'모두 방문했습니다';
   if(g.mode){
     el('status').textContent=guildNames[g.mode]+' · '+el('status').textContent;
     if(g.mode==='orient'){
       document.querySelectorAll('#market .row').forEach((row,j)=>{
         const t=5-j;
-        row.insertAdjacentHTML('beforeend',g.market[t].map(id=>card(id,'card')).join('')+'<button class="deck" data-deck="'+t+'">동방<small>'+g.decks[t].length+'장</small></button>');
+        row.insertAdjacentHTML('beforeend',g.market[t].map(id=>card(id,'card')).join('')+drawPile(t,'동방'));
       });
     }
-    if(g.cities)el('patrons').innerHTML=g.cities.map(i=>'<div class="patron guildPatron" style="--scene:url(art/guild-'+Math.floor(i/5)+'-'+(i%5)+'.webp)">'+cityFaces[i].vp+'점 '+chips(cityFaces[i].cost)+(cityFaces[i].wild?' · 다른 한 색 '+cityFaces[i].wild:'')+'</div>').join('');
+    if(g.cities)el('patrons').innerHTML=g.cities.map(i=>'<div class="patron guildPatron tt-card" style="--scene:url(art/guild-'+Math.floor(i/5)+'-'+(i%5)+'.webp)"><b>'+cityFaces[i].vp+'점</b> '+chips(cityFaces[i].cost)+(cityFaces[i].wild?' · 다른 한 색 '+cityFaces[i].wild:'')+'</div>').join('');
     if(g.mode==='posts')el('patrons').innerHTML+='<p>내 문장　'+(g.players[mySeat()]?.posts||[]).map(i=>guildPowers[i]).join(' · ')+'</p>';
   }
   document.body.classList.toggle('orient',g.mode==='orient');
   document.querySelector('.objectives').setAttribute('aria-label',g.cities?'도시 승리 조건':'귀족 방문 조건');
-  el('bank').innerHTML=g.bank.map((v,i)=>'<button data-bank="'+i+'" aria-label="'+gemNames[i]+' '+v+'개">'+gem(i,v)+'</button>').join('');
+  el('bank').innerHTML=g.bank.map((v,i)=>'<button data-bank="'+i+'" style="--n:'+Math.min(v,7)+'" aria-label="'+gemNames[i]+' '+v+'개">'+gem(i,v)+'</button>').join('');
   const pass=el('passTurn');
   pass.hidden=!(g.mode&&myTurn()&&canGuildPass(g));
   pass.onclick=()=>prepare({kind:'take',i:0,take:[]});
@@ -95,7 +100,7 @@ function takeMenu(selected){
   const options=takeOptions(g.bank);
   const fits=(arr,opt)=>arr.every((v,j)=>arr.slice(0,j+1).filter(k=>k===v).length<=opt.filter(k=>k===v).length);
   const complete=options.find(opt=>opt.length===selected.length&&fits(selected,opt));
-  modal('보석 가져오기','<p>서로 다른 세 색 또는 은행에 4개 이상 있는 한 색에서 2개를 고르세요.</p><div class="choices">'+g.bank.slice(0,5).map((v,i)=>'<button data-pick="'+i+'" '+(options.some(o=>fits([...selected,i],o))?'':'disabled')+'>'+gem(i,v)+'</button>').join('')+'</div><p>선택　'+(selected.map(i=>gem(i)).join(' ')||'없음')+'</p><button id="reset">다시 선택</button> <button class="primary" id="take" '+(complete?'':'disabled')+'>가져오기</button>');
+  modal('보석 가져오기','<p>서로 다른 세 색 또는 은행에 4개 이상 있는 한 색에서 2개를 고르세요.</p><div class="choices">'+g.bank.slice(0,5).map((v,i)=>'<button data-pick="'+i+'" '+(options.some(o=>fits([...selected,i],o))?'':'disabled')+'>'+gem(i,v)+'</button>').join('')+'</div><p>선택　'+(selected.length?'<span class="picked">'+selected.map(i=>gem(i)).join(' ')+'</span>':'없음')+'</p><button id="reset">다시 선택</button> <button class="primary" id="take" '+(complete?'':'disabled')+'>가져오기</button>');
   bind('pick',i=>takeMenu([...selected,i]));el('reset').onclick=()=>takeMenu([]);el('take').onclick=()=>prepare({kind:'take',i:0,take:complete});
 }
 // Say why a tap did nothing instead of failing silently; the line returns to the turn status.
@@ -122,7 +127,7 @@ function prepare(a){
   const due=bill&&catalog[a.i].cost.map((x,i)=>Math.max(0,x-p.bonus[i]));
   modal('행동 확인',(a.kind==='blind'?'<p>'+ (a.i+1)+'단계 덱 맨 위 카드를 비공개로 예약합니다.</p>':'')+
     (canSwap?'<p>지불　'+chips(bill)+'</p><div class="choices">'+bill.slice(0,5).map((n,i)=>n&&bill[5]<p.tokens[5]?'<button data-gold="'+i+'">'+gem(i)+' → '+gem(5)+'</button>':'').join('')+due.map((n,i)=>bill[i]<Math.min(n,p.tokens[i])?'<button data-color="'+i+'">'+gem(5)+' → '+gem(i)+'</button>':'').join('')+'</div>':'')+
-    (v.excess?'<p>반납할 보석 '+(v.excess-sum(drop))+'개　'+chips(drop)+'</p><div class="choices">'+v.tokens.map((n,i)=>'<button data-drop="'+i+'" '+(n<=drop[i]||sum(drop)>=v.excess?'disabled':'')+'>'+gem(i,n-drop[i])+'</button>').join('')+'<button id="reset">초기화</button></div>':'')+
+    (v.excess?'<p>반납할 보석 '+(v.excess-sum(drop))+'개　<span class="picked">'+chips(drop)+'</span></p><div class="choices">'+v.tokens.map((n,i)=>'<button data-drop="'+i+'" '+(n<=drop[i]||sum(drop)>=v.excess?'disabled':'')+'>'+gem(i,n-drop[i])+'</button>').join('')+'<button id="reset">초기화</button></div>':'')+
     (v.visits.length>1?'<p>방문할 귀족을 고르세요.</p>'+v.visits.map(n=>'<button data-noble="'+n+'" aria-pressed="'+(a.noble===n)+'">'+chips(patrons[n])+'</button>').join(''):'')+
     '<p><button class="primary" id="confirm" '+(sum(drop)!==v.excess||v.visits.length>1&&a.noble==null?'disabled':'')+'>확정</button></p>');
   bind('drop',i=>{drop[i]++;prepare({...a,drop});});bind('noble',n=>prepare({...a,noble:n}));

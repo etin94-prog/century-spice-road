@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id),key='worldwide-tichu-v1';
 const who=['나','왼쪽 상대','맞은편 파트너','오른쪽 상대'];
 const special=['마작','개','봉황','용'],symbols=['雀','犬','鳳','龍'];
 const rankName=n=>({11:'J',12:'Q',13:'K',14:'A'}[n]||String(n));
-const compact=c=>c>=52?special[c-52]:ranks[c%13]+suits[Math.floor(c/13)];
+const compact=c=>c>=52?special[c-52]:ranks[c%13]+suits[Math.floor(c/13)]+'︎';
 const show=id=>id<52?card(id):'<span class="card tSpecial s'+id+'" role="img" aria-label="'+special[id-52]+'"><b>'+symbols[id-52]+'</b><small>'+special[id-52]+'</small></span>';
 let g,sel=[],timer,skipBomb=false;
 try{const data=JSON.parse(localStorage.getItem(key));if(data?.p?.length===4&&['grand','exchange','play','dragon','result'].includes(data.phase))g=data;}catch{}
@@ -49,7 +49,7 @@ function render(){
   $('boardCards').innerHTML=phase==='result'?'<strong>우리 '+g.delta[0]+'점 · 상대 '+g.delta[1]+'점</strong>':phase==='exchange'?['왼쪽','파트너','오른쪽'].map((t,j)=>'<span class="gift">'+t+' '+(sel[j]===undefined?'선택':show(sel[j]))+'</span>').join(''):g.top?g.top.cards.map(show).join(''):'';
   $('detail').textContent=phase==='result'?g.order.map((i,j)=>(j+1)+'등 '+who[i]).join(' · '):phase==='play'&&!g.p[0].played?'받은 카드　'+g.p[0].received.map(x=>who[x.from]+' '+compact(x.c)).join(' · '):'';
   const canSelect=phase==='exchange'||phase==='play'&&local;
-  $('myCards').innerHTML=g.p[0].hand.slice().sort((a,b)=>Tichu.rank(a)-Tichu.rank(b)||a-b).map(c=>'<button class="handBtn" data-id="'+c+'" aria-pressed="'+sel.includes(c)+'" '+(canSelect&&(phase!=='exchange'||sel.length<3||sel.includes(c))?'':'disabled')+'>'+show(c)+'</button>').join('');
+  $('myCards').innerHTML=g.p[0].hand.slice().sort((a,b)=>Tichu.rank(a)-Tichu.rank(b)||a-b).map((c,i,all)=>'<button class="handBtn" style="--o:'+(i-(all.length-1)/2)+'" data-id="'+c+'" aria-pressed="'+sel.includes(c)+'" '+(canSelect&&(phase!=='exchange'||sel.length<3||sel.includes(c))?'':'disabled')+'>'+show(c)+'</button>').join('');
   $('handScore').textContent=g.p[0].hand.length+'장'+(phase==='exchange'?' · 선택 '+sel.length+'/3':'')+(g.p[0].call?' · 티츄 '+g.p[0].call:'');
   $('msg').textContent=phase==='grand'?'처음 8장을 보고 선언하세요.':phase==='exchange'?'왼쪽 → 파트너 → 오른쪽 순서로 한 장씩 선택하세요.':phase==='dragon'?who[g.turn]+'의 용 전달':phase==='result'?(done()?(g.totals[0]>g.totals[1]?'우리 팀 승리':'상대 팀 승리'):'라운드 종료'):windowOpen?'상대 차례 · 폭탄을 내거나 진행하세요.':who[g.turn]+' 차례'+(g.last?' · '+g.last:'');
   let controls='';

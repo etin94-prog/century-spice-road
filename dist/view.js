@@ -29,16 +29,34 @@ function card(kind,c,i,disabled=false){
     const symbols='<span class="marketRecipe">'+recipe+'</span>';
     if(kind!=='buy'){
       const target=kind==='collection'?'data-hand-index="'+i+'"':'data-kind="play" data-i="'+i+'"';
-      return '<button class="card" '+target+' aria-label="'+effectLabel+'" '+(disabled?'disabled':'')+'>'+artwork+symbols+'</button>';
+      return '<button class="card'+(kind==='collection'?'':' tt-tilt')+'" '+target+' aria-label="'+effectLabel+'" '+(disabled?'disabled':'')+'>'+artwork+symbols+'</button>';
     }
     const pile=sum(c.pile)?'<span class="marketPile">+ '+chips(c.pile)+'</span>':'';
-    return '<button class="card merchantTile" data-kind="buy" data-i="'+i+'" aria-label="영입 비용 '+i+'개, '+effectLabel+(pile?', 쌓인 자원 '+resources(c.pile):'')+'">'+artwork+'<span class="marketPrice">'+i+'</span>'+pile+symbols+'</button>';
+    return '<button class="card merchantTile tt-tilt" data-kind="buy" data-i="'+i+'" aria-label="영입 비용 '+i+'개, '+effectLabel+(pile?', 쌓인 자원 '+resources(c.pile):'')+'">'+artwork+'<span class="marketPrice">'+i+'</span>'+pile+symbols+'</button>';
   }
   const reward=kind==='order'&&bonus(g,i);
   const label=kind==='order'?(reward?coinToken(reward):''):'내 손패';
   const ready=kind==='order'&&covers(g.players[mySeat()].bag,c.cost);
-  return '<button class="card'+(ready?' affordable':'')+'" data-kind="'+kind+'" data-i="'+i+'">'+face(c,ready?label+'<span class="canOrder">달성 가능</span>':label)+'</button>';
+  return '<button class="card tt-tilt'+(ready?' affordable':'')+'" data-kind="'+kind+'" data-i="'+i+'">'+face(c,ready?label+'<span class="canOrder">달성 가능</span>':label)+'</button>';
 }
+// A face-down pile: thinner once only a few cards remain, an outline when empty.
+const deckPile=(n,kind)=>'<i class="deckPile '+kind+(n?n<6?' thin':'':' empty')+'" aria-hidden="true"></i>';
+// Held cards lean along a shallow arc around the middle of the hand.
+function fanHand(row){
+  const cards=[...row.children].filter(c=>c.matches('.card')),mid=(cards.length-1)/2;
+  cards.forEach((c,i)=>{
+    const off=i-mid;
+    c.style.setProperty('--fan-r',Math.max(-5,Math.min(5,off*1.8)).toFixed(1)+'deg');
+    c.style.setProperty('--fan-y',Math.min(7,off*off*.9).toFixed(1)+'px');
+  });
+  fadeEdge(row);
+}
+// Fade the right edge of a sideways row while more content waits beyond it.
+function fadeEdge(row){
+  const more=()=>row.classList.toggle('more',row.scrollLeft+row.clientWidth<row.scrollWidth-2);
+  row.onscroll=more;more();
+}
+addEventListener('resize',()=>{for(const id of ['hand','rival'])document.getElementById(id)?.onscroll?.();});
 function render(){
   clearGesture();
   const p=g.players[mySeat()],goal=target(g);
@@ -54,16 +72,18 @@ function render(){
       '<span class="seatDecks"><span class="orderStack" title="'+orderLabel+'" aria-label="'+orderLabel+'"><i class="orderMini '+(ai.won.length?'filled':'')+'">'+(order?order.vp+'점':'')+'</i>주문 '+ai.won.length+'장</span>'+
       '<span class="handStack" aria-label="상인 손패 '+ai.hand.length+'장"><i class="cardBack"></i>손패 '+ai.hand.length+'</span></span></button>';
   }).join('');
+  fadeEdge(el('rival'));
   document.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>inspectSeat(+b.dataset.seat));
   el('myScore').textContent=score(p)+'점 · 주문 '+p.won.length+'/'+goal+'장';
   el('bag').innerHTML=p.bag.map((n,t)=>'<div class="stock"><b>'+cube(t)+'<span class="stockCount">'+n+'</span></b><small>'+names[t]+'</small></div>').join('');
   el('handTitle').textContent='손패 '+p.hand.length+'장';
   el('hand').innerHTML=p.hand.map((c,i)=>card('play',c,i)).join('')||'<p>휴식하면 사용한 카드를 모두 회수합니다.</p>';
+  fanHand(el('hand'));
   el('rest').textContent='휴식 · '+p.used.length+'장 회수';el('rest').disabled=!!(g.over||!myTurn()||!p.used.length);
   el('orders').innerHTML=g.orders.map((c,i)=>card('order',c,i)).join('');
   el('merchants').innerHTML=g.market.map((c,i)=>card('buy',c,i)).join('');
-  el('orderDeck').textContent='남은 주문 '+g.deck.length+'장';
-  el('merchantDeck').textContent='남은 상인 '+g.merchants.length+'장';
+  el('orderDeck').innerHTML=deckPile(g.deck.length,'orders')+'남은 주문 '+g.deck.length+'장';
+  el('merchantDeck').innerHTML=deckPile(g.merchants.length,'merchants')+'남은 상인 '+g.merchants.length+'장';
   document.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{
     const kind=b.dataset.kind,i=+b.dataset.i;
     if(myTurn()&&!g.over){

@@ -61,7 +61,7 @@ function render(){
   el('atlas').querySelectorAll('button').forEach(b=>b.onclick=()=>openSite(+b.dataset.site));
   el('myTitle').textContent=edition===2?'나의 선창':'나의 정착지';
   el('inventory').innerHTML=p.bag.map((n,i)=>'<span><i class="cube s'+i+'"></i> '+info.goods[i]+' '+n+'</span>').join('');
-  el('personal').innerHTML='<b>'+(g.over?'대국 종료':seatName(active)+'의 차례')+'</b><br>'+expScore(g,p)+'점 · '+(edition===2?'교역소 '+total(p.tracks)+'곳':'정착민 '+p.ready+'/'+p.crew+'명')+' · 납품 '+p.won.length+'/'+info.goal+'<br>'+(g.departures?'시작할 섬과 화물을 선택하세요.':edition===2?'목적지 섬이나 항구를 누르세요.':'일할 장소 또는 요새를 누르세요.')+(edition===3&&g.deck.length?'<p>다음 승점 카드 · '+g.deck.at(-1)[1]+'점<br>'+goods(unitBag(g.deck.at(-1)[0]))+'</p>':'');
+  el('personal').innerHTML='<b>'+(g.over?'대국 종료':seatName(active)+'의 차례')+'</b><br>'+expScore(g,p)+'점 · '+(edition===2?'교역소 '+total(p.tracks)+'곳':'정착민 '+p.ready+'/'+p.crew+'명')+' · 납품 '+p.won.length+'/'+info.goal+'<br>'+(g.departures?'시작할 섬과 화물을 선택하세요.':edition===2?'목적지 섬이나 항구를 누르세요.':'일할 장소 또는 요새를 누르세요.')+(edition===3&&g.deck.length?'<span class="nextOrder"><small>다음 승점 · '+g.deck.length+'장</small><span class="vpCard" role="img" aria-label="다음 승점 카드 '+g.deck.at(-1)[1]+'점, '+wordBag(unitBag(g.deck.at(-1)[0]))+'"><b>'+g.deck.at(-1)[1]+'점</b>'+goods(unitBag(g.deck.at(-1)[0]))+'</span></span>':'');
   el('workerPool').hidden=edition!==3;
   el('workerPool').textContent='♟ '+p.ready+'명 · 끌어 배치';
   el('rest').hidden=edition!==3;el('rest').disabled=!myTurn()||p.ready===p.crew;

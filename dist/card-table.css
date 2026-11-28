@@ -1,8 +1,70 @@
 body.poker .felt{background:repeating-linear-gradient(35deg,#ffffff03 0 1px,transparent 1px 4px),radial-gradient(ellipse at 50% 38%,#764953,#4b303b 64%,#352633)}
-#opponents{display:flex;justify-content:center;gap:7px}.opponent{padding:3px 8px;border:1px solid #d5c5ab55;background:#13252377;border-radius:8px;text-align:center;min-width:0;flex:0 1 160px}.opponent b{font-size:13px}.opponent small{display:block;color:#eee1ce}.opponent.active,.localSeat.active{outline:2px solid #eed096}.opponent .card{--card:31px;margin-left:-7px}.opponent .corner{font-size:9px}.opponent .pips i{font-size:8px}.opponent .center{font-size:13px}
+#opponents{display:flex;justify-content:center;gap:7px}.opponent{padding:3px 8px;border:1px solid #d5c5ab55;background:#13252377;border-radius:8px;text-align:center;min-width:0;flex:0 1 160px}.opponent b{font-size:13px}.opponent small{display:block;color:#eee1ce}.opponent.active,.localSeat.active{outline:2px solid #eed096}.opponent .card{--card:31px;margin-left:-7px}.opponent .corner{font-size:11px;font-size:clamp(11px,25cqw,19px)}
 .boardTitle,.localSeat{text-align:center}.boardTitle{display:flex;gap:10px;justify-content:center;align-items:center;color:#f8e4b5}.boardTitle span{font-variant-numeric:tabular-nums}.localSeat{align-self:center;padding:3px 12px;border-radius:8px;background:#122c2999}.localSeat>div:first-child{font-size:13px}.centerBoard{border-block:1px solid #ead39a66;padding:3px 0}
-#boardCards,#myCards,.miniCards{display:flex;justify-content:center;gap:3px;align-items:center;flex-wrap:wrap;margin-top:3px}.card{margin:0}.slot{width:var(--card,56px);aspect-ratio:5/7;border:1px dashed #eee1bf77;border-radius:5px}.handBtn{min-width:35px;padding:0;border:0;background:none;display:flex;min-height:44px}.handBtn[aria-pressed=true]{transform:translateY(-4px);outline:2px solid #f8db83}.groupCard{font-size:12px;background:#163a30}.groupCard button{min-height:42px}.hula #boardCards{max-height:150px;overflow:auto}.hula .discardPile{display:flex;align-items:center;gap:4px;font-size:12px}.hula .discardPile .card{--card:38px}.hula #myCards{gap:3px}.hula #myCards .card{--card:clamp(33px,7vw,54px)}.hula .groupCard{border:1px solid #949a77;border-radius:5px;padding:3px 6px}
+#boardCards,#myCards,.miniCards{display:flex;justify-content:center;gap:3px;align-items:center;flex-wrap:wrap;margin-top:3px}.card{margin:0}.slot{width:var(--card,56px);aspect-ratio:5/7;border:1px dashed #eee1bf70;border-radius:max(4px,calc(var(--card,56px)*.085));background:#00000017;box-shadow:inset 0 1px 3px #0000002e}.handBtn{min-width:35px;padding:0;border:0;background:none;display:flex;min-height:44px}.handBtn[aria-pressed=true]{translate:0 -6px}.groupCard{font-size:12px;background:#163a30}.groupCard button{min-height:42px}.hula #boardCards{max-height:150px;overflow:auto}.hula .discardPile{display:flex;align-items:center;gap:4px;font-size:12px}.hula .discardPile .card{--card:38px}.hula #myCards{gap:3px}.hula #myCards .card{--card:clamp(33px,7vw,54px)}.hula .groupCard{border:1px solid #949a77;border-radius:5px;padding:3px 6px}
 #controls button:disabled{opacity:.45}#controls select{max-width:160px}#body button{margin:3px}.report{font-size:14px}#body label{display:flex;gap:8px;align-items:center}
 @media(max-height:420px) and (orientation:landscape){main{gap:3px}.felt{gap:3px;padding-block:5px;--card:43px}.opponent .card{--card:25px}.miniCards{margin:0}.hula #boardCards{max-height:75px}.hula .opponent{padding:2px 5px}footer{min-height:44px}.handBtn .card{--card:40px!important}}
 @media(orientation:portrait){#opponents{gap:3px}.opponent{padding-inline:3px}.card,.slot{--card:46px}#controls{justify-content:start;margin:0}}
-.tichu .felt{background:radial-gradient(ellipse at center,#555746,#273b36 72%,#1d2929)}.tSpecial{display:inline-flex;align-items:center;justify-content:center;flex-direction:column;background:#75433e;color:#fff0bd;border:2px double #e2cc96}.tSpecial b{font:700 23px Georgia,serif}.tSpecial small{font-size:10px}.tSpecial.s53{background:#555244}.tSpecial.s54{background:#8b4455}.tSpecial.s55{background:#375849}.gift{display:inline-flex;align-items:center;gap:3px;font-size:12px}.gift .card{--card:28px}.tichu #detail{text-align:center;font-size:12px}.tichu #myCards .card{--card:clamp(30px,5.6vw,52px)}.tichu .localSeat{width:100%;padding:4px}.tichu .opponent:nth-child(2){border-color:#e6c582}.tichu .handBtn{min-width:0}.tichu #boardCards .card{--card:36px}.tichu .handBtn[aria-pressed=true]{outline-color:#ffdc7b}
+.tichu .felt{background:radial-gradient(ellipse at center,#555746,#273b36 72%,#1d2929)}.gift{display:inline-flex;align-items:center;gap:3px;font-size:12px}.gift .card{--card:28px}.tichu #detail{text-align:center;font-size:12px;font-variant-emoji:text;font-family:system-ui,"Segoe UI Symbol",sans-serif}.tichu #myCards .card{--card:clamp(30px,5.6vw,52px)}.tichu .localSeat{width:100%;padding:4px}.tichu .opponent:nth-child(2){border-color:#e6c582}.tichu .handBtn{min-width:0}.tichu #boardCards .card{--card:36px}
+
+/* Tichu's special cards keep their colors and seal, printed on the same stock. */
+.tSpecial{--sp:#75433e;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;color:#fff0bd;
+  background:radial-gradient(130% 60% at 22% 0,#ffffff38 0,#fff0 62%),var(--tt-linen),var(--sp);
+  background:radial-gradient(130% 60% at 22% 0,#ffffff38 0,#fff0 62%),var(--tt-linen),linear-gradient(162deg,color-mix(in srgb,var(--sp) 84%,#fff),var(--sp) 55%,color-mix(in srgb,var(--sp) 80%,#000))}
+.tSpecial:before{inset:max(2px,5cqw);border:2px double #e2cc96c7}
+.tSpecial b{font:700 23px Georgia,serif;text-shadow:0 1px 0 #0007}.tSpecial small{font-size:10px}
+.tSpecial.s53{--sp:#555244}.tSpecial.s54{--sp:#8b4455}.tSpecial.s55{--sp:#375849}
+
+/* Picking a card up: it lifts off the felt and its shadow spreads; a finger on it
+   presses it back down. Layout never moves (translate and rotate only). */
+.handBtn{transition:translate .18s var(--tt-ease)}
+.handBtn[aria-pressed=true] .card{box-shadow:0 0 0 2px #ffd677,0 0 0 3px #0006,var(--tt-edge),var(--tt-shadow-lift)}
+/* A finger on a card lifts it, as in the other card games: a dark-gold rim just outside
+   the card, a compact lift shadow, and no glow on the paper. The button is exactly the
+   card's box, so its rim takes the card's corner instead of the button's 6px one. */
+.handBtn[data-table-pressed]{outline:2px solid #c8902e;outline-offset:1px;border-radius:max(4px,calc(var(--card,46px)*.085));filter:none}
+.handBtn[data-table-pressed] .card{box-shadow:var(--tt-edge),var(--tt-shadow-lift-compact)}
+.handBtn[aria-pressed=true][data-table-pressed] .card{box-shadow:0 0 0 2px #ffd677,0 0 0 3px #0006,var(--tt-edge),var(--tt-shadow-lift-compact)}
+/* On a picked card the rim sits outside the gold ring. */
+.handBtn.handBtn[aria-pressed=true][data-table-pressed]{outline-offset:3px}
+/* The phone stylesheet marks a picked card with a box outline and a ledge; the gold
+   ring on the card itself replaces both; a finger on it shows the card's own press rim. */
+:is(.hula,.tichu) #myCards .handBtn.handBtn[aria-pressed=true]{box-shadow:none}
+:is(.hula,.tichu) #myCards .handBtn.handBtn[aria-pressed=true]:not([data-table-pressed]){outline:0}
+:is(.hula,.tichu) #myCards .handBtn.handBtn[data-table-pressed]{border-radius:max(4px,calc(var(--card,46px)*.085))}
+:is(.hula,.tichu) #myCards .handBtn.handBtn[aria-pressed=true][data-table-pressed]{outline:2px solid #c8902e;outline-offset:3px}
+@media(orientation:landscape){
+  .hula #myCards{padding-inline:6px}
+  /* Tichu's fourteen-card hand stays inside the felt's rounded rim: a little inset, and the
+     cards close up to a 44px pitch so every tap target keeps its full width. */
+  .tichu #myCards{padding-inline:8px}
+  .tichu #myCards .handBtn+.handBtn{margin-left:-1px}
+  #myCards .handBtn{transform-origin:50% 100%;rotate:calc(var(--o,0) * .7deg);translate:0 calc(var(--o,0) * var(--o,0) * .1px)}
+  #myCards .handBtn[aria-pressed=true]{translate:0 calc(var(--o,0) * var(--o,0) * .1px - 7px)}
+}
+.poker #myCards .card:first-child{rotate:-5deg;translate:3px 1px}
+.poker #myCards .card+.card{margin-left:-8px;rotate:4deg;translate:0 -1px}
+.opponent .miniCards>.card:first-child{rotate:-4deg}
+.opponent .miniCards>.card+.card{margin-left:-13px;rotate:6deg}
+
+/* Piles on the table: the dealer's deck, Hula's draw pile and a loose discard pile. */
+#boardCards .cardPile{margin-right:8px}
+/* The poker deck sits apart from the board, turned off square, so it never reads as a sixth card. */
+body.poker #boardCards .cardPile{margin-right:16px;rotate:-6deg}
+body.poker #boardCards .cardPile .card{--card:40px}
+body.poker #boardCards .cardPile+.card{margin-left:4px}
+/* On table piles the count sits on the corner, off the back's medallion. */
+#boardCards .cardPile b{top:2px;right:-9px;bottom:auto;left:auto;translate:none;min-width:24px}
+/* Hula's board row scrolls, so its draw pile uses the thin stock edge and the row keeps
+   room below it; a thick pile on a 38px card would be cut flat at the row's bottom. */
+.hula #boardCards{padding-bottom:6px}
+.hula #boardCards .cardPile .card,.hula #boardCards .cardPile.thick .card{box-shadow:var(--tt-edge),var(--tt-pile-thin)}
+.hula .discardPile .slot{--card:38px;flex:none}
+.discardPile .cardPile{margin-right:10px}
+.discardStack{position:relative;display:inline-flex;isolation:isolate}
+.discardStack.deep:before,.discardStack.deep:after{content:'';position:absolute;inset:3px 2px;z-index:-1;border-radius:4px;background:linear-gradient(#fbf8f0b0,#fbf8f0b0),var(--tt-linen),linear-gradient(162deg,#fbf8f1,#ece2cc);box-shadow:var(--tt-edge),var(--tt-shadow-small)}
+.discardStack.deep:before{rotate:-11deg;translate:-2px 0}
+.discardStack.deep:after{rotate:7deg;translate:3px 0}
+.fanBacks{display:inline-flex;align-items:flex-end;margin:3px 8px 0 0;padding-left:14px;vertical-align:middle}
+.fanBacks .card{--card:20px;margin-left:-14px;transform-origin:50% 130%;rotate:calc(var(--o,0) * 5deg)}
+@media(prefers-reduced-motion:reduce){.handBtn{transition:none}}

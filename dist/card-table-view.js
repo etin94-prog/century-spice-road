@@ -116,25 +116,25 @@ function render(){
   $('round').textContent='ROUND '+g.round+(g.limit?' / '+g.limit:' · 무제한');$('msg').textContent=end?resultSummary():poker?CardTable.seat(g.turn)+' 차례':g.last||'내 차례에 카드를 받으세요.';
   $('opponents').innerHTML=g.players.slice(1).map((p,j)=>{
     const i=j+1,visible=end&&(!poker||g.showdown)&&!p.fold;
-    return '<div class="opponent '+(!end&&g.turn===i?'active':'')+'"><b>'+CardTable.seat(i)+(poker&&g.button===i?' · D':'')+'</b><div class="miniCards">'+(visible?showCards(p.cards):poker?p.cards.map(()=>card(null,false,'상대 홀 카드')).join(''):'손패 '+p.cards.length+'장')+'</div><small>'+(poker?p.chips+'칩 · '+(p.last||'대기')+(visible?' · '+Poker.evaluate([...p.cards,...g.board]).category:''):end?Hula.points(p.cards)+'점':p.open?'등록함':'미등록')+'</small></div>';
+    return '<div class="opponent '+(!end&&g.turn===i?'active':'')+'"><b>'+CardTable.seat(i)+(poker&&g.button===i?' · D':'')+'</b><div class="miniCards">'+(visible?showCards(p.cards):poker?p.cards.map(()=>card(null,false,'상대 홀 카드')).join(''):'<span class="fanBacks" aria-hidden="true">'+Array.from({length:Math.min(p.cards.length,7)},(_,k,n=Math.min(p.cards.length,7))=>'<span class="card back" style="--o:'+(k-(n-1)/2)+'"></span>').join('')+'</span>손패 '+p.cards.length+'장')+'</div><small>'+(poker?p.chips+'칩 · '+(p.last||'대기')+(visible?' · '+Poker.evaluate([...p.cards,...g.board]).category:''):end?Hula.points(p.cards)+'점':p.open?'등록함':'미등록')+'</small></div>';
   }).join('');
   document.querySelector('.localSeat').classList.toggle('active',local);
   if(poker){
     $('street').textContent=end?(g.showdown?'쇼다운':'핸드 종료'):Poker.streets[g.street];
     $('pot').textContent='팟 '+g.players.reduce((s,p)=>s+p.paid,0)+'칩';
-    $('boardCards').innerHTML=showCards(g.board)+'<span class="slot" aria-hidden="true"></span>'.repeat(5-g.board.length);
+    $('boardCards').innerHTML=cardPile(g.deck.length,'덱')+showCards(g.board)+'<span class="slot" aria-hidden="true"></span>'.repeat(5-g.board.length);
     $('myCards').innerHTML=showCards(mine.cards);$('handScore').textContent=(g.button===0?'D · ':'')+(mine.fold?'폴드':g.board.length?Poker.evaluate([...mine.cards,...g.board]).category:'');
     $('controls').innerHTML=local?Poker.actions(g).map(a=>btn(a,{fold:'폴드',call:'콜 '+Math.min(mine.chips,g.price-mine.bet),check:'체크',raise:(g.price?'레이즈':'베트')+' +'+Poker.unit(g)}[a],true,a==='check'||a==='call')).join(''):'';
   }else{
     $('street').textContent=end?g.reason:CardTable.seat(g.turn)+(g.phase==='draw'?' · 받기':' · 등록 / 버리기');
     $('pot').textContent='더미 '+g.deck.length+'장';
     const top=g.discard.at(-1);
-    $('boardCards').innerHTML='<div class="discardPile">버림패 '+(top===undefined?'없음':card(top))+'</div>'+g.groups.map((m,i)=>{
+    $('boardCards').innerHTML='<div class="discardPile">'+(g.deck.length?cardPile(g.deck.length,'더미'):'')+'버림패 '+(top===undefined?'<span class="slot" aria-hidden="true"></span>없음':'<span class="discardStack'+(g.discard.length>1?' deep':'')+'">'+card(top)+'</span>')+'</div>'+g.groups.map((m,i)=>{
       const label=CardTable.seat(m.owner)+' · '+m.cards.slice().sort((a,b)=>CardTable.rank(a)-CardTable.rank(b)).map(short).join(' ');
       const valid=local&&g.phase==='arrange'&&mine.open&&selected.length===1&&Hula.fits(m.cards,selected[0]);
       return valid?btn('attach-'+i,label+'에 붙이기'):'<span class="groupCard">'+label+'</span>';
     }).join('');
-    $('myCards').innerHTML=mine.cards.slice().sort((a,b)=>a-b).map(id=>'<button class="handBtn" data-id="'+id+'" aria-pressed="'+selected.includes(id)+'" '+(local&&g.phase==='arrange'?'':'disabled')+'>'+card(id)+'</button>').join('');
+    $('myCards').innerHTML=mine.cards.slice().sort((a,b)=>a-b).map((id,i,all)=>'<button class="handBtn" style="--o:'+(i-(all.length-1)/2)+'" data-id="'+id+'" aria-pressed="'+selected.includes(id)+'" '+(local&&g.phase==='arrange'?'':'disabled')+'>'+card(id)+'</button>').join('');
     $('handScore').textContent=Hula.points(mine.cards)+'점 · '+(mine.open?'등록함':'미등록');
     $('controls').innerHTML=!local?'':g.phase==='draw'?btn('draw','한 장 받기',true,true)+(Hula.thanks(g).length?btn('thanks','땡큐'):'')+(Hula.canStop(g)?btn('stop','스톱'):''):btn('meld','등록',Hula.meld(selected))+btn('discard','선택한 카드 버리기',selected.length===1,true);
   }

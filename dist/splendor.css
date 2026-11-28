@@ -1,7 +1,10 @@
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 30% 20%,#214742,#0d2726 75%);color:#f8f4de;font:15px system-ui,sans-serif;min-height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}button,select,input{font:inherit}button,select,header a{background:#264943;border:1px solid #6e8270;color:inherit;border-radius:7px;padding:7px;cursor:pointer}button:disabled{opacity:.52;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #ffcf74}header{display:flex;gap:5px;align-items:center;padding:4px 10px;background:#102e2a;flex-wrap:wrap}header strong{font:italic bold 23px Georgia;color:#efd49a}header a{text-decoration:none}#status{margin-right:auto}main{max-width:1350px;margin:auto;display:grid;grid-template-columns:minmax(0,3fr) minmax(160px,1fr);gap:8px;padding:7px}#seats{grid-column:1/-1;display:flex;gap:5px}#seats button{flex:1;min-width:0;text-align:left}button.current{outline:2px solid #ffd277;outline-offset:-2px}.sub{display:block;font-size:12px}#market{display:grid;gap:5px;align-content:start}.row{display:grid;grid-template-columns:minmax(43px,.58fr) repeat(4,minmax(0,1fr));gap:5px}.card{background:linear-gradient(175deg,#0007,transparent 55%,#000b),var(--art) center /cover;border-color:#ac9262;min-height:75px;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;text-shadow:0 1px 3px #000;color:white}.face{display:flex;align-items:center;justify-content:space-between;font-size:18px}.cost{display:flex;flex-wrap:wrap;gap:2px}.gem{display:inline-block;background:var(--color);color:var(--ink,#fff);border:1px solid #fff7;border-radius:7px;padding:1px 4px;font-size:12px;font-weight:750;text-shadow:none;white-space:nowrap}.g0{--color:#30313c}.g1{--color:#21598a}.g2{--color:#216648}.g3{--color:#923e51}.g4{--color:#f3eedd;--ink:#182623}.g5{--color:#edbd59;--ink:#3c2c0a}.deck{background:repeating-linear-gradient(45deg,#284941 0 4px,#345749 5px 6px);color:#f4dfaa}.deck small,aside small{display:block}aside{background:#102e2ac9;padding:8px;border-radius:8px}h2{font-size:16px;margin:5px 0}h2 small{display:inline;font-weight:normal;font-size:11px}#patrons,#bank,.choices,.inviteActions{display:flex;gap:4px;flex-wrap:wrap}#bank button{min-width:43px;min-height:39px}.patron{background:#484535;border:1px solid #ac9262;border-radius:5px;padding:3px}#reserved{width:100%;margin-top:6px}#save{font-size:10px;color:#c1cfbf;margin-top:4px}dialog{color:#f5efda;background:#173a34;border:1px solid #b59b69;border-radius:12px;width:min(480px,94vw);max-height:90dvh;padding:14px}dialog::backdrop{background:#031410ab}.heading,.seat{display:flex;align-items:center;justify-content:space-between;margin:4px 0}.heading button{min-width:40px}.primary{background:#e9ca87;color:#242b20;font-weight:bold}.choices,dialog p{margin:9px 0}dialog button,dialog select{min-height:40px}button[aria-pressed=true]{outline:2px solid #f6ca6c}.volume,.speedChoice{display:block;margin:12px 0}.volume input{display:block;width:100%}.flying{position:fixed;pointer-events:none;z-index:5;transform-origin:center}.cards{display:flex;flex-wrap:wrap;gap:5px}.cards .card{min-width:85px}#invite{color:#141e1a}header button,#status{font-size:12px}
 @media(orientation:landscape) and (max-height:540px){main{height:calc(100dvh - 40px);grid-template-rows:auto minmax(0,1fr);gap:4px;padding:4px 7px}header{min-height:36px}header button,header a{padding:4px 7px}#market{align-content:stretch;grid-template-rows:repeat(3,minmax(0,1fr))}.card{min-height:0}.row .card{padding:4px}.sub{font-size:11px}aside{overflow:auto}#seats button{padding:4px 7px}}
 @media(max-width:600px) and (orientation:portrait){main{grid-template-columns:minmax(0,1fr)}#seats{flex-wrap:wrap}#seats button{flex:1 0 44%}.row{gap:3px;grid-template-columns:39px repeat(4,minmax(0,1fr))}.card{padding:3px;min-height:83px}.gem{padding:1px 2px}header{gap:3px}header strong{font-size:18px}.deck{padding:2px}aside{margin-bottom:12px}}
-#latestMove{max-width:min(25vw,260px);white-space:nowrap;text-overflow:ellipsis;overflow:hidden}#seats .sub{line-height:1.35}.flying{min-height:0}
+#latestMove{max-width:min(25vw,260px);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;text-align:start}
+/* The touch header makes its buttons centring flex boxes, which clip long text on both ends and never draw the
+   ellipsis. The latest move stays a block, starts at the left and is centred vertically by its line height. */
+header #latestMove{display:block;line-height:42px;padding-block:0}#seats .sub{line-height:1.35}.flying{min-height:0}
 .card{position:relative;isolation:isolate}.card.flying{position:fixed}
 .ability{align-self:flex-start;border-radius:4px;background:#102e2ae6;padding:1px 4px;font-size:11px}.orient .row{grid-template-columns:minmax(34px,.55fr) repeat(6,minmax(0,1fr)) minmax(34px,.55fr)}.tableFull{min-height:100dvh}@media(orientation:portrait){.rotateHint header:after{content:"화면 회전 잠금을 풀고 휴대폰을 가로로 돌려주세요.";display:block;width:100%;font-size:12px;color:#efd49a}.orient #market{overflow-x:auto}.orient .row{min-width:520px}}
 .guildPatron{background:linear-gradient(#11251a45,#11251ae0),var(--scene) center / cover;padding:6px 4px}
@@ -106,4 +109,196 @@ header #reserved,header #options{min-height:44px;min-width:44px}
 @media(orientation:landscape) and (min-width:667px){
  .row{grid-template-columns:44px repeat(4,minmax(0,1fr))}
  .orient .row{grid-template-columns:44px repeat(6,minmax(0,1fr)) 44px}
+}
+
+/* ── Printed card stock ─────────────────────────────────────────────
+   Development cards are printed on cream stock: the frame is the paper, the
+   art sits in a window inside it, the point tab and the bonus gem are part of
+   the print. Draw piles are face-down stacks, nobles are thick tiles and the
+   bank holds round chips. Material tokens come from card-material.css. */
+body{background:var(--tt-grain),radial-gradient(ellipse at 30% 20%,#24504a,#0d2726 75%);background-size:140px 140px,auto}
+
+.card{
+  --key:#24614a;--frame-a:#fbf5e3;--frame-b:color-mix(in srgb,#dccfa8 70%,var(--key));
+  border:3px solid transparent;border-radius:8px;padding:2px;
+  background:
+    linear-gradient(180deg,#0000 48%,#0000004d 72%,#0009) padding-box,
+    linear-gradient(180deg,#00000038,#0000 26%) padding-box,
+    var(--art) center/cover padding-box,
+    linear-gradient(165deg,var(--frame-a) 10%,var(--frame-b)) border-box;
+  box-shadow:inset 0 0 0 1.5px var(--key),inset 0 1px 2px #0000004d,var(--tt-shadow);
+  transition:transform .18s var(--tt-ease),box-shadow .18s var(--tt-ease);
+}
+/* Every tier is printed on the same ivory stock as the other games. Each card shares one
+   hue with its pile (I green, II ochre, III indigo, 동방 maroon), but only on the keyline
+   around the art window, the shade of the point tab and the pile backs. */
+.card.tier1{--key:#8b6524}
+.card.tier2{--key:#33467f}
+.card.special{--key:#7a2c3d}
+/* Grain and sheen run over the paper frame too, not only the art window. The overlay covers
+   the border box, so it also carries the shared top-edge highlight of the frame. */
+.card.tt-card::after{inset:-3px;box-shadow:var(--tt-edge)}
+.card .face{align-items:flex-start;flex-wrap:wrap;gap:2px;line-height:1}
+/* The point value is a tab of the frame that hangs into the art. */
+.card .face b{
+  margin:-2px 0 0 -2px;padding:1px 5px 3px 4px;border-radius:0 0 7px 1px;
+  background:linear-gradient(180deg,var(--frame-a),var(--frame-b));
+  color:#271c0e;text-shadow:0 1px 0 #ffffff80;font:800 18px/1 "Noto Serif","Palatino Linotype","Book Antiqua",Palatino,serif;font-variant-numeric:lining-nums;
+  box-shadow:1px 1px 0 var(--key),0 2px 3px #0005;
+}
+.card .face b small{font:700 11px/1 system-ui,sans-serif;margin-left:1px}
+.card .face b.nil{color:#5b4a33;font-size:15px}
+/* Bonus gem: a cut stone set in a cream bezel. */
+.card .face .gem{
+  min-width:23px;height:23px;margin:-1px -1px 0 0;padding:0 3px;border-radius:12px;
+  display:grid;place-items:center;font-size:13px;line-height:1;
+  border:2px solid #f8f0da;
+  background:radial-gradient(circle at 34% 28%,#ffffffa6,#fff0 40%),repeating-conic-gradient(from 22.5deg,#ffffff24 0 45deg,#0000002a 45deg 90deg),var(--color);
+  box-shadow:0 0 0 1px var(--key),inset 0 -2px 3px #0006,0 2px 3px #0008;
+}
+/* Cost pips: round ink stamps with a paper ring, legible over any art. */
+.card .cost{gap:2px}
+.card .cost .gem{
+  border:1.5px solid #f8f0da;border-radius:10px;padding:0 4px;line-height:17px;font-size:13px;font-weight:800;
+  background:radial-gradient(ellipse at 50% 18%,#ffffff47,#fff0 65%),var(--color);
+  box-shadow:0 1px 2px #000c;
+}
+.card .g4,.card .cost .g4{border-color:#8f8266}
+.card .ability{background:linear-gradient(180deg,#fbf4e1,#e4d5b0);color:#2a1f10;font-weight:700;text-shadow:none;box-shadow:0 1px 2px #0008;border-radius:3px}
+
+/* Face-down draw piles: printed back, thickness, remaining count. */
+#market .deck{
+  --back:#24614a;--back-2:#123a2c;--ink:#f3e3b5;
+  position:relative;isolation:isolate;border:0;border-radius:8px;padding:2px 1px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--ink);
+  background:
+    radial-gradient(circle at 50% 44%,#0000 0 15px,#0000004d 16px,#0000 34px),
+    repeating-linear-gradient(45deg,#0000 0 5px,#f3e3b51f 5px 6px),
+    repeating-linear-gradient(-45deg,#0000 0 5px,#f3e3b51f 5px 6px),
+    radial-gradient(ellipse at 50% 30%,var(--back),var(--back-2));
+  box-shadow:inset 0 0 0 3px var(--back-2),inset 0 0 0 4px #f3e3b580,inset 0 0 0 5px var(--back-2),var(--tt-edge),var(--tt-pile);
+  transition:transform .18s var(--tt-ease),box-shadow .18s var(--tt-ease);
+}
+#market .deck.tier1{--back:#8b6524;--back-2:#4d360f}
+#market .deck.tier2{--back:#33467f;--back-2:#18214a}
+#market .deck:is(.tier3,.tier4,.tier5){--back:#7a2c3d;--back-2:#3f1220}
+/* Five or fewer cards: one card edge left. Empty: only a dashed outline of where the pile stood. */
+#market .deck.low{box-shadow:inset 0 0 0 3px var(--back-2),inset 0 0 0 4px #f3e3b580,inset 0 0 0 5px var(--back-2),var(--tt-edge),var(--tt-pile-thin)}
+#market .deck.empty{background:#0d27264d;box-shadow:none;outline:1.5px dashed #f3e3b566;outline-offset:-3px;color:#f3e3b5a6}
+#market .deck.empty::after{display:none}
+#market .deck .mark{
+  display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+  font:700 17px/1 "Noto Serif","Palatino Linotype","Book Antiqua",Palatino,serif;color:var(--ink);
+  background:radial-gradient(circle,var(--back) 55%,var(--back-2));
+  box-shadow:0 0 0 1.5px var(--ink),0 0 0 3px var(--back-2),0 2px 4px 2px #0006;
+}
+#market .deck:is(.tier3,.tier4,.tier5) .mark{font:700 11px/1 system-ui,sans-serif}
+#market .deck.empty .mark{background:none;box-shadow:0 0 0 1px #f3e3b566}
+/* Remaining count: the same raised badge with a paper ring as the other games' piles. */
+#market .deck small{
+  font:800 12px/16px system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:1px 6px;border-radius:9px;color:#fff4d6;
+  background:#1b2c28;box-shadow:0 0 0 1.5px #f0dfb2,0 2px 4px #0009;
+}
+
+/* Nobles and cities: thick printed tiles with a gilt edge. */
+.guildPatron{
+  border:2px solid transparent;border-radius:6px;
+  background:linear-gradient(#11251a1f,#11251ad1) padding-box,var(--scene) center/cover padding-box,linear-gradient(160deg,#f6e3ad,#a98547) border-box;
+  box-shadow:inset 0 0 0 1px #3a2a10,0 1px 0 #b39555,0 2px 0 #7a6232,0 3px 0 #4f3f1f,0 4px 7px -1px #000a;
+}
+.guildPatron.tt-card::after{inset:-2px}
+/* Phone portrait: room under the tiles' edge shadows so the chips sit on the table, not on the tiles.
+   The aside's bottom margin gives the same 6px back, so the page height is unchanged. */
+@media(max-width:600px) and (orientation:portrait){.objectives{margin-bottom:6px}aside{margin-bottom:6px}}
+/* City tiles: the score is printed on the same cream plaque as the noble tiles. */
+.guildPatron:not(.nobleTile){font-weight:700;text-shadow:0 1px 2px #000}
+.guildPatron:not(.nobleTile) b{display:inline-block;font-size:14px;line-height:18px;padding:0 5px;border-radius:3px;margin:0 3px 0 0;text-shadow:0 1px 0 #ffffff80}
+.guildPatron b{background:linear-gradient(180deg,#fbf4e1,#e1cf9f);color:#271c0e;font:800 13px/15px "Noto Serif","Palatino Linotype","Book Antiqua",Palatino,serif;font-variant-numeric:lining-nums;box-shadow:0 1px 2px #0009;border-radius:0 0 4px 0;margin:-2px 0 0 -2px;padding:0 4px}
+
+/* Gem chips: round, with an edge and a stack that grows with the bank count. */
+.gem{box-shadow:inset 0 1px 0 #ffffff59,inset 0 -1px 0 #00000059,0 1px 1px #0007}
+#bank button,.choices :is([data-pick],[data-drop]){display:grid;place-items:start center;min-width:44px;min-height:44px;background:none;border:0;padding:1px 0 0}
+#bank .gem,.choices :is([data-pick],[data-drop]) .gem{
+  --side:color-mix(in srgb,var(--color) 55%,#000);--h:calc(var(--n,1)*1px + 2px);
+  width:38px;height:38px;padding:0;border:0;border-radius:50%;display:grid;place-items:center;
+  font:800 15px/1 system-ui,sans-serif;letter-spacing:-.3px;
+  background:
+    radial-gradient(circle at 36% 30%,#ffffff6b,#fff0 34%),
+    radial-gradient(circle,var(--color) 0 57%,#ffffffd0 58% 62%,#0000 63%),
+    repeating-conic-gradient(from 11deg,#ffffffd9 0 14deg,#0000 14deg 45deg),
+    var(--color);
+  box-shadow:inset 0 0 0 1px #00000040,0 var(--h) 0 var(--side),0 calc(var(--h) + 1px) 0 #0006,0 calc(var(--h) + 2px) 6px #0009;
+  transition:transform .18s var(--tt-ease),box-shadow .18s var(--tt-ease);
+}
+#bank .g4,.choices .g4{--side:#a39a85}
+#bank .g5{--side:#9c7426}
+#bank .gem[aria-label$=" 0"]{opacity:.8}
+/* An unavailable chip keeps its colour but loses its height: dimmed once, not twice. */
+.choices :is([data-pick],[data-drop]):disabled{opacity:1}
+.choices :is([data-pick],[data-drop]):disabled .gem{opacity:1;filter:saturate(.35) brightness(.7);box-shadow:inset 0 0 0 1px #00000040,0 1px 0 var(--side),0 2px 3px #0006}
+/* The chosen or returned gems in a dialog are small chips of the same set. */
+dialog .picked{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
+dialog .picked .gem{
+  min-width:26px;height:26px;padding:0 3px;border:0;border-radius:13px;display:inline-grid;place-items:center;
+  font:800 12px/1 system-ui,sans-serif;color:var(--ink,#fff);
+  background:radial-gradient(circle at 36% 30%,#ffffff59,#fff0 36%),radial-gradient(circle,var(--color) 0 56%,#ffffffc0 58% 63%,#0000 64%),repeating-conic-gradient(from 11deg,#ffffffd0 0 14deg,#0000 14deg 45deg),var(--color);
+  box-shadow:inset 0 0 0 1px #00000040,0 2px 0 color-mix(in srgb,var(--color) 55%,#000),0 3px 4px #0008;
+}
+dialog .picked .g4{box-shadow:inset 0 0 0 1px #00000040,0 2px 0 #a39a85,0 3px 4px #0008}
+
+/* Bought cards in a seat: a small fanned stack of framed cards. */
+.layers i{border:1.5px solid #f3e9cf;border-radius:3px;box-shadow:inset 0 0 0 1px var(--color),inset 0 3px 0 var(--color),0 1px 0 #9f947e,0 2px 2px #000a}
+.pile strong{box-shadow:inset 0 1px 0 #ffffff4d,0 1px 2px #0008}
+#seats .wallet .gem{border:0;background:radial-gradient(ellipse at 50% 20%,#ffffff40,#fff0 70%),var(--color);box-shadow:inset 0 0 0 1px #ffffff4d,inset 0 -2px 0 #00000059,0 1px 1px #0009}
+
+/* Touch press: the piece is picked up off the table without moving its neighbours. */
+@media (any-pointer:coarse){
+  .card[data-table-pressed]{box-shadow:inset 0 0 0 1.5px var(--key),inset 0 1px 2px #0000004d,var(--tt-shadow-lift)}
+  #market .deck[data-table-pressed]{box-shadow:inset 0 0 0 3px var(--back-2),inset 0 0 0 4px #f3e3b580,inset 0 0 0 5px var(--back-2),var(--tt-edge),var(--tt-shadow-lift)}
+  /* The lift and shadow carry the press; the rim is a darker gold just outside the frame instead of a glow on the paper. */
+  :is(.card,#market .deck)[data-table-pressed]{outline:2px solid #c8902e;outline-offset:1px;filter:none}
+}
+@media (any-pointer:coarse) and (prefers-reduced-motion:no-preference){
+  :is(.card,#market .deck)[data-table-pressed]{transform:translateY(var(--tt-lift))}
+  :is(#bank,.choices) [data-table-pressed] .gem{transform:translateY(-2px)}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .card.tt-tilt[data-tt-active]{box-shadow:inset 0 0 0 1.5px var(--key),inset 0 1px 2px #0000004d,var(--tt-shadow-lift)}
+}
+@media (prefers-reduced-motion:reduce){
+  .card,#market .deck,#bank .gem,.choices .gem{transition:none}
+}
+
+/* Short screens: thinner frame and a smaller pile emblem. */
+@media (orientation:landscape) and (max-height:540px){
+  .row .card{border-width:2px;padding:2px}
+  .row .card.tt-card::after{inset:-2px}
+  .row .card .face b{font-size:16px;padding:0 4px 2px 3px}
+  .row .card .face .gem{min-width:20px;height:20px;border-width:1.5px}
+  .row .card .cost .gem{line-height:14px;border-width:1px;padding:0 2px}
+  #market .deck{gap:3px}
+  #market .deck .mark{width:26px;height:26px;font-size:15px}
+}
+@media (orientation:landscape) and (max-height:350px){
+  #market .deck .mark{width:22px;height:22px;font-size:13px}
+  .row .card .face .gem{min-width:20px;height:20px}
+}
+@media (orientation:landscape) and (max-width:680px){
+  .orient .row .card .face b{font-size:12px;padding:0 3px 1px 2px}
+  .orient .row .card .face .gem{min-width:17px;height:17px;border-width:1.5px}
+}
+
+/* Phone portrait: the latest move gets its own full-width row under the toolbar, and the
+   corner radius follows the family's ~.085 of the card width. */
+@media(max-width:600px) and (orientation:portrait){
+  #latestMove{order:9;flex:1 1 100%;max-width:none;min-height:44px}
+  /* Slightly tighter spacing fits the tool buttons into the rows above, so the new row costs no height. */
+  [data-table="splendor"] body>header{column-gap:6px}
+  header button{padding-inline:5px}
+  .card{border-radius:6.5px}
+  .card .face b{border-radius:0 0 6px 1px}
+}
+/* Small landscape: the turn indicator keeps its full text; the latest move gives up the room. */
+@media (orientation:landscape) and (max-width:680px) and (max-height:540px){
+  #status{font-size:12px;max-width:none;flex:0 0 auto}
 }

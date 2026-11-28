@@ -63,10 +63,12 @@ function draw(changed=false){
   document.body.dataset.phase=g.phase;
   $('balance').textContent=g.chips;
   $('dealer').innerHTML=spread('house',g.dealer.length?g.dealer.map((id,i)=>i===1&&!open?null:id):[null]);
+  // The shoe is drawn only once it holds cards (a new table fills it on the first deal).
+  $('shoe').hidden=!g.shoe.length;$('shoe').innerHTML=g.shoe.length?cardPile(g.shoe.length,'딜러 슈'):'';
   $('dealerScore').textContent=g.dealer.length?Blackjack.score(open?g.dealer:g.dealer.slice(0,1)).total:'';
   function hand(h,title,active,key){
     const value=Blackjack.score(h.cards);
-    return '<div class="hand '+(active?'selected':'')+'"><div class="handTitle"><b>'+title+'</b><strong>'+value.total+'<small>점</small></strong></div><div class="cards">'+spread(key,h.cards)+'</div><div class="handMeta"><span>'+h.bet+'칩</span>'+(h.result?'<b>'+h.result+'</b>':'')+'</div></div>';
+    return '<div class="hand '+(active?'selected':'')+'"><div class="handTitle"><b>'+title+'</b><strong>'+value.total+'<small>점</small></strong></div><div class="cards">'+spread(key,h.cards)+'</div><div class="handMeta"><span><i class="betChip" aria-hidden="true"></i>'+h.bet+'칩</span>'+(h.result?'<b>'+h.result+'</b>':'')+'</div></div>';
   }
   $('hands').innerHTML=g.hands.map((h,i)=>hand(h,g.hands.length>1?'내 손패 '+(i+1):'내 손패',g.phase==='play'&&g.index===i,'mine'+i)).join('');
   $('others').innerHTML=bet?'':g.bots.map((b,i)=>b.hand?hand(b.hand,'AI '+(i+1),g.phase==='bots'&&g.botIndex===i,'bot'+i):'<small>AI '+(i+1)+' · '+b.chips+'칩</small>').join('');
@@ -91,7 +93,7 @@ function draw(changed=false){
   const amounts=[...new Set([2,10,20,50,100,g.stake])].filter(v=>v<=g.chips).sort((a,b)=>a-b);
   $('betArea').hidden=!bet;
   $('wager').textContent=g.stake+' 칩';
-  $('chips').innerHTML=bet?amounts.map((v,i)=>'<button class="chip tone'+i+'" data-bet="'+v+'" aria-label="'+v+'칩 베팅" aria-pressed="'+(g.stake===v)+'"><b>'+v+'</b></button>').join(''):'';
+  $('chips').innerHTML=bet?amounts.map((v,i)=>'<button class="chip tone'+i+(String(v).length>2?' wide':'')+'" data-bet="'+v+'" aria-label="'+v+'칩 베팅" aria-pressed="'+(g.stake===v)+'"><b>'+v+'</b></button>').join(''):'';
   // A ranked table is fixed once it starts; an open-ended one can be reseated between hands.
   $('seating').innerHTML=bet&&(!g.round||!g.limit)?'<label>참가자 <select id="count">'+[1,2,3,4].map(n=>'<option '+(n===g.bots.length+1?'selected':'')+' value="'+n+'">'+(n===1?'나 혼자':'나 + AI '+(n-1))+'</option>').join('')+'</select></label><label>판 수 <select id="limit">'+[0,5,10,20].map(n=>'<option '+(n===g.limit?'selected':'')+' value="'+n+'">'+(n?n+'판 승부':'무제한')+'</option>').join('')+'</select></label>':'';
   $('controls').innerHTML=blocked?'':broke?button('refill','무료 리필 '+Wallet.REFILL+'칩',true):bet?button('deal',g.stake+'칩 딜',true):end?button('next',finished?'새 테이블':'다음 베팅',true):Blackjack.actions(g).map(a=>button(a,labels[a],a==='stand'||a==='decline')).join('');

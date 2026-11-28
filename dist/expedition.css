@@ -1,4 +1,4 @@
-.exp{height:100dvh;margin:0;display:flex;flex-direction:column;overflow:hidden;background:#143b36;color:#f9ecd0}.exp .mast{max-width:none;display:flex;align-items:center;gap:5px;padding:3px max(5px,env(safe-area-inset-right)) 3px max(5px,env(safe-area-inset-left));border-bottom:1px solid #92784d}.exp #status{font:600 15px Georgia,serif;white-space:nowrap;color:#f2d39b}.exp .mast button{display:block;min-height:31px;padding:3px 8px;font-size:12px}.exp #latestMove{flex:1;min-width:35px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.exp #expBoard{box-sizing:border-box;display:grid;grid-template: auto minmax(0,1fr) / minmax(0,1fr) clamp(118px,20vw,230px);gap:5px;padding:5px max(7px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(7px,env(safe-area-inset-left));width:100%;max-width:1350px;min-height:0;flex:1;overflow:hidden}.exp #seats{grid-column:1/-1;display:flex;gap:4px;margin:0}.player{flex:1;text-align:left;background:#22433b;color:#fff0cb;border:1px solid #716a50;border-left:4px solid var(--seat);border-radius:7px;min-height:36px;padding:2px 6px;line-height:1.1}.player.activeTurn{outline:2px solid #ffd784;outline-offset:-2px}.player b,.player small{font-size:12px}.player .goods{margin-left:6px}.goods{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}.goods span{display:inline-flex;align-items:center;gap:1px;font:600 12px system-ui}.goods .cube{width:10px;height:10px}.exp #atlas{margin:0;min-height:0;display:grid;gap:3px;padding:6px;overflow:auto;border:1px solid #a88a5d;border-radius:11px;background:radial-gradient(ellipse at 35% 35%,#588e92,#214e58 80%)}.exp #atlas.sea{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(12,minmax(0,1fr))}.exp #atlas.land{grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:minmax(38px,1fr);background:radial-gradient(ellipse at 48% 26%,#77865f,#3d5d4f 85%)}.site{position:relative;min-width:0;min-height:0;overflow:hidden;text-align:center;padding:2px;color:#233d34;background:linear-gradient(105deg,#fcf0d6ef,#e1cba6e8),url(art/trade.webp) center/cover;border:1px solid #b99a5e;box-shadow:0 2px 3px #102b2770;line-height:1.05}.sea .site{border-radius:23% 18% 25% 15%}.site.port,.site.fort{background:linear-gradient(125deg,#5e4734dd,#342d29eb),url(art/order.webp) center/cover;color:#fff2cd}.site.covered{border-style:dashed;background:#c5ceb7}.site strong{font-size:clamp(10px,1.55vw,15px);display:block}.site small{display:block;font-size:10px}.site .pieces{position:absolute;bottom:1px;right:3px;display:flex;gap:1px}.piece{font:700 11px system-ui;background:var(--seat);color:#172a2a;border:1px solid #16352f;border-radius:4px;padding:0 2px}.exp #manifest{min-height:0;overflow:auto;background:#eedeC0;border:1px solid #bd9c61;border-radius:9px;padding:8px;color:#203e34}.exp #manifest h2{font-size:16px}.exp #manifest p{font-size:12px;margin:6px 0}.exp #manifest button{display:block;width:100%;font-size:12px;min-height:32px;margin:4px 0;padding:3px}.exp #manifest [hidden]{display:none}.exp #manifest small{font-size:10px}.exp #inventory{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px}.exp #inventory span{background:#fffae7;padding:3px;border-radius:4px;text-align:center;font-size:12px}.exp dialog{max-height:88dvh}.exp .actions,.series{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.exp .actions button,.series a{min-height:36px}.series a{display:inline-flex;align-items:center;border:1px solid #9b815a;background:#fcf5df;border-radius:6px;padding:4px 9px;color:#22443b;text-decoration:none}.exp #motion{position:fixed;inset:0;pointer-events:none;z-index:20}.motionTile,.motionCube{position:absolute;left:0;top:0;transform:translate(-50%,-50%);pointer-events:none}.motionTile{border:2px solid #c7a673;border-radius:9px;padding:12px;text-align:center;background:linear-gradient(#174438e0,#16392de8),url(art/trade.webp) center/cover;color:#fff1cf;font-weight:700}.motionCube{background:#fff4db;color:#213e32;border:1px solid #a58650;padding:3px 6px;border-radius:7px}.exp .legend{font-size:12px}.exp .rank{padding:6px;border-bottom:1px solid #cbbd9a}.exp select{min-height:34px}.exp .route{outline:3px solid #ffca64;outline-offset:-3px}
+.exp{height:100dvh;margin:0;display:flex;flex-direction:column;overflow:hidden;background:#143b36;color:#f9ecd0}.exp .mast{max-width:none;display:flex;align-items:center;gap:5px;padding:3px max(5px,env(safe-area-inset-right)) 3px max(5px,env(safe-area-inset-left));border-bottom:1px solid #92784d}.exp #status{font:600 15px Georgia,serif;white-space:nowrap;color:#f2d39b}.exp .mast button{display:block;min-height:31px;padding:3px 8px;font-size:12px}.exp #latestMove{flex:1;min-width:35px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.exp #expBoard{box-sizing:border-box;display:grid;grid-template: auto minmax(0,1fr) / minmax(0,1fr) clamp(118px,20vw,230px);gap:5px;padding:5px max(7px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(7px,env(safe-area-inset-left));width:100%;max-width:1350px;min-height:0;flex:1;overflow:hidden}.exp #seats{grid-column:1/-1;display:flex;gap:4px;margin:0}.player{flex:1;text-align:left;background:#22433b;color:#fff0cb;border:1px solid #716a50;border-left:4px solid var(--seat);border-radius:7px;min-height:36px;padding:2px 6px;line-height:1.1}.player.activeTurn{outline:2px solid #ffd784;outline-offset:-2px}.player b,.player small{font-size:12px}.player .goods{margin-left:6px}.goods{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}.goods span{display:inline-flex;align-items:center;gap:1px;font:600 12px system-ui}.goods .cube{width:10px;height:10px}.exp #atlas{margin:0;min-height:0;display:grid;gap:3px;padding:6px;overflow:auto;border:1px solid #a88a5d;border-radius:11px;background:radial-gradient(ellipse at 35% 35%,#588e92,#214e58 80%)}.exp #atlas.sea{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(12,minmax(0,1fr))}.exp #atlas.land{grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:minmax(38px,1fr);background:radial-gradient(ellipse at 48% 26%,#77865f,#3d5d4f 85%)}.site{position:relative;min-width:0;min-height:0;overflow:hidden;text-align:center;padding:2px;color:#233d34;background:linear-gradient(105deg,#fcf0d6ef,#e1cba6e8),url(art/trade.webp) center/cover;border:1px solid #b99a5e;box-shadow:0 2px 3px #102b2770;line-height:1.05}.sea .site{border-radius:13% 10% 14% 9%}.site.port,.site.fort{background:linear-gradient(125deg,#5e4734dd,#342d29eb),url(art/order.webp) center/cover;color:#fff2cd}.site.covered{border-style:dashed;background:#c5ceb7}.site strong{font-size:clamp(10px,1.55vw,15px);display:block}.site small{display:block;font-size:10px}.site .pieces{position:absolute;bottom:1px;right:3px;display:flex;gap:1px}.piece{font:700 11px system-ui;background:var(--seat);color:#172a2a;border:1px solid #16352f;border-radius:4px;padding:0 2px}.exp #manifest{min-height:0;overflow:auto;background:#eedeC0;border:1px solid #bd9c61;border-radius:9px;padding:8px;color:#203e34}.exp #manifest h2{font-size:16px}.exp #manifest p{font-size:12px;margin:6px 0}.exp #manifest button{display:block;width:100%;font-size:12px;min-height:32px;margin:4px 0;padding:3px}.exp #manifest [hidden]{display:none}.exp #manifest small{font-size:10px}.exp #inventory{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px}.exp #inventory span{background:#fffae7;padding:3px;border-radius:4px;text-align:center;font-size:12px}.exp dialog{max-height:88dvh}.exp .actions,.series{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.exp .actions button,.series a{min-height:36px}.series a{display:inline-flex;align-items:center;border:1px solid #9b815a;background:#fcf5df;border-radius:6px;padding:4px 9px;color:#22443b;text-decoration:none}.exp #motion{position:fixed;inset:0;pointer-events:none;z-index:20}.motionTile,.motionCube{position:absolute;left:0;top:0;transform:translate(-50%,-50%);pointer-events:none}.motionTile{border:2px solid #c7a673;border-radius:9px;padding:12px;text-align:center;background:linear-gradient(#174438e0,#16392de8),url(art/trade.webp) center/cover;color:#fff1cf;font-weight:700}.motionCube{background:#fff4db;color:#213e32;border:1px solid #a58650;padding:3px 6px;border-radius:7px}.exp .legend{font-size:12px}.exp .rank{padding:6px;border-bottom:1px solid #cbbd9a}.exp select{min-height:34px}.exp .route{outline:3px solid #ffca64;outline-offset:-3px}
 @media(orientation:portrait){.exp #expBoard{grid-template:auto minmax(0,1fr) auto/1fr}.exp #manifest{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.exp #manifest button{width:auto}.exp #inventory{display:flex;margin:0}.exp #seats{display:grid;grid-template-columns:1fr 1fr}.exp .mast{flex-wrap:wrap}.exp #atlas.land{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-height:390px) and (orientation:landscape){.exp .mast button{min-height:26px}.exp #expBoard{gap:3px;padding-block:3px}.exp #atlas{padding:3px;gap:2px}.player{min-height:30px}.site .goods span{font-size:10px}.exp #atlas.land{grid-auto-rows:minmax(32px,1fr)}}
 #atlas .site{background-size:cover;background-position:center;color:#fff9e8;text-shadow:0 1px 3px #192c23}
@@ -30,3 +30,80 @@
 .exp .resourcePreview{display:block;font-size:13px;line-height:1.4;margin-top:2px}
 .exp .resourcePreview:empty{display:none}
 .exp .site strong{line-height:1.1}
+
+/* ── Printed tiles and cards (tokens from card-material.css) ──────────
+   Board tiles are die-cut board: a printed face with a frame line, grain and
+   a few layers of card edge below. Merchant and hand cards in the combined
+   modes are die-cut cards with a cream border. */
+.exp .site{
+  --thick:0 1px 0 #b99c62,0 2px 0 #6e5a36,0 2.5px 0 #3b2f1c;
+  --frame:inset 0 0 0 2px #f6e3b080,inset 0 0 0 3px #00000059;
+  box-shadow:var(--frame),var(--tt-edge),var(--thick),var(--tt-shadow-small);
+  transition:translate .16s var(--tt-ease),box-shadow .16s var(--tt-ease);
+}
+.exp .site::after{
+  content:'';position:absolute;inset:0;z-index:1;border-radius:inherit;pointer-events:none;
+  background:var(--tt-sheen),var(--tt-grain);background-size:260% 100%,140px 140px;background-position:100% 0,0 0;
+  mix-blend-mode:soft-light;
+}
+/* Labels sit above the grain overlay so they stay crisp. */
+.exp .site>strong,.exp .site>span:not(.pieces),.exp .site>small{position:relative;z-index:2}
+.exp .site .pieces{z-index:2}
+.exp .site.covered{border:1px dashed #e6d3a3}
+.exp .comboGrid .site.cardTile{
+  --frame:inset 0 0 0 2px #2d574d,inset 0 0 0 3px #fff7d94d;
+  border:3px solid #efe0b8;border-radius:10px;
+  box-shadow:0 0 0 1px #00000040,var(--frame),var(--tt-shadow);
+}
+/* Card text sits on printed plates, like the Century I recipe panel. */
+.exp .comboGrid .site.cardTile>strong,.exp .comboGrid .site.cardTile>span:not(.pieces):not(:empty){
+  max-width:100%;padding:2px 8px;border-radius:5px;text-shadow:none;
+  background:linear-gradient(#1f3429f2,#122219f5);border:1px solid #f0d99a55;
+  box-shadow:inset 0 1px #ffffff1f,0 1px 3px #000a;
+}
+.exp .comboGrid .site.cardTile>small:not(:empty){padding:0 6px;border-radius:4px;background:#122219e0;text-shadow:none}
+.exp #inventory span{box-shadow:inset 0 1px 2px #00000029,0 1px 0 #ffffffb3}
+.piece{
+  background-image:linear-gradient(#ffffff73,#fff0 55%,#00000026);
+  box-shadow:inset 0 1px #ffffff99,inset 0 -1px #0000004d,0 1px 0 #0000008c,0 2px 3px -1px #000000a6;
+}
+.motionTile{border:3px solid #eedcae;border-radius:11px;box-shadow:var(--tt-edge),var(--tt-shadow-lift)}
+.motionTile::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:var(--tt-grain) 0 0/140px 140px;mix-blend-mode:soft-light;box-shadow:inset 0 0 0 1px #00000066}
+.motionCube{box-shadow:var(--tt-shadow-small)}
+
+/* Century III: the next order card lies face up on its pile, turned on its side. */
+.exp .nextOrder{display:flex;flex-wrap:wrap;align-items:center;gap:1px 8px;margin:1px 0 4px;line-height:1.2}
+.exp .nextOrder small{flex:1 0 100%;font-size:12px;color:#4a5a50;font-weight:600}
+.exp .vpCard{
+  display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:2px 10px;border-radius:4px;color:#3d230b;
+  background:var(--tt-grain) 0 0/140px 140px,linear-gradient(158deg,#fbefca,#ecd08e 55%,#cfa45c);
+  box-shadow:var(--tt-edge),inset 0 0 0 3px #fcecc0,inset 0 0 0 4px #5b3a1280,var(--tt-pile-thin);
+}
+.exp .vpCard b{font:700 15px Georgia,"Batang",serif}
+.exp .vpCard .goods span{font-size:13px}
+.exp .vpCard .cube{outline:1px solid #fff8}
+
+@media (any-pointer:coarse){
+  .exp .site[data-table-pressed]{z-index:3;translate:0 -2px;box-shadow:var(--frame),var(--tt-edge),var(--thick),var(--tt-shadow-lift);filter:none;outline:2px solid #c8902e;outline-offset:1px}
+  .exp .comboGrid .site.cardTile[data-table-pressed]{box-shadow:0 0 0 1px #00000040,var(--frame),var(--tt-shadow-lift)}
+}
+@media (prefers-reduced-motion:reduce){
+  .exp .site{transition:none}
+}
+
+/* Labels: port names and inventory words break between words, and the boat
+   marker keeps to its own corner. */
+.exp .site>strong{word-break:keep-all;letter-spacing:-.03em}
+.exp .site>small{word-break:keep-all}
+.exp #inventory span,.exp #manifest{word-break:keep-all}
+.exp .site .pieces{right:2px;bottom:2px}
+/* A narrow portrait island has no free corner, so the boat rides on its
+   bottom-right rim instead of over the trade-post line. Wide landscape islands
+   keep the boat inside and leave it room beside the line. */
+@media(orientation:portrait){
+  .exp .sea .site:has(>.pieces:not(:empty)){overflow:visible;z-index:1}
+  .exp .sea .site .pieces{right:-6px;bottom:-10px;z-index:4}
+}
+@media(orientation:landscape){
+  .exp .sea .site:has(>.pieces:not(:empty))>small{padding-right:22px}
+}

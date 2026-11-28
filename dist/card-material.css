@@ -1,0 +1,65 @@
+/* Card stock shared by the card and board tables (not Culdcept).
+   Tokens only describe the physical material: printed paper, a thin edge, a
+   soft contact shadow, a lift when picked up and the thickness of a pile.
+   Each game applies them to its own card elements in its own stylesheet. */
+:root {
+  /* Fine paper grain, tiled. Multiply it over a face so prints read as ink on stock. */
+  --tt-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .37 0 0 0 0 .3 0 0 0 .28 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+  /* Linen finish of premium playing cards: fine enough not to read as a grid on white stock. */
+  --tt-linen: repeating-linear-gradient(0deg, #0000 0 1px, #00000005 1px 2px), repeating-linear-gradient(90deg, #0000 0 1px, #ffffff08 1px 2px);
+  /* A light sweep across a coated face. */
+  --tt-sheen: linear-gradient(118deg, #fff0 32%, #ffffff30 46%, #ffffff10 52%, #fff0 64%);
+  --tt-edge: inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #0000002e, inset 0 0 0 1px #ffffff1a;
+  --tt-shadow: 0 0 0 1px #0000002b, 0 1px 1px #00000040, 0 3px 6px -1px #00000059, 0 10px 18px -8px #00000073;
+  --tt-shadow-lift: 0 0 0 1px #0000002b, 0 2px 3px #00000033, 0 12px 18px -4px #00000066, 0 24px 32px -12px #00000080;
+  --tt-shadow-small: 0 0 0 1px #00000033, 0 1px 1px #00000040, 0 2px 4px -1px #00000059;
+  /* A lift that stays inside rows that clip vertically (scrolling hands). */
+  --tt-shadow-lift-compact: 0 0 0 1px #0000002b, 0 2px 3px #00000033, 0 8px 14px -4px #00000073;
+  /* Thickness of a face-down pile: alternating card edges below and to the right. */
+  --tt-pile: 1px 1px 0 #efe6d2, 2px 2px 0 #9f947e, 3px 3px 0 #efe6d2, 4px 4px 0 #9f947e, 5px 6px 10px -2px #00000080;
+  --tt-pile-thin: 1px 1px 0 #efe6d2, 2px 2px 0 #9f947e, 3px 4px 7px -2px #00000073;
+  --tt-ease: cubic-bezier(.2, .8, .2, 1);
+  --tt-lift: -3px;
+}
+
+/* Opt-in helpers. A game adds the class in its markup, or reuses the tokens. */
+.tt-card {
+  position: relative;
+  isolation: isolate;
+  box-shadow: var(--tt-edge), var(--tt-shadow);
+  transition: transform .18s var(--tt-ease), box-shadow .18s var(--tt-ease);
+}
+.tt-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--tt-sheen), var(--tt-grain);
+  background-size: 260% 100%, 140px 140px;
+  background-position: 100% 0, 0 0;
+  mix-blend-mode: soft-light;
+  transition: background-position .5s var(--tt-ease);
+}
+.tt-pile { box-shadow: var(--tt-edge), var(--tt-pile); }
+
+/* Pointer tilt for mouse and pen only (card-tilt.js sets the angles).
+   .tt-tilt owns transform there, so a game lifts a selected .tt-tilt card by
+   setting --tt-y (for example --tt-y:-6px) instead of writing its own transform;
+   the hover lift is added on top. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .tt-tilt {
+    transform: perspective(700px) rotateX(var(--tt-rx, 0deg)) rotateY(var(--tt-ry, 0deg)) translateY(calc(var(--tt-y, 0px) + var(--tt-hover-y, 0px)));
+    will-change: transform;
+  }
+  .tt-tilt[data-tt-active] {
+    --tt-hover-y: var(--tt-lift);
+    box-shadow: var(--tt-edge), var(--tt-shadow-lift);
+  }
+  .tt-tilt[data-tt-active]::after { background-position: var(--tt-gx, 30%) 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-card, .tt-card::after { transition: none; }
+}

@@ -1,12 +1,100 @@
 *{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:#0e1a19;color:#f7efdf;font:15px/1.25 system-ui,sans-serif;--gold:#e6ca90;--ink:#152923;--edge:#476053}main{max-width:1200px;margin:auto;min-height:100dvh;padding:4px max(8px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));display:grid;grid-template-rows:auto 1fr auto;gap:5px}button,select,header a{font:inherit;cursor:pointer;touch-action:manipulation;min-height:44px;border:1px solid var(--edge);border-radius:8px;background:#20332d;color:inherit;padding:6px 12px}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #ffd476;outline-offset:2px}header,footer,#controls,.row,.label,.handTitle,.handMeta,#chips,.betHeading{display:flex;align-items:center}header{gap:10px}header a{min-width:44px;text-align:center;text-decoration:none;font:26px Georgia;padding:3px}h1{margin:0 auto 0 0;color:var(--gold);font:italic 600 clamp(22px,3vw,38px) Georgia,serif}.balance{font-size:12px;color:#d5cdb9}.balance b{color:#fff2ce;font-size:18px;font-variant-numeric:tabular-nums;margin-left:3px}
 .felt{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:space-evenly;gap:4px;padding:8px clamp(8px,2vw,28px);border:4px solid #5a4335;border-radius:16px 16px 35px 35px;background:repeating-linear-gradient(35deg,#ffffff04 0 1px,transparent 1px 4px),radial-gradient(ellipse at 50% 35%,#316c55,#164c3d 62%,#10382f);box-shadow:inset 0 0 0 1px #cfb37a,inset 0 0 32px #071e1880,0 3px 8px #0005}
 .row{justify-content:center;gap:16px}.label,.handTitle{gap:6px;font-weight:700}.label b,.handTitle strong{background:#0d3229;color:#f4d69d;border-radius:5px;padding:2px 6px;font:700 17px Georgia,serif}.label b:empty{display:none}.rail{display:flex;align-items:center;justify-content:center;gap:9px;color:#edd59e;font:600 11px Georgia,serif;letter-spacing:.14em}.rail i{font-weight:400;letter-spacing:0}.rail:before,.rail:after{content:'';width:min(24%,180px);height:1px;background:linear-gradient(90deg,transparent,#c0ac70)}.rail:after{transform:rotate(180deg)}
-#dealer,.cards{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:2px 0 4px 12px}.card{position:relative;display:inline-block;flex:none;width:var(--card,56px);aspect-ratio:5/7;margin-left:-12px;background:linear-gradient(115deg,#fffdf5,#f5eedf);color:#18282a;border-radius:5px;border:1px solid #d4cbbb;box-shadow:1px 2px 3px #06181080;font-family:Georgia,serif}.card.red{color:#a72e3c}.corner{position:absolute;top:2px;left:3px;font-size:clamp(12px,1.5vw,17px);font-weight:bold;line-height:.91;text-align:center}.corner small{display:block;font-size:.78em}.corner.end{inset:auto 3px 2px auto;transform:rotate(180deg)}.pips{position:absolute;inset:18% 23%}.pips i{position:absolute;transform:translate(-50%,-50%);font:normal 12px Georgia}.center{position:absolute;inset:18%;display:grid;place-items:center;border:1px solid #b59f67;background:#efe3c9;font-size:28px}.back{border:3px solid #f5edda;background:repeating-linear-gradient(45deg,transparent 0 4px,#e8c38580 4px 5px),repeating-linear-gradient(-45deg,#663640 0 4px,#b77470 4px 5px)}.back:after{content:'♦';position:absolute;inset:8%;display:grid;place-items:center;border:1px solid #e9ce99;color:#f6dfb3;font-size:20px;background:#692f3b99}
-.players,#hands,#others{display:flex;justify-content:center;gap:5px;align-items:stretch;min-width:0}#hands{flex:1.35;flex-wrap:wrap}#others:not(:empty){flex:2}#others:empty,.players:not(:has(.hand)){display:none}.hand{min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:9px;padding:3px 4px;background:#0f362a60;border:1px solid #7b9b7870}.handTitle{justify-content:center;font-size:13px}.handTitle small{font:10px system-ui}.handMeta{font-size:12px;gap:5px;color:#ebe1c6}.handMeta b{color:#ffdf8c}.selected{border:2px solid #f0d495;background:#224f3c}.hand.selected .handTitle strong{background:#f4d89c;color:#23372b}#others .card{--card:40px}#others .corner{font-size:11px}#others .pips i{font-size:9px}#others .center{font-size:17px}#others .handTitle strong{font-size:14px}
-#betArea{text-align:center}.betHeading{justify-content:center;gap:8px;font-size:13px}.betHeading strong{font-size:24px;color:#f9deb0}.chip{--tone:#315d64;position:relative;display:grid;place-items:center;padding:5px;width:48px;height:48px;border-radius:50%;border:1px solid #dbcbaa;background:repeating-conic-gradient(var(--tone) 0deg 29deg,#ebdfc8 29deg 44deg);box-shadow:0 3px 0 #162921,0 5px 6px #061b1470}.tone1{--tone:#9e3946}.tone2{--tone:#305a84}.tone3{--tone:#72517d}.tone4{--tone:#35383e}.chip b{display:grid;place-items:center;width:100%;height:100%;background:var(--tone);border:1px solid #ebdfc8;border-radius:50%;font:bold 17px Georgia;color:white}.chip[aria-pressed=true]{outline:2px solid #f8d898;outline-offset:3px;transform:translateY(-2px)}#chips{justify-content:center;gap:12px;padding:7px 2px}#seating{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px}#seating label{font-size:12px;color:#dddfcd}#seating select{min-height:44px;margin-left:3px}
-footer{justify-content:space-between;gap:6px;min-height:50px}.progress{min-width:0}.progress span{font:600 11px Georgia;letter-spacing:.12em;color:var(--gold)}.progress p{margin:2px 0;font-size:14px}#controls{gap:5px;flex-wrap:wrap;justify-content:flex-end}button.primary{background:#edd29c;border-color:#ebd7ad;color:#252e22;font-weight:750;min-width:95px}.dealIn{animation:deal .22s ease-out}@keyframes deal{from{transform:translate(12px,-10px) rotate(4deg);opacity:.4}}dialog{width:min(440px,94vw);max-height:90dvh;background:#192f28;color:inherit;border:1px solid #af996d;border-radius:12px}dialog::backdrop{background:#081612bf}[hidden]{display:none!important}
+#dealer,.cards{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:2px 0 4px 12px}
+.players,#hands,#others{display:flex;justify-content:center;gap:5px;align-items:stretch;min-width:0}#hands{flex:1.35;flex-wrap:wrap}#others:not(:empty){flex:2}#others:empty,.players:not(:has(.hand)){display:none}.hand{min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:9px;padding:3px 4px;background:#0f362a60;border:1px solid #7b9b7870}.handTitle{justify-content:center;font-size:13px}.handTitle small{font:10px system-ui}.handMeta{font-size:12px;gap:5px;color:#ebe1c6}.handMeta b{color:#ffdf8c}.selected{border:2px solid #f0d495;background:#224f3c}.hand.selected .handTitle strong{background:#f4d89c;color:#23372b}#others .card{--card:40px}#others .corner{font-size:11px;font-size:clamp(11px,25cqw,19px)}#others .handTitle strong{font-size:14px}
+#betArea{text-align:center}.betHeading{justify-content:center;gap:8px;font-size:13px}.betHeading strong{font-size:24px;color:#f9deb0}#chips{justify-content:center;gap:12px;padding:7px 2px}#seating{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px}#seating label{font-size:12px;color:#dddfcd}#seating select{min-height:44px;margin-left:3px}
+footer{justify-content:space-between;gap:6px;min-height:50px}.progress{min-width:0}.progress span{font:600 11px Georgia;letter-spacing:.12em;color:var(--gold)}.progress p{margin:2px 0;font-size:14px}#controls{gap:5px;flex-wrap:wrap;justify-content:flex-end}button.primary{background:#edd29c;border-color:#ebd7ad;color:#252e22;font-weight:750;min-width:95px}dialog{width:min(440px,94vw);max-height:90dvh;background:#192f28;color:inherit;border:1px solid #af996d;border-radius:12px}dialog::backdrop{background:#081612bf}[hidden]{display:none!important}
 @media(orientation:landscape) and (max-height:550px){main{min-height:100dvh}.felt{--card:clamp(43px,14dvh,68px)}#others .card{--card:clamp(32px,10.8dvh,50px)}}
 @media(orientation:portrait){header{gap:5px}header button{padding-inline:6px}.players{flex-direction:column}#hands{--card:68px}.felt{min-height:55dvh}footer{flex-wrap:wrap}#controls{margin-left:auto}#others .hand{padding:3px 1px}#others .handTitle{gap:3px}.card{--card:60px}}
 @media(prefers-reduced-motion:reduce){.dealIn{animation:none}}
 #standings{display:flex;justify-content:center;flex-wrap:wrap;gap:4px}#standings span{background:#102d25;border-radius:5px;padding:3px 8px;font-size:12px}#standings b{color:#eed49c}
 @media(hover:hover){button:not(:disabled):hover,header a:hover{border-color:#e2cd9c}}
+
+/* Card stock. Every playing card at these tables is a printed object: linen-finish
+   white stock, a hairline printed just inside the die-cut edge, crisp corner
+   indices, a soft contact shadow and one grain/sheen overlay (::after).
+   Material tokens come from card-material.css. */
+.card{
+  --card-stock:#fbf8f0;
+  position:relative;display:inline-block;flex:none;vertical-align:middle;overflow:clip;
+  width:var(--card,56px);aspect-ratio:5/7;margin-left:-12px;
+  container-type:inline-size;isolation:isolate;
+  border-radius:max(4px,calc(var(--card,56px)*.085));
+  color:#151d27;
+  background:radial-gradient(130% 60% at 22% 0,#fff 0,#fff0 62%),linear-gradient(#fbf8f0b0,#fbf8f0b0),var(--tt-linen),linear-gradient(162deg,#fdfbf6 0,#f6f0e3 58%,#ebe1cb);
+  box-shadow:var(--tt-edge),var(--tt-shadow);
+  font-family:"Palatino Linotype","Book Antiqua",Palatino,"Times New Roman",serif;
+  font-variant-numeric:lining-nums;
+  transition:box-shadow .18s var(--tt-ease);
+}
+.card.red{color:#b0213a}
+.card::before{content:'';position:absolute;inset:1.5px;inset:max(1.5px,3.4cqw);border-radius:max(2px,calc(var(--card,56px)*.06));border:1px solid #9a845a3d;pointer-events:none}
+/* Texture comes from the grain (laid twice, offset, so it reads as stock rather than a grid). */
+.card::after{content:'';position:absolute;inset:0;z-index:3;border-radius:inherit;pointer-events:none;background:var(--tt-sheen),var(--tt-grain),var(--tt-grain);background-size:260% 100%,140px 140px,140px 140px;background-position:100% 0,0 0,70px 37px;mix-blend-mode:soft-light}
+.corner{position:absolute;z-index:1;top:max(2px,5cqw);left:max(2px,6.5cqw);font-size:13px;font-size:clamp(13px,25cqw,19px);font-weight:700;line-height:.86;text-align:center;letter-spacing:-.02em;text-shadow:0 0 1px var(--card-stock),0 0 2px var(--card-stock),0 0 3px var(--card-stock)}
+.corner b{display:block;font-weight:700}
+.r10 .corner b{letter-spacing:-.1em;margin-left:-.08em}
+.corner small{display:block;margin-top:.1em;font-size:.78em;line-height:1}
+.corner.end{top:auto;left:auto;right:max(2px,6.5cqw);bottom:max(2px,5cqw);transform:rotate(180deg)}
+.pips{position:absolute;inset:19% 30%}
+.r10 .pips{inset:18% 31%}
+.pips i{position:absolute;transform:translate(-50%,-50%);font:normal 12px/1 "Segoe UI Symbol","Apple Symbols","Noto Sans Symbols2",sans-serif;font-size:19cqw}
+.pips i.f{transform:translate(-50%,-50%) rotate(180deg)}
+.pips.dense i{font-size:16.5cqw}
+.pips.ace i{font-size:46cqw}
+/* Small cards keep their pips clear of the corner indices. */
+@container (max-width:42px){.pips,.r10 .pips{inset:21% 32%}.pips i{font-size:16cqw}.pips.dense i{font-size:14.5cqw}.center{inset:20% 27%}.center:before,.center:after{display:none}}
+.pips.ace:before{content:'';position:absolute;left:50%;top:50%;width:66cqw;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:1px solid currentColor;opacity:.2;box-shadow:0 0 0 2px var(--card-stock),0 0 0 3px #a3895a40}
+/* Court cards: a printed panel with a gold double rule and suit marks. */
+.center{position:absolute;inset:16% 22%;display:grid;place-items:center;border-radius:2px;font:normal 28px/1 "Segoe UI Symbol","Apple Symbols","Noto Sans Symbols2",serif;font-size:37cqw;text-shadow:0 1px 0 #fff9;
+  background:linear-gradient(#ffffff8c,#fff0 48%),repeating-linear-gradient(135deg,#0000 0 2px,#b8975a24 2px 3px),#f1e4c6;
+  box-shadow:inset 0 0 0 1px #a8884f,inset 0 0 0 2.5px #fbf5e7,inset 0 0 0 3.2px #a8884f8c,0 0 0 1px #fff8}
+.red .center{background:linear-gradient(#ffffff8c,#fff0 48%),repeating-linear-gradient(135deg,#0000 0 2px,#b0213a14 2px 3px),#f5e2d3}
+.center:before,.center:after{content:attr(data-s);position:absolute;font-size:15cqw;line-height:1;text-shadow:none}
+.center:before{top:8%;left:10%}
+.center:after{right:10%;bottom:8%;transform:rotate(180deg)}
+
+/* An original back: white border, burgundy lattice, guilloche rings, a cream medallion. */
+.card.back{background:radial-gradient(130% 60% at 22% 0,#fff 0,#fff0 62%),linear-gradient(#fbf8f0b0,#fbf8f0b0),var(--tt-linen),linear-gradient(162deg,#fdfbf6,#efe6d3)}
+.card.back:before{content:'✦';inset:2.5px;inset:max(2.5px,6.5cqw);border:0;border-radius:max(2px,calc(var(--card,56px)*.055));display:grid;place-items:center;color:#7a1f30;font:normal 12px/1 Georgia,serif;font-size:24cqw;
+  background:radial-gradient(closest-side,#f6e5bf 0 27%,#c9a35f 28% 31%,#0000 32%),radial-gradient(closest-side,#0000 0 40%,#f0d39a8c 41% 43%,#0000 44%),repeating-radial-gradient(circle,#0000 0 3px,#f6dca826 3px 4px),repeating-linear-gradient(45deg,#0000 0 3px,#efcd8e36 3px 4px),repeating-linear-gradient(-45deg,#0000 0 3px,#efcd8e36 3px 4px),linear-gradient(155deg,#982f43,#5b1726);
+  box-shadow:inset 0 0 0 1px #edd29b,inset 0 0 0 2.5px #6d1e2c,inset 0 0 0 3.2px #e6c88c80}
+
+/* Cards dealt onto the felt lie a little off square, the way a dealer leaves them. */
+:is(#dealer,.cards) .card:nth-child(odd){rotate:-1.6deg}
+:is(#dealer,.cards) .card:nth-child(even){rotate:1.3deg;translate:0 1px}
+:is(#dealer,.cards) .card:nth-child(4n+3){rotate:-.5deg}
+#others .card,.opponent .card,.gift .card,.fanBacks .card{box-shadow:var(--tt-edge),var(--tt-shadow-small)}
+.dealIn{animation:deal .24s var(--tt-ease)}@keyframes deal{from{transform:translate(16px,-14px) rotate(5deg);opacity:.35}}
+
+/* Face-down piles: thickness from stacked edges, the count on a badge. */
+.cardPile{position:relative;display:inline-flex;flex:none;vertical-align:middle}
+.cardPile .card{margin:0;box-shadow:var(--tt-edge),var(--tt-pile)}
+.cardPile.thin .card{box-shadow:var(--tt-edge),var(--tt-pile-thin)}
+.cardPile.thick .card{box-shadow:var(--tt-edge),var(--tt-pile),5px 5px 0 #efe6d2,6px 6px 0 #9f947e,7px 8px 12px -2px #00000080}
+.cardPile b{position:absolute;left:50%;bottom:4px;z-index:4;translate:-50% 0;min-width:24px;padding:3px 6px;border-radius:11px;background:#1b2c28;box-shadow:0 0 0 1.5px #f0dfb2,0 2px 4px #0009;color:#fff4d6;font:800 13px/1 system-ui,sans-serif;font-variant-numeric:tabular-nums;text-align:center}
+/* Blackjack: the dealing shoe, cards peeking over its smoked front. */
+#shoe{position:absolute;top:10px;right:16px;z-index:1;pointer-events:none}
+#shoe .card{--card:36px;rotate:-10deg;translate:0 -2px}
+#shoe:after{content:'';position:absolute;left:-7px;right:-9px;bottom:-5px;height:52%;z-index:2;border-radius:4px 4px 8px 8px;background:linear-gradient(172deg,#4a3428,#24170f 70%,#160d08);box-shadow:inset 0 1px 0 #ffffff2e,inset 0 -2px 0 #0007,0 5px 9px -3px #000c}
+#shoe .cardPile b{z-index:3;bottom:-4px}
+/* In portrait the dealer row can wrap to the right edge; the shoe sits on the left, clear of it. */
+@media(orientation:portrait){#shoe{right:auto;left:14px}#shoe .card{rotate:10deg}}
+
+/* Clay chips: six edge inserts, a printed inlay, and a visible stack edge. */
+.chip{--tone:#315d64;--deep:#1c3a3f;position:relative;display:grid;place-items:center;width:48px;height:48px;padding:6px;border:0;border-radius:50%;
+  background:linear-gradient(160deg,#ffffff45,#fff0 40%,#0000 62%,#0000003d),var(--tt-grain),radial-gradient(circle,#0000 0 62%,#00000045 63.5% 65.5%,#0000 67%),repeating-conic-gradient(from -9deg,#f3ead5 0 18deg,var(--tone) 18deg 60deg);
+  background-size:auto,140px 140px,auto,auto;
+  box-shadow:inset 0 1px 0 #ffffff59,inset 0 -1px 1px #00000059,0 1px 0 var(--deep),0 2px 0 var(--deep),0 3px 0 var(--deep),0 4px 1px #00000066,0 8px 10px -4px #000000b0;
+  transition:translate .16s var(--tt-ease),box-shadow .16s var(--tt-ease)}
+.tone1{--tone:#9e3946;--deep:#5e1d27}.tone2{--tone:#305a84;--deep:#1a3350}.tone3{--tone:#72517d;--deep:#432d4b}.tone4{--tone:#35383e;--deep:#18191c}
+.chip b{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 38% 30%,#fffdf6,#f1e5ca 70%,#e3d1aa);
+  box-shadow:0 0 0 1.5px var(--tone),inset 0 0 0 2.5px #fbf5e6,inset 0 0 0 3.5px #0000004d,inset 0 1px 2px #0003;
+  box-shadow:0 0 0 1.5px var(--tone),inset 0 0 0 2.5px #fbf5e6,inset 0 0 0 3.5px color-mix(in srgb,var(--tone) 60%,transparent),inset 0 1px 2px #0003;
+  color:var(--tone);font:700 15px/1 "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;font-variant-numeric:lining-nums;letter-spacing:-.03em}
+.chip[aria-pressed=true]{outline:2px solid #f8d898;outline-offset:3px;translate:0 -4px;box-shadow:inset 0 1px 0 #ffffff59,inset 0 -1px 1px #00000059,0 1px 0 var(--deep),0 2px 0 var(--deep),0 3px 0 var(--deep),0 4px 1px #00000066,0 14px 14px -6px #000000b8}
+.chip.wide b{font-size:13px;letter-spacing:-.05em}
+.betChip{display:inline-block;width:14px;height:14px;margin-right:5px;vertical-align:-2px;border-radius:50%;background:radial-gradient(circle,#f3e8cf 0 34%,#9e3946 37% 40%,#0000 42%),repeating-conic-gradient(from -10deg,#f3ead5 0 20deg,#9e3946 20deg 60deg);box-shadow:0 1px 0 #5e1d27,0 2px 0 #5e1d27,0 3px 3px #000a}
+
+@media(prefers-reduced-motion:reduce){.card,.chip{transition:none}.dealIn{animation:none}}

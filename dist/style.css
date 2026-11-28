@@ -179,3 +179,147 @@ button[data-kind]{touch-action:manipulation}
   .caravan #handTitle{white-space:nowrap;font-size:13px}
   .caravan #rest{font-size:12px;padding-inline:4px}
 }
+
+/* ── Printed card stock ─────────────────────────────────────────────
+   Every Century face is a die-cut card: a printed border around the art
+   window, a keyline, paper grain with a light sweep, a contact shadow and
+   a lift when pressed. Tokens come from card-material.css. */
+.card,.detailFace,.stageCard{
+  --fr:5px;
+  --keyline:#2d574d;
+  --stock:linear-gradient(158deg,#fffcf0 0%,#f4ebd2 52%,#e6d8b2 100%);
+  border:0;border-radius:10px;padding:var(--fr);
+  background:var(--tt-grain) 0 0/140px 140px,var(--stock);
+  box-shadow:var(--tt-edge),var(--tt-shadow);
+  transition:transform .18s var(--tt-ease),translate .16s var(--tt-ease),box-shadow .18s var(--tt-ease);
+}
+.card:has(>.illustration.order),.detailFace:has(>.illustration.order),.stageCard:has(>.illustration.order){
+  --keyline:#5b3a12;
+  --stock:linear-gradient(158deg,#fbefca 0%,#ecd08e 55%,#cfa45c 100%);
+  --panel:linear-gradient(#f7e9c2,#ecd398);--ink-print:#3d230b;
+}
+/* An order you can fill keeps its stock; a green rim and the '달성 가능' chip
+   carry the state, so the order row stays one material. */
+.card.affordable,.card.affordable:has(>.illustration.order){
+  box-shadow:0 0 0 2px #7cc48a,0 0 0 3px #0006,var(--tt-edge),var(--tt-shadow);
+}
+.card .illustration,.detailFace .illustration,.stageCard .illustration{
+  inset:var(--fr);height:auto;border-radius:6px;
+  box-shadow:0 0 0 1.5px var(--keyline),0 0 0 2.5px #fff7d966;
+}
+.card .cardtext,.detailFace .cardtext,.stageCard .cardtext{border-radius:0 0 6px 6px}
+.card::after,.detailFace::after{
+  content:'';position:absolute;inset:0;z-index:3;border-radius:inherit;pointer-events:none;
+  background:var(--tt-sheen),var(--tt-grain);background-size:260% 100%,140px 140px;background-position:100% 0,0 0;
+  mix-blend-mode:soft-light;
+  transition:background-position .5s var(--tt-ease);
+}
+.tt-tilt[data-tt-active]::after{background-position:var(--tt-gx,30%) 0,0 0}
+.card.flying,.card.lifted{rotate:none;translate:none;margin:0;box-shadow:var(--tt-edge),var(--tt-shadow-lift);transition:none}
+#playedCard .card{--fr:6px;border-radius:13px;box-shadow:var(--tt-edge),var(--tt-shadow-lift)}
+#playedCard .card .illustration{border-radius:8px}
+#playedCard.restReview button.card{padding:4px 10px;background:#1b352d;border:1px solid #b89a59;box-shadow:var(--tt-shadow-small)}
+#playedCard.restReview button.card::after{content:none}
+.detailFace{--fr:5px;border-radius:12px}
+.stageCard{--fr:3px;border-radius:7px}
+
+/* Printed values: the score plaque, the price disc, the recipe panel. */
+.card .cardtext strong,.detailFace .cardtext strong{
+  align-self:flex-start;padding:0 6px;border-radius:4px;
+  font:700 16px/1.25 Georgia,"Batang",serif;color:#173a31;text-shadow:none;
+  background:linear-gradient(#fbf4dc,#dccfa8);
+  box-shadow:inset 0 1px #fff,inset 0 -1px #0000002e,0 1px 2px #0009;
+}
+.card:has(>.illustration.order) .cardtext strong,.detailFace:has(>.illustration.order) .cardtext strong{
+  color:#3d230b;background:linear-gradient(#fff1c4,#e2b860 70%,#c9963f);
+}
+/* Orders print their cost on a panel of the card's own stock. The panel has a
+   fixed height that holds two cost lines, so the score plaque, which straddles
+   the top edge of the panel, sits at the same height on every order card. */
+.card:has(>.illustration.order) .cardtext,.detailFace:has(>.illustration.order) .cardtext{
+  justify-content:flex-start;min-height:var(--panel-h,50px);padding:0 6px 3px;gap:2px;
+  color:var(--ink-print);text-shadow:none;
+  background:var(--tt-grain) 0 0/140px 140px,var(--panel);
+  box-shadow:0 -1px 0 #5b3a1299,0 -2px 0 #fff3cf80,inset 0 1px 0 #ffffffb3;
+}
+.card:has(>.illustration.order) .cardtext strong,.detailFace:has(>.illustration.order) .cardtext strong{margin-top:-11px}
+.card:has(>.illustration.order) .recipe,.detailFace:has(>.illustration.order) .recipe{line-height:1.2;font-weight:700}
+.card:has(>.illustration.order) .cardtext .cube,.detailFace:has(>.illustration.order) .cardtext .cube{outline-color:#3d230b40}
+#playedCard .card:has(>.illustration.order) .cardtext{--panel-h:62px;padding:0 9px 6px}
+.marketPrice{
+  left:calc(var(--fr) + 3px);top:calc(var(--fr) + 3px);min-width:22px;height:22px;
+  font:700 14px/20px Georgia,serif;color:#fff6dc;
+  border:1.5px solid #ecd396;
+  background:radial-gradient(circle at 34% 28%,#43695a,#16322a 68%,#0d211b);
+  box-shadow:0 1px 2px #000b,inset 0 1px #ffffff40;
+}
+.marketRecipe,.marketPile{
+  background:linear-gradient(#1f3429f2,#122219f5);
+  border:1px solid #f0d99a55;border-radius:5px;
+  box-shadow:inset 0 1px #ffffff1f,0 1px 3px #000a;
+}
+
+/* Spice cubes and tokens: small solid pieces lit from the upper left. */
+.cube{
+  background-image:radial-gradient(circle at 30% 24%,#ffffffb3 0 8%,#fff0 40%),linear-gradient(150deg,#ffffff40,#fff0 46%,#0000003d);
+  box-shadow:inset -1.5px -2px 0 #00000045,inset 1px 1px 0 #ffffff70,0 1px 0 #00000059,0 2px 3px -1px #0000008c;
+}
+.coin{box-shadow:0 1px 0 #5a3c11,0 3px 5px -1px #1d1203cc,inset 0 1px #fffbe0}
+
+/* Face-down piles: the market decks and each rival's hand. */
+.marketmat .head>span:last-child{display:inline-flex;align-items:center;gap:7px}
+.deckPile{
+  position:relative;flex:none;display:inline-block;width:26px;height:36px;margin:-6px 4px 0 0;border-radius:4px;
+  border:2px solid #e9d29a;
+  background:radial-gradient(circle,#f3d48b 0 2px,#0000 2.5px),radial-gradient(circle,#0000 4px,#e9cf8f 4.5px 5.5px,#0000 6px),repeating-linear-gradient(45deg,#0000 0 3px,#ffffff1c 3px 4px),repeating-linear-gradient(-45deg,#0000 0 3px,#ffffff1c 3px 4px),#1f4a40;
+  box-shadow:var(--tt-edge),var(--tt-pile-thin);
+}
+.deckPile.orders{background-color:#7a3324}
+.deckPile.thin{box-shadow:var(--tt-edge),1px 1px 0 #efe6d2,2px 3px 5px -1px #0008}
+.deckPile.empty{background:none;border-style:dashed;border-color:#e9d29a88;box-shadow:none}
+.cardBack{
+  border:1px solid #e9d29a;outline:0;border-radius:3px;
+  background:radial-gradient(circle,#f3d48b 0 1.5px,#0000 2px),repeating-linear-gradient(45deg,#0000 0 3px,#ffffff22 3px 4px),repeating-linear-gradient(-45deg,#0000 0 3px,#ffffff22 3px 4px),#1f4a40;
+  box-shadow:1px 1px 0 #efe6d2,2px 2px 0 #9f947e,2px 3px 4px -1px #00000080;
+}
+.orderMini.filled{border:1px solid #e9d29a;box-shadow:var(--tt-edge),var(--tt-shadow-small)}
+
+/* The hand is held: cards overlap a little and fan along an arc. */
+/* The row scrolls sideways, which also clips it vertically, so the bottom
+   padding leaves room for the contact shadow and the negative margin gives
+   that room back to the layout. */
+#hand{gap:0;padding:8px 10px 30px;margin-bottom:-18px;scroll-padding-inline:10px}
+#hand>.card{margin-left:-8px;rotate:var(--fan-r,0deg);translate:0 var(--fan-y,0px);transform-origin:50% 115%}
+#hand>.card:first-child{margin-left:0}
+#hand>p{margin:6px 0}
+/* More cards to the right: the last visible card fades out at the edge. */
+#hand.more,#rival.more{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 16px),#0000);mask-image:linear-gradient(90deg,#000 calc(100% - 16px),#0000)}
+/* Korean labels break between words, never inside one. */
+#myTable,#bag .stock small{word-break:keep-all}
+#bag{gap:2px}
+
+@media (any-pointer:coarse){
+  /* Paper does not glow: a dark-gold rim outside the frame, as in Splendor. */
+  .card[data-table-pressed]{z-index:2;translate:0 var(--tt-lift);box-shadow:var(--tt-edge),var(--tt-shadow-lift);filter:none;outline:2px solid #c8902e;outline-offset:1px}
+  #hand>.card[data-table-pressed]{translate:0 calc(var(--fan-y,0px) + 2 * var(--tt-lift));box-shadow:var(--tt-edge),var(--tt-shadow-lift-compact)}
+}
+@media(orientation:landscape) and (max-height:660px){
+  .marketmat .card,.caravan .card{--fr:3px;border-radius:6px}
+  .marketmat .card .illustration,.caravan .card .illustration{border-radius:4px}
+  .card:has(>.illustration.order){--panel-h:46px}
+  .card:has(>.illustration.order) .cardtext{padding:0 4px 2px}
+  .card:has(>.illustration.order) .cardtext strong{margin-top:-10px}
+  .marketmat .card:has(>.illustration.order) .recipe .chips{gap:1px 3px}
+  .deckPile{width:18px;height:24px;margin:-2px 3px 0 0;border-width:1.5px;border-radius:3px}
+  #bag .stock small{letter-spacing:-.04em}
+  #hand{padding:5px 6px 26px;margin-bottom:-16px}
+  #hand>.card{margin-left:-10px}
+  #hand>.card:first-child{margin-left:0}
+}
+@media(orientation:landscape) and (max-height:360px){
+  .card:has(>.illustration.order){--panel-h:40px}
+  .marketmat .card:has(>.illustration.order) .cardtext strong{font-size:14px;margin-top:-9px}
+}
+@media (prefers-reduced-motion:reduce){
+  .card,.detailFace,.stageCard,.card::after,.detailFace::after{transition:none}
+}

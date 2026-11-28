@@ -60,7 +60,7 @@ function renderMix(){
       if(t.special==='reserve'||t.special==='recover'||(mixTab==='cards')!==extra.includes(t.special))return '';
       const name=mixTileName(board,t,i),detail=mixTileDetail(board,t,i),marks=sea?board.players.map((q,j)=>q.boat===i?piece(j,'⛵'):'').join(''):t.occupant?piece(t.occupant.seat,t.occupant.n+'명'):'';
       const position=sea?'style="grid-column:'+(t.col+1)+';grid-row:'+(t.y+1)+' / span 2"':'';
-      return '<button data-site="'+i+'" class="site '+(t.port?'port':t.fort?'fort':t.special==='market'||t.special==='buy'?'merchant':'')+'" '+position+'><strong>'+name+'</strong><span>'+detail+'</span><small>'+(t.need?'♟ '+workerCost(p,t):t.owners?.length?'⌂ '+t.owners.map(j=>j+1).join('·'):'')+'</small><span class="pieces">'+marks+'</span></button>';
+      return '<button data-site="'+i+'" class="site '+(t.port?'port':t.fort?'fort':t.special==='market'||t.special==='buy'?'merchant cardTile':t.special==='play'||t.special==='route'?'cardTile':'')+'" '+position+'><strong>'+name+'</strong><span>'+detail+'</span><small>'+(t.need?'♟ '+workerCost(p,t):t.owners?.length?'⌂ '+t.owners.map(j=>j+1).join('·'):'')+'</small><span class="pieces">'+marks+'</span></button>';
     }).join('');
     atlas.querySelectorAll('[data-site]').forEach(b=>b.onclick=()=>openMix(+b.dataset.site));
   }

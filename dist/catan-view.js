@@ -122,6 +122,68 @@ compactMap.addEventListener('change',()=>{
 });
 $('board').onclick=e=>{const area=e.target.closest('[data-region]');if(area){district=Number(area.dataset.region);render();return;}const target=e.target.closest('[data-index]');if(target)act(actions[+target.dataset.index]);};
 $('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const t=e.target.closest('[data-index],[data-region]');if(t){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}}};
+// Printed cards: the visible seat's hand, its development or progress cards,
+// and card faces for choices that name a resource.
+function ccNote(text){const p=document.createElement('p');p.className='ccLabel';p.textContent=text;return p;}
+function ccRow(cls,...cardsIn){const d=document.createElement('div');d.className='ccRow'+(cls?' '+cls:'');d.append(...cardsIn);return d;}
+function showHand(s,visible,actor,ck){
+  const box=$('hand'),dev=$('dev');
+  if(visible<0){
+    CatanCards.forget();
+    const total=s.players[actor].hand.reduce((a,n)=>a+n,0);
+    const msg=document.createElement('p');msg.className='ccHidden';msg.textContent='차례를 확인하면 표시됩니다.';
+    box.setAttribute('aria-label','보유 자원 · 차례를 확인하면 표시됩니다.');
+    box.replaceChildren(CatanCards.pile(total,s.players[actor].name+' 손패',null,'손패'),msg);dev.replaceChildren();return;
+  }
+  const q=s.players[visible];
+  CatanCards.hand(box,q.hand,R,visible);
+  if(ck){
+    const tracks=document.createElement('div');tracks.className='ccTracks';
+    q.tracks.forEach((n,k)=>{
+      const t=document.createElement('span');t.className='ccTrack';t.dataset.track=CatanCards.trackKinds[k];
+      t.textContent=CatanCities.tracks[k]+' '+n+'단계';
+      const pips=document.createElement('i');pips.setAttribute('aria-hidden','true');
+      for(let l=1;l<=5;l++){const d=document.createElement('b');if(l<=n)d.className='on';pips.append(d);}
+      t.append(pips);tracks.append(t);
+    });
+    const tints=['#d6a83c','#4e9a52','#3f6fb0'];
+    const held=q.progress.map(c=>CatanCards.emblemCard(CatanCards.trackKinds[c.track],CatanCities.names[c.card],null,{label:CatanCities.tracks[c.track]+' 진보 카드 '+CatanCities.names[c.card]}));
+    const piles=s.progressDecks.map((d,k)=>CatanCards.pile(d.length,CatanCities.tracks[k]+' 진보 카드 더미',tints[k]));
+    // The three draw decks get their own row; the held progress cards form a hand below them.
+    dev.replaceChildren(ccNote('도시 개선'),tracks,ccNote('진보 카드'+(held.length?' '+held.length+'장':' · 없음')),ccRow('ccPiles',...piles),...(held.length?[ccRow('',...held)]:[]));
+    return;
+  }
+  const owned=cards.map((c,k)=>{
+    const fresh=q.fresh[k],n=q.dev[k]+fresh;
+    return n?CatanCards.emblemCard(CatanCards.devKinds[k],c,n,{fresh,label:c+' '+n+'장'+(fresh?' · 이번 차례 구입 '+fresh+'장':'')}):null;
+  }).filter(Boolean);
+  dev.replaceChildren(ccNote('발전 카드'+(owned.length?'':' · 없음')),ccRow('',CatanCards.pile(s.deck.length,'발전 카드 더미'),...owned));
+}
+const resourceChoices=['discard','gain','take','gold','loot','gift','water'];
+function cardChoices(select,p){
+  const sync=[],paint=()=>sync.forEach(f=>f());
+  select.addEventListener('change',paint);
+  if(resourceChoices.includes(selected)){
+    const pick=document.createElement('div');pick.className='ccPick';
+    for(const o of select.options){
+      const a=actions[+o.value],r=a[1];
+      const b=CatanCards.resource(r,R[r],selected==='discard'?p.hand[r]:null,'button');
+      b.type='button';b.setAttribute('aria-label',o.text+(selected==='discard'?' · 보유 '+p.hand[r]+'장':''));
+      b.onclick=()=>{select.value=o.value;paint();};
+      sync.push(()=>b.setAttribute('aria-pressed',String(select.value===o.value)));pick.append(b);
+    }
+    paint();return pick;
+  }
+  if(selected==='bank'||selected==='offer'){
+    const trade=document.createElement('div');trade.className='ccTrade';trade.setAttribute('aria-hidden','true');
+    sync.push(()=>{
+      const [k,x,y,z]=actions[+select.value],arrow=document.createElement('span');arrow.textContent='→';
+      trade.replaceChildren(CatanCards.resource(x,R[x],k==='bank'?z:1),arrow,CatanCards.resource(y,R[y],1));
+    });
+    paint();return trade;
+  }
+  return null;
+}
 function render(){
   clearTimeout(timer);
   const s=state,i=Catan.actor(s),p=s.players[i],over=s.phase==='over',interactive=!over&&!p.ai&&!waiting;
@@ -133,12 +195,12 @@ function render(){
   rules[2].hidden=ck;
   rules[1].hidden=ck;
   rules[0].textContent='도로는 목재·벽돌 각 1장, 마을은 목재·벽돌·양모·곡식 각 1장, 도시는 곡식 2장과 광석 3장이 필요합니다.'+(ck?'':' 발전 카드는 양모·곡식·광석 각 1장입니다.');
-  document.querySelector('.legend').textContent='낮은 집은 마을, 탑이 있는 건물은 도시　'+(ck?'▲ 활성 기사　△ 대기 기사':s.mode==='sea'?'배 모양 표식은 항로':'')+'　· 점선 원은 선택 가능';
+  document.querySelector('.legend').replaceChildren(...['낮은 집은 마을, 탑이 있는 건물은 도시',...(ck?['▲ 활성 기사','△ 대기 기사']:s.mode==='sea'?['배 모양 표식은 항로']:[]),'점선 원은 선택 가능'].flatMap((t,k,all)=>{const e=document.createElement('span');e.textContent=t+(k<all.length-1?' ·':'');return k?[' ',e]:[e];}));
   $('variant').textContent=description[s.mode]+(ck?' 기사 모집과 승급은 양모·광석 각 1장, 활성화는 곡식 1장입니다. 성벽은 벽돌 2장이며 손패 한도를 2장 늘립니다. 야만인이 7칸 전진하면 활성 기사 전력과 전체 도시 수를 비교합니다. 개선 4단계부터 대도시를 세워 2점을 얻습니다.':'');
   const prizes={road:'최장 도로',army:'최대 기사단',port:'항구왕'};
   $('scores').replaceChildren(...s.players.map((q,j)=>{
     const seat=document.createElement('span'),name=document.createElement('b');
-    if(i===j)seat.className='current';
+    if(i===j)seat.className='current';seat.style.setProperty('--seat',colors[j]);
     name.style.color=colors[j];name.textContent=(j+1)+' · '+q.name;
     const awards=Object.entries(s.awards).filter(([,owner])=>owner===j).map(([k])=>prizes[k]);
     seat.append(name,'　'+Catan.points(s,j,visible===j||over)+'점',awards.length?' · '+awards.join(' · '):'');return seat;
@@ -147,9 +209,7 @@ function render(){
   const o=s.offer;
   const hints={spy:'확인한 상대의 진보 카드 중 한 장을 고르세요.',pillage:'마을로 강등할 도시를 고르세요.',reward:'공동 방어 보상으로 받을 진보 카드 계열을 고르세요.',returnProgress:'보유 한도를 넘어 반납할 진보 카드를 고르세요.',gold:'금광에서 받을 자원을 고르세요.',smith:'무료로 승급할 기사를 고르세요.',loot:'상대에게서 가져올 카드를 고르세요.',sail:'배를 옮길 항로를 고르세요.',march:'기사를 보낼 교차점을 고르세요.',aqueduct:'수로로 받을 자원 한 장을 고르세요.',retreat:'밀려난 기사의 후퇴 지점을 고르세요.',dismiss:'반환할 기사를 고르세요.',place:'기사를 배치할 지점을 고르세요.',gift:'전달할 카드를 고르세요.',setupVillage:'첫 정착지를 지을 꼭짓점을 고르세요.',setupRoad:'방금 세운 마을에 연결할 도로를 고르세요.',turn:s.rolled?'건설·교역을 하거나 차례를 마치세요.':'주사위를 굴려 자원을 생산하세요.',robber:'도둑을 옮길 땅을 고르세요.',victim:'무작위 자원 1장을 가져올 상대를 고르세요.',discard:'버릴 자원 '+(s.discard[0]?.n||0)+'장을 고르세요.',freeRoad:'무료 도로를 놓을 위치를 고르세요.',monopoly:'상대에게서 모두 가져올 자원을 고르세요.',plenty:'은행에서 받을 자원을 고르세요.',offer:o?`${s.players[o.from].name}의 제안 · ${R[o.give]} 1장을 받고 ${R[o.want]} 1장을 줍니다.`:''};
   $('hint').textContent=(saveFailed?'자동 저장 불가 · ':'')+(over?'목표 승점에 도달했습니다.':waiting?'기기를 건네고 아래 버튼을 누르세요.':p.ai?'AI가 수를 고르고 있습니다.':(s.dice.length?'주사위 '+s.dice.join(' + ')+' · ':'')+hints[s.phase]);
-  $('hand').innerHTML=visible<0?'차례를 확인하면 표시됩니다.':s.players[visible].hand.map((n,r)=>`<span>${R[r]} <b>${n}</b></span>`).join('');
-  $('dev').textContent=visible<0?'':'발전 카드 · '+(cards.map((c,k)=>{const n=s.players[visible].dev[k]+s.players[visible].fresh[k];return n?c+' '+n:'';}).filter(Boolean).join(', ')||'없음');
-  if(ck&&visible>=0){const q=s.players[visible];$('dev').textContent=q.tracks.map((n,k)=>CatanCities.tracks[k]+' '+n+'단계').join(' · ')+' / 진보 카드 '+(q.progress.map(c=>CatanCities.names[c.card]).join(', ')||'없음');}
+  showHand(s,visible,i,ck);
   if(ck&&s.phase==='setupVillage'&&s.step>=s.players.length&&!waiting&&!p.ai)$('hint').textContent='두 번째 정착지에 도시를 세우세요.';
   $('log').replaceChildren(...s.log.map(text=>{const li=document.createElement('li');li.textContent=text;return li;}));
   const bar=$('controls');bar.replaceChildren();actions=interactive?Catan.choices(s):[];
@@ -165,7 +225,9 @@ function render(){
   if(selected&&actions.some(a=>a[0]===selected&&a.length>1)){
     const group=document.createElement('div'),select=document.createElement('select');group.className='group';select.setAttribute('aria-label',label[selected]);
     actions.forEach((a,j)=>{if(a[0]===selected)select.add(new Option(optionText(a),j));});
-    group.append(select,button('선택 확정',()=>act(actions[+select.value])));bar.append(group);
+    group.append(select,button('선택 확정',()=>act(actions[+select.value])));
+    const faces=cardChoices(select,p);if(faces)bar.append(faces);
+    bar.append(group);
   }
   board(interactive);
   if(!over&&p.ai)timer=setTimeout(()=>act(Catan.ai(state)),480);

@@ -2,11 +2,19 @@
 const suits=['♠','♥','♣','♦'],ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const points=[[20,9],[80,9],[20,36],[80,36],[20,64],[80,64],[20,91],[80,91],[50,50],[50,25],[50,75],[50,9],[50,91]];
 const layouts=[[8],[11,12],[11,8,12],[0,1,6,7],[0,1,8,6,7],[0,1,2,3,6,7],[0,1,2,3,6,7,9],[0,1,2,3,6,7,9,10],[0,1,2,3,4,5,6,7,8],[0,1,2,3,4,5,6,7,9,10]];
+// A printed playing card: indices in two corners, pips (the lower half printed
+// upside down, as on real cards) or a framed court panel, on linen card stock.
 function card(id,animate=false,backLabel="뒷면 카드"){
   if(id===null)return '<span class="card back" role="img" aria-label="'+backLabel+'"></span>';
-  const rank=id%13,suit=id/13|0,sign=suits[suit],face=ranks[rank],corner=face+'<small>'+sign+'</small>';
-  const center=rank<10?'<span class="pips">'+layouts[rank].map(i=>'<i style="left:'+points[i][0]+'%;top:'+points[i][1]+'%">'+sign+'</i>').join('')+'</span>':'<span class="center court-'+['jack','queen','king'][rank-10]+'">'+['♞','♛','♚'][rank-10]+'</span>';
-  return '<span role="img" aria-label="'+['스페이드','하트','클로버','다이아'][suit]+' '+face+'" class="card '+(suit%2?'red ':'')+(animate?'dealIn':'')+'"><span aria-hidden="true"><span class="corner">'+corner+'</span>'+center+'<span class="corner end">'+corner+'</span></span></span>';
+  const rank=id%13,suit=id/13|0,sign=suits[suit],face=ranks[rank],corner='<b>'+face+'</b><small>'+sign+'</small>';
+  const center=rank<10?'<span class="pips'+(rank?rank>=6?' dense':'':' ace')+'">'+layouts[rank].map(i=>'<i'+(points[i][1]>50?' class="f"':'')+' style="left:'+points[i][0]+'%;top:'+points[i][1]+'%">'+sign+'</i>').join('')+'</span>':'<span class="center court-'+['jack','queen','king'][rank-10]+'" data-s="'+sign+'">'+['♞','♛','♚'][rank-10]+'</span>';
+  return '<span role="img" aria-label="'+['스페이드','하트','클로버','다이아'][suit]+' '+face+'" class="card tt-tilt '+(suit%2?'red ':'')+(rank===9?'r10 ':'')+(animate?'dealIn':'')+'"><span aria-hidden="true"><span class="corner">'+corner+'</span>'+center+'<span class="corner end">'+corner+'</span></span></span>';
+}
+
+// A face-down pile with a remaining count (shoe, deck, draw pile). The card in it
+// carries no label, so card landings never mistake the pile for a new card.
+function cardPile(count,label){
+  return '<span class="cardPile'+(count>20?' thick':count>1?'':' thin')+'" role="img" aria-label="'+label+' '+count+'장"><span class="card back" aria-hidden="true"></span><b aria-hidden="true">'+count+'</b></span>';
 }
 
 // Each of these tables uses one deck. Compare within each pile so moving a
