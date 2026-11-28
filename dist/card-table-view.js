@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const poker=new URLSearchParams(location.search).get('game')!=='hula';
-const engine=poker?Poker:Hula,title=poker?'Texas Hold’em':'훌라',key='worldwide-'+(poker?'holdem':'hula')+'-v1';
+const engine=poker?Poker:Hula,title=poker?'23 · Texas Hold’em':'훌라',key='worldwide-'+(poker?'holdem':'hula')+'-v1';
 let game,timer,selected=[],seen=0;
 // The saved table is the only copy. If another tab, or this page restored from the
 // back/forward cache, finds a save it did not write, it reloads instead of playing

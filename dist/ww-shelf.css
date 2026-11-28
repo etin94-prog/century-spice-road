@@ -1,0 +1,72 @@
+#worldwide .ww-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 16px;
+}
+.ww-filter input,
+.ww-filter select {
+  min-height: 44px;
+  border: 1px solid #839786;
+  border-radius: 8px;
+  background: #183c34;
+  color: #f6ecd5;
+  font: inherit;
+  padding: 6px 12px;
+}
+.ww-filter input {
+  flex: 1;
+  min-width: 115px;
+}
+.ww-filter input::placeholder {
+  color: #d0d6c9;
+}
+.ww-filter output {
+  font-size: 13px;
+  color: #f0d49c;
+}
+#worldwide .ww-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 166px), 1fr));
+  gap: 12px;
+}
+#worldwide .ww-list a {
+  position: relative;
+  min-height: 0;
+  padding: 0;
+  background: #25473b;
+  justify-content: start;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 3px 9px #10251d80;
+}
+#worldwide .ww-list a img {
+  width: 100%;
+  aspect-ratio: 1.8;
+  object-fit: cover;
+  background: #326358;
+}
+#worldwide .ww-list h2 {
+  font: 650 clamp(14px, 2.1vw, 18px) / 1.35 system-ui;
+  padding: 9px 10px 11px;
+  word-break: keep-all;
+}
+#worldwide [hidden] {
+  display: none !important;
+}
+.extra-title {
+  margin: 24px 0 9px;
+  font-size: 17px;
+}
+@media (max-width: 480px) {
+  #worldwide .ww-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ww-filter output {
+    flex-basis: 100%;
+  }
+}
+
+#worldwide .ww-list h2 { padding-bottom: 2px; }
+#worldwide .ww-list small { padding: 0 10px 10px; color: #d5decf; font-size: 12px; }
