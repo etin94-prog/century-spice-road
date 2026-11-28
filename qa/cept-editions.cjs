@@ -7935,8 +7935,12 @@ for(const edition of ['ps1','saturn']){
     assert.equal(restored.replay.steps.at(-1).effect[0],at);
     assert.match(restored.log[0],/시한폭탄 폭발/);
     assert.equal(restored.replay.steps.at(-1).tiles.find(([i])=>i===at)[1].length,8);
-    const replayCheck=createContext({C,replay:restored.replay});
+    const replayCheck=createContext({C,replay:restored.replay,el:()=>({}),btn:()=>({}),$:()=>({append(){}})});
     runInContext(readFileSync(resolve(__dirname,'../dist/cept-replay-view.js'),'utf8'),replayCheck);
+    assert.ok(runInContext('validateReplay(replay)',replayCheck));
+    const oldReplay=structuredClone(restored.replay);
+    for(const frame of oldReplay.steps)for(const [,row] of frame.tiles)row.length=8;
+    replayCheck.replay=oldReplay;
     assert.ok(runInContext('validateReplay(replay)',replayCheck));
 
     s.turn=1;s.phase='spell';s.players[1].hand=[id('removecurse')];
