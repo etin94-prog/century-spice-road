@@ -173,7 +173,7 @@ body:has(#game:not([hidden])){overscroll-behavior:none}
   border-color:var(--panel-line);border-radius:12px;background:var(--panel);backdrop-filter:blur(6px);
 }
 #game .table aside.match-actions:has(#buttons:empty):not(:has(#handPanel)){display:none}
-#game:has(#mapViewport #handPanel[open]) .match-actions{visibility:hidden}
+#game:has(#mapViewport #handPanel[open]) .match-actions,#game:has(#mapViews[open]) aside.action-menu{visibility:hidden}
 #game .match-actions #who{float:left;font-size:12px;line-height:1.5;margin:0 6px 0 0}
 #game .match-actions #hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:1.65;margin:0;color:#e2d8c2}
 #game .match-actions:has(#buttons .match-standings) #hint{white-space:normal}
@@ -240,6 +240,14 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 #game #map{--label:calc(1px / var(--camera-zoom,1))}
 #game #map .tile .chain-mark{padding:calc(var(--label) * 1) calc(var(--label) * 4);border-width:var(--label);border-radius:calc(var(--label) * 4);font-size:calc(var(--label) * 10)}
 #game #map .tile>b,#game #map .tile>small{padding:0 calc(var(--label) * 3);border-radius:calc(var(--label) * 3);font-size:calc(var(--label) * 10.5)}
+#game #map .tile-compact{display:none}
+#game #map.compact-labels .tile :is(.tile-name,.chain-mark),#game #map.compact-labels .tile>small{display:none}
+#game #map.compact-labels .tile>b{top:50%;translate:-50% -50%;z-index:2;max-width:calc(100% - var(--label) * 3);overflow:hidden;text-overflow:ellipsis;
+  padding:0 calc(var(--label) * 2);letter-spacing:0;background:#1b1920e8;pointer-events:none}
+#game #map.compact-labels .tile-compact{display:inline}
+#game #map.compact-labels .tile.occupied>b{box-shadow:inset 0 calc(var(--label) * -1) var(--tile-owner)}
+#game #map.compact-labels .tile:has(.time-bomb-mark)>b{color:#ffe4d4;background:#5a2421}
+#game #map.compact-labels .tile.chain-peer>b{background:#ffe3a5;color:#30220d}
 #game #map .pawn i{padding:calc(var(--label) * 1) calc(var(--label) * 5);border-width:var(--label);border-radius:calc(var(--label) * 7);font-size:calc(var(--label) * 11);font-weight:800}
 
 /* Touch feedback */

@@ -476,6 +476,8 @@ function placeMapRoll(root,x,y,zoom){
   if(menuShown)actionMenu.style.maxHeight=Math.max(96,Math.min(menuHeight,floor-top-rollHeight-gap))+'px';
 }
 function setMapCamera(root,x,y,zoom){
+  const tile=root.firstElementChild;
+  root.classList.toggle('compact-labels',!!tile&&tile.offsetWidth*zoom<64);
   root.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')';
   placeMapRoll(root,x,y,zoom);
 }
@@ -718,13 +720,17 @@ function map(){
       b.classList.toggle('chain-peer',inspect>=0&&C.sameChain(t,s.tiles[inspect],s));
     }
     const surface=el('span',null,'tile-surface');surface.setAttribute('aria-hidden','true');
-    b.append(surface,el('b',(n+1)+' · '+name));
+    const title=el('b',null);
+    title.append(el('span',(n+1)+' · '+name,'tile-name'));
+    b.append(surface,title);
     const prior=s.players[s.turn].pos===n?s.players[s.turn].previous:null;
     const switchInfo=C.pathSwitch(s,n,prior);
+    let compactLabel=String(n+1);
     if(switchInfo){
       const [toRow,toCol]=m.position[switchInfo.to];
       const right=toCol-toRow>c-r,down=toCol+toRow>c+r;
       const arrow=down?(right?'↘':'↙'):(right?'↗':'↖');
+      compactLabel=arrow+(switchInfo.to+1);
       b.append(el('small',arrow+' '+(switchInfo.to+1)+'번 · '+switchInfo.rounds+'R'));
       b.setAttribute('aria-label',(n+1)+'번 '+name+' · '+(switchInfo.to+1)+'번 방향 · '+switchInfo.rounds+'라운드 후 자동 전환');
     }
@@ -735,7 +741,8 @@ function map(){
       b.setAttribute('aria-label',b.getAttribute('aria-label')+' · 시한폭탄 '+bombRounds+'라운드 남음');
     }
     if(t.type==='마력 트랩'){
-      const stored='적립 '+(t.trapMagic??0)+'G';
+      compactLabel=(t.trapMagic??0)+'G';
+      const stored='적립 '+compactLabel;
       b.append(el('small',stored));
       b.setAttribute('aria-label',(n+1)+'번 '+name+' · '+stored);
     }
@@ -747,9 +754,14 @@ function map(){
     }
     if(t.unit){const miniature=creatureFigure(t.unit.id);miniature.classList.add('summoned');b.append(miniature);}
     if(t.unit){
-      b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+tollLabel(t)+(t.unit.fatigued?' · 피로':'')));
-      if(t.unit.fatigued)b.setAttribute('aria-label',b.getAttribute('aria-label')+' · 피로');
+      const toll=tollLabel(t),status=t.unit.fatigued?' · 피로':'';
+      b.style.setProperty('--tile-owner',colors[t.owner]);
+      b.classList.add('occupied');
+      compactLabel=toll;
+      b.append(el('small',(t.owner+1)+'P · Lv.'+t.level+' · '+toll+status));
+      b.setAttribute('aria-label',b.getAttribute('aria-label')+' · Lv.'+t.level+' · 통행료 '+toll+status);
     }
+    title.append(el('span',bombRounds?bombRounds+'R':compactLabel,'tile-compact'));
     const pawns=el('div',null,'pawns');
     const occupants=s.players.flatMap((p,i)=>p.pos===n?[i]:[]);
     s.players.forEach((p,i)=>{
@@ -790,7 +802,7 @@ function map(){
       const c=C.cards[u.id],effect=C.cards.find(card=>u.enchant&&C.combo.key(card)===u.enchant);
       const status=u.poisoned?'독':u.confused?'혼란':u.enchant==='paralysis'?'마비':u.enchant==='phantasm'?'판타즘':effect?.name;
       center.prepend(creatureFigure(u.id));
-      center.append(el('span',[c.name,status,u.fatigued?'피로 · 영지 명령 불가':null,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.chainName(s,t)+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+tollLabel(t),'가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
+      center.append(el('span',[c.name,s.players[t.owner]?.name,'Lv.'+t.level,status,u.fatigued?'피로 · 영지 명령 불가':null,'ST '+(u.st??c.st),'HP '+u.hp+'/'+(u.mhp??c.hp),typeof t.type==='number'?(t.area+1)+'지역 '+C.chainName(s,t)+' · '+(C.chain(s,t)>1?C.chain(s,t)+'연쇄':'단독 영지')+' ×'+C.chainRate(s,t):'연쇄 제외','통행료 '+tollLabel(t),'가치 '+C.value(s,t)+'G'].filter(Boolean).join(' · ')));
     }else if(t.type==='카드 상점'){
       const stock=C.shopStock(s,inspect);
       center.append(el('span',stock.length?stock.map(id=>C.cards[id].name+' '+C.shopCost(id)+'G').join(' · '):'이 맵의 상품 정보 없음'));
