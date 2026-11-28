@@ -518,6 +518,9 @@ const CepterCreatureText=(()=>{
     if(card.battleST)pieces.push('전투 ST '+(card.battleST>0?'+':'')+card.battleST);
     if(card.battleHP)pieces.push('전투 HP '+(card.battleHP>0?'+':'')+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');
+    if(card.battleFeePerHP)pieces.push('전투 종료 시 남은 HP × '+card.battleFeePerHP+'G를 지불합니다. 일시 HP 보너스는 제외합니다.');
+    if(card.hitMagicPerHP)pieces.push('일반 공격이 명중하면 일시 보너스를 제외한 남은 HP × '+card.hitMagicPerHP+'G를 상대의 보유 마력 한도에서 빼앗습니다.');
+    if(card.hitMagicPerLap)pieces.push('일반 공격이 명중하면 현재 주회 번호 × '+card.hitMagicPerLap+'G를 상대의 보유 마력 한도에서 빼앗습니다. 첫 주회부터 적용합니다.');
     if(card.battleFee){
       if(key!=='baal'){
         const target=key==='elderdragon'?'용 종족':targets([card.element]);

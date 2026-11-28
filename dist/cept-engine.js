@@ -988,7 +988,7 @@ function createCepter(edition="ps2"){
         a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,blocksFirst:false,criticalMHP:0,battleHP:0,invadeST:0,doubleAttack:false,
           criticalElements:[],criticalRaces:[],pierceElements:[],pierceAll:false,reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false,neutralizeRaces:[],
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
-          criticalBaseSTAtLeast:null,battleFee:0,reviveForm:null,splitReflect:false,instantKill:null,
+          criticalBaseSTAtLeast:null,battleFee:0,battleFeePerHP:0,hitMagicPerHP:0,hitMagicPerLap:0,reviveForm:null,splitReflect:false,instantKill:null,
           selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
           battleEndHPLoss:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false};
         useGear(a);
@@ -1303,6 +1303,14 @@ function createCepter(edition="ps2"){
           (firstEdition?d.c.catalog?.race==='rh':begins?fx.strength(d.u)>=40:fx.max(d.u)<=30)&&
           Math.random()<(firstEdition?.3:begins?.7:.6))d.hp=0;
         if(attacker==='cleric'&&d.element===-1&&(begins||!s.predict&&Math.random()<.8))d.hp=0;
+        if(creatureEffects&&a.hp>0&&(a.c.hitMagicPerHP||a.c.hitMagicPerLap)){
+          const owner=s.players[a.seat],rival=s.players[d.seat];
+          const requested=a.c.hitMagicPerHP?Math.min(a.hp,a.u.hp)*a.c.hitMagicPerHP:(owner.lap+1)*a.c.hitMagicPerLap;
+          const amount=Math.min(Math.max(0,rival.cash),requested);
+          rival.cash-=amount;owner.cash+=amount;
+          if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+d.defending]+=amount;b.magicLoss[+a.defending]-=amount;}
+          if(amount)lines.push(a.c.name+' · '+amount+'G 탈취');
+        }
         if(attacker==='willothewisp'||attacker==='amazon'&&!a.gear){
           const available=s.players[d.seat].cash;
           const amount=begins&&attacker==='willothewisp'?Math.max(0,a.hp)*2:Math.min(available,attacker==='amazon'?(s.players[a.seat].lap+1)*(s.edition==='revolt'?30:20):Math.min(a.hp,a.u.hp)*2);
@@ -1815,6 +1823,12 @@ function createCepter(edition="ps2"){
     }
     if(creatureEnd)for(const a of sides){
       if(a.hp<=0)continue;
+      if(a.c.battleFeePerHP){
+        const amount=Math.min(a.hp,a.u.hp)*a.c.battleFeePerHP;
+        s.players[a.seat].cash-=amount;
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]+=amount;}
+        lines.push(a.c.name+' · 전투 대가 '+amount+'G');
+      }
       if(a.c.randomHandBreak&&!s.predict){
         const hand=s.players[(a===A?D:A).seat].hand;
         if(hand.length){
@@ -2425,7 +2439,8 @@ function createCepter(edition="ps2"){
       const items=canUseItem?p.hand.filter((id,i)=>i!==cardIndex&&i!==discardIndex&&price(p,cards[id],s,false)+price(p,c,s)<=p.cash&&canEquip(cards[inv],cards[id],null,p.status==='release',s)):[];
       return Math.max(...[null,...items].map(item=>{
         return evaluateGear({at,inv,invUnit,tower},item,false,true,discardIndex==null?[base]:[base,discard],battle=>
-          (battle.won?value(s,tile)+100:battle.noToll&&!tower?toll(s,tile):-60)-price(p,c,s)*.5-(cards[item]?.cost||0)*.5);
+          (battle.won?value(s,tile)+100:battle.noToll&&!tower?toll(s,tile):-60)-price(p,c,s)*.5-(cards[item]?.cost||0)*.5-
+          (firstEdition?(battle.magicLoss?.[0]||0)*.65:0));
       }));
     }
     function intrusionScore(at,index,spellCost=0){

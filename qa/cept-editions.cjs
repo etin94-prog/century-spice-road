@@ -9298,3 +9298,52 @@ for(const edition of ['ps1','saturn']){
   }
 }
 console.log('PS1 and Saturn own-hand forging, privacy, replayed selection, AI and two-link Roadrunner; Saturn Giant Leech recovery threshold checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const book=C.presets.legacyFireTribute;
+  assert.ok(C.validBook(book));
+  for(const key of ['bistair','willothewisp','efreet'])assert.ok(book.includes(id(key)));
+  assert.equal(C.cards[id('efreet')].cost,edition==='ps1'?60:75);
+  assert.equal(C.cards[id('bistair')].catalog.additionalCost.split(',').length,edition==='ps1'?3:4);
+  function fight(attacker,guard,{gear,land='무속성',lap=0,cash=1000,paralysis=false}={}){
+    const s=C.start(2,2,7000,edition+'-original-marsh-paths',book,book),t=s.tiles[1];
+    Object.assign(t,{type:land,owner:1,unit:{id:id(guard),hp:C.cards[id(guard)].hp}});
+    if(paralysis)t.unit.enchant='paralysis';
+    Object.assign(s.players[0],{hand:gear?[id(gear)]:[],cash:1000,lap});
+    Object.assign(s.players[1],{hand:[],cash});
+    s.phase='attack';s.battle={at:1,inv:id(attacker),atkItem:null,defItem:null};
+    assert.ok(C.play(s,gear?['equip',0]:['bare']));
+    assert.ok(C.play(s,['bare']));
+    return {cash:s.players.map(p=>p.cash),battle:s.battle};
+  }
+  const paid=fight('efreet','goblin');
+  assert.deepEqual(paid.cash,[960,1000]);
+  assert.equal(paid.battle.strikes[0].side,1);
+  assert.match(paid.battle.lines.join(' '),/전투 대가 40G/);
+  const scroll=fight('efreet','wallofstone',{gear:'firebolt',land:2});
+  assert.deepEqual(scroll.cash,[1000-C.cards[id('firebolt')].cost-80,1000]);
+  assert.match(scroll.battle.strikes[1].notes.join(' '),/45 피해/);
+  assert.deepEqual(fight('efreet','fighter').cash,[1000,1000]);
+  assert.deepEqual(fight('goblin','efreet',{land:0}).cash,[1000,940]);
+  assert.deepEqual(fight('goblin','efreet',{paralysis:true}).cash,[1000,1000]);
+  assert.deepEqual(fight('willothewisp','fighter').cash,[1020,980]);
+  assert.deepEqual(fight('willothewisp','wallofstone',{gear:'firebolt'}).cash,[1000-C.cards[id('firebolt')].cost,1000]);
+  assert.deepEqual(fight('bistair','goblin').cash,[1050,950]);
+  assert.deepEqual(fight('bistair','goblin',{lap:2}).cash,[1150,850]);
+  assert.deepEqual(fight('bistair','goblin',{lap:2,cash:10}).cash,[1010,0]);
+  const guarded=fight('bistair','unseenstalker',{lap:2});
+  assert.deepEqual(guarded.cash,[1000,1000]);
+  assert.equal(guarded.battle.strikes[0].effect,'block');
+
+  const raid=C.start(2,0,7000,edition+'-original-marsh-paths',book,book,3);
+  raid.phase='land';
+  Object.assign(raid.players[0],{pos:1,lap:2,cash:800,hand:[id('fighter'),id('bistair')]});
+  Object.assign(raid.tiles[1],{owner:1,type:2,unit:{id:id('goblin'),hp:20}});
+  for(const at of [2,3,5,6])Object.assign(raid.tiles[at],{owner:0,type:0,unit:{id:id('goblin'),hp:20}});
+  raid.players[1].cash=800;
+  assert.deepEqual(C.ai(raid),['invade',1]);
+  raid.players[1].cash=0;
+  assert.deepEqual(C.ai(raid),['invade',0]);
+}
+console.log('PS1 and Saturn fire magic: edition costs, Bistair lap theft, Wisp successful hit and Efreet post-battle payment checked.');

@@ -767,7 +767,8 @@ const CepterEditions=(()=>{
     medusa:{hitTransform:{form:'wallofstone',rate:.6}},cockatrice:{hitTransform:{form:'wallofstone',rate:.6}},
     ghoul:{paralyze:true,statusRaces:['rh','rb','rd'],regenerateOnDefeat:true},barrowwight:{sleepOnHit:true},
     thunderbeak:{first:true,paralyze:true,statusElements:[1]},toxicflower:{stationary:true,first:true,poison:true,statusRaces:['rh','rb','rd']},
-    roadrunner:{},giantleech:{regenerateHitRatio:.25}
+    roadrunner:{},giantleech:{regenerateHitRatio:.25},
+    efreet:{last:true,scrollCritical:true,battleFeePerHP:2},willothewisp:{last:true,hitMagicPerHP:2},bistair:{first:true,hitMagicPerLap:50}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1264,6 +1265,11 @@ const CepterEditions=(()=>{
         .map(([from,to])=>[lookup.get(from),lookup.get(to)]));
       if(edition==='saturn')workshop.set(lookup.get('giantamoeba'),lookup.get('giantleech'));
       presets.legacyWorkshop=presets.intro.map(id=>workshop.get(id)??id);
+      const tribute=presets.fire.slice();
+      for(const [from,to] of [['fighter','bistair'],['kobold','willothewisp'],['minotaur','efreet']]){
+        tribute[tribute.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyFireTribute=tribute;
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]
