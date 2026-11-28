@@ -590,6 +590,7 @@ const CepterCreatureText=(()=>{
       const scope=shape.races?shape.races.map(r=>races[r]).join('·')+' ':'';
       pieces.push('일반 공격으로 피해를 준 '+scope+'상대가 생존하면 '+Math.round(shape.rate*100)+'% 확률로 스톤 월로 바꿉니다.');
     }
+    if(card.hitCharm)pieces.push('일반 공격으로 피해를 준 '+card.hitCharm.races.map(r=>races[r]).join('·')+' 상대가 생존하면 '+Math.round(card.hitCharm.rate*100)+'% 확률로 내 손패에 넣습니다. 빈자리가 필요합니다.');
     if(card.regenerateOnDefeat)pieces.push('전투에서 상대를 격파하고 생존하면 HP를 모두 회복합니다.');
     if(card.regenerateHitRatio)pieces.push('상대 최대 HP의 '+Math.round(card.regenerateHitRatio*100)+'% 이상을 일반 공격으로 피해 입히고 생존하면 HP를 모두 회복합니다.');
     const special=C.edition==='3ds'&&key==='powdereater'?'영지 이동 명령으로 이동할 때 원래 영지에도 분신을 남깁니다. 주문으로 이동하면 분신이 생기지 않습니다.':

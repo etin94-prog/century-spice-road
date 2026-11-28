@@ -1107,6 +1107,7 @@ const CepterEditions=(()=>{
       if(first&&kind==='item'){
         if(Object.hasOwn(firstBattleGear,slug))Object.assign(c,{st:0,hp:0,catalogOnly:false},firstBattleGear[slug]);
         if(slug==='ripperknife')Object.assign(c,{catalogOnly:false,st:40,recoilPercent:edition==='ps1'?30:25});
+        if(slug==='charm')Object.assign(c,{catalogOnly:false,st:0,scrollCharm:{races:['rh','rb'],rate:.6}});
         if(slug==='deadlythorn')Object.assign(c,{catalogOnly:false,st:0,scrollTransform:'wallofstone'});
         if(slug==='bloodspoil')Object.assign(c,{catalogOnly:false,st:0,scrollPoisonRaces:edition==='ps1'?['rh','rb','rd']:['rh','rb']});
         if(slug==='magicbelt')Object.assign(c,{catalogOnly:false,st:40,permanentSTLoss:edition==='ps1'?20:10});
@@ -1184,6 +1185,7 @@ const CepterEditions=(()=>{
           else c.criticalRaces=['rh'];
         }
       }
+      if(first&&slug==='nymph')Object.assign(c,{catalogOnly:false,basicBattle:true,neutralizes:[0],hitCharm:{races:['rh'],rate:.6}});
       if(edition==='ps1'&&slug==='werewolf')Object.assign(c,{catalogOnly:false,basicBattle:false});
       if(edition==='saturn'&&slug==='mimic')Object.assign(c,{catalogOnly:false,basicBattle:true,givesHandCardOnDefeat:true});
       if(edition==='saturn'&&slug==='bandersnatch')Object.assign(c,{catalogOnly:false,basicBattle:true,hitReturnChance:.3});
@@ -1275,6 +1277,8 @@ const CepterEditions=(()=>{
       curses[curses.indexOf(lookup.get('stonehail'))]=lookup.get('deadlythorn');
       if(edition==='ps1')curses[curses.indexOf(lookup.get('fighter'))]=lookup.get('ashura');
       presets.legacyCurses=curses;
+      tides[tides.indexOf(lookup.get('kingtortoise'))]=lookup.get('nymph');
+      tides[tides.indexOf(lookup.get('stonehail'))]=lookup.get('charm');
       const workshop=new Map([['harpy','roadrunner'],['manna','armorsmith'],['cure','weaponsmith']]
         .map(([from,to])=>[lookup.get(from),lookup.get(to)]));
       if(edition==='saturn'){

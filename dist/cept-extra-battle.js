@@ -341,6 +341,15 @@ const CepterExtraBattle=(()=>{
         if(s.edition==='begins'&&a.n==='amabie')lines.push(a.c.name+' · 빈 수 영지가 없어 격파');
       }else{a.away=at;lines.push((at+1)+'번 빈 영지로 이동');}
     }
+    function charm(recipient,target,effect,source=recipient){
+      if(!effect.races.includes(target.c.catalog?.race))return false;
+      const hand=s.players[recipient.seat].hand;
+      if(hand.length>=6)return false;
+      if(!(s.predict?s.combatOddsMask&(source.defending?2:1):chance(effect.rate)))return false;
+      target.stolen=true;hand.push(target.u.id);
+      lines.push('매혹 · 상대 크리처를 손패로 획득');
+      return true;
+    }
     function onHit(a,d,damage){
       a.hit=true;
       const blocked=d.c.blocksAttackAbilities||d.gear?.blocksCreatureHits;
@@ -372,6 +381,7 @@ const CepterExtraBattle=(()=>{
         }
       }
       if(n==='littlegray'&&chance(.5))vacant(d);
+      if(!blocked&&a.hp>0&&a.c.hitCharm)charm(a,d,a.c.hitCharm);
       if(n==='nymph'&&fx.max(d.u)<=30&&s.players[a.seat].hand.length<6&&chance(.4)){
         d.stolen=true;s.players[a.seat].hand.push(d.u.id);lines.push('상대 크리처를 손패로 획득');
       }
@@ -524,7 +534,7 @@ const CepterExtraBattle=(()=>{
         const i=t.area*4+a.element;if(s.prices[i]!=null)s.prices[i]=Math.floor(s.prices[i]*(firstEdition?1.2:1.3));
       }
     }
-    return {protectedGear,recyclesToBook,itemStart,forms,baseStats,critical,protect,onHit,gearDeath,end,victory,transform,convert,vacant,ids,boost,grow};
+    return {protectedGear,recyclesToBook,itemStart,forms,baseStats,critical,protect,onHit,charm,gearDeath,end,victory,transform,convert,vacant,ids,boost,grow};
   }
   return {rules,protectedItem};
 })();

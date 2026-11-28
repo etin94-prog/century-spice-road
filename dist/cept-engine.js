@@ -1009,7 +1009,7 @@ function createCepter(edition="ps2"){
           firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false,
           criticalBaseSTAtLeast:null,weakBaseSTAtLeast:null,blocksOddTens:false,battleFee:0,battleFeePerHP:0,hitMagicPerHP:0,hitMagicPerLap:0,reviveForm:null,splitReflect:false,instantKill:null,
           selfDestructAfterBattle:false,battleEvolution:null,randomHandBreak:false,battleRecoilPercent:0,
-          battleEndHPLoss:0,hitReturnChance:0,landLevelLossRate:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false,battleCepterCurse:null};
+          battleEndHPLoss:0,hitReturnChance:0,hitCharm:null,landLevelLossRate:0,terrainLevelHP:null,invadeVictoryTerrain:null,hitTransform:null,regenerateHitRatio:0,regenerateOnDefeat:false,sleepOnHit:false,battleCepterCurse:null};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1214,6 +1214,11 @@ function createCepter(edition="ps2"){
         extra.vacant(target);target.keepForcedForm=true;
         if(target.hp<=0)lines.push('블래스터 레이 · 빈 영지가 없어 격파');
         return reflected?'reflect':'hit';
+      }
+      if(scroll&&weapon?.scrollCharm){
+        const captured=extra.charm(reflected?d:a,reflected?a:d,weapon.scrollCharm,a);
+        if(!captured)lines.push(weapon.name+' · 매혹 실패');
+        return reflected?'reflect':captured?'hit':'miss';
       }
       if(a.g==='sleep'||a.g==='death'||scroll&&(weapon?.deathStrike||weapon?.scrollPoisonRaces||weapon?.scrollTransform)){
         const target=reflected?a:d;
@@ -2489,8 +2494,8 @@ function createCepter(edition="ps2"){
     function evaluateGear(battle,gear,defending,unpaid,spent,score){
       if(firstEdition){
         const invader=cards[battle.inv],guard=cards[s.tiles[battle.at].unit?.id];
-        const odds=card=>card?.hitReturnChance||(key(card)==='basilisk'?card.instantKill.rate:0);
-        const raid=odds(invader),defense=odds(guard);
+        const odds=(card,item)=>cards[item]?.scrollCharm?.rate||card?.hitCharm?.rate||card?.hitReturnChance||(key(card)==='basilisk'?card.instantKill.rate:0);
+        const raid=odds(invader,defending?null:gear),defense=odds(guard,defending?gear:null);
         if(raid||defense){
           const weights=[(1-raid)*(1-defense),raid*(1-defense),(1-raid)*defense,raid*defense];
           return weights.reduce((total,weight,mask)=>total+(weight?weight*score(forecast(battle,gear,defending,unpaid,spent,false,mask)):0),0);

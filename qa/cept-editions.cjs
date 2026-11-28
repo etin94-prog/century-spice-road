@@ -9839,3 +9839,74 @@ console.log('Saturn Bandersnatch: exact odds, current hand limit, attack and def
   assert.match(elemental.battle.strikes[0].notes.join(' '),/30/);
 }
 console.log('Saturn Mimic and Energy Fist: defeat, survival, empty and full hands, equipment payment, hidden transfer, native decks and neutral scroll critical checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),book=C.presets.legacyTides;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const nymph=id('nymph'),charm=id('charm'),manna=id('manna');
+  assert.ok(C.validBook(book)&&book.includes(nymph)&&book.includes(charm));
+  assert.match(creatureText.describe(C,C.cards[nymph]),/화 속성.*무효화.*인간.*60%/);
+  assert.doesNotMatch(creatureText.describe(C,C.cards[nymph]),/40%/);
+  assert.match(describeItem(C,C.cards[charm]),/인간·야수.*60%.*손패/);
+  assert.deepEqual([C.cards[nymph].hp,C.cards[charm].category,C.cards[charm].cost],[40,'scroll',100]);
+  function setup(attacker,guard,{atk=[],def=[],type=2,level=1,from,atkHP}={}){
+    const s=C.start(2,0,7000,edition+'-original-marsh-paths',book,book,3),at=3;
+    const inv=id(attacker),defender=id(guard);
+    Object.assign(s.players[0],{pos:at,hand:atk,cash:1000});
+    Object.assign(s.players[1],{hand:def,cash:1000});
+    Object.assign(s.tiles[at],{type,owner:1,level,unit:{id:defender,hp:C.cards[defender].hp}});
+    if(from!=null)Object.assign(s.tiles[from],{type:1,owner:0,unit:{id:inv,hp:atkHP??C.cards[inv].hp}});
+    s.phase='attack';s.battle={at,from,inv,atkItem:null,defItem:null};
+    return s;
+  }
+  function fight(s,{left=['bare'],right=['bare'],roll=.5999}={}){
+    const random=Math.random;
+    try{
+      Math.random=()=>roll;
+      assert.ok(C.play(s,left)&&C.play(s,right));
+    }finally{Math.random=random;}
+    return s;
+  }
+  const human=fight(setup('nymph','fighter'));
+  assert.deepEqual(human.players[0].hand,[id('fighter')]);
+  assert.equal(human.tiles[3].unit.id,nymph);
+  assert.equal(human.battle.strikes.length,1);
+  assert.equal(fight(setup('nymph','fighter'),{roll:.6}).battle.won,false);
+  assert.equal(fight(setup('nymph','wolf')).battle.won,false);
+  assert.equal(fight(setup('nymph','unseenstalker')).battle.strikes[0].effect,'block');
+  const home=fight(setup('minotaur','nymph',{type:1,level:2,from:2,def:Array(5).fill(manna)}));
+  assert.equal(home.battle.strikes[0].effect,'block');
+  assert.deepEqual(home.players[1].hand,[...Array(5).fill(manna),id('minotaur')]);
+  assert.equal(home.tiles[2].owner,-1);
+  const full=fight(setup('minotaur','nymph',{type:1,level:2,from:2,def:Array(6).fill(manna)}));
+  assert.equal(full.players[1].hand.length,6);
+  assert.equal(full.tiles[2].owner,0);
+  assert.doesNotMatch(full.battle.lines.join(' '),/매혹/);
+  const gear=['equip',0];
+  for(const target of ['fighter','wolf']){
+    const hit=fight(setup('fighter',target,{atk:[charm,...Array(5).fill(manna)],level:5}),{left:gear});
+    assert.equal(hit.players[0].cash,900);
+    assert.equal(hit.battle.won,true);
+    assert.equal(hit.players[0].hand.at(-1),id(target));
+    assert.deepEqual(hit.battle.strikes[0].hp,hit.battle.startHP);
+    assert.equal(hit.battle.strikes[0].scroll,true);
+    assert.match(hit.battle.lines.join(' '),/매혹.*획득/);
+  }
+  for(const [target,roll] of [['fighter',.6],['wallofstone',.5999]]){
+    const miss=fight(setup('fighter',target,{atk:[charm]}),{left:gear,roll});
+    assert.equal(miss.battle.strikes[0].effect,'miss');
+    assert.equal(miss.battle.won,false);
+  }
+  const reflected=fight(setup('fighter','carbuncle',{atk:[charm],from:2}),{left:gear});
+  assert.equal(reflected.battle.strikes[0].effect,'reflect');
+  assert.deepEqual(reflected.players[1].hand,[id('fighter')]);
+  assert.equal(reflected.tiles[2].owner,-1);
+  const fullReflection=fight(setup('fighter','carbuncle',{atk:[charm],def:Array(6).fill(manna),from:2}),{left:gear});
+  assert.equal(fullReflection.battle.strikes[0].effect,'reflect');
+  assert.equal(fullReflection.tiles[2].owner,0);
+  const ward=fight(setup('fighter','sandman',{atk:[charm]}),{left:gear});
+  assert.equal(ward.battle.strikes[0].effect,'block');
+  const ai=setup('fighter','minotaur',{atk:[charm],type:0,level:5});
+  assert.deepEqual(C.ai(ai),gear);
+}
+console.log('PS1 and Saturn Nymph and Charm: race restrictions, exact odds, fire ward, hand size, full-hand reflection, AI and native book checked.');

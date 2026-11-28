@@ -170,6 +170,7 @@ const describeCepterItem=(()=>{
     if(card.battleRace)pieces.push('장착한 크리처는 전투 중 '+raceNames[card.battleRace]+' 종족으로 취급됩니다.');
     if(card.absorbRaces)pieces.push(card.absorbRaces.map(r=>raceNames[r]).join('·')+' 종족의 일반 공격 피해를 흡수합니다.');
     if(card.paralyzeRaces)pieces.push(card.paralyzeRaces.map(r=>raceNames[r]).join('·')+' 종족에게 일반 공격이 명중하면 마비를 부여합니다.');
+    if(card.scrollCharm)pieces.push(card.scrollCharm.races.map(r=>raceNames[r]).join('·')+' 종족 상대를 '+Math.round(card.scrollCharm.rate*100)+'% 확률로 매혹해 내 손패에 넣습니다. 빈자리가 필요합니다.');
     if(card.scrollTransform==='wallofstone')pieces.push('두루마리로 상대를 스톤 월로 석화합니다. 남은 기본 HP는 스톤 월의 최대 HP까지만 유지됩니다.');
     if(card.scrollPoisonRaces)pieces.push('두루마리로 '+card.scrollPoisonRaces.map(r=>raceNames[r]).join('·')+' 종족에게 독을 부여합니다.');
     if(card.finalHP!=null)pieces.push('생존하면 전투가 끝날 때 HP가 '+card.finalHP+'이 됩니다.');
