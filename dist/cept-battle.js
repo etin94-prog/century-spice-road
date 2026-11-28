@@ -212,33 +212,47 @@ function renderBattle(center,state){
     const name=el('span',C.cards[id].name);
     title.append(el('i',i?'수비':'침략','duel-role'),name);
     const meter=el('meter');meter.min=0;meter.max=Math.max(1,base[i],b.startHP?.[i]||0);
-    const bar=el('div',null,'duel-hp'),fill=el('i'),lag=el('i',null,'lag');bar.append(lag,fill);bar.setAttribute('aria-hidden','true');
     const unit=i?tile.unit:state.tiles[b.from]?.unit??b.invUnit;
-    const stats=el('div',null,'duel-stats'),power=el('span',null,'duel-st'),value=el('span',null,'duel-hp-value');
-    const chips=el('div',null,'duel-chips');
-    let st=result?C.cards[id].st:unit?.st??C.cards[id].st,hp=base[i];
+    const stats=el('div',null,'duel-stats'),chips=el('div',null,'duel-chips');
+    // A gauge shows the creature's own value in its colour and what support, land and items add in another,
+    // and writes the two apart ("30+10") until a blow changes the figure.
+    const gauge=(kind,start)=>{
+      const row=el('div',null,'duel-gauge '+kind),bar=el('div',null,'duel-bar'),lag=el('i',null,'lag'),fill=el('i',null,'own'),extra=el('i',null,'extra'),number=el('span',null,'duel-number');
+      bar.append(lag,fill,extra);bar.setAttribute('aria-hidden','true');row.append(el('i',kind.toUpperCase(),'duel-tag'),bar,number);
+      let value=start,own=start;
+      const text=()=>value>own?own+'+'+(value-own):String(value);
+      const paint=()=>{
+        const scale=Math.max(100,value,own),kept=Math.min(value,own);
+        fill.style.width=100*kept/scale+'%';extra.style.left=100*kept/scale+'%';extra.style.width=100*Math.max(0,value-own)/scale+'%';lag.style.width=100*value/scale+'%';
+        bar.classList.toggle('low',kind==='hp'&&value<=Math.max(1,own)*.3);
+      };
+      number.setAttribute('aria-label',kind.toUpperCase()+' '+start);
+      return {row,value:()=>value,
+        set(next,ms=0){
+          const from=value;value=next;paint();number.setAttribute('aria-label',kind.toUpperCase()+' '+next);
+          if(ms>0&&from!==next&&motionOK()){battleCount(number,from,next,ms,'');setTimeout(()=>{if(value===next&&number.isConnected&&!number.dataset.settled)number.textContent=text();},ms+40);}
+          else number.textContent=text();
+        },
+        settle(){
+          number.dataset.settled='1';number.classList.remove('rising','falling');number.textContent=text();
+          requestAnimationFrame(()=>{delete number.dataset.settled;});
+        }};
+    };
+    const power=gauge('st',result?C.cards[id].st:unit?.st??C.cards[id].st),life=gauge('hp',base[i]);
     const fighter={side,face,pocket,name,chips,art:illustration,scar,
-      strength:()=>st,vitality:()=>hp,
-      setST(next,ms=0){battleCount(power,st,next,ms,'ST ');st=next;},
-      setHP(next,ms=0){
-        meter.max=Math.max(meter.max,next);meter.value=next;battleCount(value,hp,next,ms,'HP ');hp=next;
-        const share=Math.max(0,Math.min(100,100*next/meter.max))+'%';
-        fill.style.width=share;lag.style.width=share;bar.classList.toggle('low',next<=meter.max*.3);
-      },
+      strength:power.value,vitality:life.value,
+      setST(next,ms=0){power.set(next,ms);},
+      setHP(next,ms=0){meter.max=Math.max(meter.max,next);meter.value=next;life.set(next,ms);},
       // Stops any number still counting and shows where it ends.
-      settle(){
-        for(const node of [power,value]){node.dataset.settled='1';node.classList.remove('rising','falling');}
-        power.textContent='ST '+st;value.textContent='HP '+hp;
-        requestAnimationFrame(()=>{delete power.dataset.settled;delete value.dataset.settled;});
-      },
+      settle(){power.settle();life.settle();},
       chip(text,kind){const chip=el('span',text,'duel-chip '+(kind||''));chips.append(chip);return chip;},
       say(text,kind){
         if(!animated)return;
         const word=el('b',text,'duel-callout '+(kind||''));side.append(word);
         setTimeout(()=>word.remove(),1150);
       }};
-    power.textContent='ST '+st;fighter.setHP(hp);
-    stats.append(power,value);plate.append(title,stats,bar,chips);
+    fighter.setST(power.value());fighter.setHP(base[i]);
+    stats.append(life.row,power.row);plate.append(title,stats,chips);
     side.append(face,pocket,plate,meter);field.append(side);
     return fighter;
   });
@@ -254,7 +268,7 @@ function renderBattle(center,state){
     status.textContent='장비 선택 전 · 수비 지형 HP +'+ground.hp;
     status.append(el('small','인접 지원 ST · 침략 +'+ground.attack+' / 수비 +'+ground.defense,'battle-support'));
     // Ability, what the neighbours and the land add, and the total, as the original lays it out.
-    const sheet=el('div',null,'duel-table'),strength=fighters.map(f=>f.strength()),plus=[[ground.attack,0],[ground.defense,ground.hp]];
+    const plus=[[ground.attack,0],[ground.defense,ground.hp]],sheet=el('div',null,'duel-table'),strength=fighters.map((f,i)=>f.strength()-plus[i][0]);
     const row=(label,cells,kind)=>{
       const line=el('div',null,'duel-row '+(kind||''));
       line.append(el('span',cells[0]),el('b',label),el('span',cells[1]));sheet.append(line);
@@ -264,6 +278,7 @@ function renderBattle(center,state){
     row('지원 / 지형',[0,1].map(i=>'+'+plus[i][0]+' · +'+plus[i][1]),'plus');
     row('합계',[0,1].map(i=>'ST '+(strength[i]+plus[i][0])+' · HP '+(base[i]+plus[i][1])),'total');
     status.append(sheet);
+    fighters[0].setST(fighters[0].strength()+ground.attack);fighters[1].setST(fighters[1].strength()+ground.defense);fighters[1].setHP(base[1]+ground.hp);
     if(ground.hp)fighters[1].chip('지형 HP +'+ground.hp,'land');
     if(ground.attack)fighters[0].chip('지원 ST +'+ground.attack,'support');
     if(ground.defense)fighters[1].chip('지원 ST +'+ground.defense,'support');

@@ -442,3 +442,46 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
   box-shadow:0 0 0 2px #d6b874,0 8px 16px #000a;transform-origin:50% 100%;animation:map-card .92s cubic-bezier(.3,.7,.3,1) both}
 @media(prefers-reduced-motion:no-preference){.map-effect.summon .map-fx-badge{translate:-50% 80%}}
 @keyframes map-card{0%{transform:translateY(-130%) rotateY(540deg) scale(1.5);opacity:0}22%{opacity:1}68%{transform:translateY(0) rotateY(0) scale(1);opacity:1}100%{transform:translateY(8%) rotateY(0) scale(.16);opacity:0}}
+
+/* Whose turn it is: the round above the name; another cepter's turn is a smaller plate in its colour. */
+.turn-cue{display:grid;justify-items:center;gap:0}
+.turn-cue small{font:700 10.5px/1.2 system-ui;letter-spacing:.14em;opacity:.85}
+.turn-cue b{font:inherit}
+.turn-cue.other{top:calc(var(--hud-height) + 44px);padding:4px 16px;border-color:var(--seat);font-size:13px;box-shadow:0 0 0 1px #0008,0 0 14px color-mix(in srgb,var(--seat),#0000 40%)}
+
+/* A new match opens with what has to be done to win it. */
+.match-intro{position:absolute;z-index:19;left:50%;top:calc(var(--hud-height) + 58px);translate:-50% 0;box-sizing:border-box;width:min(92%,24rem);display:grid;justify-items:center;gap:3px;padding:10px 16px 12px;
+  border:2px solid #e6c47a;border-radius:12px;background:linear-gradient(#1b2334f5,#0e1320f5);box-shadow:0 10px 30px #000c;text-align:center;pointer-events:none;animation:match-intro 4.2s both}
+.match-intro small{font:700 11px/1.2 system-ui;letter-spacing:.16em;color:#c9d2e2}
+.match-intro strong{font:800 clamp(20px,6.4cqw,28px)/1.15 Georgia,serif;color:#ffe9a8;text-shadow:0 2px 0 #6b3510}
+.match-intro p{margin:0;font-size:12.5px;line-height:1.4;color:#f0e8d6}
+.intro-seats{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:4px}
+.intro-seats span{padding:1px 9px;border-radius:99px;border:1px solid var(--seat);background:color-mix(in srgb,var(--seat),#10141b 78%);font-size:11px;font-weight:700;color:#fff}
+@keyframes match-intro{0%{opacity:0;transform:translateY(-14px) scale(.94)}7%{opacity:1;transform:none}88%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-8px)}}
+
+/* The match ends on a lit stage. */
+.victory-show{position:absolute;z-index:19;inset:var(--hud-height) 0 auto;height:min(46%,23rem);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;justify-items:center;align-content:start;gap:2px;padding:12px 12px 10px;
+  overflow:hidden;pointer-events:none;text-align:center;background:radial-gradient(ellipse 80% 90% at 50% 0,#fff4c8e6,#f0c86acc 26%,#6a4a1ae6 62%,#14100af2);border-bottom:2px solid #e6c47a;animation:victory-show 5.2s both}
+.victory-show.lost{background:radial-gradient(ellipse 80% 90% at 50% 0,#dfe8f2e6,#8fa8c4cc 26%,#2a3a52e6 62%,#0c1018f2);border-color:#9ab0c8}
+.victory-rays{position:absolute;left:50%;top:-40%;width:160%;aspect-ratio:1;translate:-50% 0;z-index:-1;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,#fff8 0 6deg,#fff0 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 10%,#0000 68%);mask:radial-gradient(circle,#000 10%,#0000 68%);animation:victory-rays 14s linear infinite}
+.victory-show small{font:800 12px/1.2 system-ui;letter-spacing:.3em;color:#3a2408}
+.victory-show.lost small{color:#0c1a2c}
+.victory-show strong{font:italic 900 clamp(26px,9cqw,44px)/1.1 Georgia,serif;color:#fff;-webkit-text-stroke:1px #6b3510;text-shadow:0 3px 0 #6b3510,0 0 22px #ffd45c}
+.victory-show.lost strong{-webkit-text-stroke-color:#1c2c44;text-shadow:0 3px 0 #1c2c44,0 0 18px #9ad0ff}
+.victory-cast{display:flex;align-items:end;justify-content:center;gap:6px;min-height:0}
+.victory-cast span{display:block;height:54px;filter:drop-shadow(0 4px 6px #0009) grayscale(.5) brightness(.8)}
+.victory-cast span.champion{height:78px;filter:drop-shadow(0 0 12px #ffe9a8) drop-shadow(0 4px 6px #0009);animation:victory-hop .7s ease-in-out infinite alternate}
+.victory-cast :is(img,canvas,svg,.cept-figure){height:100%;width:auto}
+.victory-show ol{list-style:none;display:grid;gap:2px;width:min(100%,20rem);margin:2px 0 0;padding:0}
+.victory-show li{display:grid;grid-template-columns:3.2em minmax(0,1fr) auto;align-items:baseline;gap:8px;padding:2px 10px;border-radius:7px;border-left:4px solid var(--seat);background:#0c0f15d9;font-size:12.5px;color:#fff;text-align:left}
+.victory-show li span{font-weight:800;color:#ffe2a0}.victory-show li b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.victory-show li em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums}
+@keyframes victory-show{0%{opacity:0;transform:translateY(-30%)}7%{opacity:1;transform:none}90%{opacity:1}100%{opacity:0}}
+@keyframes victory-rays{to{transform:rotate(360deg)}}
+@keyframes victory-hop{to{transform:translateY(-8px)}}
+@media(prefers-reduced-motion:reduce){.victory-rays,.victory-cast span.champion{animation:none}.match-intro,.victory-show{animation-timing-function:step-end}}
+
+/* The hand bubble and the draw note say what kind of card it is and what it costs. */
+#game #detail .card-facts{display:block;font-size:11.5px;font-weight:700;color:#ffe2a0}
+.draw-show>p small{font-size:11.5px;font-weight:700;color:#ffe2a0}
+.draw-show>p small.draw-text{max-width:17rem;font-weight:500;line-height:1.35;color:#e8e2d2}

@@ -589,7 +589,7 @@ async function keepAwake(){
 }
 document.addEventListener('visibilitychange',keepAwake);
 // A short banner and pulse tell a player who looked away that the game is waiting for them.
-let cueSeen='';
+let cueSeen='',turnSeen={game:null,key:''};
 // The card drawn at the start of a turn turns face up over the board and drops into the hand.
 // Only the seat that may see that hand is shown it; a hand-over prompt is answered first.
 let seenDraw={game:null,sequence:0};
@@ -610,6 +610,8 @@ function presentDraw(owner,handSeat){
   }
   const over=owner.hand.length-6,note=el('p');
   note.append(el('strong','카드를 '+ids.length+'장 뽑았습니다'),el('span',ids.map(id=>C.cards[id].name).join(' · ')));
+  // One card: say what it is, as the original's card panel does.
+  if(ids.length===1){const card=C.cards[ids[0]];note.append(el('small',cardFacts(card,owner)),el('small',cardSummary(card),'draw-text'));}
   if(over>0)note.append(el('em','손패 '+owner.hand.length+'장 · '+over+'장을 버려야 합니다'));
   show.append(row,note);viewport.append(show);
   // The card ends its flight on the hand strip.
@@ -621,12 +623,62 @@ function presentDraw(owner,handSeat){
   show.addEventListener('animationend',e=>{if(e.target===show)close();});
   setTimeout(close,fastPlay?1700:2700);
 }
-function turnCue(label){
+// Kind, element and cost of a card in one line.
+function cardFacts(c,holder){
+  const kind=c.kind==='creature'?cardElements(c)+'속성 크리처':c.kind==='item'?'아이템':'주문';
+  return [kind,c.kind==='creature'?'ST '+c.st+' · HP '+c.hp:null,(holder?C.price(holder,c,s,!s.battle):c.cost)+'G'].filter(Boolean).join(' · ');
+}
+// Whose turn it is. The player's own turn is announced large and felt; another cepter's is a small plate in its colour.
+function turnCue(label,seat){
   if(!label)return;
   document.querySelector('.turn-cue')?.remove();
-  const cue=el('div',label,'turn-cue');cue.setAttribute('aria-hidden','true');
+  const other=seat!=null,cue=el('div',null,'turn-cue'+(other?' other':''));cue.setAttribute('aria-hidden','true');
+  cue.append(el('small',s.round+'라운드'),el('b',label));
+  if(other)cue.style.setProperty('--seat',colors[seat]);
   $('game').append(cue);setTimeout(()=>cue.remove(),1500);
-  if($('effectsOn')?.checked)navigator.vibrate?.([18,50,18]);
+  if(!other&&$('effectsOn')?.checked)navigator.vibrate?.([18,50,18]);
+}
+// A new match opens with what has to be done to win it, as the guide explains it in the original.
+let introSeen=null;
+function presentIntro(){
+  if(s.battle||s.phase==='over')document.querySelector('.match-intro')?.remove();
+  if(introSeen===s||pending)return;
+  introSeen=s;
+  document.querySelector('.match-intro')?.remove();
+  if(s.round!==1||s.lastMove||s.log.length||s.phase==='over'||s.battle)return;
+  const intro=el('div',null,'match-intro');intro.setAttribute('role','status');
+  const seats=el('div',null,'intro-seats');
+  for(const j of s.turnOrder||s.players.keys()){
+    const chip=el('span',s.players[j].name+(s.teams?' · '+String.fromCharCode(65+s.teams[j])+'팀':''));
+    chip.style.setProperty('--seat',colors[j]);seats.append(chip);
+  }
+  intro.append(el('small',C.board(s).name||'대국 시작'),el('strong','목표 총마력 '+s.target+'G'),
+    el('p','총마력을 '+s.target+'G 이상 모아 가장 먼저 성으로 돌아오면 승리합니다.'+(s.roundLimit?' '+s.roundLimit+'라운드가 끝나면 총마력으로 순위를 가립니다.':'')),seats);
+  $('game').append(intro);
+  setTimeout(()=>intro.remove(),fastPlay?2600:4200);
+}
+// The match ends on a lit stage: the winner's name, then every cepter's standing.
+let victorySeen=null;
+function presentVictory(){
+  if(s.phase!=='over'){victorySeen=null;return;}
+  if(victorySeen===s)return;
+  victorySeen=s;
+  document.querySelector('.victory-show')?.remove();
+  const verdict=C.outcome(s),show=el('div',null,'victory-show');show.setAttribute('aria-hidden','true');
+  const totals=s.players.map((p,j)=>[j,C.total(s,j)]).sort((a,b)=>Number(verdict.winners.includes(b[0]))-Number(verdict.winners.includes(a[0]))||b[1]-a[1]);
+  const first=totals[0][0],viewer=room?room.seat:s.players.filter(p=>!p.ai).length===1?s.players.findIndex(p=>!p.ai):-1;
+  const won=viewer>=0&&verdict.winners.includes(viewer);
+  show.classList.toggle('lost',viewer>=0&&!won&&!verdict.tie);
+  show.append(el('i',null,'victory-rays'),el('small',verdict.tie?'승자 없음':viewer<0?'우승':won?'승리':'패배'),
+    el('strong',verdict.tie?'무승부':sideName(first)));
+  const stage=el('div',null,'victory-cast'),list=el('ol');
+  totals.forEach(([j,wealth],rank)=>{
+    const row=el('li');row.style.setProperty('--seat',colors[j]);
+    row.append(el('span',verdict.tie&&rank===0?'동률':rank===0?'우승':(rank+1)+'위'),el('b',s.players[j].name),el('em',wealth+'G'));list.append(row);
+    const stand=el('span',null,rank===0&&!verdict.tie?'champion':'');stand.append(figure(j,s.players[j].name));stage.append(stand);
+  });
+  show.append(stage,list);$('game').append(show);
+  setTimeout(()=>show.remove(),5200);
 }
 // Fast play shortens AI turns and walking; a tap on the board during an AI walk skips to the end of it.
 // It also takes the steps that leave no choice: ending a turn with nothing to do, paying a toll, leaving a battle result.
@@ -1181,6 +1233,15 @@ function render(){
     const key=[s.round,s.turn,i,!!s.battle].join(':');
     if(cueSeen!==key){cueSeen=key;if(!C.isComputer(s,s.turn)||s.battle)turnCue(s.turn===i?(s.phase==='spell'||s.phase==='roll'?'내 차례':''):'방어 차례');}
   }
+  // Another cepter's turn is named as it begins.
+  if(!pending&&!over&&!s.battle){
+    const key=s.round+':'+s.turn;
+    if(turnSeen.game!==s||turnSeen.key!==key){
+      const fresh=turnSeen.game===s;turnSeen={game:s,key};
+      if(fresh&&(C.isComputer(s,s.turn)||room&&room.seat!==s.turn))turnCue(s.players[s.turn].name+' 차례',s.turn);
+    }
+  }
+  presentIntro();presentVictory();
   if(fastPlay&&local&&!room&&choices.length===1&&['pass','pay','continue'].includes(choices[0][0])){
     const forced=choices[0];
     timer=setTimeout(()=>{if(fastPlay)act(forced);},forced[0]==='continue'?battleReplayDuration(s.battle)+1100:750);

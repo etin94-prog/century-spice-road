@@ -321,7 +321,7 @@ function showHandSelection(p,choices){
   const id=p.hand[focusCard],c=C.cards[id];if(!c||floating&&!handPanel.open)return;
   const actions=choices.filter(([k,x])=>['cast','summon','invade','equip','discard','sacrifice'].includes(k)&&x===focusCard);
   const name=el('strong',c.name),buttons=el('div',null,'hand-actions');
-  panel.append(name,el('span',cardSummary(c)));
+  panel.append(name,el('small',cardFacts(c,p),'card-facts'),el('span',cardSummary(c)));
   if(!actions.length&&C.price(p,c,s,!s.battle)>p.cash){
     panel.append(el('small','현재 마력 '+p.cash+'G · 사용 비용까지 '+(C.price(p,c,s,!s.battle)-p.cash)+'G 부족'));
   }

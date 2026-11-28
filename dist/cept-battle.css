@@ -24,7 +24,7 @@
 
 /* The two sides. Side by side by default; one above the other across the stage when the stage is tall. */
 .arena .duel-field{position:relative;min-height:0;container:duel/size}
-.arena .duel-side{--plate:66px;--card-w:min(47cqw,calc((100cqh - var(--plate) - 10px) * .8));position:absolute;top:50%;display:flex;flex-direction:column;align-items:center;gap:5px;
+.arena .duel-side{--plate:70px;--card-w:min(47cqw,calc((100cqh - var(--plate) - 10px) * .8));position:absolute;top:50%;display:flex;flex-direction:column;align-items:center;gap:5px;
   width:var(--card-w);translate:0 -50%;text-shadow:0 1px 3px #000}
 .arena .duel-side.attacker{left:calc(25cqw - var(--card-w) / 2);z-index:2}
 .arena .duel-side.defender{right:calc(25cqw - var(--card-w) / 2);z-index:1}
@@ -36,7 +36,7 @@
   .arena .duel-side.defender{right:0;top:0;flex-direction:column-reverse}
 }
 @container duel (min-aspect-ratio:2/1){
-  .arena .duel-side{--plate:52px}
+  .arena .duel-side{--plate:62px}
   .arena .duel-side.attacker{left:calc(21cqw - var(--card-w) / 2)}
   .arena .duel-side.defender{right:calc(21cqw - var(--card-w) / 2)}
 }
@@ -76,17 +76,21 @@
 .arena .duel-name{display:flex;align-items:center;gap:6px;min-width:0;font-size:12.5px;line-height:1.2;color:#fff1cf}
 .arena .duel-name>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .arena .duel-role{flex:none;padding:1px 6px;border-radius:4px;background:var(--seat,#d6b874);color:#14110c;font-style:normal;font-size:10.5px;font-weight:800;text-shadow:none}
-.arena .duel-stats{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.arena .duel-st{font:800 14px/1.1 system-ui;color:#ffd98a}
-.arena .duel-hp-value{font:800 16px/1.1 system-ui;color:#fff}
-.arena :is(.duel-st,.duel-hp-value){transition:color .2s,scale .2s;transform-origin:50% 100%}
-.arena :is(.duel-st,.duel-hp-value).rising{color:#9af09a;scale:1.25}
-.arena :is(.duel-st,.duel-hp-value).falling{color:#ff8a70;scale:1.25}
+.arena .duel-stats{display:grid;gap:3px}
+.arena .duel-gauge{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
+.arena .duel-tag{min-width:1.9em;padding:0 3px;border-radius:3px;font:800 9.5px/1.5 system-ui;font-style:normal;text-align:center;color:#0c0f15;background:#9fe08f}
+.arena .duel-gauge.st .duel-tag{background:#8fc4ff}
+.arena .duel-bar{position:relative;height:8px;border-radius:99px;background:#05070b;box-shadow:inset 0 0 0 1px #ffffff2e;overflow:hidden}
+.arena .duel-bar>i{position:absolute;inset:0 auto 0 0;transition:width .35s cubic-bezier(.2,.8,.2,1),left .35s cubic-bezier(.2,.8,.2,1)}
+.arena .duel-bar>.own{background:linear-gradient(#b6f09a,#4fae46)}
+.arena .duel-gauge.st .duel-bar>.own{background:linear-gradient(#a8d4ff,#3f7fd0)}
+.arena .duel-bar>.extra{background:linear-gradient(#ffb48a,#e2532f)}
+.arena .duel-bar>.lag{background:#fff0b8;transition:width .8s .35s ease-out}
+.arena .duel-bar.low>.own{background:linear-gradient(#ff9a6b,#d0402c)}
+.arena .duel-number{min-width:2.6em;text-align:right;font:800 14px/1 system-ui;color:#fff;transition:color .2s,scale .2s;transform-origin:100% 60%}
+.arena .duel-number.rising{color:#9af09a;scale:1.25}
+.arena .duel-number.falling{color:#ff8a70;scale:1.25}
 .arena .duel-side>meter{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.arena .duel-hp{position:relative;height:7px;border-radius:99px;background:#05070b;box-shadow:inset 0 0 0 1px #ffffff2e;overflow:hidden}
-.arena .duel-hp>i{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:linear-gradient(90deg,#6cc85c,#c8f28a);transition:width .35s cubic-bezier(.2,.8,.2,1)}
-.arena .duel-hp>i.lag{background:#ffcf7a;transition:width .8s .35s ease-out}
-.arena .duel-hp.low>i:not(.lag){background:linear-gradient(90deg,#e0563f,#ff9a6b)}
 .arena .duel-chips{position:absolute;left:0;right:0;bottom:calc(100% + 4px);display:flex;flex-wrap:wrap;justify-content:center;gap:3px;pointer-events:none}
 .arena .duel-chip{padding:0 6px;border-radius:99px;border:1px solid #ffffff38;background:#10141be6;font-size:10px;line-height:1.5;color:#e8e2d2;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;animation:duel-chip .35s cubic-bezier(.2,1.4,.4,1) backwards}
 .arena .duel-chip.land{border-color:#9ad88a80;color:#c8f2b4}
