@@ -707,6 +707,18 @@ const CepterEditions=(()=>{
   };
   const firstRace={人:'rh',獣:'rb',不死:'ru',植物:'rp',竜:'rd'};
   const firstAffinity={無:-1,火:0,水:1,地:2,風:3};
+  const firstBattleCreatures={
+    unseenstalker:{neutralizeNormal:true},gianteel:{neutralizes:[3]},sandman:{spellWard:true,neutralizeScroll:true},
+    wizard:{support:true,scrollCritical:true},druid:{support:true,scrollCritical:true},mage:{support:true,scrollCritical:true},
+    ooze:{half:true},crustacea:{pierceAll:true},firedrake:{invadeST:20},sabreclaw:{invadeST:20},
+    charybdis:{firstStat:'levelST'},kraken:{neutralizes:[-1],firstStat:'rivalFireST'},simurgh:{firstStat:'windHP'},
+    dullahan:{firstStat:'windST'},mothman:{first:true,firstStat:'neutralST'},deadlyfungus:{stationary:true,battleGrowth:10},
+    paladin:{criticalRaces:['ru'],regenerate:true},giantslug:{last:true,criticalRaces:['rp']},
+    selenear:{first:true,tollFactor:1.5},siren:{first:true,support:true,neutralizeRaces:['rh']},
+    dragonoid:{support:true},gargoyle:{first:true,entryST:50},salamander:{absorbElements:[0]},icesalamander:{absorbElements:[0]},
+    shade:{first:true,halveSTOnHit:true},succubus:{halveSTOnHit:true},
+    chupacabra:{hpDrain:true},drainroper:{stationary:true,hpDrain:true},vampire:{first:true,hpDrain:true}
+  };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
     terrair:{first:true,st:40,hp:30,deathStrike:{elements:[1,2],rate:1}},
@@ -1078,7 +1090,10 @@ const CepterEditions=(()=>{
       if(first&&slug==='cure')c.effect='heal';
       if(basicCreature&&!r.shared)c.basicBattle=true;
       if(first&&slug==='sorcerer')c.support=true;
-      if(first)c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
+      if(first&&kind==='creature'&&Object.hasOwn(firstBattleCreatures,slug)){
+        Object.assign(c,{catalogOnly:false,basicBattle:true},firstBattleCreatures[slug]);
+      }
+      if(first&&['knight','darkelf','elf'].includes(slug))c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
       if(first&&['pan','hornet'].includes(slug))c.statusRaces=['rh','rb','rd'];
       if(id===undefined)cards.push(c);else cards[id]=c;
     }
@@ -1129,6 +1144,13 @@ const CepterEditions=(()=>{
         ['earthshield','holygrail'],['freeze','soulblast'],['longsword','magicbelt'],['wingedboots','tigerrobe']
       ].map(([from,to])=>[lookup.get(from),lookup.get(to)]));
       presets.legacyGear=presets.legacyControl.map(id=>gear.get(id)??id);
+    }
+    if(edition==='ps1'||edition==='saturn'){
+      const native=new Map([
+        ['kobold','firedrake'],['minotaur','salamander'],['dragonfly','crustacea'],['giantrat','gianteel'],
+        ['wallofstone','deadlyfungus'],['woodfolk','paladin'],['wereboar','gargoyle'],['dwarf','ooze']
+      ].map(([from,to])=>[lookup.get(from),lookup.get(to)]));
+      presets.legacyGuard=presets.fire.map(id=>native.get(id)??id);
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

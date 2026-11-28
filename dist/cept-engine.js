@@ -280,7 +280,8 @@ function createCepter(edition="ps2"){
     Object.assign(tile,{type:claimTerrain(tile,cards[unit.id]),owner:seat,unit});
   }
   function claimFromHand(tile,seat,unit){
-    const enchant=cards[unit.id].entryEnchant;
+    const {entryEnchant:enchant,entryST}=cards[unit.id];
+    if(entryST!=null)unit.st=entryST;
     if(enchant){combo.clear(unit);unit.enchant=enchant;}
     claim(tile,seat,unit);
   }
@@ -963,7 +964,8 @@ function createCepter(edition="ps2"){
     if(!muted){
       for(const a of sides)if(a.u.enchant==='paralysis'){
         a.n=null;a.c={...a.c,revenge:null,innateScroll:0,blocksAttackAbilities:false,neutralizeScroll:false,protectGear:false,scrollCritical:false,first:false,last:false,half:false,regenerate:false,neutralizes:[],blocksLarge:false,blocksSmall:false,blocksFirst:false,criticalMHP:0,battleHP:0,invadeST:0,doubleAttack:false,
-          criticalElements:[],pierceElements:[],reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false};
+          criticalElements:[],criticalRaces:[],pierceElements:[],pierceAll:false,reflectElements:[],reflectNormal:false,partialReflect:0,neutralizeNormal:false,neutralizeRaces:[],
+          firstStat:null,battleGrowth:0,absorbElements:[],halveSTOnHit:false,hpDrain:false};
         useGear(a);
       }
       for(const [a,d] of [[A,D],[D,A]])if(a.n==='leprechaun'&&a.gear){useGear(d,a);useGear(a);}
@@ -1141,7 +1143,7 @@ function createCepter(edition="ps2"){
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||a.c.pierceBaseSTAtLeast&&fx.strength(d.u)>=a.c.pierceBaseSTAtLeast||weapon?.pierceAll||matches(weapon?.pierceElements,d));
       const beastCritical=revolt&&a.n==='lonebeast'&&board(s).links[b.at].some(at=>at!==b.from&&s.tiles[at].owner===a.seat);
-      const elementalCritical=!scroll&&!muted&&(beastCritical||weapon?.criticalNormal||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||weapon?.criticalRaces?.includes(d.c.catalog?.race)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
+      const elementalCritical=!scroll&&!muted&&(beastCritical||weapon?.criticalNormal||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||a.c.criticalRaces?.includes(d.c.catalog?.race)||weapon?.criticalRaces?.includes(d.c.catalog?.race)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
       if(!scroll&&penetrates&&!orb&&d.n==='bunyip'){lines.push('관통 공격 무효');return 'block';}
       let damage=a.st;
@@ -1181,7 +1183,7 @@ function createCepter(edition="ps2"){
           d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||!guard?.firstEquipment&&d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           !guard?.firstEquipment&&(d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3))||d.g==='dragonhelm'&&[1,2].includes(a.element)||
-          matches(d.c.neutralizes,a)||d.c.blocksBaseSTAtMost!=null&&fx.strength(a.u)<=d.c.blocksBaseSTAtMost||
+          matches(d.c.neutralizes,a)||d.c.neutralizeRaces?.includes(a.c.catalog?.race)||d.c.blocksBaseSTAtMost!=null&&fx.strength(a.u)<=d.c.blocksBaseSTAtMost||
           d.c.blocksBaseSTAtLeast!=null&&fx.strength(a.u)>=d.c.blocksBaseSTAtLeast||d.c.blocksLarge&&fx.max(a.u)>=(edition==='saga'&&d.n==='rahab'?50:40)||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
           d.n==='caitsith'&&fx.strength(a.u)>=40||d.c.blocksWithArmor&&d.gear?.category==='armor'||(revolt||begins)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
@@ -1263,10 +1265,11 @@ function createCepter(edition="ps2"){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
         if(weapon?.deathStrike)extra.gearDeath(a,d);
-        if(firstEdition&&a.g==='ringofthesuccubus'&&d.hp>0){
+        if(firstEdition&&(a.g==='ringofthesuccubus'||creatureEffects&&a.c.halveSTOnHit)&&d.hp>0){
           const before=fx.strength(d.u),after=Math.floor(before/2);
-          if(d.gear?.category!=='scroll'&&!d.gear?.scrollAsItem&&!d.gear?.zeroBattleST&&d.g!=='petrifystone')d.st=Math.max(0,d.st-(before-after));
-          d.u.st=after;lines.push(a.gear.name+' · 상대 기본 ST '+after);
+          const fixedST=d.gear?.category==='scroll'||d.gear?.scrollAsItem||d.gear?.zeroBattleST||d.g==='petrifystone'||['levelST','windST'].includes(d.c.firstStat);
+          if(!fixedST)d.st=Math.max(0,d.st-(before-after));
+          d.u.st=after;lines.push((a.g==='ringofthesuccubus'?a.gear.name:a.c.name)+' · 상대 기본 ST '+after);
         }else if((revolt||begins)&&a.g==='ringofthesuccubus'||revolt&&attacker==='shadowgeist'||begins&&attacker==='succubus'){
           const fixed=d.gear?.category==='scroll'||d.g==='petrifystone'||d.c.evoBattle==='landST'||d.n==='spectre'||d.n==='gargoyle'&&d.defending||d.u.enchant==='liquidform'||begins&&['manticore','lilith'].includes(d.n);
           if(!fixed)d.st=Math.max(0,d.st-fx.strength(d.u));

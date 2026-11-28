@@ -517,6 +517,22 @@ const CepterCreatureText=(()=>{
     if(card.battleST)pieces.push('전투 ST '+(card.battleST>0?'+':'')+card.battleST);
     if(card.battleHP)pieces.push('전투 HP '+(card.battleHP>0?'+':'')+card.battleHP);
     if(card.criticalElements?.length)pieces.push(targets(card.criticalElements)+' 상대에게 강타합니다.');
+    if(card.entryST!=null)pieces.push('손패에서 영지에 배치되면 기본 ST가 '+card.entryST+'이 됩니다.');
+    if(card.battleGrowth)pieces.push('전투 종료 시 생존하면 최대 HP가 '+card.battleGrowth+' 증가합니다. 상한은 80입니다.');
+    if(firstEdition&&card.tollFactor)pieces.push('이 영지의 통행료는 '+card.tollFactor+'배입니다.');
+    if(card.absorbElements?.length)pieces.push(targets(card.absorbElements)+' 상대의 일반 공격 피해를 흡수합니다.');
+    if(card.halveSTOnHit)pieces.push('일반 공격이 명중하면 상대의 기본 ST를 절반으로 줄입니다.');
+    if(card.hpDrain)pieces.push('일반 공격으로 준 피해량만큼 HP를 회복합니다.');
+    if(card.criticalRaces?.length)pieces.push(card.criticalRaces.map(r=>races[r]).join('·')+' 종족 상대에게 강타합니다.');
+    if(card.neutralizeRaces?.length)pieces.push(card.neutralizeRaces.map(r=>races[r]).join('·')+' 종족 상대의 일반 공격을 무효화합니다.');
+    if(card.pierceAll)pieces.push('일반 공격이 지형 HP 보너스를 관통합니다.');
+    if(card.firstStat)pieces.push({
+      levelST:'전투 ST는 교전 영지 레벨 × 20입니다.',
+      rivalFireST:'상대가 가진 화 영지 한 곳당 전투 ST가 10 내려갑니다.',
+      windHP:'전투의 기본 HP는 내 풍 영지 수 × 20입니다.',
+      windST:'전투의 기본 ST는 내 풍 영지 수 × 20입니다.',
+      neutralST:'내 무속성 영지 한 곳당 전투 ST가 10 오릅니다.'
+    }[card.firstStat]);
     if(card.pierceElements?.length)pieces.push(targets(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(targets(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(targets(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');

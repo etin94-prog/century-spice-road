@@ -8231,3 +8231,86 @@ for(const edition of ['ps1','saturn']){
   assert.equal(belt.tile.unit.st,C.cards[id('fighter')].st-(edition==='ps1'?20:10));
 }
 console.log('PS1 and Saturn battle gear, spell reflection, probability thresholds, tally and legal deck checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+  const map=edition+'-original-marsh-paths';
+  const run=({attacker='fighter',guard='fighter',weapon,armor,level=1,terrain=0,life,enchant,others=[]}={})=>{
+    const s=C.start(2,2,5000,map),land=s.tiles.flatMap((v,i)=>C.territoryType(v.type)?[i]:[]),at=land[0];
+    const tile=s.tiles[at],inv=id(attacker),def=id(guard);
+    assert.ok(inv>=0&&def>=0);
+    Object.assign(tile,{type:terrain,level,owner:1,unit:{id:def,hp:life??C.cards[def].hp,...(enchant?{enchant}:{})}});
+    const nonadjacent=land.filter(i=>i!==at&&!C.board(s).links[at].includes(i));
+    for(let i=0;i<others.length;i++){
+      const [owner,type]=others[i];
+      Object.assign(s.tiles[nonadjacent[i]],{owner,type,unit:{id:id('goblin'),hp:30}});
+    }
+    s.phase='attack';s.battle={at,inv,atkItem:null,defItem:null};
+    s.players.forEach(p=>{p.cash=1000;p.hand=[];});
+    if(weapon)s.players[0].hand=[id(weapon)];
+    if(armor)s.players[1].hand=[id(armor)];
+    assert.ok(C.play(s,weapon?['equip',0]:['bare']));
+    assert.ok(C.play(s,armor?['equip',0]:['bare']));
+    return {s,tile,b:s.battle};
+  };
+  assert.ok(C.validBook(C.presets.legacyGuard));
+  assert.equal(run({guard:'unseenstalker'}).b.strikes[0].effect,'block');
+  assert.equal(run({guard:'unseenstalker',weapon:'firebolt'}).b.strikes[0].effect,'hit');
+  assert.equal(run({attacker:'giantbat',guard:'gianteel'}).b.strikes[0].effect,'block');
+  assert.equal(run({guard:'gianteel'}).b.strikes[0].effect,'hit');
+  const sand=run({guard:'sandman',weapon:'firebolt'});
+  assert.equal(sand.b.strikes[0].effect,'block');
+  const land=sand.s.tiles.findIndex((v,i)=>i!==sand.b.at&&C.territoryType(v.type));
+  Object.assign(sand.s.tiles[land],{owner:1,unit:{id:id('goblin'),hp:30}});
+  sand.s.phase='spell';sand.s.players[0].hand=[id('magicbolt')];
+  assert.ok(C.play(sand.s,['cast',0]));
+  assert.ok(C.choices(sand.s).some(([k,i])=>k==='targetLand'&&i===land));
+  assert.ok(!C.choices(sand.s).some(([k,i])=>k==='targetLand'&&i===sand.b.at));
+  for(const attacker of ['wizard','mage','druid']){
+    const scroll=run({attacker,guard:'unseenstalker',weapon:'firebolt'});
+    assert.match(scroll.b.strikes[0].notes.join(' '),/45 피해/);
+    assert.equal(run({attacker,guard:'unseenstalker',weapon:'wolf'}).b.attackST,C.cards[id('wolf')].st);
+  }
+  assert.equal(run({guard:'ooze'}).b.strikes[0].hp[1],20);
+  assert.equal(run({attacker:'crustacea',guard:'kingtortoise',terrain:1,level:3}).b.strikes[0].hp[1],30);
+  assert.equal(run({attacker:'firedrake'}).b.attackST,C.cards[id('firedrake')].st+20);
+  assert.equal(run({guard:'firedrake'}).b.defendST,C.cards[id('firedrake')].st);
+  assert.equal(run({attacker:'sabreclaw'}).b.attackST,C.cards[id('sabreclaw')].st+20);
+  assert.equal(run({guard:'charybdis',level:4,terrain:1}).b.defendST,80);
+  const kraken=run({guard:'kraken',terrain:1,others:[[0,0],[0,0],[1,0]]});
+  assert.equal(kraken.b.defendST,30);
+  assert.equal(kraken.b.strikes[0].effect,'block');
+  assert.equal(run({guard:'simurgh',terrain:3,level:2,others:[[1,3]]}).b.startHP[1],60);
+  assert.equal(run({attacker:'dullahan',others:[[0,3],[0,3],[1,3]]}).b.attackST,40);
+  assert.equal(run({attacker:'mothman',others:[[0,'무속성'],[1,'무속성']]}).b.attackST,C.cards[id('mothman')].st+10);
+  const fungus=run({guard:'deadlyfungus',attacker:'goblin',terrain:2});
+  assert.equal(fungus.tile.unit.mhp,50);
+  assert.equal(run({attacker:'paladin',guard:'skeleton'}).b.strikes[0].notes.some(v=>v.includes('75 피해')),true);
+  assert.equal(run({attacker:'giantslug',guard:'woodfolk'}).b.strikes[0].side,1);
+  assert.equal(run({attacker:'giantslug',guard:'woodfolk'}).b.strikes[1].notes.some(v=>v.includes('45 피해')),true);
+  const toll=run({guard:'selenear',terrain:2});
+  const nativeToll=C.toll(toll.s,toll.tile);
+  toll.tile.unit.id=id('fighter');
+  assert.equal(nativeToll,Math.floor(C.toll(toll.s,toll.tile)*1.5));
+  assert.equal(run({guard:'siren'}).b.strikes.find(v=>v.side===0).effect,'block');
+  assert.equal(run({guard:'siren',enchant:'paralysis'}).b.strikes[0].effect,'hit');
+  assert.equal(run({guard:'deadlyfungus',attacker:'goblin',terrain:2,enchant:'paralysis'}).tile.unit.mhp,undefined);
+  assert.equal(run({attacker:'dragonoid',weapon:'wolf'}).b.attackST,50);
+  const gargoyle=run({attacker:'gargoyle',guard:'goblin',life:10});
+  assert.equal(gargoyle.b.attackST,C.cards[id('gargoyle')].st);
+  assert.equal(gargoyle.tile.unit.st,50);
+  for(const guard of ['salamander','icesalamander']){
+    assert.equal(run({attacker:'minotaur',guard,life:25}).b.strikes[0].effect,'heal');
+    assert.equal(run({guard,life:25}).b.strikes[0].effect,'hit');
+  }
+  for(const guard of ['vampire','chupacabra','drainroper']){
+    const drain=run({attacker:'goblin',guard,life:25});
+    assert.ok(drain.b.finalHP[1]>5);
+    assert.ok(drain.tile.unit.hp>5);
+  }
+  for(const attacker of ['shade','succubus']){
+    const drained=run({attacker,guard:'paladin',terrain:2,level:3});
+    assert.equal(drained.tile.unit.st,25);
+  }
+}
+console.log('PS1 and Saturn creature wards, races, permanent stats, scaling, tolls and support checked.');

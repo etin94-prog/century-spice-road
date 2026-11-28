@@ -122,6 +122,16 @@ const CepterExtraBattle=(()=>{
     }
     function baseStats(a,d){
       const lands=s.tiles.filter(v=>v.owner===a.seat);
+      if(a.c.firstStat){
+        const own=element=>lands.filter(v=>v.type===element||element===-1&&v.type==='무속성').length;
+        switch(a.c.firstStat){
+          case 'levelST':a.st=20*t.level;break;
+          case 'rivalFireST':a.st-=10*s.tiles.filter(v=>v.owner===d.seat&&v.type===0).length;break;
+          case 'windHP':a.hp=20*own(3);break;
+          case 'windST':a.st=20*own(3);break;
+          case 'neutralST':a.st+=10*own(-1);break;
+        }
+      }
       if(s.edition==='revolt'){
         const synergy=a.c.synergy;
         if(synergy&&s.tiles.some((v,j)=>j!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],synergy.element))){
@@ -283,7 +293,7 @@ const CepterExtraBattle=(()=>{
         return;
       }
       const fire=side=>s.edition==='saga'?combo.hasElement(side,0):side.element===0;
-      if(d.n==='salamander'&&fire(a)){
+      if(d.n==='salamander'&&fire(a)||d.c.absorbElements?.includes(a.element)){
         d.hp+=damage;d.absorbed=true;lines.push('화속성 피해 흡수');return 'heal';
       }
       if(orb)return;
@@ -312,7 +322,7 @@ const CepterExtraBattle=(()=>{
     function onHit(a,d,damage){
       a.hit=true;
       const n=d.c.blocksAttackAbilities||d.gear?.blocksCreatureHits?null:a.n;
-      if(n==='vampire'||s.edition==='saga'&&n==='crimsonvine'){a.hp+=damage;a.absorbed=true;}
+      if(n==='vampire'||s.edition==='saga'&&n==='crimsonvine'||a.c.hpDrain&&!d.c.blocksAttackAbilities&&!d.gear?.blocksCreatureHits){a.hp+=damage;a.absorbed=true;}
       if(s.edition==='saga'&&n==='jackolantern'){
         const amount=Math.min(Math.max(0,s.players[d.seat].cash),Math.max(0,Math.min(a.u.hp,a.hp))*2);
         s.players[d.seat].cash-=amount;s.players[a.seat].cash+=amount;
@@ -372,6 +382,7 @@ const CepterExtraBattle=(()=>{
         if(a.n==='efreet')s.players[a.seat].cash-=a.ordinaryDamage||0;
         if(s.edition==='saga'&&a.n==='nil'){s.players[a.seat].cash-=100;lines.push('닐 · 전투 종료 100G 상실');}
         if(a.n==='fungonoid')grow(a,10);
+        if(a.c.battleGrowth)grow(a,a.c.battleGrowth);
         if(s.edition!=='3ds'&&a.n==='catoblepas'&&!a.gear&&d.hp>0)d.hp=Math.min(d.u.hp,d.hp)-fx.strength(d.u);
         const leveller=['dc','begins','3ds','saga'].includes(s.edition)?a.n==='leveller':a.n==='leveler';
         if((a.n==='basilisk'||leveller&&t.type!==3)&&t.level>1&&!fx.blockedLevel(s,t)){
