@@ -49,8 +49,8 @@ const CepterCombos = (() => {
     const idol=(s,n)=>s.tiles.some(t=>name(t.unit)===n&&(s.edition!=='saga'||t.unit.enchant!=='paralysis'));
     const immuneHP=t=>['phantasm','holyasylum'].includes(t.unit?.enchant)||name(t.unit)==='odradek'||!!cards[t.unit?.id]?.immutableHP;
     const landLevelLocked=(t,s)=>levelLocked(t)||name(t.unit)==='trampleweed'||s?.players[t.owner]?.status==='sagadrought';
-    const terrainLocked=(s,t,fromSpell=false)=>(s.edition==='begins'||s.edition==='revolt'&&fromSpell)&&name(t.unit)==='barong'&&t.unit.enchant!=='paralysis';
-    const blockedLevel=(s,t,lower=true)=>lower&&t.unit?.enchant==='holyasylum'||landLevelLocked(t,s)||terrainLocked(s,t)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
+    const terrainLocked=(s,t,fromSpell=false)=>(s.edition==='begins'||['revolt','3ds'].includes(s.edition)&&fromSpell)&&name(t.unit)==='barong'&&t.unit.enchant!=='paralysis';
+    const blockedLevel=(s,t,lower=true)=>lower&&t.unit?.enchant==='holyasylum'||landLevelLocked(t,s)||terrainLocked(s,t,s.edition==='3ds'&&lower)||idol(s,'jadeidol')||activeWorld(s)==='solidworld';
     const isDefensive=u=>cards[u.id].stationary||u.enchant==='magicshelter';
     function targetable(s,t,category='sflash',dispel=false){
       if(!t.unit)return false;

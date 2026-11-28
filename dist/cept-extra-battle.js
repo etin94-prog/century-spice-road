@@ -239,7 +239,7 @@ const CepterExtraBattle=(()=>{
         if(fx.name(a.u)==='goblin'&&boost('redcap',a))a.st+=20;
       }
       if(a.element>=0&&boost(lord[a.element],a)){
-        if(firstEdition||s.edition==='begins'&&a.element>=2)a.st+=10;
+        if(firstEdition||['begins','3ds'].includes(s.edition)&&a.element>=2)a.st+=10;
         else a.hp+=10;
       }
       if(firstEdition&&a.c.catalog?.race==='rd'&&boost('elderdragon',a))a.st+=10;
@@ -402,7 +402,7 @@ const CepterExtraBattle=(()=>{
         if(s.edition==='saga'&&a.n==='flammefleur'&&!a.dealtDamage&&d.hp>0){d.hp=0;lines.push('전투 종료 · 피해를 주지 못해 상대 격파');}
         if(lord.includes(a.n)){
           s.players[a.seat].cash-=100;
-          if(s.edition==='begins'){
+          if(['begins','3ds'].includes(s.edition)){
             if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]+=100;}
             lines.push(a.c.name+' · 100G 지불');
           }
@@ -448,6 +448,9 @@ const CepterExtraBattle=(()=>{
     }
     function victory(a,d,creatureEnd){
       if(s.edition==='3ds'&&a.n==='ghoul')grow(a,10);
+      if(s.edition==='3ds'&&creatureEnd&&a.n==='mattocktail'&&d.defeatedByOpponent&&t.level<5&&!fx.blockedLevel(s,t,false)){
+        t.level++;lines.push(a.c.name+' · 영지 Lv.'+t.level);
+      }
       if(s.edition==='begins'){
         if(a.n==='nezha')a.u.mhp=Math.min(100,fx.max(a.u)+10);
         if(a.n==='mattocktail'&&t.level<5&&!fx.levelLocked(t)){t.level++;lines.push(a.c.name+' · 영지 Lv.'+t.level);}
@@ -470,7 +473,7 @@ const CepterExtraBattle=(()=>{
       }
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
       const invadeTerrain=creatureEnd&&!a.defending?a.c.invadeVictoryTerrain:null;
-      if((a.n==='leviathan'||invadeTerrain!=null)&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld'){
+      if((a.n==='leviathan'||invadeTerrain!=null)&&!fx.terrainLocked(s,t,true)&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld'){
         if(invadeTerrain!=null&&t.type!==invadeTerrain)lines.push(a.c.name+' · 교전 영지 속성 변경');
         t.type=invadeTerrain??1;
       }

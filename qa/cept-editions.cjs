@@ -9011,3 +9011,71 @@ console.log('2012 3DS support, fusion, generated forms, enchant inheritance, dam
   assert.equal(sand.unit.hp,20);assert.ok(goblin.unit.hp<30);
 }
 console.log('3DS swarm, neutral wards, scrolls, last strike, obliteration, rank, resurrection and legacy effects checked.');
+
+{
+  const C=ps2.createEdition('3ds'),map='3ds-original-bend';
+  const id=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  const start=()=>C.start(2,2,7000,map,C.presets.handheldTerritory,C.presets.handheldTerritory,1);
+  assert.ok(C.validBook(C.presets.handheldTerritory));
+  function fight(a,d,{type=2,level=1,atkGear,defGear,hp,extra,hand=[],symbols}={}){
+    const s=start(),at=s.tiles.findIndex(t=>C.territoryType(t.type)),tile=s.tiles[at];
+    Object.assign(tile,{type,level,owner:1,unit:{id:id(d),hp:hp??C.cards[id(d)].hp}});
+    if(extra){
+      const i=s.tiles.findIndex((t,i)=>i!==at&&!C.board(s).links[at].includes(i)&&C.territoryType(t.type));
+      Object.assign(s.tiles[i],{owner:0,unit:{id:id(extra),hp:C.cards[id(extra)].hp}});
+    }
+    s.players.forEach((p,i)=>{const gear=[atkGear,defGear][i];p.cash=1000;p.hand=[...(gear?[gear]:[]),...(i===1?hand:[])].map(id);});
+    if(symbols)s.players[0].symbols=[...symbols];
+    s.phase='attack';s.battle={at,inv:id(a),atkItem:null,defItem:null};
+    const random=Math.random;
+    try{
+      Math.random=()=>.25;
+      assert.ok(C.play(s,atkGear?['equip',0]:['bare']));
+      assert.ok(C.play(s,defGear?['equip',0]:['bare']));
+    }finally{Math.random=random;}
+    return {s,at,tile,b:s.battle};
+  }
+  const bard=fight('bard','dwarf',{type:2,level:3});
+  assert.ok(bard.s.tiles.some((t,i)=>i!==bard.at&&t.owner===0&&t.unit?.id===id('bard')));
+  assert.equal(bard.tile.owner,1);
+  assert.match(fight('bard','wallofstone',{atkGear:'nuclearfusion'}).b.strikes[0].notes.join(' '),/75 피해/);
+  const beast=fight('goblin','behemoth',{hand:['goblin','fighter']});
+  assert.equal(beast.b.strikes[0].side,0);assert.deepEqual(beast.s.players[1].hand,[id('fighter')]);
+  const lung=fight('lung','wallofstone',{symbols:[99,30,99,99,30,15,30,30]});
+  assert.deepEqual([lung.b.attackST,lung.b.startHP[0]],[45,45]);
+  const master=fight('dwarf','wallofstone',{extra:'darkmaster'});
+  assert.equal(master.b.attackST,C.cards[id('dwarf')].st+10);
+  assert.equal(master.s.players[0].cash,1000);
+  const beel=fight('harpy','wallofstone',{extra:'beelzebub'});
+  assert.equal(beel.b.attackST,C.cards[id('harpy')].st+10);
+  for(const lord of ['darkmaster','beelzebub']){
+    const slayer=fight(lord,'wallofstone',{atkGear:'nuclearfusion'});
+    assert.match(slayer.b.strikes[0].notes.join(' '),/75 피해/);
+    assert.equal(slayer.s.players[0].cash,900-C.cards[id('nuclearfusion')].cost);
+  }
+  const hammer=fight('mattocktail','goblin',{type:2,level:3});
+  assert.equal(hammer.b.strikes[0].side,0);assert.equal(hammer.tile.level,4);
+  assert.equal(fight('mattocktail','goblin',{type:2,level:5}).tile.level,5);
+  const bud=fight('goblin','mycoron');
+  assert.equal(bud.tile.unit.hp,C.cards[id('mycoron')].hp);
+  assert.equal(bud.s.tiles.filter(t=>t.unit?.id===id('mycoron')&&t.owner===1).length,2);
+  assert.equal(fight('fighter','mycoron',{defGear:'countershield'}).s.tiles.filter(t=>t.unit?.id===id('mycoron')).length,1);
+  const guarded=fight('leviathan','barong',{hp:5});
+  assert.equal(guarded.tile.type,2);assert.deepEqual(guarded.s.players[1].hand,[id('barong')]);
+  assert.equal(fight('leviathan','barong',{hp:5,hand:Array(6).fill('goblin')}).s.players[1].hand.length,6);
+  const cursed=fight('ganji','dwarf',{type:2,level:3});
+  assert.equal(cursed.tile.unit.enchant,'senility');assert.ok(cursed.tile.unit.hp>0);
+  assert.equal(fight('fighter','ganji',{atkGear:'nuclearfusion'}).b.strikes[0].effect,'block');
+  for(const spell of ['upheaval','meteor']){
+    const s=start(),sites=s.tiles.flatMap((t,i)=>C.territoryType(t.type)?[i]:[]),at=sites[0],other=sites[1];
+    Object.assign(s.tiles[at],{type:2,owner:1,level:3,unit:{id:id('barong'),hp:50}});
+    Object.assign(s.tiles[other],{type:2,owner:1,level:3,unit:{id:id('dwarf'),hp:50}});
+    s.phase='spell';s.players[0].cash=1000;s.players[0].hand=[id(spell),id('goblin')];
+    assert.ok(C.play(s,['cast',0]));
+    if(s.phase==='sacrifice')assert.ok(C.play(s,['sacrifice',1]));
+    const choices=C.choices(s);
+    assert.ok(!choices.some(([k,i])=>k==='targetLand'&&i===at));
+    assert.ok(choices.some(([k,i])=>k==='targetLand'&&i===other));
+  }
+}
+console.log('3DS Bard, Behemoth, Lung, rulers, land levels, Mycoron, Barong and Ganji checked.');

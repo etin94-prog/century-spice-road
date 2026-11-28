@@ -645,6 +645,11 @@ const CepterEditions=(()=>{
         watershield:3,magicshield:2,magussmirror:1,spikedshield:2,countershield:2,powercrown:1,holygrail:1,
         manna:3,windofhope:3,sink:2,relief:2,lifestream:2,peace:1,barrier:2,landdrain:1
       },
+      handheldTerritory:{
+        bard:2,minotaur:2,mattocktail:3,mycoron:3,giantamoeba:2,barong:3,woodfolk:3,dwarf:2,ganji:2,harpy:3,
+        nuclearfusion:2,chainmail:2,countershield:1,vorpalsword:2,magicshield:2,
+        manna:3,windofhope:3,holyword6:2,relief:2,barrier:2,turntothewall:2,lifestream:2
+      },
       handheldSwarm:{
         goblin:4,redcap:3,mothman:3,dragonoid:3,nightfiend:2,paladin:2,harpy:2,sandman:2,cerberus:2,gildedraptor:2,
         chainmail:2,countershield:1,vorpalsword:2,magicshield:2,scalearmor:2,
@@ -924,6 +929,8 @@ const CepterEditions=(()=>{
   };
   const handheldFusionNames={battlegearalpha:'배틀 기어 α',battlegearbeta:'배틀 기어 β',bundlegear:'번들 기어',carbunfly:'카번플라이'};
   const handheldSpecial={
+    bard:{scrollCritical:true},behemoth:{last:true},lung:{},darkmaster:{scrollCritical:true},beelzebub:{scrollCritical:true},
+    mattocktail:{first:true},mycoron:{regenerate:true},barong:{},ganji:{neutralizeScroll:true},
     cerberus:{doubleAttack:true},cockatrice:{},deathgaze:{neutralizeScroll:true},taotieh:{},igneousfatui:{last:true},nightfiend:{first:true},
     paladin:{regenerate:true,basicBattle:true,instantKill:{elements:[-1],rate:1}},sphinx:{confuse:true},wendigo:{},dragonoid:{support:true,scrollCritical:true},
     redcap:{},avenger:{},sandman:{spellWard:true,immutableHP:true},gildedraptor:{},mothman:{first:true},ouroboros:{},

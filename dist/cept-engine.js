@@ -1236,7 +1236,7 @@ function createCepter(edition="ps2"){
       d.hp-=damage;lines.push(a.c.name+' → '+damage+' 피해');
       if(damage>0){
         a.dealtDamage=true;
-        if(revolt)d.damagedByAttack=true;
+        if(revolt||handheld)d.damagedByAttack=true;
         if(!scroll)d.hitByOpponent=true;
       }
       trackDamage(d,damage,!scroll);
@@ -1525,7 +1525,7 @@ function createCepter(edition="ps2"){
         const hand=s.players[a.n==='remora'?d.seat:a.seat].hand;
         if(hand.length){
           hand.splice(s.predict?0:Math.floor(Math.random()*hand.length),1);
-          if(begins)lines.push(a.c.name+' · 손패 한 장 파괴');
+          if(begins||handheld&&a.n==='behemoth')lines.push(a.c.name+' · 손패 한 장 파괴');
         }
       }
       if(!muted&&(edition!=='saga'||!basalt)&&a.u.enchant==='bulimia'&&a.hp>0){
@@ -1636,7 +1636,7 @@ function createCepter(edition="ps2"){
         lines.push(a.gear.name+' · 손패를 6장까지 보충');
       }
       const amulet=a.g==='phoenixamulet'&&(!begins||itemEnd);
-      if((creatureEnd&&(a.n==='phoenix'||(begins||revolt&&a.defeatedByOpponent)&&a.n==='barong')||amulet)&&(!revolt||hasHandSpace(p))){
+      if((creatureEnd&&(a.n==='phoenix'||(begins||handheld&&hasHandSpace(p)||revolt&&a.defeatedByOpponent)&&a.n==='barong')||amulet)&&(!revolt||hasHandSpace(p))){
         const returned=begins&&amulet?(a.original?.id??a.u.id):a.u.id;
         p.hand.push(returned);
         if((begins||handheld)&&amulet){
@@ -1766,13 +1766,16 @@ function createCepter(edition="ps2"){
         lines.push(a.c.name+' · 승리 후 기본 ST '+a.u.st+' · 최대 HP '+a.u.mhp);
       }
       if(revolt&&creatureEnd&&a.hp>0&&a.n==='tentacles')drawUntil(s.players[a.seat],5);
-      if(revolt&&!s.predict&&creatureEnd&&a.hp>0&&a.n==='mycoron'&&a.damagedByAttack){
+      if((revolt||handheld)&&!s.predict&&creatureEnd&&a.hp>0&&a.n==='mycoron'&&a.damagedByAttack){
         const vacancies=s.tiles.filter((tile,at)=>at!==b.at&&!tile.unit&&territoryType(tile.type)&&canOccupy(a.c,tile));
         if(vacancies.length){
           const dst=vacancies[Math.floor(Math.random()*vacancies.length)];
           claimFromHand(dst,a.seat,{id:a.u.id,hp:a.c.hp});
           lines.push(a.c.name+' · 빈 영지에 분열');
         }
+      }
+      if(handheld&&creatureEnd&&a.hp>0&&opponent.hp>0&&a.n==='ganji'){
+        combo.clear(opponent.u);opponent.u.enchant='senility';lines.push(a.c.name+' · 상대에게 노쇠 부여');
       }
       if(revolt&&creatureEnd&&a.hp>0&&a.n==='flameduke'&&a.gear?.kind==='item'){
         returnToBook(s,a.seat,a.item);lines.push(a.c.name+' · 사용한 아이템을 북으로 복귀');

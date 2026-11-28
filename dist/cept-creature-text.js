@@ -609,6 +609,13 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='mycoron'?'생존하면 HP를 회복합니다. 상대가 피해를 주었다면 무작위 빈 영지에 마이코론을 배치합니다.':
       C.edition==='revolt'&&key==='coatlicue'?'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 20씩 오릅니다.':
       ['begins','revolt','3ds'].includes(C.edition)&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
+      C.edition==='3ds'&&['darkmaster','beelzebub'].includes(key)?'지도에 배치되어 교전에 참여하지 않으면 '+targets([card.element])+' 크리처의 전투 ST를 10 올립니다. 전투에서 살아남으면 100G를 지불합니다.':
+      C.edition==='3ds'&&key==='bard'?'일반 공격이 명중해도 상대를 격파하지 못하면 자신이 무작위 빈 영지로 이동합니다. 빈 영지가 없으면 격파됩니다.':
+      C.edition==='3ds'&&key==='behemoth'?'전투가 끝나면 내 손패 한 장을 무작위로 파괴합니다.':
+      C.edition==='3ds'&&key==='mattocktail'?'상대를 격파하고 생존하면 교전 영지 레벨이 1 오릅니다. 최고 레벨은 5입니다.':
+      C.edition==='3ds'&&key==='mycoron'?'전투에서 살아남으면 HP를 회복합니다. 상대에게 피해를 받았다면 무작위 빈 영지에 마이코론을 배치합니다.':
+      C.edition==='3ds'&&key==='barong'?'영지 명령 외의 속성 변경과 레벨 하락을 막습니다. 전투에서 격파되면 손패로 돌아오며 손패가 6장이면 파괴됩니다.':
+      C.edition==='3ds'&&key==='ganji'?'둘 다 살아남으면 전투가 끝날 때 상대에게 노쇠를 겁니다.':
       C.edition==='3ds'&&key==='deathgaze'?'적을 격파하면 80% 확률로 같은 카드를 상대의 손패와 북에서 모두 제거합니다.':
       C.edition==='3ds'&&key==='taotieh'?'적을 격파하고 생존하면 기본 ST·최대 HP가 20씩 오릅니다. 상한은 100입니다.':
       C.edition==='3ds'&&key==='igneousfatui'?'일반 공격으로 피해를 준 상대를 70% 확률로 즉사시킵니다.':
