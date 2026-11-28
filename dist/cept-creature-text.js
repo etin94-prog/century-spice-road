@@ -536,7 +536,14 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='redcap'?'배치된 고블린 한 마리당 자신의 전투 ST와 HP가 20씩 오릅니다. 자신이 전투에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
       C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
       C.edition==='begins'&&key==='ambermosquito'?'전투에서 티라노사우루스와 자이언트 래트 중 하나로 같은 확률로 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
-      C.edition==='begins'&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
+      C.edition==='revolt'&&key==='livingamulet'?'상대가 무기를 쓰지 않았다면 전투에서 격파된 자신 또는 장착 크리처를 리빙 아뮬렛으로 되살립니다.':
+      C.edition==='revolt'&&key==='livingbomb'?'전투 종료 시 자신 또는 장착 크리처가 살아 있고 HP가 20 이하면 양쪽을 격파합니다.':
+      C.edition==='revolt'&&key==='livingglove'?'배치된 크리처 중 사용자의 크리처와 속성이 다른 한 마리당 전투 ST와 HP가 5가 됩니다. 장비로 쓰면 그만큼 더합니다.':
+      C.edition==='revolt'&&key==='lunatichare'?'전투에서 생존하면 상대의 기본 ST와 최대 HP를 교환합니다.':
+      C.edition==='revolt'&&key==='mosstitan'?'주회 보상을 받으면 최대 HP가 10 오릅니다. 80을 넘으면 30으로 돌아갑니다.':
+      C.edition==='revolt'&&key==='mycoron'?'생존하면 HP를 회복합니다. 상대가 피해를 주었다면 무작위 빈 영지에 마이코론을 배치합니다.':
+      C.edition==='revolt'&&key==='coatlicue'?'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 20씩 오릅니다.':
+      ['begins','revolt'].includes(C.edition)&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
       ['begins','saga'].includes(C.edition)&&key==='baldanders'?'전투 중 다른 크리처로 무작위 변신합니다. E 등급은 제외되며 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':

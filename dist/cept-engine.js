@@ -483,6 +483,12 @@ function createCepter(edition="ps2"){
       if(t.owner!==s.turn||!t.unit)continue;
       delete t.unit.fatigued;
       const c=cards[t.unit.id];
+      if(revolt&&heal&&c.lapGrowth){
+        const prior=fx.max(t.unit),next=prior+c.lapGrowth;
+        t.unit.mhp=next>80?c.hp:next;
+        t.unit.hp=Math.min(t.unit.hp,t.unit.mhp);
+        note(s,c.name+' · 최대 HP '+prior+' → '+t.unit.mhp);
+      }
       if(heal&&!(revolt&&(fx.name(t.unit)==='statue'||c.noLapHeal)))t.unit.hp=Math.min(fx.max(t.unit),t.unit.hp+heal);
       if(revolt&&heal&&c.lapStrength)t.unit.st=Math.min(100,fx.strength(t.unit)+10);
     }
@@ -1012,6 +1018,7 @@ function createCepter(edition="ps2"){
       if((revolt||edition==='saga')&&a.g==='spectresrobe'){a.st+=randomStat();a.hp+=randomStat();}
       if(a.n==='nightfiend')a.st+=t.level*20;
       if(a.n==='peri'&&other.book.length-owner.book.length>=3){a.st+=20;a.hp+=20;}
+      if(revolt&&!muted&&a.n==='coatlicue'&&owner.book.length>other.book.length){a.st+=20;a.hp+=20;}
       if(a.g==='changingsalve')[a.st,a.hp]=[a.hp,a.st];
       if(a.g==='neutralamulet'||!revolt&&a.g==='neutralcloak'){a.element=-1;a.elements=null;}
       if(!muted){
@@ -1025,8 +1032,11 @@ function createCepter(edition="ps2"){
         }
       }
       a.land=a.defending?(initialLand??terrainHP(t,a.u,a,a.n,muted)):0;
-      a.hp+=a.land+(a.gear?.hp||0)+(muted?0:a.c.battleHP||0);
-      a.st+=supportST(s,b.at,b.from,a.seat)+(a.gear?.st||0)+(muted?0:a.c.battleST||0);
+      const gloveGear=revolt&&a.g==='livingglove',gloveCreature=revolt&&!muted&&a.n==='livingglove';
+      const glovePower=gloveGear||gloveCreature?5*s.tiles.filter(v=>v.unit&&!combo.hasElement(cards[v.unit.id],a.element)).length:0;
+      if(gloveCreature)a.st=a.hp=glovePower;
+      a.hp+=a.land+(gloveGear?glovePower:a.gear?.hp||0)+(muted?0:a.c.battleHP||0);
+      a.st+=supportST(s,b.at,b.from,a.seat)+(gloveGear?glovePower:a.gear?.st||0)+(muted?0:a.c.battleST||0);
       if(!muted){
         if(!a.defending)a.st+=a.c.invadeST||0;
         if(a.u.enchant!=='paralysis'){
@@ -1144,6 +1154,7 @@ function createCepter(edition="ps2"){
       d.hp-=damage;lines.push(a.c.name+' → '+damage+' 피해');
       if(damage>0){
         a.dealtDamage=true;
+        if(revolt)d.damagedByAttack=true;
         if(!scroll)d.hitByOpponent=true;
       }
       trackDamage(d,damage,!scroll);
@@ -1362,11 +1373,18 @@ function createCepter(edition="ps2"){
           d.u.st=Math.max(0,Math.min(d.hp,d.u.hp));
           d.u.hp=d.u.mhp=d.hp=priorST;
           lines.push(a.c.name+' · 상대 기본 ST와 HP 교환');
+        }else if(revolt&&a.n==='lunatichare'){
+          const priorST=fx.strength(d.u);
+          d.u.st=fx.max(d.u);
+          d.u.hp=d.u.mhp=d.hp=priorST;
+          lines.push(a.c.name+' · 상대 기본 ST와 최대 HP 교환');
         }else{
           const st=Math.max(0,d.st);d.u.st=Math.max(0,Math.min(d.hp,fx.max(d.u)));d.hp=st;
         }
       }
-      if(a.hp>0&&a.hp<=20&&(a.n==='mandrake'||itemEnd&&a.g==='gemoflife')){
+      const livingBomb=revolt&&(a.n==='livingbomb'||itemEnd&&a.g==='livingbomb');
+      if(a.hp>0&&a.hp<=20&&(livingBomb||a.n==='mandrake'||itemEnd&&a.g==='gemoflife')){
+        if(livingBomb)lines.push('리빙 봄 · 폭발로 양측 격파');
         if(edition==='saga'&&d.hp>0)d.defeatedByOpponent=true;
         a.hp=d.hp=0;
       }
@@ -1418,7 +1436,9 @@ function createCepter(edition="ps2"){
       const fossil=edition==='saga'&&['greatfossil','littlefossil'].includes(a.n);
       const creatureForm=creatureEnd&&(!fossil||a.defeatedByOpponent)&&(kudz||a.c.reviveForm||({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld||begins?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]);
       const itemForm=scarab?(edition==='saga'||revolt?'skeleton':'zombie'):null;
-      const form=revolt?creatureForm||itemForm:itemForm||creatureForm;
+      const opponent=a===A?D:A;
+      const amulet=revolt&&(creatureEnd&&a.n==='livingamulet'||itemEnd&&a.g==='livingamulet')&&opponent.gear?.category!=='weapon';
+      const form=revolt?creatureForm||itemForm||(amulet?'livingamulet':null):itemForm||creatureForm;
       if(!form||a.revived)return false;
       extra.transform(a,extra.ids.get(form));a.revived=true;
       return true;
@@ -1602,6 +1622,14 @@ function createCepter(edition="ps2"){
         lines.push(a.c.name+' · 승리 후 기본 ST '+a.u.st+' · 최대 HP '+a.u.mhp);
       }
       if(revolt&&creatureEnd&&a.hp>0&&a.n==='tentacles')drawUntil(s.players[a.seat],5);
+      if(revolt&&!s.predict&&creatureEnd&&a.hp>0&&a.n==='mycoron'&&a.damagedByAttack){
+        const vacancies=s.tiles.filter((tile,at)=>at!==b.at&&!tile.unit&&territoryType(tile.type)&&canOccupy(a.c,tile));
+        if(vacancies.length){
+          const dst=vacancies[Math.floor(Math.random()*vacancies.length)];
+          claimFromHand(dst,a.seat,{id:a.u.id,hp:a.c.hp});
+          lines.push(a.c.name+' · 빈 영지에 분열');
+        }
+      }
       if(revolt&&creatureEnd&&a.hp>0&&a.n==='flameduke'&&a.gear?.kind==='item'){
         returnToBook(s,a.seat,a.item);lines.push(a.c.name+' · 사용한 아이템을 북으로 복귀');
       }
@@ -1678,6 +1706,10 @@ function createCepter(edition="ps2"){
     if(edition==='revolt'){
       // OmiyaSoft's six-sided dice show 0–5. An all-zero roll moves 12 spaces.
       const die=()=>Math.floor(Math.random()*6);
+      if(fixed==null&&p.diceLimitRolls>0&&p.status==='slow'){
+        const total=1+Math.floor(Math.random()*3),first=Math.floor(Math.random()*(total+1));
+        return {faces:[first,total-first],total,sides:6,zeroBased:true,limited:true};
+      }
       if(fixed==null&&p.hasteRolls>0&&['haste','chargingstep'].includes(p.status)){
         const charging=p.status==='chargingstep',total=(charging?2:6)+Math.floor(Math.random()*3);
         const low=Math.max(0,total-5),first=low+Math.floor(Math.random()*(Math.min(5,total)-low+1));

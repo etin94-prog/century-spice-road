@@ -534,6 +534,8 @@ const CepterCombos = (() => {
       ownWaterShift:{cost:100,label:'자신의 영지를 수 속성으로 바꿈',self:true},
       shrinkBoth:{cost:50,label:'적 크리처의 HP와 최대 HP −10',shrink:10,subtractHP:true,enemy:true},
       replaceHand:{cost:20,label:'고른 셉터의 손패 한 장 교체',player:true},
+      discardBookTop:{cost:50,label:'고른 셉터의 북 맨 위 카드 한 장 파괴',player:true},
+      shortDice:{cost:50,label:'고른 셉터의 다음 주사위 합을 1~3으로 제한',player:true},
       playerBarrier:{cost:50,label:'고른 셉터에게 안티 스펠 부여',player:true},
       toArmedPrincess:{cost:60,label:'아머드 프린세스로 진화',form:'armedprincess',self:true},
       toGaruda:{cost:60,label:'가루다로 진화',form:'garuda',self:true},
@@ -594,7 +596,7 @@ const CepterCombos = (() => {
       if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.enchant==='paralysis'||!borrowed&&(src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost))return [];
       if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
         (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'&&(!art.chooseDirection||!q.chooseDirection)&&
-        (key!=='replaceHand'||q.hand.length)?[['secretPlayer',i]]:[]);
+        (key!=='replaceHand'||q.hand.length)&&(key!=='discardBookTop'||q.book.length)?[['secretPlayer',i]]:[]);
       if(key==='ownWaterShift')return src.type!==1&&activeWorld(s)!=='solidworld'?[['secretSelf',from]]:[];
       if(key==='drawItem')return p.book.some(id=>cards[id].kind==='item')?[['secretSelf',from]]:[];
       if(art.move)return territoryMoveExits(s,from,true).map(at=>['secretLand',at]);
@@ -640,6 +642,12 @@ const CepterCombos = (() => {
           s.spellTarget=at;s.cloudGizmo='secret';return art.label;
         }
         if(key==='playerBarrier'){clearCepter(q);q.status='barrier';return art.label;}
+        if(key==='shortDice'){clearCepter(q);q.status='slow';q.diceLimitRolls=1;return art.label;}
+        if(key==='discardBookTop'){
+          q.book.pop();
+          for(const who of s.players)if(who.peek?.seat===at)delete who.peek;
+          return art.label;
+        }
         if(art.word||art.chooseDirection){
           clearCepter(q);
           if(art.word)q.word=art.word;else q.chooseDirection=true;
@@ -726,6 +734,8 @@ const CepterCombos = (() => {
         if(q.antiMagic)return -20;
         if(art==='replaceHand')return allied(s,at,s.turn)?q.hand.length>2?10:0:Math.max(0,...q.hand.map(id=>cards[id].cost*.2))-(borrowed?0:4);
         if(art==='playerBarrier')return allied(s,at,s.turn)?16:-20;
+        if(art==='discardBookTop')return allied(s,at,s.turn)?-60:Math.min(24,36/Math.max(1,q.book.length))-(borrowed?0:8);
+        if(art==='shortDice')return allied(s,at,s.turn)?-12:q.word!=null?10:0;
         if(spec.word||spec.chooseDirection)return allied(s,at,s.turn)&&q.word==null?5:-20;
         const value=art==='drainSigil'?Math.floor(Math.max(0,q.cash)*.1)/5:
           q.hand.filter(id=>cards[id]?.kind==='spell').length*9;

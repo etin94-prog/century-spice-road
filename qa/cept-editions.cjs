@@ -1909,7 +1909,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,38);
+  assert.equal(ready.length,46);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
   {
     const shot=mode=>revolt('battleaxe',null,'goblin',mode).s.battle.strikes[0].effect;
@@ -2243,7 +2243,44 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
     const makara=actSecret('makara');
     assert.deepEqual([makara.tiles[1].type,makara.tiles[1].unit.fatigued],[1,undefined]);
-    console.log('Revolt new creature reactions, gear wards, placement commands, evolution and private Cloud Gizmo checked');
+    const glove=revolt('livingglove',null,'redogre','goblin',s=>{
+      revoltUnit(s,2,'redogre',0,0);revoltUnit(s,3,'blueogre',0,1);
+    }).s.battle;
+    assert.equal(glove.attackST,CForRevolt('redogre').st+10);
+    const bareGlove=revolt(null,null,'livingglove','redogre',s=>{
+      revoltUnit(s,2,'redogre',0,0);revoltUnit(s,3,'blueogre',0,1);
+    }).s.battle;
+    assert.deepEqual([bareGlove.attackST,bareGlove.startHP[0]],[15,15]);
+    const bomb=revolt(null,null,'redogre','livingbomb',s=>{s.tiles[1].unit.hp=20;s.tiles[1].unit.st=0;}).s;
+    assert.deepEqual(bomb.battle.finalHP,[CForRevolt('redogre').hp,0],'destroyed bomb does not detonate');
+    const explosion=revolt(null,'livingbomb','goblin','goblin',s=>{
+      s.tiles[1].unit.hp=10;
+      s.tiles[1].unit.mhp=10;
+    }).s;
+    assert.deepEqual(explosion.battle.finalHP,[0,0]);
+    const amulet=revolt(null,'livingamulet','redogre','livingamulet').s;
+    assert.equal(amulet.tiles[1].unit.id,bySlug.get('livingamulet'));
+    const armed=revolt('mace',null,'redogre','livingamulet').s;
+    assert.notEqual(armed.tiles[1].unit?.id,bySlug.get('livingamulet'));
+    const hare=revolt(null,null,'lunatichare','statue').s;
+    assert.equal(hare.battle.won,true);
+    const spores=revolt(null,null,'goblin','mycoron').s;
+    assert.equal(spores.tiles.filter(t=>t.owner===1&&t.unit?.id===bySlug.get('mycoron')).length,2);
+    const pile=revolt(null,null,'goblin','mycoron',s=>{s.tiles[1].unit.hp=10;}).s;
+    assert.equal(pile.tiles.filter(t=>t.owner===1&&t.unit?.id===bySlug.get('mycoron')).length,0);
+    const bookAttack=actSecret('coatlicue',s=>{
+      s.players[1].book=[bySlug.get('goblin'),bySlug.get('manna')];
+      s.players[1].hand=[bySlug.get('mace')];
+    });
+    assert.ok(R.play(bookAttack,['secretPlayer',1]));
+    assert.deepEqual([bookAttack.players[1].book,bookAttack.players[1].hand,bookAttack.players[0].cash],[[bySlug.get('goblin')],[bySlug.get('mace')],450]);
+    const slowDie=actSecret('swampspawn');
+    assert.ok(R.play(slowDie,['secretPlayer',0]));
+    assert.deepEqual([slowDie.players[0].diceLimitRolls,slowDie.players[0].status],[1,'slow']);
+    assert.ok(R.play(slowDie,['roll']));
+    assert.ok(slowDie.die>=1&&slowDie.die<=3);
+    assert.equal(slowDie.players[0].diceLimitRolls,undefined);
+    console.log('Revolt new creature reactions, gear wards, placement commands, evolution, living equipment and secret arts checked');
 
 
 
