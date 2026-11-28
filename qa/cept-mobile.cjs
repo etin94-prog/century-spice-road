@@ -240,7 +240,7 @@ const {chromium}=require('playwright');
         const menu=await page.evaluate(()=>{
           const box=e=>e.getBoundingClientRect(),panel=box(document.querySelector('.match-actions')),pawn=box(document.querySelector('#map .pawn-action'));
           return {selects:document.querySelectorAll('#buttons select').length,openers:document.querySelectorAll('#buttons [data-open]').length,
-            covered:pawn.left<panel.right&&pawn.right>panel.left&&pawn.top<panel.bottom&&pawn.bottom>panel.top,
+            covered:pawn.left<panel.right&&pawn.right>panel.left&&pawn.top<panel.bottom&&pawn.bottom>panel.top,rects:[pawn,panel].map(b=>[b.left,b.top,b.right,b.bottom].map(Math.round)),inspect,phase:s.phase,expanded:document.querySelector('#matchActionsToggle').getAttribute('aria-expanded'),
             inside:panel.left>=0&&panel.right<=innerWidth&&panel.top>=0&&panel.bottom<=innerHeight};
         });
         assert.equal(menu.selects,0);assert.ok(menu.openers>=2,JSON.stringify(menu));

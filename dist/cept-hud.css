@@ -385,3 +385,37 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
   .turn-picker-cards button.turn-picker-card{flex-basis:clamp(86px,13vw,112px)}
   .turn-picker-card .card-face{max-height:min(118px,30dvh);width:auto}
 }
+
+/* Speed toggle beside the sound button. */
+#matchHud .match-speed{display:grid;place-items:center;min-width:44px;min-height:44px;padding:0;border:1px solid #e0bd7959;border-radius:10px;background:#242c38e6;color:#fff0cf;font-size:14px;letter-spacing:-2px;line-height:1}
+#matchHud .match-speed[aria-pressed=true]{background:#e0bc76;color:#201d21;border-color:#f3dba6}
+
+/* The camera settles quickly, so the cepter and its menu stop moving before the next tap. */
+@media(prefers-reduced-motion:no-preference){
+  #game #mapViewport #map{transition:transform .3s cubic-bezier(.2,.7,.3,1)}
+  #game #mapRoll,#game .table aside.match-actions.action-menu{transition:left .3s cubic-bezier(.2,.7,.3,1),top .3s cubic-bezier(.2,.7,.3,1)}
+}
+@media(prefers-reduced-motion:reduce){#game #mapViewport #map,#game #mapRoll,#game .table aside.match-actions.action-menu{transition:none}}
+
+/* The board answers to one finger for panning and two for zooming. */
+#game #mapViewport{touch-action:none}
+
+/* Turn cue: a brief banner when the game starts waiting for the player. */
+.turn-cue{position:absolute;z-index:20;left:50%;top:calc(var(--hud-height) + 14%);translate:-50% 0;padding:7px 26px;border:1px solid #ffe2a4;border-radius:999px;
+  background:#141a24eb;color:#ffe7a6;font:800 18px/1.2 system-ui;letter-spacing:.08em;pointer-events:none;box-shadow:0 6px 22px #000b;animation:turn-cue 1.5s ease-out both}
+@keyframes turn-cue{0%{opacity:0;transform:scale(.8)}12%{opacity:1;transform:scale(1.06)}22%{transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+@media(prefers-reduced-motion:reduce){.turn-cue{animation-timing-function:step-end}}
+
+/* Battle skip hint */
+#game .battle-skip{position:absolute;left:50%;top:24px;translate:-50% 0;z-index:7;margin:0;padding:2px 9px;border-radius:99px;background:#0c0f15b8;color:#e8dcc0;font-size:10.5px;letter-spacing:0;pointer-events:none}
+
+/* Wide battle: the cards use the full height; names and numbers sit on the card edges. */
+@container(min-width:620px){
+  #game .battle-stage{padding:4px 2% 6px;grid-template-rows:auto minmax(0,1fr)}
+  #game .battle-side{justify-content:center;gap:0}
+  #game .battle-side>strong{position:absolute;z-index:3;top:0;left:50%;translate:-50% 0;max-width:94%;padding:2px 12px;border-radius:0 0 10px 10px;background:#0c0f15d9;font-size:12.5px}
+  #game .battle-side-outcome{position:absolute;z-index:4;top:26px;left:50%;translate:-50% 0}
+  #game .battle-face{flex:1 1 0;padding:2px 0 26px}
+  #game .battle-stats{position:absolute;z-index:3;bottom:9px;left:50%;translate:-50% 0;padding:1px 12px;border-radius:99px;background:#0c0f15d9;white-space:nowrap}
+  #game .battle-hp{position:absolute;z-index:3;bottom:0;left:50%;translate:-50% 0;width:min(86%,13rem)}
+}

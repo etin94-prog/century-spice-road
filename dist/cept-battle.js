@@ -1,4 +1,5 @@
-const battleBeat=950;
+// Fast play tightens the gap between strikes.
+const battleBeat=()=>typeof fastPlay!=='undefined'&&fastPlay?620:950;
 const attackVariants={
   leap:'ninja samurai knight griffon pegasus wyvern dragonfly',
   crush:'colossus cyclops golem stonegolem giantmole firegiant stormgiant steamgear',
@@ -50,7 +51,7 @@ function battleSparks(frame,kind){
   frame.append(burst);setTimeout(()=>burst.remove(),700);
 }
 function battleReplayDuration(b){
-  return b.strikes&&!matchMedia('(prefers-reduced-motion: reduce)').matches?1100+b.strikes.length*battleBeat:0;
+  return b.strikes&&!matchMedia('(prefers-reduced-motion: reduce)').matches?1100+b.strikes.length*battleBeat():0;
 }
 function renderBattle(center,state){
   const b=state.battle,tile=state.tiles[b.at],result=state.phase==='result';
@@ -102,7 +103,7 @@ function renderBattle(center,state){
     }
     return;
   }
-  const later=(ms,fn)=>setTimeout(()=>{if(stage.isConnected)fn();},ms);
+  const later=(ms,fn)=>setTimeout(()=>{if(stage.isConnected&&!stage.dataset.skipped)fn();},ms);
   const reveal=()=>fighters.forEach((f,i)=>{
     const item=C.cards[items[i]];
     if(item){f.pocket.replaceChildren(cardSeal(items[i]));f.pocket.classList.add('revealed');f.pocket.title=item.name;f.pocket.setAttribute('aria-label',item.name);}
@@ -111,6 +112,7 @@ function renderBattle(center,state){
     f.update((b.startHP||base)[i]);
   });
   const finish=()=>{
+    if(stage.dataset.phase==='complete')return;
     fighters.forEach((f,i)=>{
       const final=b.settled?.forms?.[i]??b.finalForms?.[i];
       if(final!=null&&final!==ids[i]){
@@ -121,7 +123,7 @@ function renderBattle(center,state){
       if(b.settled?.st?.[i]!=null)f.power.textContent='ST '+b.settled.st[i];
       f.update(b.settled?.hp?.[i]??b.finalHP[i]);f.frame.classList.toggle('defeated',b.finalHP[i]===0);
     });
-    status.textContent=b.lines.at(-1);stage.dataset.phase='complete';
+    status.textContent=b.lines.at(-1);stage.dataset.phase='complete';stage.querySelector('.battle-skip')?.remove();
     const draw=b.finalHP.every(hp=>hp===0);
     const empty=!b.won&&!draw&&b.finalHP[1]===0;
     const outcome=draw?'양측 격파':b.won?'침략 승리':empty?'영지 비움':'수비 성공';
@@ -143,10 +145,18 @@ function renderBattle(center,state){
   };
   if(!battleReplayDuration(b)){playEffect(b.strikes?.at(-1)?.effect||'hit');reveal();finish();return;}
   stage.dataset.phase='replay';status.textContent='전투 준비';
+  // A tap on the stage jumps to the result.
+  const skip=el('small','탭하면 결과로','battle-skip');stage.append(skip);
+  stage.addEventListener('click',()=>{
+    if(stage.dataset.phase!=='replay')return;
+    stage.dataset.skipped='1';skip.remove();
+    for(const fx of stage.querySelectorAll('.battle-impact,.battle-shot,.battle-damage,.battle-flash,.battle-sparks'))fx.remove();
+    reveal();finish();
+  });
   later(180,()=>{reveal();status.textContent=[...items.map(id=>C.cards[id]?.name),b.landHP?'지형 보너스 +'+b.landHP+' HP':''].filter(Boolean).join(' · ')||'아이템 없이 전투';});
   b.strikes.forEach((strike,index)=>{
     const attacker=fighters[strike.side],defender=fighters[1-strike.side];
-    const time=850+index*battleBeat;
+    const time=850+index*battleBeat();
     const previous=b.strikes[index-1];
     const actionLabel=!previous?'선공':previous.side===strike.side?'연속 공격':'반격';
     later(time,()=>{

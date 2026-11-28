@@ -121,7 +121,7 @@ actionToggle.onclick=()=>setActionMenu(actionToggle.getAttribute('aria-expanded'
 function lobby(){
   cancelMapEffect();stopWalk();
   if(room){location.assign(location.pathname+(C.edition==='ps2'?'':'?edition='+C.edition));return;}
-  clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;$('setup').hidden=true;setMatchChrome(false);
+  clearTimeout(timer);$('lobby').hidden=false;$('game').hidden=true;keepAwake();$('setup').hidden=true;setMatchChrome(false);
   $('resume').hidden=!s;$('resume').textContent=s?.phase==='over'?'저장한 대국 결과':'저장한 대국 계속';
   resetScroll();
 }
@@ -129,7 +129,7 @@ function handoff(){return !room&&s.phase!=='over'&&!C.isComputer(s,C.actor(s))&&
 function enter(){
   seenActionSound=s.actionSound?.sequence||0;cancelMapEffect();seenMapEffect=s.mapEffect?.sequence||0;stopWalk();
   seenMove=s.lastMove?.sequence||0;pending=handoff();focusCard=inspect=-1;
-  $('lobby').hidden=true;$('game').hidden=false;$('setup').hidden=false;setMatchChrome(true);
+  $('lobby').hidden=true;$('game').hidden=false;keepAwake();$('setup').hidden=false;setMatchChrome(true);
   if(!room&&!pending&&C.armClock(s))save();
   render();resetScroll();
 }
@@ -176,6 +176,7 @@ function localAction(a,timedOut){
   if(!(timedOut?C.expire(s):C.play(s,a)))return;
   if(timedOut)document.querySelector('#turnPicker[open]')?.close();
   pending=before!==C.actor(s)&&handoff();inspect=-1;
+  if(before!==C.actor(s))focusCard=-1;
   if(pending)delete s.deadlineAt;
   if(pending||card==null||reading.hand[focusCard]!==card)focusCard=-1;
   save();render();
@@ -376,14 +377,24 @@ function placeHandPanel(){
   }
 }
 const mapViewButtons=[...$('mapViews').querySelectorAll('[data-zoom]')];
-let mapZoom='1.8',cameraTile=0,targetZoom=null;
+let mapZoom='1.8',cameraTile=0,targetZoom=null,pinchZoom=null,presetChosen=false;
+const maxMapZoom=4;
+try{
+  const pinched=Number(localStorage.getItem('cept-map-pinch'));
+  if(pinched>0)pinchZoom=pinched;
+  presetChosen=localStorage.getItem('cept-map-zoom')!=null;
+}catch{}
 try{
   const saved=localStorage.getItem('cept-map-zoom');
   if(mapViewButtons.some(b=>b.dataset.zoom===saved))mapZoom=saved;
 }catch{}
 // The map may slide until its edge meets the free area, so edge tiles never sit under a panel.
-function mapOffset(offset,start,end,canvas){
-  return canvas<=end-start?start+(end-start-canvas)/2:Math.max(end-canvas,Math.min(start,offset));
+// The map may slide until its edge meets the free area. With slack it may slide further, so a tile on
+// the map's edge can still sit in the middle of the free area instead of under the top bar.
+function mapOffset(offset,start,end,canvas,slack=0){
+  if(canvas<=end-start&&!slack)return start+(end-start-canvas)/2;
+  const low=Math.min(end-canvas,start+(end-start-canvas)/2)-slack,high=Math.max(start,start+(end-start-canvas)/2)+slack;
+  return Math.max(low,Math.min(high,offset));
 }
 let mapFree={left:0,top:0,right:0,bottom:0};
 function measureMapFree(){
@@ -417,15 +428,17 @@ function placeMapRoll(root,x,y,zoom){
   const feetY=y+(tile.offsetTop+pawn.offsetTop)*zoom,pawnHeight=pawn.offsetHeight*zoom;
   const width=viewport.clientWidth,height=viewport.clientHeight;
   const rollWidth=rollShown?mapRoll.offsetWidth:0,rollHeight=rollShown?mapRoll.offsetHeight:0;
-  const menuWidth=menuShown?actionMenu.offsetWidth:0,menuHeight=menuShown?actionMenu.offsetHeight:0;
+  const menuWidth=menuShown?actionMenu.offsetWidth:0;
+  const room=height-matchHud.offsetHeight-(handPanel.parentElement===viewport?height-handPanel.offsetTop:0)-16;
+  const menuHeight=menuShown?Math.min(actionMenu.offsetHeight,Math.max(96,room-(rollShown?mapRoll.offsetHeight+6:0))):0;
   const gap=rollShown&&menuShown?6:0,stackWidth=Math.max(rollWidth,menuWidth),stackHeight=rollHeight+gap+menuHeight;
   const bounds=[...tile.querySelectorAll('.pawn')].map(piece=>{
     const center=x+(tileLeft+piece.offsetLeft)*zoom;
-    const half=Math.max(piece.offsetWidth/2,piece.offsetHeight*.3)*zoom;
+    const half=Math.max(piece.offsetWidth/2,piece.offsetHeight*.4)*zoom;
     return [center-half,center+half];
   });
   const groupStart=Math.min(...bounds.map(([start])=>start)),groupEnd=Math.max(...bounds.map(([,end])=>end));
-  const right=groupEnd+10,before=groupStart-stackWidth-10;
+  const right=groupEnd+14,before=groupStart-stackWidth-14;
   // While another tile is inspected, or route arrows surround the cepter, the stack waits at the edge.
   const routeOnMap=['fork','direction'].includes(s.phase);
   const away=cameraTile!==s.players[s.turn].pos||routeOnMap||!!tile.querySelector('.time-bomb-mark'),wideView=width>height*1.1;
@@ -448,7 +461,7 @@ function placeMapRoll(root,x,y,zoom){
   actionMenu.style.setProperty('--menu-left',align(menuWidth)+'px');
   actionMenu.style.setProperty('--menu-top',(top+rollHeight+gap)+'px');
   // A long menu scrolls inside itself instead of leaving the screen.
-  if(menuShown)actionMenu.style.maxHeight=Math.max(96,floor-top-rollHeight-gap)+'px';
+  if(menuShown)actionMenu.style.maxHeight=Math.max(96,Math.min(menuHeight,floor-top-rollHeight-gap))+'px';
 }
 function setMapCamera(root,x,y,zoom){
   root.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')';
@@ -483,19 +496,23 @@ function focusMapTile(index){
   const free=measureMapFree(),freeWidth=free.right-free.left,freeHeight=free.bottom-free.top;
   if(!selectingMapTarget())targetZoom=null;
   const preferred=selectingMapTarget()?(targetZoom??(selectingTerritoryMove()||inspect<0?'1':mapZoom)):mapZoom;
-  const overview=preferred==='1';
-  const cover=Math.max(viewWidth/w,viewHeight/h);
-  const zoom=overview?Math.min(1,freeWidth/w,freeHeight/h):
-    Math.max(Number(preferred),cover*Number(preferred)/1.8);
+  const cover=Math.max(viewWidth/w,viewHeight/h),fit=Math.min(1,freeWidth/w,freeHeight/h);
+  // A pinch sets any zoom. Until the player chooses one, a wide screen opens on a broad view of the board.
+  const free0=pinchZoom??(presetChosen||freeWidth<=freeHeight*1.1?null:1.45);
+  const custom=!selectingMapTarget()&&free0?Math.max(fit,Math.min(maxMapZoom,free0)):0;
+  const overview=!custom&&preferred==='1';
+  const zoom=custom||(overview?fit:Math.max(Number(preferred),cover*Number(preferred)/1.8));
   viewport.classList.toggle('pannable',!overview);
-  for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(b.dataset.zoom===preferred));
+  for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(!custom&&b.dataset.zoom===preferred));
   root.style.setProperty('--camera-zoom',zoom);
   // The pawn stands above its tile, so the tile sits a little below the middle of the free area.
   // An open action menu takes the right half on a wide screen and the lower part on a tall one.
-  const menuOpen=actionMenuShown()&&actionToggle.getAttribute('aria-expanded')==='true';
   const wide=freeWidth>freeHeight*1.1;
-  const x=mapOffset(free.left+freeWidth*(menuOpen&&wide?.36:.5)-tile.offsetLeft*zoom,free.left,free.right,w*zoom);
-  const y=mapOffset(free.top+freeHeight*(menuOpen&&!wide?.3:.56)-(tile.offsetTop+tile.offsetHeight*.5)*zoom,free.top,free.bottom,h*zoom);
+  const slackX=overview||w*zoom<=freeWidth?0:freeWidth*.45,slackY=overview||h*zoom<=freeHeight?0:freeHeight*.45;
+  // The camera does not move when the menu opens or closes, so nothing slides under the finger.
+  // A wide screen keeps the cepter left of centre and a tall one keeps it high, leaving room for the menu.
+  const x=mapOffset(free.left+freeWidth*(wide?.38:.5)-tile.offsetLeft*zoom,free.left,free.right,w*zoom,slackX);
+  const y=mapOffset(free.top+freeHeight*(wide?.56:.42)-(tile.offsetTop+tile.offsetHeight*.5)*zoom,free.top,free.bottom,h*zoom,slackY);
   setMapCamera(root,x,y,zoom);
 }
 for(const button of mapViewButtons){
@@ -507,7 +524,8 @@ for(const button of mapViewButtons){
     }
     mapZoom=button.dataset.zoom;
     for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(b===button));
-    try{localStorage.setItem('cept-map-zoom',mapZoom);}catch{}
+    pinchZoom=null;presetChosen=true;
+    try{localStorage.setItem('cept-map-zoom',mapZoom);localStorage.removeItem('cept-map-pinch');}catch{}
     focusMapTile(cameraTile);
   };
 }
@@ -530,27 +548,94 @@ document.addEventListener('click',e=>{
   const bubble=$('detail');
   if(bubble.classList.contains('card-popup')&&bubble.childElementCount&&!target.closest?.('#detail,#hand .card,dialog'))closeCardPopup();
 });
+// The screen stays on while a match is open.
+let wakeLock=null;
+async function keepAwake(){
+  try{
+    if($('game').hidden||document.visibilityState!=='visible'){wakeLock?.release();return;}
+    if(!wakeLock&&navigator.wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null;});}
+  }catch{/* Battery saver or an old browser: the match plays on without it. */}
+}
+document.addEventListener('visibilitychange',keepAwake);
+// A short banner and pulse tell a player who looked away that the game is waiting for them.
+let cueSeen='';
+function turnCue(label){
+  if(!label)return;
+  document.querySelector('.turn-cue')?.remove();
+  const cue=el('div',label,'turn-cue');cue.setAttribute('aria-hidden','true');
+  $('game').append(cue);setTimeout(()=>cue.remove(),1500);
+  if($('effectsOn')?.checked)navigator.vibrate?.([18,50,18]);
+}
+// Fast play shortens AI turns and walking; a tap on the board during an AI walk skips to the end of it.
+// It also takes the steps that leave no choice: ending a turn with nothing to do, paying a toll, leaving a battle result.
+let fastPlay=false;
+try{fastPlay=localStorage.getItem('cept-fast-play')==='1';}catch{}
+const speedButton=el('button',null,'match-speed');speedButton.type='button';
+function paintSpeed(){speedButton.textContent=fastPlay?'▶▶':'▶';speedButton.setAttribute('aria-pressed',String(fastPlay));speedButton.setAttribute('aria-label',fastPlay?'빠른 진행 끄기':'빠른 진행 켜기');speedButton.title=fastPlay?'빠른 진행':'보통 속도';}
+speedButton.onclick=()=>{fastPlay=!fastPlay;try{localStorage.setItem('cept-fast-play',fastPlay?'1':'0');}catch{}paintSpeed();};
+paintSpeed();$('matchSound').before(speedButton);
+document.addEventListener('pointerdown',e=>{
+  // The game is inert while a cepter walks, so the tap is located by its position.
+  const box=viewport.getBoundingClientRect();
+  if(!activeWalk||!s||!C.isComputer(s,activeWalk.seat??-1)||e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom)return;
+  activeWalk.animation?.finish();activeWalk.skip=true;
+},true);
 const matchResize=new ResizeObserver(adjustMatchHud);
 matchResize.observe(viewport);matchResize.observe(matchHud);
 let drag=null,ignoreMapClick=false;
 viewport.addEventListener('pointerdown',e=>{
   ignoreMapClick=false;
-  if(!e.isPrimary||e.button!==0||e.target.closest('#mapViews,#mapRoll,#handPanel')||!viewport.classList.contains('pannable')||s?.battle||activeWalk||mapPlayback)return;
+  if(!e.isPrimary||e.button!==0||pinch||e.target.closest('#mapViews,#mapRoll,#handPanel')||!viewport.classList.contains('pannable')||s?.battle||activeWalk||mapPlayback)return;
   const matrix=new DOMMatrixReadOnly(getComputedStyle($('map')).transform);
   drag={id:e.pointerId,x:e.clientX,y:e.clientY,tx:matrix.e,ty:matrix.f,zoom:matrix.a,started:false};
 });
 viewport.addEventListener('pointermove',e=>{
-  if(!drag||e.pointerId!==drag.id)return;
+  if(!drag||pinch||e.pointerId!==drag.id)return;
   let dx=e.clientX-drag.x,dy=e.clientY-drag.y;
   if(!drag.started&&Math.hypot(dx,dy)<7)return;
   if(!drag.started){viewport.setPointerCapture(e.pointerId);drag.started=true;viewport.classList.add('dragging');}
   if(document.documentElement.classList.contains('cept-wide')&&matchMedia('(orientation:portrait)').matches)[dx,dy]=[dy,-dx];
   const map=$('map'),zoom=drag.zoom;
-  const x=mapOffset(drag.tx+dx,mapFree.left,mapFree.right,map.clientWidth*zoom);
-  const y=mapOffset(drag.ty+dy,mapFree.top,mapFree.bottom,map.clientHeight*zoom);
+  const x=mapOffset(drag.tx+dx,mapFree.left,mapFree.right,map.clientWidth*zoom,(mapFree.right-mapFree.left)*.45);
+  const y=mapOffset(drag.ty+dy,mapFree.top,mapFree.bottom,map.clientHeight*zoom,(mapFree.bottom-mapFree.top)*.45);
   setMapCamera(map,x,y,zoom);
 });
 function endDrag(e){if(drag?.id===e.pointerId){ignoreMapClick=drag.started;drag=null;viewport.classList.remove('dragging');}}
+// Two fingers zoom the board around the point between them.
+const touches=new Map();let pinch=null;
+function pinchState(){
+  const [a,b]=[...touches.values()],box=viewport.getBoundingClientRect();
+  return {d:Math.hypot(a.x-b.x,a.y-b.y),x:(a.x+b.x)/2-box.left,y:(a.y+b.y)/2-box.top};
+}
+$('game').addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='touch'||!e.target.closest('.table')||s?.battle||activeWalk||mapPlayback||document.documentElement.classList.contains('cept-wide')||e.target.closest('#mapViews,#handPanel,#detail'))return;
+  touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(touches.size!==2)return;
+  const matrix=new DOMMatrixReadOnly(getComputedStyle($('map')).transform);
+  pinch={...pinchState(),tx:matrix.e,ty:matrix.f,zoom:matrix.a,now:matrix.a};
+  drag=null;viewport.classList.add('dragging');
+},true);
+$('game').addEventListener('pointermove',e=>{
+  if(!touches.has(e.pointerId))return;
+  touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(!pinch||touches.size!==2)return;
+  const map=$('map'),now=pinchState(),w=map.clientWidth,h=map.clientHeight;
+  const fit=Math.min(1,(mapFree.right-mapFree.left)/w,(mapFree.bottom-mapFree.top)/h);
+  const zoom=Math.max(fit,Math.min(maxMapZoom,pinch.zoom*now.d/pinch.d)),k=zoom/pinch.zoom;
+  const loose=zoom>fit*1.02;
+  const x=mapOffset(now.x-(pinch.x-pinch.tx)*k,mapFree.left,mapFree.right,w*zoom,loose?(mapFree.right-mapFree.left)*.45:0);
+  const y=mapOffset(now.y-(pinch.y-pinch.ty)*k,mapFree.top,mapFree.bottom,h*zoom,loose?(mapFree.bottom-mapFree.top)*.45:0);
+  pinch.now=zoom;map.style.setProperty('--camera-zoom',zoom);viewport.classList.add('pannable');
+  setMapCamera(map,x,y,zoom);
+},true);
+function endTouch(e){
+  if(!touches.delete(e.pointerId)||!pinch)return;
+  pinchZoom=pinch.now;pinch=null;ignoreMapClick=true;viewport.classList.remove('dragging');
+  for(const b of mapViewButtons)b.setAttribute('aria-pressed','false');
+  try{localStorage.setItem('cept-map-pinch',String(+pinchZoom.toFixed(3)));}catch{}
+  setTimeout(()=>{ignoreMapClick=false;},350);
+}
+$('game').addEventListener('pointerup',endTouch,true);$('game').addEventListener('pointercancel',endTouch,true);
 viewport.addEventListener('pointerup',endDrag);viewport.addEventListener('pointercancel',endDrag);
 viewport.addEventListener('click',e=>{if(ignoreMapClick){ignoreMapClick=false;e.preventDefault();e.stopPropagation();}},true);
 $('mapHome').onclick=()=>{$('mapViews').open=false;inspect=-1;render();};
@@ -591,7 +676,10 @@ function map(){
   const exits=new Set(s.phase==='fork'?(room?room.choices:C.choices(s)).filter(a=>a[0]==='route').map(a=>a[1]):[]);
   s.tiles.forEach((t,n)=>{
     const name=m.gateNames?.[m.gates[n]]||({light:'빛의 성소',dark:'어둠의 성소'}[m.shrineKinds?.[n]])||C.elements[t.type]||t.type,owner=t.owner>=0?s.players[t.owner].name:'미점유';
-    const b=btn('',e=>{if(e?.target.closest('.pawn-action')&&!targets.has(n)){launchPawnActions();return;}if(s.phase==='fork'&&canTarget&&exits.has(n)){act(['route',n]);return;}if(s.phase==='towerTarget'&&targets.has(n)){act(targets.get(n));return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect||n===s.towerAt?' chosen':''));
+    const b=btn('',e=>{
+      // The whole tile under the active cepter answers for it, so a crowded tile is still easy to hit.
+      const mine=canTarget&&n===s.players[C.actor(s)]?.pos&&!['fork','direction'].includes(s.phase)&&!s.battle&&s.phase!=='over';
+      if((e?.target.closest('.pawn-action')||mine)&&!targets.has(n)){launchPawnActions();return;}if(s.phase==='fork'&&canTarget&&exits.has(n)){act(['route',n]);return;}if(s.phase==='towerTarget'&&targets.has(n)){act(targets.get(n));return;}inspect=n;focusCard=-1;render();},'tile '+(['fire','water','earth','wind'][t.type]||'special')+(n===inspect||n===s.towerAt?' chosen':''));
     const [r,c]=m.position[n];b.style.left=((m.rows+c-r+.3)*half)+'%';
     b.style.top=(11+(r+c-2)*half*.5)+'cqw';
     if(m.stage){
@@ -753,7 +841,7 @@ async function walkPath(move){
   const pawn=root.querySelector('.pawn[data-seat="'+move.seat+'"]');
   const sprite=el('img',null,'walking-cepter');
   sprite.alt='';sprite.src='art/cept-walk-'+move.seat+'.webp';
-  const walk={sprite,pawn,animation:null};
+  const walk={sprite,pawn,animation:null,seat:move.seat};
   activeWalk=walk;
   $('game').inert=true;
   try{
@@ -781,7 +869,8 @@ async function walkPath(move){
       const jumping=C.board(s).transit?.[move.path[step-1]]===destination;
       playEffect(jumping?'warp':'step');
       const frames=jumping?[{left:x+'px',top:y+'px',opacity:1},{left:x+'px',top:y+'px',opacity:0,offset:.49},{left:endX+'px',top:endY+'px',opacity:0,offset:.5},{left:endX+'px',top:endY+'px',opacity:1}]:[{left:x+'px',top:y+'px'},{left:endX+'px',top:endY+'px'}];
-      walk.animation=sprite.animate(frames,{duration:480,fill:'forwards'});
+      if(walk.skip)continue;
+      walk.animation=sprite.animate(frames,{duration:fastPlay?190:C.isComputer(s,move.seat)?360:440,fill:'forwards'});
       await walk.animation.finished;
       from.classList.remove('current-step');
       to.classList.add('current-step');
@@ -981,5 +1070,13 @@ function render(){
   if(owner&&typeof showHandCombos==='function')showHandCombos(hand,owner.hand);
   $('log').replaceChildren(...(s.log.length?s.log:['아직 진행 기록이 없습니다.']).map(t=>el('li',t)));
   if(!s.battle)focusMapTile(cameraTile);
-  if(!room&&!over&&C.isComputer(s,i))timer=setTimeout(()=>act(C.ai(s)),550+(s.phase==='result'?battleReplayDuration(s.battle):0));
+  if(local&&s.players.some(v=>v.ai)){
+    const key=[s.round,s.turn,i,!!s.battle].join(':');
+    if(cueSeen!==key){cueSeen=key;if(!C.isComputer(s,s.turn)||s.battle)turnCue(s.turn===i?(s.phase==='spell'||s.phase==='roll'?'내 차례':''):'방어 차례');}
+  }
+  if(fastPlay&&local&&!room&&choices.length===1&&['pass','pay','continue'].includes(choices[0][0])){
+    const forced=choices[0];
+    timer=setTimeout(()=>{if(fastPlay)act(forced);},forced[0]==='continue'?battleReplayDuration(s.battle)+1100:750);
+  }
+  if(!room&&!over&&C.isComputer(s,i))timer=setTimeout(()=>act(C.ai(s)),(fastPlay?160:420)+(s.phase==='result'?battleReplayDuration(s.battle):0));
 }
