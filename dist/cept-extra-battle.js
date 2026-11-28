@@ -367,7 +367,7 @@ const CepterExtraBattle=(()=>{
           else convert(d,'wallofstone');
         }
       }
-      if(n==='littlegray'&&chance(s.edition==='saturn'?.6:.5))vacant(d);
+      if(n==='littlegray'&&chance(.5))vacant(d);
       if(n==='nymph'&&fx.max(d.u)<=30&&s.players[a.seat].hand.length<6&&chance(.4)){
         d.stolen=true;s.players[a.seat].hand.push(d.u.id);lines.push('상대 크리처를 손패로 획득');
       }

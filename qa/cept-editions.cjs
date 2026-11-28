@@ -9081,7 +9081,7 @@ console.log('3DS swarm, neutral wards, scrolls, last strike, obliteration, rank,
 console.log('3DS Bard, Behemoth, Lung, rulers, land levels, Mycoron, Barong and Ganji checked.');
 
 for(const edition of ['ps1','saturn']){
-  const C=ps2.createEdition(edition),rate=edition==='ps1'?.5:.6;
+  const C=ps2.createEdition(edition),rate=.5;
   const id=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
   assert.ok(C.validBook(C.presets.legacyMachines));
   for(const n of ['battlegearalpha','battlegearbeta','ghost','littlegray'])assert.ok(C.presets.legacyMachines.includes(id(n)));

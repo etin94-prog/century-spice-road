@@ -621,7 +621,6 @@ const CepterCreatureText=(()=>{
       C.edition==='3ds'&&key==='ganji'?'둘 다 살아남으면 전투가 끝날 때 상대에게 노쇠를 겁니다.':
       firstEdition&&key==='battlegearalpha'?'배틀 기어 β를 지원으로 사용하면 번들 기어로 합체합니다.':
       firstEdition&&key==='battlegearbeta'?'배틀 기어 α를 지원으로 사용하면 번들 기어로 합체합니다.':
-      C.edition==='saturn'&&key==='littlegray'?'일반 공격으로 피해를 준 상대가 살아 있으면 60% 확률로 무작위 빈 영지로 보냅니다. 빈 영지가 없으면 상대가 격파됩니다.':
       firstEdition&&key==='ghost'?'상대를 격파하고 생존하면 자신의 HP가 10 감소합니다.':
       C.edition==='3ds'&&key==='deathgaze'?'적을 격파하면 80% 확률로 같은 카드를 상대의 손패와 북에서 모두 제거합니다.':
       C.edition==='3ds'&&key==='taotieh'?'적을 격파하고 생존하면 기본 ST·최대 HP가 20씩 오릅니다. 상한은 100입니다.':
