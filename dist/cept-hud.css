@@ -215,12 +215,17 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 #game .action-menu #who{display:none}
 #game .action-menu #hint{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;min-height:30px;padding:1px 38px 0 3px;font-size:11.5px;line-height:1.3}
 #game .action-menu #buttons{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;margin-top:5px}
+/* On a wide, short screen a long list of actions takes two columns, so the last one is reached without scrolling. */
+@container(min-width:620px){
+  #game .table aside.match-actions.action-menu:has(#buttons>.command:nth-child(5)){width:min(24rem,100% - 12px)}
+  #game .action-menu #buttons:has(>.command:nth-child(5)){grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 #game .action-menu #buttons .route-options{grid-template-columns:minmax(0,1fr)}
 #matchActionsToggle{display:none}
 #game aside.action-menu #matchActionsToggle{display:flex;align-items:center;gap:6px;min-height:44px;padding:4px 15px;border-radius:999px;font-size:13px;font-weight:700;background:var(--panel);border-color:var(--panel-line);box-shadow:0 3px 10px #05070bb3}
 #game .table aside.action-menu:has(#matchActionsToggle[aria-expanded=false]){width:max-content;padding:0;border-color:transparent;background:transparent;backdrop-filter:none;box-shadow:none;overflow:visible}
 #game aside.action-menu:has(#matchActionsToggle[aria-expanded=false]) :is(#who,#hint,#buttons){display:none}
-#game aside.action-menu #matchActionsToggle[aria-expanded=true]{position:absolute;top:2px;right:2px;justify-content:center;min-width:38px;min-height:38px;padding:0;border:0;background:transparent;box-shadow:none;font-size:0}
+#game aside.action-menu #matchActionsToggle[aria-expanded=true]{position:absolute;top:0;right:0;justify-content:center;min-width:44px;min-height:44px;padding:0;border:0;background:transparent;box-shadow:none;font-size:0}
 #game aside.action-menu #matchActionsToggle[aria-expanded=true]::after{content:"\2715";font-size:15px;color:#f0cf88}
 
 /* In battle the hand sits inside the dock as a plain row. */
@@ -297,69 +302,12 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 
 /* Battle: the stage fills the screen under the top bar; the choices float at the bottom. */
 #game .atlas.in-battle #center{inset:var(--hud-height) 0 0;padding:0;border:0;border-radius:0;background:#0d1016}
-#game .battle-stage{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;
-  gap:4px 4%;padding:6px 3% calc(var(--battle-bar,8px) + 6px);isolation:isolate}
-#game .battle-stage::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background:radial-gradient(ellipse 60% 55% at 50% 52%,#ffe9b022,transparent 70%),radial-gradient(ellipse at 50% 120%,#000a,transparent 60%),linear-gradient(#0008,transparent 18%,transparent 80%,#000b)}
-#game .battle-stage>small{grid-column:1/-1;margin:0;text-align:center;font-size:11px;letter-spacing:.08em;color:#f3dfae;text-shadow:0 1px 3px #000}
-#game .battle-pair{display:contents}
-#game .battle-side{grid-row:2;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:auto;min-width:0;min-height:0;text-shadow:0 1px 3px #000}
-#game .battle-side:nth-child(2){grid-column:2}
-#game .battle-side>strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#fff1cf}
-#game .battle-face{flex:1 1 0;min-height:0;width:100%;height:auto;max-width:100%;aspect-ratio:auto;display:flex;align-items:center;justify-content:center;position:relative;overflow:visible}
-#game .battle-face>:is(.card-face,.custom-face){width:auto;height:auto;max-width:100%;max-height:100%;min-height:0;object-fit:contain;border-radius:6px;
-  box-shadow:0 0 0 2px #d6b874,0 0 0 4px #2a2116,0 10px 26px #000c;transition:filter .5s,box-shadow .5s}
-#game .battle-pocket{width:24%;top:4%;left:2%;border-radius:4px;z-index:2}
-#game .battle-side:nth-child(2) .battle-pocket{left:auto;right:2%}
-#game .battle-stats{position:relative;z-index:1;display:flex;gap:10px;align-items:baseline;font-variant-numeric:tabular-nums}
-#game .battle-st{font-size:11px;letter-spacing:.06em;color:#f2d79e}
-#game .battle-hp-value{font-size:13px;font-weight:700;color:#fff}
-#game .battle-side>meter{display:none}
-#game .battle-hp{position:relative;z-index:1;width:min(100%,12rem);height:7px;border-radius:99px;background:#0a0d12;box-shadow:inset 0 0 0 1px #ffffff2e;overflow:hidden}
-#game .battle-hp>i{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:linear-gradient(90deg,#7ad06a,#c8f28a);transition:width .35s cubic-bezier(.2,.8,.2,1)}
-#game .battle-hp>i.lag{background:#ffcf7a;transition:width .8s .35s ease-out}
-#game .battle-hp.low>i:not(.lag){background:linear-gradient(90deg,#e0563f,#ff9a6b)}
 #game .battle-caption{grid-column:1/-1;justify-self:center;width:min(100%,34rem);margin:0;padding:5px 10px;border:1px solid #c9a96a80;border-radius:10px;
   background:#10141bd9;font-size:12.5px;font-weight:600;line-height:1.35;text-align:center;backdrop-filter:blur(4px)}
 #game .battle-caption .battle-outcome{margin-bottom:2px;font-size:17px;letter-spacing:.02em}
 #game .battle-caption .battle-support{font-size:11px;font-weight:500}
-#game .battle-side-outcome{position:relative;z-index:1;padding:1px 12px;border-radius:99px;font-size:13px;letter-spacing:.1em;background:#0c0f15d9}
 #game .battle-log{font-size:11.5px}
 #game .battle-log ol{max-height:4.6rem}
-#game .battle-versus{inset:38% auto auto 50%;translate:-50% 0;padding:0;border:0;background:none}
-#game .battle-versus b{display:block;font:900 clamp(30px,8cqw,64px)/1 Georgia,serif;font-style:italic;color:#ffe7a6;
-  text-shadow:0 0 18px #ff9a3c,0 0 4px #fff,0 3px 0 #6b3510;animation:battle-vs 1.5s .45s both}
-@keyframes battle-vs{0%{opacity:0;transform:scale(3) rotate(-12deg)}18%{opacity:1;transform:scale(.9) rotate(-6deg)}30%{transform:scale(1.05) rotate(-6deg)}75%{opacity:1}100%{opacity:0;transform:scale(1.2) rotate(-6deg)}}
-#game .battle-side.striking{z-index:5}
-#game .battle-side.striking .battle-face>:is(.card-face,.custom-face){box-shadow:0 0 0 2px #fff4c8,0 0 22px 6px #ffc35a,0 10px 26px #000c}
-#game .battle-side.victor .battle-face>:is(.card-face,.custom-face){animation:battle-victor 1.6s ease-in-out infinite}
-@keyframes battle-victor{50%{box-shadow:0 0 0 2px #fff1b8,0 0 26px 8px #ffcf5a,0 10px 26px #000c}}
-#game .battle-side.vanquished .battle-face{animation:battle-fall .7s ease-in both}
-@keyframes battle-fall{to{transform:translateY(6%) rotate(-3deg) scale(.94)}}
-#game .battle-face.defeated{opacity:1}
-#game .battle-face.defeated>:is(.card-face,.custom-face){filter:grayscale(1) brightness(.45)}
-#game .battle-flash{position:absolute;inset:0;z-index:6;pointer-events:none;background:radial-gradient(circle at 50% 50%,#fff8,transparent 60%);animation:battle-flash .4s ease-out both}
-#game .battle-flash.heavy{background:radial-gradient(circle at 50% 50%,#fffd,#ffd38a55 40%,transparent 75%)}
-@keyframes battle-flash{from{opacity:1}to{opacity:0}}
-#game .battle-sparks{position:absolute;left:50%;top:45%;z-index:4;pointer-events:none}
-#game .battle-sparks b{position:absolute;width:6px;height:6px;margin:-3px;border-radius:50%;background:#fff6c8;box-shadow:0 0 8px 2px #ffb347;animation:battle-spark .65s cubic-bezier(.1,.7,.3,1) both}
-#game .battle-sparks:is(.magic,.wave) b{background:#e6fbff;box-shadow:0 0 8px 2px #5cc8ff}
-#game .battle-sparks.ember b{background:#fff0b0;box-shadow:0 0 8px 3px #ff6a1a}
-#game .battle-sparks.volley b{background:#f2ffd4;box-shadow:0 0 8px 2px #a6e35a}
-@keyframes battle-spark{from{transform:translate(0,0) scale(1.3);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
-#game .battle-damage{top:30%;z-index:5;padding:2px 10px;border:2px solid #ffd9a8;border-radius:10px;background:#7a1f22;font:900 clamp(18px,4cqw,30px)/1.15 system-ui;
-  text-shadow:0 2px 0 #3a0c0e;animation:battle-pop .9s cubic-bezier(.2,.9,.3,1.2) both}
-#game .battle-damage.heavy{background:#a3241d;font-size:clamp(22px,5cqw,36px)}
-#game .battle-damage.heal{background:#1f6a3a;border-color:#bff2c9}
-@keyframes battle-pop{0%{opacity:0;transform:translate(-50%,20%) scale(.4)}18%{opacity:1;transform:translate(-50%,-30%) scale(1.25)}35%{transform:translate(-50%,-25%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-90%) scale(.95)}}
-#game .battle-impact{z-index:4;mix-blend-mode:screen}
-@media(prefers-reduced-motion:reduce){#game .battle-side.victor .battle-face>*,#game .battle-side.vanquished .battle-face,#game .battle-versus b{animation:none}}
-
-@container(max-width:619px){
-  #game .battle-side{justify-content:center}
-  #game .battle-face{flex:0 1 auto}
-  #game .battle-face>:is(.card-face,.custom-face){max-height:calc(var(--play-height) * .46)}
-}
 
 /* Battle choices: a slim bar at the bottom; the hand stays out of the way. */
 #game .table:has(.atlas.in-battle) aside.match-actions{
@@ -376,9 +324,6 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 
 /* Wide screens: the two cards face each other across the stage and the choices sit between them. */
 @container(min-width:620px){
-  #game .battle-stage{grid-template-columns:minmax(0,1fr) minmax(11rem,15rem) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);padding:6px 2% 8px}
-  #game .battle-side:nth-child(2){grid-column:3}
-  #game .battle-caption{grid-column:2;grid-row:2;align-self:start;margin-top:8%;width:100%}
   #game .table:has(.atlas.in-battle) aside.match-actions{left:50%;right:auto;translate:-50% 0;width:min(15rem,30%);max-width:none;margin:0}
   #game .table:has(.atlas.in-battle) aside #buttons{flex-direction:column}
   #game .table:has(.atlas.in-battle) aside #hint{white-space:normal}
@@ -418,17 +363,6 @@ main:has(#game:not([hidden])) #notice:empty{display:none}
 
 /* Battle skip hint */
 #game .battle-skip{position:absolute;left:50%;top:24px;translate:-50% 0;z-index:7;margin:0;padding:2px 9px;border-radius:99px;background:#0c0f15b8;color:#e8dcc0;font-size:10.5px;letter-spacing:0;pointer-events:none}
-
-/* Wide battle: the cards use the full height; names and numbers sit on the card edges. */
-@container(min-width:620px){
-  #game .battle-stage{padding:4px 2% 6px;grid-template-rows:auto minmax(0,1fr)}
-  #game .battle-side{justify-content:center;gap:0}
-  #game .battle-side>strong{position:absolute;z-index:3;top:0;left:50%;translate:-50% 0;max-width:94%;padding:2px 12px;border-radius:0 0 10px 10px;background:#0c0f15d9;font-size:12.5px}
-  #game .battle-side-outcome{position:absolute;z-index:4;top:26px;left:50%;translate:-50% 0}
-  #game .battle-face{flex:1 1 0;padding:2px 0 26px}
-  #game .battle-stats{position:absolute;z-index:3;bottom:9px;left:50%;translate:-50% 0;padding:1px 12px;border-radius:99px;background:#0c0f15d9;white-space:nowrap}
-  #game .battle-hp{position:absolute;z-index:3;bottom:0;left:50%;translate:-50% 0;width:min(86%,13rem)}
-}
 
 /* Closed hand: the top of each card peeks from the bottom edge, beside the hand button. */
 #game .hand-peek{position:absolute;z-index:4;right:calc(var(--side-right) + 56px);bottom:0;display:flex;align-items:flex-start;height:calc(70px + env(safe-area-inset-bottom));padding:8px 6px 0 16px;overflow:hidden;pointer-events:none}

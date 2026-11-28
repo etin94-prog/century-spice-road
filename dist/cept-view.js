@@ -519,18 +519,31 @@ function focusMapTile(index){
   const free0=pinchZoom??(presetChosen||freeWidth<=freeHeight*1.1?null:1.45);
   const custom=!selectingMapTarget()&&free0?Math.max(fit,Math.min(maxMapZoom,free0)):0;
   const overview=!custom&&preferred==='1';
-  const zoom=custom||(overview?fit:Math.max(Number(preferred),cover*Number(preferred)/1.8));
-  viewport.classList.toggle('pannable',!overview);
+  // While a land is being picked, the whole board is shown unless that would leave its tiles too small to tap;
+  // then it is drawn large enough for a finger and can be dragged. Choosing the whole-board view still shows it all.
+  const tapWidth=overview&&selectingMapTarget()&&targetZoom==null?Math.min(cover*1.2,40/Math.max(1,tile.offsetWidth)):0;
+  const reach=tapWidth>fit*1.04;
+  // The enlarged board opens on the nearest land that can be picked.
+  let anchor=tile;
+  if(reach&&!tile.classList.contains('targetable')){
+    let nearest=Infinity;
+    for(const other of root.querySelectorAll('.tile.targetable')){
+      const gap=Math.hypot(other.offsetLeft-tile.offsetLeft,other.offsetTop-tile.offsetTop);
+      if(gap<nearest){nearest=gap;anchor=other;}
+    }
+  }
+  const zoom=custom||(reach?tapWidth:overview?fit:Math.max(Number(preferred),cover*Number(preferred)/1.8));
+  viewport.classList.toggle('pannable',!overview||reach);
   for(const b of mapViewButtons)b.setAttribute('aria-pressed',String(!custom&&b.dataset.zoom===preferred));
   root.style.setProperty('--camera-zoom',zoom);
   // The pawn stands above its tile, so the tile sits a little below the middle of the free area.
   // An open action menu takes the right half on a wide screen and the lower part on a tall one.
   const wide=freeWidth>freeHeight*1.1;
-  const slackX=overview||w*zoom<=freeWidth?0:freeWidth*.45,slackY=overview||h*zoom<=freeHeight?0:freeHeight*.45;
+  const whole=overview&&!reach,slackX=whole||w*zoom<=freeWidth?0:freeWidth*.45,slackY=whole||h*zoom<=freeHeight?0:freeHeight*.45;
   // The camera does not move when the menu opens or closes, so nothing slides under the finger.
   // A wide screen keeps the cepter left of centre and a tall one keeps it high, leaving room for the menu.
-  const x=mapOffset(free.left+freeWidth*(wide?.38:.5)-tile.offsetLeft*zoom,free.left,free.right,w*zoom,slackX);
-  const y=mapOffset(free.top+freeHeight*(wide?.56:.42)-(tile.offsetTop+tile.offsetHeight*.5)*zoom,free.top,free.bottom,h*zoom,slackY);
+  const x=mapOffset(free.left+freeWidth*(wide?.38:.5)-anchor.offsetLeft*zoom,free.left,free.right,w*zoom,slackX);
+  const y=mapOffset(free.top+freeHeight*(wide?.56:.42)-(anchor.offsetTop+anchor.offsetHeight*.5)*zoom,free.top,free.bottom,h*zoom,slackY);
   setMapCamera(root,x,y,zoom);
 }
 for(const button of mapViewButtons){

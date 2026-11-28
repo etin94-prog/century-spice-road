@@ -179,4 +179,9 @@ assert.equal(fight('fighter','goblin','markerflag',null,s=>{s.battle.teleport=tr
   },.1);
   assert.equal(noVacancy.tiles[1].owner,0);assert.equal(noVacancy.destroyedCount,1);
 }
+// The battle stage shows a critical hit and a scroll attack differently, so each strike says which it was.
+assert.equal(first('knight','colossus').critical,true);
+assert.equal(first('fighter','goblin').critical,undefined);
+assert.equal(first('fighter','goblin','firebolt').scroll,true);
+assert.equal(first('fighter','goblin').scroll,undefined);
 console.log('PS2 battle items, transformations, wards, hit effects, retreat, growth, rewards and post-battle abilities OK');

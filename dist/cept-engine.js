@@ -1185,6 +1185,8 @@ function createCepter(edition="ps2"){
     }
     function hit(a,d){
       const scroll=a.gear?.category==='scroll'||a.gear?.scrollAsItem||!muted&&!a.gear&&(a.c.innateScroll||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb'||a.suppressPhysicalWard;
+      // The battle screen shows a critical hit and a scroll attack differently.
+      a.struckCritical=false;a.struckScroll=!!scroll;
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
       const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||a.c.pierceBaseSTAtLeast&&fx.strength(d.u)>=a.c.pierceBaseSTAtLeast||weapon?.pierceAll||matches(weapon?.pierceElements,d));
@@ -1197,7 +1199,7 @@ function createCepter(edition="ps2"){
       if(elementalCritical||!scroll&&begins&&a.n==='juggernaut'&&fx.strength(d.u)>=40||extra.critical(a,d,scroll)||scroll&&(a.gear?.effect==='freeze'&&d.element===0||a.gear?.critical===d.element||!muted&&(matches(a.gear?.scrollCriticalElements,d)||weapon?.scrollCriticalRaces?.includes(d.c.catalog?.race)||matches(a.c.scrollCriticalElements,d))||a.c.scrollCritical||['ninja','sorcerer','witch'].includes(a.n))||!scroll&&(
         a.g==='wateramulet'&&a.element===1||a.g==='fireamulet'&&a.element===0||a.g==='dragonhelm'&&[0,3].includes(d.element)||
         a.g==='flametongue'&&d.element===1||a.g==='rockbiter'&&d.element===2||a.g==='airslasher'&&d.element===3||
-        !muted&&(a.c.criticalMHP&&fx.max(d.u)<=a.c.criticalMHP||a.c.criticalLargeMHP&&fx.max(d.u)>=a.c.criticalLargeMHP)||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20))damage=Math.floor(damage*1.5);
+        !muted&&(a.c.criticalMHP&&fx.max(d.u)<=a.c.criticalMHP||a.c.criticalLargeMHP&&fx.max(d.u)>=a.c.criticalLargeMHP)||a.n==='paladin'&&d.element===-1||a.n==='uriel'&&combo.enchanted(d.u)||!muted&&a.c.criticalRace&&a.c.criticalRace===d.c.catalog?.race||!firstEdition&&a.n==='darkelf'&&d.element===3||a.n==='gladiator'&&d.element>=0||!firstEdition&&a.n==='knight'&&fx.max(d.u)>=50||a.n==='firegiant'&&d.element===1||a.n==='stormgiant'&&d.element===0||a.n==='migoal'&&[1,2].includes(d.element)||a.n==='grendel'&&fx.strength(d.u)<=20)){damage=Math.floor(damage*1.5);a.struckCritical=true;}
       if(!muted&&a.u.enchant!=='paralysis'&&s.players[a.seat].status==='sinkingsong')damage=Math.floor(damage/2);
       if(!scroll&&!muted&&a.c.weakBaseSTAtLeast!=null&&fx.strength(d.u)>=a.c.weakBaseSTAtLeast){
         damage=Math.floor(damage/2);
@@ -1463,7 +1465,7 @@ function createCepter(edition="ps2"){
             lines.push(a.gear.name+' · 상대 최대 HP −40');
           }
         }
-        b.strikes.push({effect,side:a===A?0:1,hp:health(),notes:lines.slice(start)});
+        b.strikes.push({effect,side:a===A?0:1,hp:health(),notes:lines.slice(start),...(a.struckCritical&&effect==='hit'?{critical:true}:{}),...(a.struckScroll?{scroll:true}:{})});
       }
     }
     const basalt=active('basaltidol');
