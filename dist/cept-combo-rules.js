@@ -69,7 +69,7 @@ const CepterCombos = (() => {
     }
     function destroy(s,t,caster=s.turn,fromSpell=false){
       const u=t.unit;
-      if(u.enchant==='soulhunt')s.players[u.caster].cash+=max(u)*5;
+      if(u.enchant==='soulhunt')s.players[u.caster].cash+=max(u)*(s.edition==='dc'?10:5);
       if(activeWorld(s)!=='naturalworld'){
         if(name(u)==='cornfolk'&&(s.edition!=='begins'||fromSpell))s.players[t.owner].cash+=200;
         if(s.edition==='revolt'&&name(u)==='creepingcoin')s.players[t.owner].cash+=100;
@@ -163,7 +163,7 @@ const CepterCombos = (() => {
           const gain=['revolt','begins','3ds'].includes(s.edition)?Math.max(0,Math.min(10,100-max(u))):10;
           u.mhp=max(u)+gain;u.hp=s.edition==='begins'?Math.min(u.mhp,u.hp+10):u.hp+gain;
         }
-        else if(e==='weakness')u.st=0;
+        else if(e==='weakness')u.st=s.edition==='saturn'?Math.floor(strength(u)/2):0;
         else if(e==='fatbody'){
           u.st=Math.max(0,strength(u)-20);
           if(!immuneHP(t)){const increase=Math.max(0,Math.min(20,100-max(u)));u.mhp=max(u)+increase;u.hp+=increase;}
@@ -205,7 +205,7 @@ const CepterCombos = (() => {
         if(e==='suppression'){if(q.hand.some(id=>cards[id].kind==='spell')){s.spellTarget=x;return 'suppression';}return 'roll';}
         if(e==='antimagic')q.antiMagic=true;
         if(e==='waste')q.status=e;
-        if(e==='wizardeye'){p.peek={seat:x,ids:q.book.slice(-6).reverse()};p.hand.push(ids.get(e));}
+        if(e==='wizardeye'){p.peek={seat:x,ids:q.book.slice(-6).reverse()};if(!['ps1','saturn'].includes(s.edition))p.hand.push(ids.get(s.edition==='dc'?'wizardseye':e));}
         if(e==='mindseeker'){
           if(['saga','revolt'].includes(s.edition))p.peek={seat:x,ids:q.book.slice(-6).reverse()};
           s.spellTarget=x;return 'mindseeker';
@@ -215,7 +215,8 @@ const CepterCombos = (() => {
           const slots=q.book.map((_,i)=>i);
           const goblin=ids.get('goblin');
           if(s.edition==='ps2')q.recycleTemplate??=q.template.slice();
-          for(let j=0;j<2&&slots.length;j++){
+          const count=['ps1','saturn'].includes(s.edition)?3:2;
+          for(let j=0;j<count&&slots.length;j++){
             const index=slots.splice(Math.floor(Math.random()*slots.length),1)[0];
             const prior=q.book[index];
             q.book[index]=goblin;
@@ -231,14 +232,14 @@ const CepterCombos = (() => {
           s.visited=[];s.remaining=0;s.die=0;return 'land';
         }
         if(e==='wordofrecall'){if(x===i&&q.pos!==0)s.spellArrival=true;q.pos=0;q.dir=0;q.previous=null;s.die=0;return 'land';}
-        if(e==='grace')p.cash+=Math.floor(q.symbols.reduce((a,n,j)=>a+n*s.prices[j],0)*.15);
+        if(e==='grace')p.cash+=Math.floor(q.symbols.reduce((a,n,j)=>a+n*s.prices[j],0)*(s.edition==='dc'?.2:.15));
         if(e==='echo')p.cash=Math.floor(q.cash/2);
         if(e==='drainmagic'){const amount=Math.floor(Math.max(0,q.cash)*.3);q.cash-=amount;p.cash+=amount;}
         if(e==='pain')q.cash=Math.max(0,q.cash-100);
         if(['silence','haste','despair','slow'].includes(e)){
           q.status=e;
           if(s.edition==='ps2')q.enchantDeadline=(s.round+1)*s.players.length+s.turn;
-          else if(['ps1','saturn'].includes(s.edition)&&['haste','slow'].includes(e))q.enchantDeadline=(s.round+2)*s.players.length+s.turn;
+          else if(['ps1','saturn'].includes(s.edition))q.enchantDeadline=(s.round+(e==='silence'?1:2))*s.players.length+s.turn;
           else if(s.edition==='revolt'&&e==='haste')q.hasteRolls=2;
           else if(s.edition==='begins'){
             if(e==='haste'||e==='slow')q.diceLimitRolls=2;
@@ -262,8 +263,8 @@ const CepterCombos = (() => {
           clearCepter(p);p.dream=true;
           if(['revolt','begins','3ds'].includes(s.edition))p.enchantDeadline=(s.round-1+5)*s.players.length+s.turn;
         }
-        if(e==='raisedead'){if(s.lastDestroyed!=null)p.hand.push(s.lastDestroyed);p.book.unshift(ids.get(e));}
-        if(e==='aurora'||e==='pressure')s.prices=s.prices.map(n=>Math.max(1,Math.floor(n*(e==='aurora'?1.2:.7))));
+        if(e==='raisedead'){if(s.lastDestroyed!=null)p.hand.push(s.lastDestroyed);if(!['dc','ps1','saturn'].includes(s.edition))p.book.unshift(ids.get(e));}
+        if(e==='aurora'||e==='pressure')s.prices=s.prices.map(n=>Math.max(1,Math.floor(n*(e==='aurora'?1.2:s.edition==='dc'?.8:.7))));
         for(const a of s.players){
           if(e==='gravity'){clearCepter(a);a.word=1;}
           if(e==='scourge'&&(a.word!=null||a.status||a.dream||a.invisible||s.edition==='3ds'&&(a.antiMagic||a.reverse||a.chooseDirection)))

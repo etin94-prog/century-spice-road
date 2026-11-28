@@ -29,12 +29,12 @@ const CepterExtraSpells=(()=>{
     bountyhunt:'land',release:'global',homeground:'global',senseofwild:'global',uniformity:'player',clusterburst:'global',subsidenceMass:'global',
     fluxion:'player',thunderclap:'land',suddenimpact:'land',quietude:'global',rayofpurge:'global',formportal:'global',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
-    aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',
+    aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',firstBarricade:'area',firstHolyblight:'global',
     ...Object.fromEntries(Object.keys(firstStorms).map(e=>[e,'area'])),
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30,thunderclap:30};
-  const damageSpells=new Set([...Object.keys(firstStorms),'acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','clusterburst','deathmiasma','sagaselection','sagadisaster','armageddon','beginstempest']);
+  const damageSpells=new Set([...Object.keys(firstStorms),'firstHolyblight','acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','clusterburst','deathmiasma','sagaselection','sagadisaster','armageddon','beginstempest']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
@@ -375,6 +375,14 @@ const CepterExtraSpells=(()=>{
         }
         return 'roll';
       }
+      if(e==='firstBarricade'){
+        for(const tile of owning(s,s.turn))if(tile.area===x&&tile.unit&&fx.targetable(s,tile)){
+          combo.clear(tile.unit);
+          tile.unit.enchant='barricade';
+          tile.unit.expires=s.round+3;
+        }
+        return 'roll';
+      }
       if(e==='firstPressure'){
         s.prices=s.prices.map((price,index)=>Math.floor(index/4)===x?Math.max(1,Math.floor(price*.8)):price);
         return 'roll';
@@ -662,7 +670,19 @@ const CepterExtraSpells=(()=>{
                 if(lower)v.level--;
               }
             }break;
-          case 'darkcraft':{const n=Math.max(...s.players.map(symbolCount));for(const other of s.players)if(symbolCount(other)===n)mostSymbols(other,.3,true);break;}
+          case 'firstHolyblight':
+            for(const tile of land)if(cards[tile.unit.id].catalog?.race==='ru')fx.spellHarm(s,tile,20);
+            break;
+          case 'darkcraft':{
+            if(s.edition==='dc'){
+              for(const other of s.players)other.cash-=symbolCount(other)*5;
+              returnToBook(s,s.turn,ids.get(e));
+            }else{
+              const n=Math.max(...s.players.map(symbolCount));
+              for(const other of s.players)if(symbolCount(other)===n)mostSymbols(other,.3,true);
+            }
+            break;
+          }
           case 'erasure':s.players.forEach(clearCepter);for(const v of s.tiles){if(v.unit)combo.clear(v.unit);delete v.enchant;}break;
           case 'find':draw(p,s);p.hand.push(ids.get(e));break;
           case 'refuge':p.cash+=80;p.hand.push(ids.get(e));break;
@@ -750,7 +770,12 @@ const CepterExtraSpells=(()=>{
             break;
           }
           case 'rayoflaw':for(const other of s.players)other.hand=other.hand.filter(id=>cards[id].cost<100);break;
-          case 'reincarnation':{const n=p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));p.hand=[];for(let j=0;j<n;j++)draw(p,s);break;}
+          case 'reincarnation':{
+            const n=['dc','ps1','saturn'].includes(s.edition)?6:p.hand.length+Number(['revolt','begins','3ds'].includes(s.edition));
+            p.hand=[];
+            for(let j=0;j<n;j++)draw(p,s);
+            break;
+          }
           case 'revelation':case 'telegnosis':
             setStatus(s,p,'enlightenment',e==='telegnosis'?1:2);
             if(e==='telegnosis')returnToBook(s,s.turn,ids.get(e));
@@ -857,6 +882,7 @@ const CepterExtraSpells=(()=>{
         const loss=fx.damageAmount(s,t,Math.floor(fx.max(t.unit)*.3));
         return sum+(enemy(s,t.owner)?1:-1)*(loss/8+(loss===t.unit.hp?3*t.level:0));
       },0);
+      if(e==='firstBarricade')return owning(s,s.turn).filter(t=>t.area===x&&t.unit&&fx.targetable(s,t)&&t.unit.enchant!=='barricade').reduce((score,t)=>score+4*t.level,0);
       if(e==='firstPressure')return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?1:-1)*q.symbols.slice(x*4,x*4+4).reduce((loss,count,k)=>loss+count*(s.prices[x*4+k]-Math.max(1,Math.floor(s.prices[x*4+k]*.8))),0),0)/20;
       if(e==='trade')return s.tradeFrom!=null?tradeScore(s,s.tradeFrom,x):
         Math.max(-40,...tradeTargets(s,x).map(([,to])=>tradeScore(s,x,to)));
@@ -1003,6 +1029,7 @@ const CepterExtraSpells=(()=>{
         const amount=massDamage(s,e,v);
         return sum+(!amount||e!=='energyflash'&&fx.immuneHP(v)?0:(enemy(s,v.owner)?1:-1)*(amount/8+(amount>=v.unit.hp?4*v.level:0)));
       },0);
+      if(e==='firstHolyblight')return s.tiles.reduce((score,t)=>score+(t.unit&&cards[t.unit.id].catalog?.race==='ru'?(enemy(s,t.owner)?1:-1)*fx.damageAmount(s,t,20)/3:0),0);
       if(e==='firstGrace')return p.symbols.reduce((sum,count,index)=>sum+count*s.prices[index],0)/100;
       if(e==='aetherflash'){
         return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*q.hand.reduce((benefit,id)=>{

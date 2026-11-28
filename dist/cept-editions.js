@@ -105,6 +105,9 @@ const CepterEditions=(()=>{
     acidrain:'acidrain',aports:'aports',bind:'bind',bindingmist:'bindingmist',grace:'firstGrace',locust:'locust',
     phantasm:'phantasm',soulsteal:'soulsteal',slow:'slow',teleport:'teleport',pressure:'firstPressure',
     forestleap:'forestleap',lakeleap:'lakeleap',mountainleap:'mountainleap',plainleap:'plainleap',
+    barricade:'firstBarricade',changeling:'changeling',fog:'fog',holyblight:'firstHolyblight',
+    raisedead:'raisedead',reincarnation:'reincarnation',silence:'silence',sink:'sink',upheaval:'upheaval',
+    waste:'waste',weakness:'weakness',weathering:'weathering',wildgrowth:'wildgrowth',wizardseye:'wizardeye',
     icestorm:'firstIceStorm',fireexplosion:'firstFireExplosion',thunderstorm:'firstThunderstorm',deathcloud:'firstDeathCloud'
   };
   const legacySpellEffects={
@@ -116,9 +119,14 @@ const CepterEditions=(()=>{
       forestleap:'forestleap',lakeleap:'lakeleap',mountainleap:'mountainleap',plainleap:'plainleap',
       locust:'locust',parasite:'parasite',phantasm:'phantasm',quintessence:'quintessence',
       removecurse:'removecurse',replace:'replace',revival:'revival',rust:'rust',
-      soulsteal:'soulsteal',spiritwalk:'spiritwalk',teleport:'teleport',triumph:'triumph'
+      soulsteal:'soulsteal',spiritwalk:'spiritwalk',teleport:'teleport',triumph:'triumph',
+      darkcraft:'darkcraft',dullness:'dullness',eclipse:'eclipse',elementalrage:'elementalrage',escape:'escape',grace:'grace',
+      incineration:'incineration',influence:'influence',lifeforce:'lifeforce',massgrowth:'massgrowth',meteor:'meteor',mistletoe:'mistletoe',
+      pressure:'pressure',raisedead:'raisedead',reincarnation:'reincarnation',revelation:'revelation',ruin:'ruin',
+      selenear:'selenear',simulacrum:'simulacrum',sink:'sink',soulhunt:'soulhunt',subsidence:'subsidence',
+      upheaval:'upheaval',weathering:'weathering',wildgrowth:'wildgrowth',wing:'wing',wizardseye:'wizardeye'
     },
-    ps1:{...firstSpellEffects,corruption:'corruption'},
+    ps1:{...firstSpellEffects,antielement:'antielement',corruption:'corruption',revival:'revival'},
     saturn:firstSpellEffects
   };
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');

@@ -7649,3 +7649,141 @@ for(const edition of ['dc','ps1','saturn']){
   assert.deepEqual([...samples.at(-1).finished],[160,160]);
   console.log('2012 3DS six native-rule arenas, exact starter and archive decks, 18 AI finishes, alliance economy, spell thresholds, all nine Revenge cards, all 27 territory abilities and 320 seat-rotation samples OK');
 }
+
+for(const edition of ['dc','ps1','saturn']){
+  const C=ps2.createEdition(edition);
+  const id=name=>C.cards.findIndex(c=>c.catalog&&!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const goblin=id('goblin'),fighter=id('fighter');
+  const map=edition==='dc'?'dc-1':edition+'-original-marsh-paths';
+  function setup(name){
+    const s=C.start(4,4,5000,map,undefined,undefined,0,'teams');
+    const at=s.tiles.flatMap((t,i)=>C.territoryType(t.type)?[i]:[]);
+    const p=s.players[0],q=s.players[1];
+    p.cash=q.cash=500;
+    p.hand=[id(name)];
+    p.book=Array(7).fill(fighter);
+    return {s,at,p,q};
+  }
+  function cast(s,target,tribute=false){
+    assert.ok(C.play(s,['cast',0]),edition+' cast '+C.combo.key(C.cards[s.players[0].hand[0]]));
+    if(tribute)assert.ok(C.play(s,['sacrifice',1]));
+    if(target)assert.ok(C.play(s,target),JSON.stringify(target));
+  }
+  function place(s,at,owner,card=goblin){
+    const tile=s.tiles[at];
+    Object.assign(tile,{owner,unit:{id:card,hp:C.cards[card].hp}});
+    return tile;
+  }
+
+  {
+    const {s,p}=setup('reincarnation');
+    p.hand.push(goblin);
+    cast(s);
+    assert.deepEqual(p.hand,Array(6).fill(fighter));
+    assert.deepEqual(p.book,[fighter]);
+  }
+  {
+    const {s,p}=setup('raisedead');
+    s.lastDestroyed=goblin;
+    cast(s);
+    assert.deepEqual(p.hand,[goblin]);
+    assert.ok(!p.book.includes(id('raisedead')));
+  }
+  {
+    const {s,at}=setup('sink');
+    const target=place(s,at[0],1);
+    target.type=0;
+    target.level=5;
+    cast(s,['targetLand',at[0]]);
+    assert.deepEqual([target.type,target.level,target.owner],[1,5,1]);
+  }
+  if(edition==='dc'){
+    {
+      const {s,p,q}=setup('darkcraft');
+      p.symbols[0]=6;
+      q.symbols[1]=11;
+      cast(s);
+      assert.deepEqual([p.cash,q.cash,p.symbols[0],q.symbols[1]],[370,445,6,11]);
+      assert.ok(p.book.includes(id('darkcraft')));
+    }
+    {
+      const {s,p,q}=setup('grace');
+      q.symbols[0]=13;s.prices[0]=40;
+      cast(s,['targetPlayer',1]);
+      assert.equal(p.cash,604);
+    }
+    {
+      const {s}=setup('pressure');
+      s.prices.fill(40);
+      cast(s);
+      assert.ok(s.prices.every(price=>price===32));
+    }
+    {
+      const {s,at,p}=setup('meteor');
+      const target=place(s,at[0],1);
+      target.level=5;
+      p.hand.push(fighter);
+      cast(s,['targetLand',at[0]],true);
+      assert.equal(target.level,1);
+      assert.deepEqual(p.hand,[]);
+    }
+    {
+      const {s,p,q}=setup('lifeforce');
+      p.hand.push(fighter);
+      const item=C.cards[id('chainmail')];
+      assert.ok(item);
+      const normal=C.price(q,item,s);
+      cast(s,['targetPlayer',1],true);
+      assert.deepEqual([q.status,q.enchantDeadline,C.price(q,item,s)],['lifeforce',12,Math.floor(normal/2)]);
+    }
+    {
+      const {s,p,q}=setup('mistletoe');
+      cast(s);
+      assert.equal(p.enchantDeadline,8);
+      s.turn=1;
+      q.word=6;
+      assert.ok(C.play(s,['roll']));
+      assert.equal(p.cash,530);
+    }
+  }else{
+    {
+      const {s,at}=setup('weakness');
+      const target=place(s,at[0],1,fighter);
+      const st=C.cards[fighter].st;
+      cast(s,['targetLand',at[0]]);
+      assert.equal(target.unit.st,edition==='saturn'?Math.floor(st/2):0);
+    }
+    {
+      const {s,at}=setup('barricade');
+      const own=place(s,at[0],0),enemy=place(s,at[1],1);
+      const other=place(s,at.find(i=>s.tiles[i].area!==own.area),0);
+      const toll=C.toll(s,own);
+      cast(s,['comboArea',own.area]);
+      assert.equal(own.unit.expires,4);
+      assert.equal(C.toll(s,own),Math.floor(toll*1.3));
+      assert.equal(enemy.unit.enchant,undefined);
+      assert.equal(other.unit.enchant,undefined);
+    }
+    {
+      const {s,q}=setup('changeling');
+      q.book=Array(6).fill(fighter);
+      cast(s,['targetPlayer',1]);
+      assert.equal(q.book.filter(card=>card===goblin).length,3);
+    }
+    {
+      const {s,at}=setup('holyblight');
+      const ghost=place(s,at[0],1,id('skeleton'));
+      const mortal=place(s,at[1],0);
+      cast(s);
+      assert.equal(ghost.unit.hp,C.cards[ghost.unit.id].hp-20);
+      assert.equal(mortal.unit.hp,C.cards[goblin].hp);
+    }
+    {
+      const {s,q}=setup('silence');
+      cast(s,['targetPlayer',1]);
+      assert.equal(q.status,'silence');
+      assert.equal(q.enchantDeadline,8);
+    }
+  }
+}
+console.log('Legacy spells honor original costs, source-edition values, land scope and book changes.');

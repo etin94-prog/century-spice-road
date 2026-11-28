@@ -286,6 +286,22 @@ const describeCepterSpell=(()=>{
     if(C.edition==='revolt'&&card.effect==='exile')return '추가 소환 조건 없이 낼 수 있고 인챈트가 걸린 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     if(C.edition==='revolt'&&card.effect==='holybanishment')return '영지와 속성이 다른 크리처를 주인의 손패로 돌려보냅니다. 이미 10장이면 파괴합니다.';
     const e=card.effect,edition=C.edition;
+    if(['dc','ps1','saturn'].includes(edition)){
+      if(e==='reincarnation')return '현재 손패를 모두 버리고 북에서 여섯 장을 뽑습니다.';
+      if(e==='raisedead')return '가장 최근에 파괴된 크리처 카드를 손패에 넣습니다.';
+      if(e==='firstBarricade')return '고른 지역에 있는 내 영지의 통행료가 3라운드 동안 30% 오릅니다.';
+      if(e==='firstHolyblight')return '맵에 배치된 모든 불사족 크리처에 20 피해를 줍니다.';
+      if(e==='changeling'&&edition!=='dc')return '고른 적의 북에서 무작위로 최대 세 장을 고블린으로 바꿉니다.';
+      if(e==='wizardeye'&&edition!=='dc')return '고른 셉터의 북 맨 위에서 최대 여섯 장을 엿봅니다.';
+      if(e==='weakness'&&edition==='saturn')return '고른 크리처의 기본 ST를 절반으로 낮춥니다.';
+    }
+    if(edition==='dc'){
+      if(e==='grace')return '고른 셉터가 가진 호부 총가치의 20%를 마력으로 얻습니다.';
+      if(e==='pressure')return '모든 지역의 호부 가격을 20% 낮춥니다.';
+      if(e==='mistletoe')return '2라운드 동안 누구든 이동 주사위로 5~7을 내면 내가 100G를 얻습니다.';
+      if(e==='soulhunt')return '고른 크리처가 맵에서 파괴되면 내가 그 크리처의 최대 HP 1당 10G를 얻습니다.';
+      if(e==='darkcraft')return '모든 셉터가 보유한 호부 하나당 5G를 잃습니다. 사용한 주문은 북으로 돌아갑니다.';
+    }
     if(edition==='begins'&&e==='revoltphantasm')return '모든 크리처에 HP 고정을 부여합니다. 주문의 효과로 현재 HP와 최대 HP가 변하지 않습니다.';
     if(edition==='begins'&&e==='shrink')return '고른 적 크리처의 기본 ST, 현재 HP, 최대 HP를 각각 10 낮춥니다.';
     if(edition==='begins'&&e==='meteor')return '고른 영지의 레벨을 2 낮춥니다. 연쇄가 없으면 레벨 1이 됩니다.';
