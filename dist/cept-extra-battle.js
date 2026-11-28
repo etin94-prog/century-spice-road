@@ -35,6 +35,7 @@ const CepterExtraBattle=(()=>{
     const {ids,creatures}=catalog(cards,combo.key);
     function pick(pool){return pool[s.predict?Math.floor(pool.length/2):Math.floor(Math.random()*pool.length)];}
     function randomForm(excluded){
+      if(s.edition==='saga')return pick(fx.sagaFormChoices(excluded));
       return pick(creatures.filter(id=>id!==excluded&&(s.edition!=='begins'||cards[id].catalog.rarity!=='E')));
     }
     const chance=n=>!s.predict&&Math.random()<n;
@@ -79,7 +80,7 @@ const CepterExtraBattle=(()=>{
         form=ids.get('bundlegear');consume=true;temporary=false;
       }else if(name==='ambermosquito')form=ids.get(pick(['giantrat','tyrannosaurus']));
       else if(name==='doppelganger')form=opponentId;
-      else if(name==='baldanders')form=s.edition==='begins'?randomForm(a.u.id):pick(creatures);
+      else if(name==='baldanders')form=['begins','saga'].includes(s.edition)?randomForm(a.u.id):pick(creatures);
       else if(s.edition==='saga'&&name==='revenant'&&combo.enchanted(t.unit))form=ids.get('vampire');
       if(s.edition==='revolt'&&gear==='necroplasma')form=ids.get('skeleton');
       if(s.edition==='revolt'&&gear==='dragonorb'){
@@ -87,9 +88,9 @@ const CepterExtraBattle=(()=>{
         consume=true;
       }
       if(s.edition==='saga'&&a.gear?.kind==='creature'){
-        if(name==='groundgear'&&gear==='skygear'||name==='skygear'&&gear==='groundgear')form=ids.get('androgear');
-        if(name==='androgear'&&gear==='beastgear')form=ids.get('gearion');
-        if(form!=null){consume=true;temporary=false;}
+        const pair=name==='groundgear'&&gear==='skygear'||name==='skygear'&&gear==='groundgear';
+        const fusion=pair?'androgear':name==='androgear'&&gear==='beastgear'?'gearion':null;
+        if(fusion){form=ids.get(fusion);consume=true;temporary=false;}
       }
       if(form!=null){
         transform(a,form,temporary);
@@ -103,6 +104,12 @@ const CepterExtraBattle=(()=>{
         // creature's first form remains on the board when the item expires.
         const itemForm=gear==='trapezon'?ids.get('baal'):randomForm(a.u.id);
         transform(a,itemForm,true);consume=true;
+      }
+      if(s.edition==='saga'&&s.players[a.seat].status==='mesozoicsong'&&a.u.enchant!=='paralysis'){
+        const original=a.original;
+        transform(a,ids.get('tyrannosaurus'),true);
+        if(original)a.original=original;
+        if(a.gear?.category==='scroll')consume=true;
       }
       if(consume){a.item=null;a.gear=null;a.g=null;}
     }

@@ -33,6 +33,7 @@ const describeCepterItem=(()=>{
     reactivearmor:'전투 시작 시 상대가 장착한 무기를 파괴합니다.',
     gremlinseye:'전투 시작 시 상대 장비가 N 등급이 아니면 파괴합니다.',
     squidmantle:'상대의 공격 성공 시 효과가 발동하지 않습니다.',
+    blasterray:'두루마리 공격이 통과하면 50% 확률로 상대를 무작위 빈 영지에 보냅니다. 이동할 빈 영지가 없으면 상대가 파괴됩니다.',
     angrymask:'생존하면 전투 중 받은 피해만큼 상대의 기본 HP에 피해를 줍니다.',
     argentkey:'일반 공격으로 피해를 주고 상대가 살아 있으면 무작위 빈 영지로 이동합니다. 빈 영지가 없으면 장착한 크리처가 파괴됩니다.',
     burningheart:'장착한 크리처가 격파되면 상대도 격파합니다.',
@@ -176,7 +177,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='3ds'&&name==='heartfibula')pieces.push('적을 격파하면 최대 HP가 최대 100까지 20 오릅니다.');
     else if(C.edition==='3ds'&&name==='wateramulet')pieces.push(ability[name]+' 적을 격파하면 기본 ST가 최대 100까지 10 오릅니다.');
     else if(C.edition==='3ds'&&name==='windamulet')pieces.push('풍 속성 크리처가 장착하면 일반 공격이 강타합니다. 적을 격파하면 최대 HP가 최대 100까지 10 오릅니다.');
-    else if(C.edition==='begins'&&name==='proteanring')pieces.push('전투에서 E 등급을 제외한 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.');
+    else if(['begins','saga'].includes(C.edition)&&name==='proteanring')pieces.push('전투에서 E 등급을 제외한 다른 크리처로 무작위 변신합니다. 생존하면 원래 모습으로 돌아옵니다.');
     else if(C.edition==='begins'&&name==='coinofpiety')pieces.push('장착한 크리처가 생존하면 내가 가장 많이 가진 호부 수량이 10% 증가합니다.');
     else if(C.edition==='begins'&&name==='offeringdoll')pieces.push('생존하면 장착 크리처와 같은 속성의 호부 가치가 30% 오릅니다.');
     else if(!(baseStatsBracelet||['3ds','begins'].includes(C.edition)&&key==='holygrail'||['saga','revolt'].includes(C.edition)&&name==='necroscarab')&&(ability[card.effect]||ability[name]))pieces.push(ability[card.effect]||ability[name]);

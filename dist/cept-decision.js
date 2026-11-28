@@ -169,7 +169,7 @@ function openTurnPicker(entries,title,preferred=-1){
     if(card){
       const art=cardSeal(entry.id);art.alt='';option.prepend(art);
       const kind=entry.action[0],noExtraCost=['circleCast','replaceCard','intrusionCard'].includes(kind)||C.edition==='begins'&&['stealCard','forgeCard','reformCard','poisonBookCard'].includes(kind);
-      const cost=kind==='buyCard'?C.shopCost(entry.id):noExtraCost?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s):card.cost):null;
+      const cost=kind==='buyCard'?C.shopCost(entry.id):noExtraCost?0:card.kind==='creature'||card.kind==='item'||card.kind==='spell'?(actorSeat?C.price(actorSeat,card,s,kind!=='equip'):card.cost):null;
       if(Number.isFinite(cost)&&kind!=='wormDiscard')option.append(el('small',cost+'G','card-cost'));
       if(card.kind==='creature')option.append(el('small','ST '+card.st+' · HP '+card.hp,'card-power'));
     }
@@ -301,8 +301,8 @@ function showHandSelection(p,choices){
   const actions=choices.filter(([k,x])=>['cast','summon','invade','equip','discard','sacrifice'].includes(k)&&x===focusCard);
   const name=el('strong',c.name),buttons=el('div',null,'hand-actions');
   panel.append(name,el('span',cardSummary(c)));
-  if(!actions.length&&C.price(p,c,s)>p.cash){
-    panel.append(el('small','현재 마력 '+p.cash+'G · 사용 비용까지 '+(C.price(p,c,s)-p.cash)+'G 부족'));
+  if(!actions.length&&C.price(p,c,s,!s.battle)>p.cash){
+    panel.append(el('small','현재 마력 '+p.cash+'G · 사용 비용까지 '+(C.price(p,c,s,!s.battle)-p.cash)+'G 부족'));
   }
   buttons.append(btn('카드 상세',()=>showCatalogCard(c,id)));
   for(const action of actions)buttons.append(btn(labels[action[0]],()=>act(action),'primary'));
@@ -331,6 +331,7 @@ function seatSummary(seat){
   const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'모든 내 영지에 명령 가능',bravesong:'브레이브 송 · 전투 ST +20',toughsong:'터프 송 · 전투 HP +20',sagaTollUp:'통행료 30% 증가',
     sagaTollDown:'통행료 30% 감소',sagaStrut:'제롬 · 통행료 면제',sagaMagicEra:'제롬 · 카드 사용 마력 0G',sagadrought:'드라우트 · 영지 레벨 변경 금지',sagafloat:'플로트 · 주사위 5 고정',holdcurse:'홀드 커스 · 기존 영지 인챈트 보호',
     hunterssong:'헌터스 송 · 전투 격파 +200G',trespass:'트레스패스 · 다른 셉터 완주 보너스 획득',innocence:'이노센스 · 통행료 면제 및 침략 금지',sagaDeduction:'크리처·장비 비용 감면',sagaInflation:'크리처·장비 비용 증가',
+    mesozoicsong:'메소조익 송 · 전투에서 티라노사우루스로 변신',sinkingsong:'싱킹 송 · 전투 피해 절반',conspiracy:'컨스피러시 · 조건부 소환 마력 0G',
     sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):
     p.word!=null?'다음 주사위 '+p.word:p.reverse?'역방향 이동':p.antiMagic?'안티 매직':p.invisible?'인비저빌리티':p.dream?'드림 테레인':p.sagaClemency?'다음 이동 통행료 면제':p.sagaService?'다음 요새 보너스 +50%':p.sagaFeast?'다음 주회 보너스 +50%':null;
   if(effect){

@@ -361,6 +361,7 @@ const CepterCreatureText=(()=>{
     if(art)return '비술 '+art.cost+'G · '+art.label+'. 주사위를 굴리기 전에 사용합니다.';
     if(C.edition==='revolt')return;
     const key=C.combo.key(card),saga={
+      shapeshifter:'자신을 N·S·R 등급의 다른 크리처로 무작위 진화시킵니다.',
       nil:'모든 크리처에게 각자의 최대 HP 절반만큼 피해를 준 뒤 자신을 파괴합니다.',
       hivequeen:'하이브 워커 한 장을 내 손패에 넣습니다.',
       peluda:'무·수·지·풍 속성 크리처에게 10 피해를 줍니다.',
@@ -496,7 +497,7 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='paleglobster'?'전투 ST와 HP에 교전 영지 레벨 × 10을 더합니다. 주문에 의해 HP나 최대 HP가 바뀌지 않습니다.':
       C.edition==='begins'&&key==='ambermosquito'?'전투에서 티라노사우루스와 자이언트 래트 중 하나로 같은 확률로 변신합니다. 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='begins'&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
-      C.edition==='begins'&&key==='baldanders'?'전투 중 다른 크리처로 무작위 변신합니다. E 등급은 제외되며 생존하면 원래 모습으로 돌아옵니다.':
+      ['begins','saga'].includes(C.edition)&&key==='baldanders'?'전투 중 다른 크리처로 무작위 변신합니다. E 등급은 제외되며 생존하면 원래 모습으로 돌아옵니다.':
       C.edition==='begins'&&key==='cleric'?'일반 공격이 명중하면 무속성 상대를 즉사시킵니다.':
       C.edition==='begins'&&key==='samurai'?'일반 공격이 명중하면 기본 ST 40 이상인 상대를 70% 확률로 즉사시킵니다.':
       C.edition==='saga'&&key==='saint'?'무속성 상대에게 일반 공격으로 피해를 주면 80% 확률로 즉사시킵니다.':

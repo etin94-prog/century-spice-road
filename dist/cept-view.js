@@ -317,6 +317,10 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'zeromnPower':return C.zeromnOptions[x];
     case 'intrusionCard':return C.cards[y].name;
     case 'foresightCard':case 'replaceCard':case 'mesmerCard':case 'stealCard':case 'forgeCard':case 'reformCard':case 'poisonBookCard':return C.cards[y].name;
+    case 'forfeitSymbol':{
+      const qty=s.players[s.spellTarget].symbols[x];
+      return symbolLabel(x)+' · '+qty+'장 → '+qty*s.prices[x]+'G';
+    }
     case 'soltisArea':case 'comboArea':case 'plagueArea':return (x+1)+'지역';
     case 'prophecyKind':case 'fortuneDraw':return {creature:'크리처',item:'아이템',spell:'주문'}[x];
     case 'route':return (x+1)+'번 · '+(C.elements[s.tiles[x].type]||s.tiles[x].type);
@@ -447,7 +451,7 @@ function setMapCamera(root,x,y,zoom){
 function selectingSpellMapTarget(){
   if(C.edition==='begins'&&s?.spellEffect==='telekinesis'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
-  if(C.edition==='saga'&&s?.phase==='spellTarget'&&['trade','intrusion','reflection','replace','holyasylum','lunaticlight'].includes(s.spellEffect))return true;
+  if(C.edition==='saga'&&s?.phase==='spellTarget'&&['trade','intrusion','reflection','replace','holyasylum','lunaticlight','sagapolymorph','sagaliquidform','walltransform'].includes(s.spellEffect))return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
     ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
   return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong','metalform','temptation','beginspolymorph'].includes(s.spellEffect);
@@ -952,7 +956,7 @@ function render(){
     const type=c.kind==='creature'?cardElements(c)+' · 크리처':c.kind==='item'?'아이템':'주문';
     const availability={cast:'주문 사용 가능',equip:'장비 가능',summon:'소환 가능',invade:'침략 가능'};
     b.classList.toggle('ready',!!ready);b.setAttribute('aria-pressed',String(j===focusCard));
-    b.append(cardSeal(id),el('span',ready?availability[ready[0]]:type,'card-type'),el('b',c.name),el('span',stats(c)),el('span',C.price(owner,c,s)+' G'));hand.append(b);});
+    b.append(cardSeal(id),el('span',ready?availability[ready[0]]:type,'card-type'),el('b',c.name),el('span',stats(c)),el('span',C.price(owner,c,s,!s.battle)+' G'));hand.append(b);});
     showHandSelection(owner,choices);hand.scrollLeft=handScroll;
   }else hand.append(el('span',over?'대국이 끝났습니다.':'본인 차례에 표시됩니다.','muted'));
   if(owner&&typeof showHandCombos==='function')showHandCombos(hand,owner.hand);

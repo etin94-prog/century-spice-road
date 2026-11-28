@@ -584,7 +584,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       assert.equal(saved.tiles[source].owner,-1);
     }
   }
-  assert.equal(C.battleCombos.length,21);
+  assert.equal(C.battleCombos.length,27);
   for(const [index,recipe] of C.battleCombos.entries()){
     const book=C.practiceBook(index);
     assert.ok(C.validBook(book),recipe.hint);
@@ -1094,6 +1094,148 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
   assert.deepEqual(tide.tiles[2].unit,{id:id('dwarf'),hp:50,enchant:'disease'});
   assert.deepEqual([3,otherArea].map(at=>tide.tiles[at].unit.hp),[22,22]);
   console.log('Saga Disaster HP threshold, Holy Asylum, Hold Curse single-target immunity, Lunatic Light, Revolt and Time Tide checked');
+  const conspiracy=sagaCast('conspiracy',s=>{
+    unit(s,2,'goblin',0,2);unit(s,3,'colossus',1,0);
+  });
+  const conspirator=conspiracy.players[0],goblinCard=C.cards[id('goblin')],colossusCard=C.cards[id('colossus')];
+  assert.equal(conspirator.status,'conspiracy');
+  assert.equal(C.price(conspirator,goblinCard,conspiracy),0);
+  assert.equal(C.price(conspirator,goblinCard,conspiracy,false),goblinCard.cost);
+  assert.equal(C.price(conspirator,colossusCard,conspiracy),colossusCard.cost);
+  conspirator.cash=0;conspirator.hand=[id('goblin')];conspirator.pos=1;conspiracy.phase='land';
+  assert.ok(C.play(conspiracy,['summon',0]));
+  assert.deepEqual([conspirator.cash,conspiracy.tiles[1].unit.id],[0,id('goblin')]);
+  conspiracy.turn=0;conspiracy.phase='roll';
+  Object.assign(conspirator,{pos:1,previous:2,word:1,dir:-1});
+  assert.ok(C.play(conspiracy,['roll']));
+  assert.deepEqual([conspirator.pos,conspirator.status],[0,undefined]);
+  assert.equal(C.price(conspirator,goblinCard,conspiracy),goblinCard.cost);
+  const forfeit=sagaCast('forfeit',s=>{
+    const q=s.players[1];q.cash=400;q.symbols[1]=3;q.symbols[5]=7;s.prices[5]=29;
+  });
+  assert.ok(C.play(forfeit,C.choices(forfeit)[0]));
+  assert.deepEqual(C.choices(forfeit),[['targetPlayer',1]]);
+  assert.ok(C.play(forfeit,['targetPlayer',1]));
+  assert.deepEqual(C.choices(forfeit),[['forfeitSymbol',1],['forfeitSymbol',5]]);
+  const resumedForfeit=structuredClone(forfeit);
+  assert.ok(!C.play(resumedForfeit,['forfeitSymbol',0]));
+  assert.ok(C.play(resumedForfeit,['forfeitSymbol',5]));
+  assert.deepEqual([resumedForfeit.players[1].symbols[1],resumedForfeit.players[1].symbols[5],resumedForfeit.players[1].cash,resumedForfeit.prices[5],resumedForfeit.phase],[3,0,603,29,'roll']);
+  try{
+    Math.random=()=>0;
+    const shifted=fight('dwarf','doppelganger','무속성','blasterray');
+    assert.equal(shifted.battle.won,true);
+    assert.equal(shifted.tiles[1].owner,0);
+    assert.equal(shifted.tiles.filter(t=>t.owner===1&&t.unit?.id===id('dwarf')).length,1);
+    const shielded=fight('dwarf','doppelganger','무속성','blasterray',null,'smoketorch');
+    assert.equal(shielded.battle.won,false);
+    assert.equal(shielded.tiles[1].unit.id,id('doppelganger'));
+    const reflectedRay=fight('dwarf','doppelganger','무속성','blasterray',null,'livingmirror');
+    assert.equal(reflectedRay.battle.won,false);
+    assert.equal(reflectedRay.tiles.filter(t=>t.owner===0&&t.unit?.id===id('dwarf')).length,1);
+    const blockedMap=fight('dwarf','goblin','무속성','blasterray',s=>{
+      for(const [at,t] of s.tiles.entries())if(at!==1&&C.combo.territoryType(t.type))unit(s,at,'fighter',0,t.type);
+    });
+    assert.equal(blockedMap.battle.won,true);
+    assert.ok(blockedMap.battle.lines.some(line=>line.includes('빈 영지가 없어 격파')));
+    Math.random=()=>.5;
+    const missedRay=fight('dwarf','goblin','무속성','blasterray');
+    assert.equal(missedRay.battle.won,false);
+    assert.ok(missedRay.battle.lines.some(line=>line.includes('이동 실패')));
+  }finally{Math.random=priorRandom;}
+  console.log('Saga Conspiracy paid only actual summons, Forfeit preserved other region, Blaster Ray retained temporary form and respected scroll wards');
+  for(const [spell,target] of [['mesozoicsong',0],['sinkingsong',1]]){
+    const s=sagaCast(spell);
+    assert.ok(C.play(s,['targetPlayer',target]));
+    assert.deepEqual([s.players[target].status,s.players[target].enchantDeadline],[spell,6]);
+    for(let n=1;n<=6;n++){
+      s.phase='land';s.players[s.turn].pos=0;
+      assert.ok(C.play(s,['pass']));
+      assert.equal(s.players[target].status,n<6?spell:undefined);
+    }
+  }
+  const meso=fight('gremlin','dwarf','무속성',null,s=>{s.players[0].status='mesozoicsong';},'smoketorch');
+  assert.deepEqual([meso.battle.attackST,meso.battle.startHP[0],meso.battle.finalForms[0],meso.tiles[1].unit.id],
+    [50,60,id('tyrannosaurus'),id('gremlin')]);
+  const mesoSupport=fight('sage','dwarf','무속성','fighter',s=>{s.players[0].status='mesozoicsong';});
+  assert.equal(mesoSupport.battle.attackST,50+C.cards[id('fighter')].st);
+  assert.equal(mesoSupport.battle.startHP[0],60+C.cards[id('fighter')].hp);
+  const sinking=fight('hellhound','blueogre','무속성',null,s=>{s.players[0].status='sinkingsong';});
+  assert.match(sinking.battle.strikes[0].notes.join(' '),new RegExp(Math.floor(C.cards[id('hellhound')].st/4)+' 피해'));
+  const paralyzedSong=fight('goblin','dwarf','무속성',null,s=>{
+    s.players[1].status='toughsong';s.tiles[1].unit.enchant='paralysis';
+  });
+  assert.equal(paralyzedSong.battle.startHP[1],50);
+  const paralyzedMeso=fight('goblin','dwarf','무속성',null,s=>{
+    s.players[1].status='mesozoicsong';s.tiles[1].unit.enchant='paralysis';
+  });
+  assert.equal(paralyzedMeso.battle.finalForms[1],id('dwarf'));
+  console.log('Saga protection songs expire, stack reductions, preserve pre-transformation item effects and support, and respect paralysis');
+  const permittedForms=original=>C.cards.flatMap((card,j)=>j!==id(original)&&card.kind==='creature'&&!card.unlisted&&
+    !card.catalogOnly&&!card.generatedOnly&&['N','S','R'].includes(card.catalog.rarity)?[j]:[]);
+  try{
+    for(const rng of [0,.999999]){
+      Math.random=()=>rng;
+      const expected=original=>permittedForms(original).at(rng===0?0:-1);
+      const shifter=fromTerritory('shapeshifter');
+      shifter.tiles[2].level=3;
+      assert.ok(C.play(shifter,['ability',2]));
+      assert.deepEqual([shifter.players[0].cash,shifter.tiles[2].owner,shifter.tiles[2].level,shifter.tiles[2].unit.id],
+        [550,0,3,expected('shapeshifter')]);
+      const polymorph=sagaCast('polymorph',s=>{unit(s,2,'colossus',1,2,3,11);});
+      assert.ok(C.play(polymorph,C.choices(polymorph)[0])&&C.play(polymorph,['targetLand',2]));
+      assert.deepEqual([polymorph.tiles[2].owner,polymorph.tiles[2].level,polymorph.tiles[2].unit.id],
+        [1,3,expected('colossus')]);
+      const baldanders=fight('baldanders','goblin');
+      assert.equal(baldanders.battle.finalForms[0],expected('baldanders'));
+      const ring=fight('dwarf','goblin','무속성','proteanring');
+      assert.equal(ring.battle.finalForms[0],expected('dwarf'));
+    }
+  }finally{Math.random=priorRandom;}
+  console.log('Saga map and battle transformations select a different card from exactly N, S and R ranks');
+  const liquid=sagaCast('liquidform',s=>unit(s,2,'dwarf',1,2));
+  const preLiquidBook=liquid.players[0].book.slice();
+  assert.ok(C.play(liquid,['targetLand',2]));
+  assert.deepEqual(liquid.players[0].hand,[id('fighter')]);
+  assert.deepEqual(liquid.players[0].book,preLiquidBook);
+  assert.equal(liquid.tiles[2].unit.enchant,'liquidform');
+  try{
+    const oppositeRolls=()=>{
+      let calls=0;
+      Math.random=()=>calls++%2?.99999:0;
+    };
+    const robe=fight('dwarf','goblin','무속성','spectresrobe',oppositeRolls);
+    assert.deepEqual([robe.battle.attackST,robe.battle.startHP[0]],[40,120]);
+    const rolledForm=fight('fighter','dwarf','무속성',null,s=>{
+      s.tiles[1].unit.enchant='liquidform';oppositeRolls();
+    });
+    assert.deepEqual([rolledForm.battle.defendST,rolledForm.battle.startHP[1]],[10,70]);
+  }finally{Math.random=priorRandom;}
+  for(const [before,after] of [['goblin','wonderwall'],['redogre','creepingflame'],['blueogre','wallofice'],['dwarf','wallofstone'],['yellowogre','tornado']]){
+    const wall=sagaCast('walltransform',s=>{
+      unit(s,2,before,1,3,3,9);
+      unit(s,3,'fontaciel',1,1);
+    });
+    assert.deepEqual(C.choices(wall),[['targetLand',2]]);
+    assert.ok(C.play(wall,['targetLand',2]));
+    assert.deepEqual([wall.tiles[2].unit.id,wall.tiles[2].unit.hp,wall.tiles[2].owner,wall.tiles[2].level],
+      [id(after),C.cards[id(after)].hp,1,3]);
+  }
+  for(const full of [false,true]){
+    const fear=sagaCast('fear',s=>{
+      unit(s,2,'goblin',1,2,3,25);s.tiles[2].unit.enchant='landprotection';
+      unit(s,3,'dwarf',1,0,1,9);
+      s.players[1].hand=full?Array(6).fill(id('manna')):[];
+    });
+    assert.deepEqual(C.choices(fear),[['targetPlayer',1]]);
+    assert.ok(C.play(fear,['targetPlayer',1]));
+    assert.deepEqual([fear.tiles[2].unit,fear.tiles[3].unit.id,fear.players[1].hand.includes(id('goblin'))],[null,id('dwarf'),!full]);
+    if(full)assert.equal(fear.lastDestroyed,id('goblin'));
+  }
+  const fearTie=sagaCast('fear',s=>{unit(s,2,'goblin',1,2);unit(s,3,'goblin',1,0);});
+  assert.deepEqual(C.choices(fearTie),[['fizzle']]);
+  assert.equal(C.cards.filter(card=>!card.unlisted&&card.catalogOnly).length,0);
+  console.log('Saga 487 implementations, separate ST/HP rolls, five wall forms and unique minimum Fear return checked');
   const boosts=fight('fighter','dwarf','무속성',null,s=>{
     unit(s,4,'ares',1,0);unit(s,5,'poseidon',0,1);
   });

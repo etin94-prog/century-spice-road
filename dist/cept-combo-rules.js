@@ -39,6 +39,9 @@ const CepterCombos = (() => {
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
   function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace=p=>p.hand.length<6,returnToBook}){
     const names=cards.map(key);
+    const sagaForms=cards.flatMap((card,id)=>card.kind==='creature'&&!card.unlisted&&!card.catalogOnly&&
+      !card.generatedOnly&&['N','S','R'].includes(card.catalog?.rarity)?[id]:[]);
+    const sagaFormChoices=id=>sagaForms.filter(form=>form!==id);
     const ids=new Map(names.map((n,id)=>[n,id]));
     const max=u=>u.mhp??cards[u.id].hp;
     const strength=u=>u.st??cards[u.id].st;
@@ -273,7 +276,7 @@ const CepterCombos = (() => {
     const territoryCosts={domovikha:70,spittingcobra:0,conjurer:80,goobaqueen:20,tetramorph:50,heatimp:50,windimp:50,witch:30,
       archbishop:50,astralqueen:60,clockworkowl:30,dancingdoll:70,domovoi:30,fanatic:60,sharazad:30,
       algasphere:30,banshee:60,bookworm:40,fate:40,hyde:50,barometz:0,healer:20,quakebeast:60,archer:30,holyllama:30};
-    const sagaTerritory={nil:100,hivequeen:20,peluda:100,assassin:80,cloudgizmo:20,sleipnir:60,dragonsegg:100,dragonewt:120,hardrockdragon:80,lightningdragon:80,aquahorn:30,mistwing:30,spriggan:80,armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
+    const sagaTerritory={shapeshifter:50,nil:100,hivequeen:20,peluda:100,assassin:80,cloudgizmo:20,sleipnir:60,dragonsegg:100,dragonewt:120,hardrockdragon:80,lightningdragon:80,aquahorn:30,mistwing:30,spriggan:80,armoreddragon:70,heraldspirit:50,swampspawn:50,venomouspore:100,swordprincess:100,
       possession:80,lordofbane:60,bonegolem:60,ahuizotl:80,nobleshaman:50,brancharmy:50,quicksilver:60,necromancer:30,deathscythe:50,fontaciel:50,gogma:200,warlock:60,clockworkowl:30,fay:60,tokebi:0,hypnosloth:40,lichenoid:40,rockshell:40,sakuya:80,creepingflame:30,fortress:30,helltic:60,hellpyron:30,burnacle:50,lamia:40,sylph:100,spudfolk:0,spinyagama:80,seismodon:120};
     const handheldTerritory={
       metalbug:80,sakuya:120,barometz:0,heatimp:50,archbishop:30,clockworkowl:30,dancingdoll:70,domovikha:80,domovoi:30,
@@ -314,6 +317,7 @@ const CepterCombos = (() => {
           const forms=quicksilverForms(s);
           return forms.some(id=>id!==tile.unit.id)&&forms.every(id=>!cards[id].catalogOnly)?[['abilitySelf',from]]:[];
         }
+        if(n==='shapeshifter')return sagaFormChoices(tile.unit.id).length?[['abilitySelf',from]]:[];
         if(n==='nil'||n==='peluda')return [['abilitySelf',from]];
         if(n==='hivequeen')return hasHandSpace(s.players[s.turn])?[['abilitySelf',from]]:[];
         if(n==='cloudgizmo')return idol(s,'graniteidol')?[]:s.players.flatMap((q,j)=>q.hand.length&&q.status!=='barrier'?[['abilityPlayer',j]]:[]);
@@ -408,6 +412,10 @@ const CepterCombos = (() => {
       if(s.edition==='saga'){
         if(n==='quicksilver'){
           const forms=quicksilverForms(s),id=forms[Math.floor(Math.random()*forms.length)];
+          src.unit={id,hp:cards[id].hp};return;
+        }
+        if(n==='shapeshifter'){
+          const pool=sagaFormChoices(src.unit.id),id=pool[Math.floor(Math.random()*pool.length)];
           src.unit={id,hp:cards[id].hp};return;
         }
         if(n==='nil'){
@@ -734,7 +742,7 @@ const CepterCombos = (() => {
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];
     }
     return {targets,targetable,apply,max,strength,name,destroy,returnToHand,death,harm:damage,spellHarm,spellDestroy,damageAmount,immuneHP,shrinkHealth,isDefensive,idol,territoryCosts,territoryCost,levelLocked:landLevelLocked,
-      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
+      blockedLevel,terrainLocked,clearCepter,telekinesisExits,quicksilverForms,sagaFormChoices,canUseAbility,territoryTargets,territoryEffect,territoryMoveExits,secretArt,secretTargets,applySecret,secretValue};
   }
   const recipes=[
     [["antimagic"],["goblinslair"]],
@@ -1015,7 +1023,13 @@ const CepterCombos = (() => {
       {groups:[['raksas'],['godlesspike']],hint:'전투에서 이기면 상대가 가장 많이 가진 호부 수량을 30% 줄이고, 상대 크리처 속성의 호부 가격도 절반으로 내립니다.'},
       {groups:[['tetrarm'],['nuclearfusion']],hint:'짧은 전투에서 두루마리 공격 50을 최대 두 번 사용합니다.'},
       {groups:[['tengu'],['nuclearfusion']],hint:'텐구가 선제 두루마리 강타로 지형 HP를 건너뛰고 75 피해를 줍니다.'},
-      {groups:[['tengu'],['soulray']],hint:'텐구가 선제 두루마리 강타로 45 피해를 줍니다. 생존하고 손패에 빈자리가 있으면 소울 레이가 돌아옵니다.'}
+      {groups:[['tengu'],['soulray']],hint:'텐구가 선제 두루마리 강타로 45 피해를 줍니다. 생존하고 손패에 빈자리가 있으면 소울 레이가 돌아옵니다.'},
+      {groups:[['spectre'],['spectresrobe']],hint:'스펙터의 전투 ST와 HP에 로브가 독립적으로 10~70을 추가합니다.'},
+      {groups:[['spectre'],['stormcauser']],hint:'스펙터의 무작위 ST에 60을 더하고 HP를 30 줄입니다.'},
+      {groups:[['flyingpuffer'],['stormcauser']],hint:'플라잉 퍼퍼의 화력을 높입니다. 상대를 격파하거나 상대 공격에 격파되면 양쪽 크리처가 함께 파괴됩니다.'},
+      {groups:[group(c=>c.regenerate,'spikedshield'),['spikedshield']],hint:'스파이크드 실드로 일반 공격의 절반을 반사합니다. 재생 크리처가 살아남으면 HP를 모두 회복합니다.'},
+      {groups:[['unnameable'],['livingrapier','ringofthesuccubus','sling']],hint:'선제 장비로 지연 공격을 상쇄합니다. 일반 공격을 명중시키면 70% 즉사가 발동할 수 있습니다.'},
+      {groups:[['skeleton'],['necroscarab']],hint:'상대에게 격파되면 네크로 스캐럽이 스켈레톤으로 되살립니다.'}
     ];
   }
   const revoltCombos=[
