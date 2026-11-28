@@ -77,12 +77,68 @@ const refused=(page,call,args)=>page.evaluate(async([call,args])=>{try{await Wal
     }
     await first.evaluate(()=>Wallet.set(2030));await uploaded(first);
 
-    // Logging out keeps the chips on the device and stops uploads.
+    // An upload whose answer was lost (tab closed mid-request) is not counted twice:
+    // the wallet already carries its id.
+    await first.evaluate(()=>{const s=JSON.parse(localStorage.getItem('worldwide-wallet-v1'));s.pending={id:'0123456789abcdef',chips:s.chips+40,base:s.base};s.chips+=40;localStorage.setItem('worldwide-wallet-v1',JSON.stringify(s));});
+    await first.reload();await first.evaluate(()=>Wallet.ready);await uploaded(first);
+    assert.equal(await first.evaluate(()=>Wallet.chips),2070);
+    await first.evaluate(()=>{const s=JSON.parse(localStorage.getItem('worldwide-wallet-v1'));s.pending={id:'0123456789abcdef',chips:s.chips,base:s.chips-40};s.base-=40;localStorage.setItem('worldwide-wallet-v1',JSON.stringify(s));});
+    await first.reload();await first.evaluate(()=>Wallet.ready);await uploaded(first);
+    assert.equal(await first.evaluate(()=>Wallet.chips),2070,'a replayed upload id is applied once');
+
+    // A hand in play on one page holds the refill on the lobby too, and releases it
+    // when the hand is over.
+    const lobby=await first.context().newPage();
+    await lobby.goto(new URL('index.html?emulator#worldwide',base).href);
+    await lobby.waitForFunction(()=>typeof Wallet==='object');
+    // Tabs of one browser share localStorage, which is not atomic across tabs, so
+    // let the lobby's first sync finish before this tab settles a hand.
+    await lobby.evaluate(()=>Wallet.ready);
+    const bet=await first.evaluate(()=>{
+      while(!['bet','result'].includes(g.phase)){if(g.phase==='insurance')Blackjack.play(g,'decline');else if(g.phase==='play')Blackjack.play(g,'stand');else Blackjack.dealerStep(g);}
+      draw(true);document.querySelector('[data-action="next"]')?.click();
+      document.querySelector('[data-action="deal"]').click();return g.phase;
+    });
+    if(!['bet','result'].includes(bet)){
+      await lobby.waitForFunction(()=>Wallet.held);
+      await first.evaluate(()=>{while(!['bet','result'].includes(g.phase)){if(g.phase==='insurance')Blackjack.play(g,'decline');else if(g.phase==='play')Blackjack.play(g,'stand');else Blackjack.dealerStep(g);}draw(true);});
+      await lobby.waitForFunction(()=>!Wallet.held);
+    }
+    await lobby.close();
+    await first.evaluate(()=>{document.querySelector('[data-action="next"]')?.click();Wallet.set(2070);});await uploaded(first);
+    // Another device's upload in between does not make a retried upload count twice.
+    await second.evaluate(()=>Wallet.sync());
+    await first.evaluate(()=>{const s=JSON.parse(localStorage.getItem('worldwide-wallet-v1'));s.pending={id:'a1b2c3d4e5f60718',chips:s.chips+30,base:s.chips};s.chips+=30;localStorage.setItem('worldwide-wallet-v1',JSON.stringify(s));});
+    await first.reload();await first.evaluate(()=>Wallet.ready);await uploaded(first);
+    await second.evaluate(()=>Wallet.set(Wallet.chips+5));await uploaded(second);
+    await first.evaluate(()=>{const s=JSON.parse(localStorage.getItem('worldwide-wallet-v1'));s.pending={id:'a1b2c3d4e5f60718',chips:s.chips,base:s.chips-30};s.base-=30;localStorage.setItem('worldwide-wallet-v1',JSON.stringify(s));});
+    await first.reload();await first.evaluate(()=>Wallet.ready);await uploaded(first);
+    assert.equal(await first.evaluate(()=>Wallet.chips),2105,'retried upload after another device wrote');
+    await first.evaluate(()=>Wallet.set(2070));await uploaded(first);
+
+    // A second tab of the same table follows the saved hand instead of replaying
+    // its own stale copy.
+    const twin=await first.context().newPage();
+    await twin.goto(new URL('blackjack.html?emulator',base).href);
+    await twin.waitForFunction(()=>typeof g==='object');
+    const hands=await first.evaluate(()=>{
+      while(!['bet','result'].includes(g.phase)){if(g.phase==='insurance')Blackjack.play(g,'decline');else if(g.phase==='play')Blackjack.play(g,'stand');else Blackjack.dealerStep(g);}
+      draw(true);document.querySelector('[data-action="next"]')?.click();
+      document.querySelector('[data-action="deal"]').click();return JSON.stringify(g.hands);
+    });
+    await twin.waitForFunction(h=>typeof g==='object'&&JSON.stringify(g.hands)===h,hands);
+    await twin.close();
+    await first.evaluate(()=>{while(!['bet','result'].includes(g.phase)){if(g.phase==='insurance')Blackjack.play(g,'decline');else if(g.phase==='play')Blackjack.play(g,'stand');else Blackjack.dealerStep(g);}draw(true);Wallet.set(2070);});
+    await uploaded(first);
+
+    // Logging out leaves the chips with the account and returns the guest balance
+    // the device had before, so they cannot be copied into a new ID.
     await second.evaluate(()=>Wallet.sync());
     await second.evaluate(()=>Wallet.logout());
+    assert.equal(await second.evaluate(()=>Wallet.chips),1000);
     await second.evaluate(()=>Wallet.set(5));
     await first.reload();await first.evaluate(()=>Wallet.ready);
-    assert.equal(await first.evaluate(()=>Wallet.chips),2030);
+    assert.equal(await first.evaluate(()=>Wallet.chips),2070);
 
     // The database refuses anyone who is not signed in, and never lists wallets.
     const token=(await saved(first)).token,host='http://127.0.0.1:9000/',ns='?ns=demo-century-default-rtdb';

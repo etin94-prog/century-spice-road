@@ -1,6 +1,18 @@
 'use strict';
 const $=id=>document.getElementById(id),key='worldwide-blackjack-v1';
-let g=Blackjack.table(1,Wallet.chips,0),timer,saveFailed=false;
+let g=Blackjack.table(1,Wallet.chips,0),timer,saveFailed=false,shownBlocked=false;
+// The saved table is the only copy. If another tab, or this page restored from the
+// back/forward cache, finds a save it did not write, it reloads instead of playing
+// on a stale copy (which could settle the same hand twice).
+let lastSaved=null;
+try{lastSaved=localStorage.getItem(key);}catch{}
+function fresh(){
+  let now;try{now=localStorage.getItem(key);}catch{return true;}
+  if(now===lastSaved)return true;
+  clearTimeout(timer);location.reload();return false;
+}
+addEventListener('storage',e=>{if(e.key===key)fresh();});
+addEventListener('pageshow',e=>{if(e.persisted)fresh();});
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&Array.isArray(saved.bots)&&Array.isArray(saved.hands)&&Array.isArray(saved.shoe)&&['bet','insurance','play','bots','dealer','result'].includes(saved.phase)
   // A hand saved before the shared wallet staked table chips, not wallet chips: start clean.
   &&(Number.isInteger(saved.base)||['bet','result'].includes(saved.phase)))g=saved;}catch{}
@@ -40,7 +52,7 @@ function draw(changed=false){
   clearTimeout(timer);
   if(g.phase==='bet'&&g.stake>g.chips)g.stake=Math.max(2,2*Math.floor(g.chips/2));
   if(changed)Wallet.set(g.chips);
-  if(changed)try{localStorage.setItem(key,JSON.stringify(g));saveFailed=false;}catch{saveFailed=true;}
+  if(changed)try{const text=JSON.stringify(g);localStorage.setItem(key,text);lastSaved=text;saveFailed=false;}catch{saveFailed=true;}
   const bet=g.phase==='bet',end=g.phase==='result',open=['dealer','result'].includes(g.phase);
   const nextPaint=new Map();
   function spread(key,ids){
@@ -71,7 +83,9 @@ function draw(changed=false){
     }).join('');
     text+=' · '+g.limit+'판 손익 순위';
   }
-  if(broke)text=(end?text+' · ':'')+'칩이 떨어졌습니다. 무료로 채워 드립니다.';
+  // A hold'em hand still in play elsewhere holds the refill until it ends.
+  const blocked=broke&&Wallet.heldBy(key);shownBlocked=blocked;
+  if(broke)text=(end?text+' · ':'')+(blocked?'칩이 떨어졌습니다. 진행 중인 포커 판을 먼저 끝내 주세요.':'칩이 떨어졌습니다. 무료로 채워 드립니다.');
   $('round').textContent='ROUND '+Math.max(1,g.round+(bet?1:0))+(g.limit?' / '+g.limit:' · 무제한');
   $('message').textContent=text+(saveFailed?' · 저장 불가':'');
   const amounts=[...new Set([2,10,20,50,100,g.stake])].filter(v=>v<=g.chips).sort((a,b)=>a-b);
@@ -80,15 +94,16 @@ function draw(changed=false){
   $('chips').innerHTML=bet?amounts.map((v,i)=>'<button class="chip tone'+i+'" data-bet="'+v+'" aria-label="'+v+'칩 베팅" aria-pressed="'+(g.stake===v)+'"><b>'+v+'</b></button>').join(''):'';
   // A ranked table is fixed once it starts; an open-ended one can be reseated between hands.
   $('seating').innerHTML=bet&&(!g.round||!g.limit)?'<label>참가자 <select id="count">'+[1,2,3,4].map(n=>'<option '+(n===g.bots.length+1?'selected':'')+' value="'+n+'">'+(n===1?'나 혼자':'나 + AI '+(n-1))+'</option>').join('')+'</select></label><label>판 수 <select id="limit">'+[0,5,10,20].map(n=>'<option '+(n===g.limit?'selected':'')+' value="'+n+'">'+(n?n+'판 승부':'무제한')+'</option>').join('')+'</select></label>':'';
-  $('controls').innerHTML=broke?button('refill','무료 리필 '+Wallet.REFILL+'칩',true):bet?button('deal',g.stake+'칩 딜',true):end?button('next',finished?'새 테이블':'다음 베팅',true):Blackjack.actions(g).map(a=>button(a,labels[a],a==='stand'||a==='decline')).join('');
-  if($('count'))$('count').onchange=$('limit').onchange=()=>{const stake=g.stake;g=Blackjack.table(+$('count').value,g.chips,+$('limit').value);g.stake=stake;draw(true);};
-  if(['bots','dealer'].includes(g.phase)&&!$('help').open)timer=setTimeout(()=>{updateWithAudio(()=>Blackjack.dealerStep(g));},450);
+  $('controls').innerHTML=blocked?'':broke?button('refill','무료 리필 '+Wallet.REFILL+'칩',true):bet?button('deal',g.stake+'칩 딜',true):end?button('next',finished?'새 테이블':'다음 베팅',true):Blackjack.actions(g).map(a=>button(a,labels[a],a==='stand'||a==='decline')).join('');
+  if($('count'))$('count').onchange=$('limit').onchange=()=>{if(!fresh())return;const stake=g.stake;g=Blackjack.table(+$('count').value,g.chips,+$('limit').value);g.stake=stake;draw(true);};
+  if(['bots','dealer'].includes(g.phase)&&!$('help').open)timer=setTimeout(()=>{if(fresh())updateWithAudio(()=>Blackjack.dealerStep(g));},450);
 }
 $('chips').onclick=$('controls').onclick=e=>{
+  if(!fresh())return;
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.bet&&g.phase==='bet')g.stake=+b.dataset.bet;
   else if(b.dataset.action==='refill'){
-    Wallet.refill();syncWallet();g.stake=Math.max(g.stake,10);cardAudio.cue('chip');
+    Wallet.refill(key);syncWallet();g.stake=Math.max(g.stake,10);cardAudio.cue('chip');
     if(g.phase==='result'&&!Blackjack.over(g)){g.phase='bet';g.hands=[];g.dealer=[];g.bots.forEach(bot=>bot.hand=null);}
   }
   else if(b.dataset.action==='deal'){if(updateWithAudio(()=>Blackjack.deal(g),true))confirmCardTouch(e);return;}
@@ -102,6 +117,7 @@ $('chips').onclick=$('controls').onclick=e=>{
   if(b.dataset.bet)$('chips').querySelector('[aria-pressed="true"]')?.focus({preventScroll:true});
 };
 $('rules').onclick=()=>{clearTimeout(timer);$('help').showModal();};$('dismiss').onclick=()=>$('help').close();$('help').onclose=()=>draw();
-Wallet.hold(()=>!['bet','result'].includes(g.phase));
-Wallet.onChange(()=>{if(syncWallet())draw(true);});
+// Only redraw here; the table is saved by its own moves, never by a wallet change
+// (which may come from a tab holding a stale copy of this table).
+Wallet.onChange(()=>{if(syncWallet()||(shownBlocked&&!Wallet.heldBy(key)))draw();});
 draw();

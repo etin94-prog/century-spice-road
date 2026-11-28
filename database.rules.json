@@ -63,6 +63,11 @@
         "at": {
           ".validate": "newData.val() === now"
         },
+        "op": {
+          "$device": {
+            ".validate": "$device.matches(/^[a-f0-9]{16}$/) && newData.isString() && newData.val().matches(/^[a-f0-9]{16}$/)"
+          }
+        },
         "$other": {
           ".validate": false
         }

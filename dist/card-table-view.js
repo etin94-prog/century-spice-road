@@ -3,6 +3,18 @@ const $=id=>document.getElementById(id);
 const poker=new URLSearchParams(location.search).get('game')!=='hula';
 const engine=poker?Poker:Hula,title=poker?'Texas Hold’em':'훌라',key='worldwide-'+(poker?'holdem':'hula')+'-v1';
 let game,timer,selected=[],seen=0;
+// The saved table is the only copy. If another tab, or this page restored from the
+// back/forward cache, finds a save it did not write, it reloads instead of playing
+// on a stale copy (which could settle the same hand twice).
+let lastSaved=null;
+try{lastSaved=localStorage.getItem(key);}catch{}
+function fresh(){
+  let now;try{now=localStorage.getItem(key);}catch{return true;}
+  if(now===lastSaved)return true;
+  clearTimeout(timer);location.reload();return false;
+}
+addEventListener('storage',e=>{if(e.key===key)fresh();});
+addEventListener('pageshow',e=>{if(e.persisted)fresh();});
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved?.players?.length>=2&&saved.players.length<=4&&saved.round>=1)game=saved;}catch{}
 // Tables saved before the round setting ran five hands on 200 table chips each.
 // A hold'em hand from then is dropped: its pot was never taken from the wallet.
@@ -36,7 +48,7 @@ function cap(){
   if(cut<=0)return false;
   me.chips-=cut;me.buyin-=cut;seen=me.chips;return true;
 }
-Wallet.hold(()=>poker&&!!game&&game.phase!=='result');
+let setupBlocked=false;
 const limits=value=>'<label>판 수<select id="limit">'+[0,5,10,20].map(n=>'<option value="'+n+'" '+(n===value?'selected':'')+'>'+(n?n+'판 승부':'무제한')+'</option>').join('')+'</select></label>';
 const short=id=>ranks[CardTable.rank(id)-1]+suits[CardTable.suit(id)];
 const showCards=cards=>cards.map(id=>card(id)).join('');
@@ -46,7 +58,7 @@ function modal(heading,html){
   $('close').hidden=!game;if(!$('modal').open)$('modal').showModal();
 }
 function setup(){
-  modal(title+' · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(n=>'<option value="'+n+'" '+((game?.players.length||4)===n?'selected':'')+'>나 + AI '+(n-1)+'</option>').join('')+'</select></label>'+limits(game?.limit??(poker?0:5))+'<p>'+(poker?'내 칩 '+Wallet.chips+' · AI 200칩씩 · 블라인드 5 / 10':'한 사람당 7장 · 정통 턴제')+'</p>'+(poker&&Wallet.chips<Wallet.LOW?btn('refill','무료 리필 '+Wallet.REFILL+'칩',true,true):btn('start','로컬 대국 시작',true,true))+'<a class="setupBack" href="./#worldwide">게임 선택으로</a>');
+  modal(title+' · 대국 설정','<label>참가 인원<select id="count">'+[2,3,4].map(n=>'<option value="'+n+'" '+((game?.players.length||4)===n?'selected':'')+'>나 + AI '+(n-1)+'</option>').join('')+'</select></label>'+limits(game?.limit??(poker?0:5))+'<p>'+(poker?'내 칩 '+Wallet.chips+' · AI 200칩씩 · 블라인드 5 / 10':'한 사람당 7장 · 정통 턴제')+'</p>'+(poker&&Wallet.chips<Wallet.LOW?((setupBlocked=Wallet.heldBy(key))?'<p>칩이 떨어졌습니다. 진행 중인 블랙잭 판을 먼저 끝내 주세요.</p>':btn('refill','무료 리필 '+Wallet.REFILL+'칩',true,true)):btn('start','로컬 대국 시작',true,true))+'<a class="setupBack" href="./#worldwide">게임 선택으로</a>');
 }
 const pokerRules='<p>52장 한 덱을 사용합니다. 내 카드 2장과 공용 카드 5장 중 가장 강한 5장 조합이 이깁니다. 공용 카드만 사용할 수도 있습니다.</p><p>프리플롭과 플롭은 10칩, 턴과 리버는 20칩씩 올리는 고정 리밋입니다. 한 거리에서 베트와 레이즈를 합쳐 최대 4회입니다. 레이즈는 전액을 낼 수 있을 때 가능하며, 콜 금액이 부족하면 남은 칩만 올인합니다.</p><p>동점은 팟을 분할하고 나머지 칩은 버튼 왼쪽부터 받습니다. 올인한 사람은 자신이 기여한 범위의 팟만 겨룹니다.</p><p>내 칩은 블랙잭과 함께 쓰는 공용 지갑이고, AI는 200칩으로 앉습니다. 무제한 테이블은 끝없이 이어지며 칩이 떨어진 AI는 200칩으로 다시 앉습니다. 5·10·20판 승부는 정한 판 수를 마치거나 한 명만 남으면 그동안의 손익으로 순위를 정합니다. 내 칩이 떨어지면 설정 화면에서 무료로 채웁니다.</p>';
 const hulaRules='<p>내 차례에는 더미에서 한 장 받거나 직전 버림패로 땡큐 등록을 하고, 원하는 만큼 등록·붙이기 후 한 장을 버립니다. 손을 비우면 훌라입니다.</p><p>같은 숫자 3장 이상, 같은 무늬의 연속 3장 이상, 또는 7 한 장을 등록할 수 있습니다. A는 낮거나 높게 쓰되 K-A-2로 잇지 않습니다. 7 한 장에는 같은 무늬의 이웃 숫자를 붙입니다. 내가 한 번 등록한 뒤에는 누구의 조합에나 붙일 수 있습니다.</p><p>이 테이블은 내 차례에만 땡큐를 허용합니다. 받기 전, 이미 등록했고 손패 합계가 2인 7점·3인 10점·4인 15점 이하면 스톱할 수 있습니다. 스톱이나 더미 소진 시 A=1부터 K=13까지 합산해 최저점자가 이깁니다. 동점은 공동 승리이며, 별도 배수 없이 승수를 겨룹니다. 판 수는 설정에서 5·10·20판이나 무제한으로 고릅니다.</p>';
@@ -57,7 +69,7 @@ function finished(){
 const tally=p=>poker?p.chips-p.buyin:p.wins;
 function changed(){
   selected=[];mirror();absorb();renderCardMove(render);
-  try{localStorage.setItem(key,JSON.stringify(game));}catch{$('msg').textContent+=' · 기기 저장 불가';}
+  try{const text=JSON.stringify(game);localStorage.setItem(key,text);lastSaved=text;}catch{$('msg').textContent+=' · 기기 저장 불가';}
 }
 function commit(action,event){
   const previousBoard = poker ? game.board.length : 0;
@@ -96,7 +108,7 @@ function resultSummary(){
 }
 function schedule(){
   clearTimeout(timer);
-  if(game&&game.phase!=='result'&&game.turn>0&&!$('modal').open)timer=setTimeout(()=>commit(engine.ai(game)),550);
+  if(game&&game.phase!=='result'&&game.turn>0&&!$('modal').open)timer=setTimeout(()=>{if(fresh())commit(engine.ai(game));},550);
 }
 function render(){
   const g=game,end=g.phase==='result',mine=g.players[0],local=!end&&g.turn===0;
@@ -140,12 +152,13 @@ function render(){
   schedule();
 }
 document.addEventListener('click',e=>{
+  if(e.target.closest('[data-id],[data-act]')&&!fresh())return;
   const cardBtn=e.target.closest('[data-id]');
   if(cardBtn){const id=+cardBtn.dataset.id;selected=selected.includes(id)?selected.filter(c=>c!==id):[...selected,id];redrawHandSelection(cardBtn,render);return;}
   const el=e.target.closest('[data-act]');if(!el)return;
   const a=el.dataset.act;
   if(a==='start'){cardAudio.stopVoice();cardAudio.cue('deal',4);const limit=+$('limit').value;seen=Wallet.chips;game=poker?Poker.start(+$('count').value,Wallet.chips,limit):Hula.start(+$('count').value);game.limit=limit;$('modal').close();changed();return;}
-  if(a==='refill'){Wallet.refill();cardAudio.cue('chip');setup();return;}
+  if(a==='refill'){Wallet.refill(key);cardAudio.cue('chip');setup();return;}
   if(!game)return;
   if(a==='setup'&&game.phase==='result'){setup();return;}
   if(a==='next'&&game.phase==='result'){cardAudio.stopVoice();absorb();if(finished())setup();else{engine.deal(game);cardAudio.cue('deal',4);changed();}return;}
@@ -162,5 +175,10 @@ document.addEventListener('click',e=>{
 $('guide').onclick=()=>modal(title+' · 테이블 규칙',poker?pokerRules:hulaRules);
 $('close').onclick=()=>$('modal').close();$('modal').onclose=schedule;$('modal').oncancel=e=>{if(!game)e.preventDefault();};
 document.body.className=poker?'poker':'hula';document.title=title+' · 51 Worldwide Games';$('name').textContent=title;
-Wallet.onChange(()=>{if(absorb()||cap()){try{localStorage.setItem(key,JSON.stringify(game));}catch{}render();}});
+Wallet.onChange(()=>{
+  // Only redraw; the table is saved by its own moves, never by a wallet change.
+  if(absorb()||cap())render();
+  // The blackjack hand that held the refill has ended.
+  else if(setupBlocked&&!Wallet.heldBy(key)&&$('modal').open)setup();
+});
 if(game){absorb();cap();render();}else setup();
