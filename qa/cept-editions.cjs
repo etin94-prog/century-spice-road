@@ -8314,3 +8314,67 @@ for(const edition of ['ps1','saturn']){
   }
 }
 console.log('PS1 and Saturn creature wards, races, permanent stats, scaling, tolls and support checked.');
+
+{
+  const C=ps2.createEdition('ps1'),map=C.maps['ps1-2'];
+  const id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+  const fresh=()=>C.start(4,4,7000,'ps1-2');
+  const w=map.types.findIndex((type,i)=>type===1&&map.areas[i]===0);
+  const e=map.types.findIndex((type,i)=>type===1&&map.areas[i]===1);
+  const dst=map.types.findIndex((type,i)=>type===2&&map.areas[i]===1);
+  const guard={id:id('fighter'),hp:40},needsWater=id('charybdis');
+  const s=fresh(),p=s.players[0];
+  assert.equal(s.layoutRevision,2);
+  assert.equal(s.prices.length,8);
+  assert.ok(s.players.every(p=>p.symbols.length===8));
+  assert.equal(C.board({mapId:'ps1-2',layoutRevision:1}).areaCount,1);
+  assert.equal(C.board(s).areaCount,2);
+  for(const [i,neighbors] of map.links.entries())if(i!==0)for(const other of neighbors){
+    if(other!==0)assert.equal(map.areas[i],map.areas[other]);
+  }
+  Object.assign(p,{pos:dst,hand:[needsWater],cash:1000});s.phase='land';
+  Object.assign(s.tiles[w],{owner:0,unit:{...guard}});
+  const allowed=(key,...args)=>C.choices(s).some(a=>a.length===args.length+1&&a[0]===key&&args.every((x,j)=>a[j+1]===x));
+  assert.equal(allowed('summon',0),false);
+  // A separate region never contributes to a chain or to a summoning requirement.
+  Object.assign(s.tiles[e],{owner:0,unit:{...guard}});
+  assert.equal(C.chain(s,s.tiles[w]),1);assert.equal(C.chain(s,s.tiles[e]),1);
+  assert.equal(allowed('summon',0),true);
+  Object.assign(s.tiles[e],{owner:-1,unit:null});
+  Object.assign(s.tiles[dst],{owner:1,unit:{...guard}});
+  assert.equal(allowed('invade',0),false);
+  Object.assign(s.tiles[e],{owner:0,unit:{...guard}});
+  assert.equal(allowed('invade',0),true);
+  Object.assign(s.tiles[dst],{owner:0,unit:{...guard}});
+  assert.equal(allowed('exchange',dst,0),true);
+  Object.assign(s.tiles[e],{owner:-1,unit:null});
+  assert.equal(allowed('exchange',dst,0),false);
+  // A saved match with the old area layout may still resume.
+  s.layoutRevision=1;s.prices=s.prices.slice(0,4);
+  for(const p of s.players)p.symbols=p.symbols.slice(0,4);
+  for(const t of s.tiles)t.area=0;
+  assert.equal(allowed('exchange',dst,0),true);
+  const movement=fresh(),walker=movement.players[0],fort=map.forts[0],from=map.links[fort][0];
+  Object.assign(walker,{pos:from,previous:map.links[from].find(i=>i!==fort),dir:1,cash:500,word:1});
+  movement.phase='roll';
+  assert.ok(C.play(movement,['roll']));
+  assert.equal(walker.pos,fort);
+  assert.equal(walker.cash,500);
+  assert.deepEqual(walker.flags,[fort]);
+  assert.match(movement.log[0],/요새 통과/);
+  const flight=fresh(),flier=flight.players[0];
+  Object.assign(flier,{cash:500,hand:[id('fly')],status:'haste',word:6,enchantDeadline:99});
+  const originalRandom=Math.random;
+  try{
+    Math.random=()=>0;
+    assert.ok(C.play(flight,['cast',0]));
+    assert.equal(flier.status,undefined);
+    assert.equal(flier.word,undefined);
+    assert.equal(flier.enchantDeadline,undefined);
+    assert.ok(C.play(flight,['roll']));
+    assert.deepEqual(flight.mapEffect.faces,[1,1]);
+    assert.equal(flight.die,2);
+  }finally{Math.random=originalRandom;}
+  assert.match(describeSpell(C.cards[id('fly')].effect,C.cards[id('fly')],C),/주사위/);
+}
+console.log('PS1 Sneff dual-area ownership, old saves, summon/invasion/exchange, checkpoint cash and Fly checked.');

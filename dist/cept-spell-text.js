@@ -406,7 +406,7 @@ const describeCepterSpell=(()=>{
       case 'disease':case 'vitality':
         if(edition==='revolt'||edition==='3ds')return '고른 크리처의 전투 ST와 HP를 각각 20 '+(e==='disease'?'낮추고':'높이고')+' 카드 한 장을 뽑습니다.';break;
       case 'manna':return '(완료한 주회 수 + 1) × '+(card.magicPerLap||50)+'G를 얻습니다.';
-      case 'fly':return edition==='revolt'?'이번 차례에 주사위를 3개 굴립니다.':'이번 차례에 주사위를 2개 굴립니다.';
+      case 'fly':return edition==='ps1'?'자신에게 걸린 기존 셉터 인챈트를 덮어쓰고 이번 차례에 주사위를 2개 굴립니다.':edition==='revolt'?'이번 차례에 주사위를 3개 굴립니다.':'이번 차례에 주사위를 2개 굴립니다.';
       case 'bolt':return '고른 '+(['ps1','saturn'].includes(edition)?'':'적 ')+'크리처에게 20 피해를 줍니다.';
       case 'landdrain':return '고른 적의 보유 영지 한 곳당 '+(edition==='saga'?20:30)+'G를 빼앗습니다.';
       case 'reincarnation':if(['revolt','begins','3ds'].includes(edition))return '현재 손패를 모두 버리고 버린 수보다 한 장 더 뽑습니다.';break;

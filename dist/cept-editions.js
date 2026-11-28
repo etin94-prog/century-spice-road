@@ -85,9 +85,13 @@ const CepterEditions=(()=>{
       const id=mapId(edition,m,index),nextMap=data.maps[edition][index+1];
       const transit=modernMapSlots[edition]?checkedTransit(id,m,types,links):m.transit;
       const shop=edition==='begins'?beginsShops[m.slug]:null;
+      // PS1 Sneff has separate west and east loops (drgs.app/culdceptex/map/02sneff.html).
+      const splitSneff=edition==='ps1'&&m.slug==='sneph';
+      const [castleRow,castleColumn]=position[types.indexOf('성')];
+      const areas=splitSneff?position.map(([row,column])=>Number(row<castleRow||column>castleColumn)):same?other.areas:types.map(()=>0);
       result[id]={...m,types,links,transit,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
-        areas:same?other.areas:types.map(()=>0),areaCount:same?other.areaCount:1,startCash,bonus:lapBonus||200,base:landPrice||(edition==='begins'&&m.slug==='gaidess-arena-2'?100:80),die:die||Number(m.die)||other?.die||(edition==='begins'?8:6),storyGoal:goal||other?.storyGoal,
+        areas,areaCount:splitSneff?2:same?other.areaCount:1,...(splitSneff?{regionalRevision:2}:{}),startCash,bonus:lapBonus||200,base:landPrice||(edition==='begins'&&m.slug==='gaidess-arena-2'?100:80),die:die||Number(m.die)||other?.die||(edition==='begins'?8:6),storyGoal:goal||other?.storyGoal,
         graph:true,...(fortBonus||edition==='begins'?{fortBonus:fortBonus||200}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
         ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{}),
         ...(shop?{cardShops:Object.fromEntries(types.flatMap((t,i)=>t==='카드 상점'?[[i,shop]]:[]))}:{})};
