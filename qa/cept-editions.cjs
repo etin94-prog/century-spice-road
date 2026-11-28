@@ -8378,3 +8378,44 @@ console.log('PS1 and Saturn creature wards, races, permanent stats, scaling, tol
   assert.match(describeSpell(C.cards[id('fly')].effect,C.cards[id('fly')],C),/주사위/);
 }
 console.log('PS1 Sneff dual-area ownership, old saves, summon/invasion/exchange, checkpoint cash and Fly checked.');
+
+{
+  const C=ps2.createEdition('ps1');
+  const kelderId=Object.entries(C.maps).find(([,m])=>m.slug==='kelder')[0];
+  const talioId=Object.entries(C.maps).find(([,m])=>m.slug==='talio')[0];
+  const kelder=C.start(4,4,8000,kelderId),p=kelder.players[0];
+  const map=C.board(kelder),earth=6,wind=7,temple=map.types.indexOf('신전');
+  assert.equal(kelder.layoutRevision,2);
+  assert.equal(C.board({mapId:kelderId,layoutRevision:1}).areaCount,1);
+  assert.ok(kelder.players.every(q=>q.symbols.length===8));
+  assert.deepEqual(kelder.prices.slice(earth),[1,1]);
+  const northFort=map.types.indexOf('북쪽 요새');
+  assert.equal(kelder.tiles[northFort].area,1);
+  assert.equal(kelder.tiles[temple].area,0);
+  assert.ok(kelder.tiles.filter(t=>t.area===1).every(t=>t.type!==2&&t.type!==3));
+  const newMatch=C.start(2,2,8000,kelderId);
+  kelder.prices[earth]=99;
+  assert.equal(newMatch.prices[earth],1);
+  kelder.prices[earth]=1;
+  Object.assign(p,{pos:temple,cash:500});kelder.phase='temple';
+  assert.ok(!C.play(kelder,['buySymbol',earth,101]));
+  assert.ok(C.play(kelder,['buySymbol',earth,100]));
+  assert.deepEqual([p.cash,p.symbols[earth],p.symbols[2]],[400,100,0]);
+  kelder.phase='temple';
+  assert.ok(C.play(kelder,['buySymbol',earth,100]));
+  assert.deepEqual([p.cash,p.symbols[earth]],[300,200]);
+  kelder.phase='temple';
+  assert.ok(!C.play(kelder,['sellSymbol',earth,101]));
+  assert.ok(C.play(kelder,['sellSymbol',earth,100]));
+  assert.deepEqual([p.cash,p.symbols[earth],p.symbols[2],kelder.prices[wind]],[400,100,0,1]);
+  for(const laps of [0,1,2]){
+    const match=C.start(2,2,8000,talioId),map=C.board(match),walker=match.players[0],from=map.links[0][0];
+    Object.assign(walker,{cash:500,pos:from,previous:map.links[from].find(n=>n!==0),dir:1,word:1,lap:laps,flags:map.checkpoints.slice()});
+    match.phase='roll';assert.ok(C.play(match,['roll']));
+    assert.deepEqual([walker.pos,walker.lap,walker.cash],[0,laps+1,1000+50*laps]);
+  }
+  const prior=ps2.start(2,2,8000,'market'),q=prior.players[0];
+  q.cash=8000;q.pos=prior.tiles.findIndex(t=>t.type==='신전');prior.phase='temple';
+  assert.ok(!ps2.choices(prior).some(([kind,,n])=>kind==='buySymbol'&&n>50));
+}
+console.log('PS1 Kelder north charms, repeat 100-card trades, legacy map and Talio lap scaling checked.');

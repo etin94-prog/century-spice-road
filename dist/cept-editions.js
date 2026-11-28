@@ -88,10 +88,18 @@ const CepterEditions=(()=>{
       // PS1 Sneff has separate west and east loops (drgs.app/culdceptex/map/02sneff.html).
       const splitSneff=edition==='ps1'&&m.slug==='sneph';
       const [castleRow,castleColumn]=position[types.indexOf('성')];
-      const areas=splitSneff?position.map(([row,column])=>Number(row<castleRow||column>castleColumn)):same?other.areas:types.map(()=>0);
+      // Kelder's north has its own charms; its earth and wind charms start at 1G.
+      // The PS1 field report also records Talio's 50G increase on successive laps.
+      // drgs.app/culdceptex/map/05kelder.html and drgs.app/culdceptex/map/06talio.html
+      const splitKelder=edition==='ps1'&&m.slug==='kelder',regional=splitSneff||splitKelder;
+      const areas=splitSneff?position.map(([row,column])=>Number(row<castleRow||column>castleColumn)):
+        splitKelder?position.map(([row,column],i)=>Number(types[i]!=='성'&&row<=castleRow&&column<=castleColumn)):
+        same?other.areas:types.map(()=>0);
       result[id]={...m,types,links,transit,forts,checkpoints:forts.filter((j,i)=>forts.findIndex(k=>types[k]===types[j])===i),
         castles:types.flatMap((t,i)=>t==='성'?[i]:[]),position,cols:Math.max(...position.map(v=>v[1])),rows:Math.max(...position.map(v=>v[0])),
-        areas,areaCount:splitSneff?2:same?other.areaCount:1,...(splitSneff?{regionalRevision:2}:{}),startCash,bonus:lapBonus||200,base:landPrice||(edition==='begins'&&m.slug==='gaidess-arena-2'?100:80),die:die||Number(m.die)||other?.die||(edition==='begins'?8:6),storyGoal:goal||other?.storyGoal,
+        areas,areaCount:regional?2:same?other.areaCount:1,...(regional?{regionalRevision:2}:{}),
+        ...(splitKelder?{initialSymbolPrices:[10,10,10,10,10,10,1,1]}:{}),
+        ...(edition==='ps1'&&m.slug==='talio'?{lapIncrement:50}:{}),startCash,bonus:lapBonus||200,base:landPrice||(edition==='begins'&&m.slug==='gaidess-arena-2'?100:80),die:die||Number(m.die)||other?.die||(edition==='begins'?8:6),storyGoal:goal||other?.storyGoal,
         graph:true,...(fortBonus||edition==='begins'?{fortBonus:fortBonus||200}:{}),...(same?{stage:index+1,image:other.image,half:other.half,position:other.position,fortBonus:other.fortBonus}:{}),section:m.section,next:m.section==='story'&&nextMap?.section==='story'?mapId(edition,nextMap,index+1):null,
         ...(edition==='revolt'?revoltGates(m):{}),...(edition==='saga'?{shrineKinds:sagaShrineKinds[m.slug]||{}}:{}),
         ...(shop?{cardShops:Object.fromEntries(types.flatMap((t,i)=>t==='카드 상점'?[[i,shop]]:[]))}:{})};

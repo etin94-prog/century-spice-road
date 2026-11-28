@@ -5,10 +5,11 @@ function createCepter(edition="ps2"){
   const editions=edition==="ps2"?null:typeof module==="undefined"?CepterEditions:require("./cept-editions");
   const maps=editions?editions.boards(edition,originalMaps):originalMaps;
   const original=typeof module==='undefined'?CepterCards:require('./cept-cards.js');
-  const sneff=maps['ps1-2'];
-  const legacySneff=sneff?.regionalRevision?{...sneff,areas:sneff.types.map(()=>0),areaCount:1}:null;
+  const legacyRegionalMaps=new Map(Object.entries(maps).flatMap(([id,map])=>map.regionalRevision?
+    [[id,{...map,areas:map.types.map(()=>0),areaCount:1,initialSymbolPrices:undefined}]]:[]));
   function board(s){
-    if(legacySneff&&s.mapId==='ps1-2'&&(s.layoutRevision??0)<sneff.regionalRevision)return legacySneff;
+    const previous=legacyRegionalMaps.get(s.mapId);
+    if(previous&&(s.layoutRevision??0)<previous.regionalRevision)return previous;
     return maps[(s.mapId?.startsWith('ps2-')&&!s.layoutRevision?'legacy-':'')+(s.mapId||'classic')];
   }
   const firstEdition=edition==='saturn'||edition==='ps1',revolt=edition==='revolt',handheld=edition==='3ds',begins=edition==='begins';
@@ -238,13 +239,14 @@ function createCepter(edition="ps2"){
     if(![0,20,30,40,60].includes(roundLimit)&&!(begins&&roundLimit===25))throw Error('지원하지 않는 라운드 제한입니다.');
     const layout=teamLayouts[alliance]||(count===4&&alliance==='auto'&&mapGoal&&storyNames?teamLayouts.teams:null);
     const teams=layout?.slice()||null;
+    const map=maps[mapId],symbolKinds=(map.areaCount||2)*4;
     const players=Array.from({length:count},(_,i)=>{
       const npc=storyCast&&i>=humans?(aiBook==='story-leo'&&i===2?'Leo · Revenge':storyNames[i]):null;
       const seatBook=npc?storyBook(npc):i>=humans&&!storyCast?aiBook:template;
-      const p={ai:i>=humans,name:npc||((i>=humans?'AI ':'셉터 ')+(i+1)),cash:maps[mapId].startCash??200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(seatBook),template:seatBook.slice(),symbols:Array((maps[mapId].areaCount||2)*4).fill(0),previous:null};
+      const p={ai:i>=humans,name:npc||((i>=humans?'AI ':'셉터 ')+(i+1)),cash:maps[mapId].startCash??200,pos:0,dir:0,lap:0,flags:[],hand:[],book:shuffledBook(seatBook),template:seatBook.slice(),symbols:Array(symbolKinds).fill(0),previous:null};
       for(let j=0;j<openingHandSize;j++)draw(p);return p;
     });
-    const s={edition,version:1,layoutRevision:maps[mapId].regionalRevision||1,storyCast,alliance,teams,mapId,mapGoal,aiLevel,roundLimit,prices:Array((maps[mapId].areaCount||2)*4).fill(maps[mapId].gemStore?50:10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].baseValues?.[i]??maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
+    const s={edition,version:1,layoutRevision:maps[mapId].regionalRevision||1,storyCast,alliance,teams,mapId,mapGoal,aiLevel,roundLimit,prices:map.initialSymbolPrices?.slice()||Array(symbolKinds).fill(map.gemStore?50:10),players,target,turn:0,round:1,phase:'spell',tiles:maps[mapId].types.map((type,i)=>({type,area:maps[mapId].areas[i],base:maps[mapId].baseValues?.[i]??maps[mapId].base,owner:-1,level:1,unit:null})),log:[],die:0,visited:[],winner:-1};
     if(edition==='begins')s.openingHandSize=openingHandSize;
     if(revolt){
       players[0].cash+=roundGain(s);
@@ -652,7 +654,7 @@ function createCepter(edition="ps2"){
         }
         if(t.type==='성'&&p.flags.length===(m.checkpoints||m.forts).length){
           const cashBeforeLap=p.cash;p.lap++;p.flags=[];
-          const lapIncrement=edition==='saga'||handheld?m.bonus/10:20;
+          const lapIncrement=m.lapIncrement??(edition==='saga'||handheld?m.bonus/10:20);
           const lands=s.tiles.filter(v=>handheld?allied(s,v.owner,s.turn):v.owner===s.turn).length;
           const fixed=begins?(p.lap+1)*100:m.bonus+Math.floor(lapIncrement*(p.lap-1));
           const landBonus=begins?(s.players.length===2?60:80):handheld?s.players.length*10:20;
@@ -887,12 +889,14 @@ function createCepter(edition="ps2"){
           });
         });
         options.push(['leaveGem']);break;
-      case 'temple':
+      case 'temple':{
+        const tradeLimit=edition==='ps1'?100:50;
         s.prices.forEach((price,k)=>{
-          const capacity=begins?50-p.symbols[k]:50;
+          const capacity=begins?tradeLimit-p.symbols[k]:tradeLimit;
           for(let n=1;n<=Math.min(capacity,Math.floor(p.cash/price));n++)options.push(['buySymbol',k,n]);
-          for(let n=1;n<=Math.min(50,p.symbols[k]);n++)options.push(['sellSymbol',k,n]);
+          for(let n=1;n<=Math.min(tradeLimit,p.symbols[k]);n++)options.push(['sellSymbol',k,n]);
         });options.push(['leaveTemple']);break;
+      }
       case 'spellCircle':return [...s.circleOffers.map(id=>['circleCast',id]),['circleSkip']];
       case 'pathSwitch':return [['switchKeep'],['switchFlip']];
       case 'towerTarget':return [...towerTargets(s),['towerCancel']];
