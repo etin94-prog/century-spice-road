@@ -769,7 +769,9 @@ const CepterEditions=(()=>{
     thunderbeak:{first:true,paralyze:true,statusElements:[1]},toxicflower:{stationary:true,first:true,poison:true,statusRaces:['rh','rb','rd']},
     roadrunner:{},giantleech:{regenerateHitRatio:.25},
     efreet:{last:true,scrollCritical:true,battleFeePerHP:2},willothewisp:{last:true,hitMagicPerHP:2},bistair:{first:true,hitMagicPerLap:50},
-    deepspawn:{battleCepterCurse:'bind'}
+    deepspawn:{battleCepterCurse:'bind'},
+    ormechead:{neutralizeNormal:true,neutralizeScroll:true,battleEndHPLoss:10,battleEndLossIgnoresBonus:true},
+    taotieh:{basicBattle:false}
   };
   const firstBattleGear={
     coinofpiety:{},holygrail:{},neutralamulet:{},offeringdoll:{},ringofthesuccubus:{},ringofthevampire:{},sleep:{},
@@ -1274,6 +1276,11 @@ const CepterEditions=(()=>{
         tribute[tribute.indexOf(lookup.get(from))]=lookup.get(to);
       }
       presets.legacyFireTribute=tribute;
+      const earth=presets.legacyGuard.slice();
+      for(const [from,to] of [['paladin','taotieh'],['ooze','ormechead']]){
+        earth[earth.indexOf(lookup.get(from))]=lookup.get(to);
+      }
+      presets.legacyEarthDefense=earth;
     }
     if(edition==='dc'){
       const fusion=new Map([['goblin','battlegearalpha'],['fighter','battlegearbeta'],['wolf','livingsword'],['skeleton','livingspear']]

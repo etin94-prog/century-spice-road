@@ -9408,3 +9408,43 @@ for(const edition of ['ps1','saturn']){
   }
 }
 console.log('Deep Spawn: defense vs surviving combat, lost turn, expiry and paralysis; PS1 Ashura next reverse route checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition);
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const book=C.presets.legacyEarthDefense;
+  assert.ok(C.validBook(book));
+  for(const key of ['taotieh','ormechead'])assert.ok(book.includes(id(key)),edition+' '+key);
+  function fight(attacker,guard,{atHP,atST,defHP,defST,defMHP,gear,enchant,level=1}={}){
+    const s=C.start(2,2,7000,edition+'-original-marsh-paths',book,book,2),at=3;
+    const a=C.cards[id(attacker)],d=C.cards[id(guard)];
+    Object.assign(s.players[0],{pos:at,hand:gear?[id(gear)]:[],cash:1000});
+    Object.assign(s.players[1],{hand:[],cash:1000});
+    Object.assign(s.tiles[at],{type:2,owner:1,level,unit:{id:id(guard),hp:defHP??d.hp,st:defST,mhp:defMHP,enchant}});
+    s.phase='attack';
+    s.battle={at,inv:id(attacker),invUnit:{id:id(attacker),hp:atHP??a.hp,st:atST},atkItem:null,defItem:null};
+    assert.ok(C.play(s,gear?['equip',0]:['bare'])&&C.play(s,['bare']));
+    return s;
+  }
+  const normal=fight('fighter','ormechead');
+  assert.equal(normal.battle.strikes[0].effect,'block');
+  assert.equal(normal.tiles[3].unit.hp,20);
+  const scroll=fight('fighter','ormechead',{gear:'firebolt',defHP:20});
+  assert.equal(scroll.battle.strikes[0].effect,'block');
+  assert.equal(scroll.tiles[3].unit.hp,10);
+  const worn=fight('fighter','ormechead',{defHP:10,level:5});
+  assert.equal(worn.battle.won,true);
+  assert.equal(worn.tiles[3].unit.id,id('fighter'));
+  const inactive=fight('fighter','ormechead',{enchant:'paralysis',level:3});
+  assert.equal(inactive.battle.strikes[0].effect,'hit');
+  assert.doesNotMatch(inactive.battle.lines.join(' '),/전투 종료 HP/);
+  const defense=fight('goblin','taotieh',{defHP:69,defMHP:75,defST:75});
+  assert.deepEqual([defense.tiles[3].unit.st,defense.tiles[3].unit.mhp,defense.tiles[3].unit.hp],[80,80,64]);
+  assert.match(defense.battle.lines.join(' '),/기본 ST 80 · 최대 HP 80/);
+  const invasion=fight('taotieh','goblin');
+  assert.equal(invasion.battle.won,true);
+  assert.equal(invasion.tiles[3].unit.st,edition==='ps1'?40:undefined);
+  assert.equal(invasion.tiles[3].unit.hp,edition==='ps1'?50:40);
+  assert.doesNotMatch(fight('taotieh','wallofstone').battle.lines.join(' '),/격파 후 기본 ST/);
+}
+console.log('PS1 and Saturn Ormec Head and Tao Tieh: attack types, permanent HP, paralysis, defense growth, cap and edition-specific invasion checked.');

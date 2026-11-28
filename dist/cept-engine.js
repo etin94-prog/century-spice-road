@@ -1530,7 +1530,7 @@ function createCepter(edition="ps2"){
       const hpLoss=creatureEnd&&a.c.battleEndHPLoss;
       if(a.hp>0&&(hpLoss||a.n==='zombie')){
         const loss=hpLoss||20;
-        a.hp=(begins||handheld?Math.min(a.hp,a.u.hp):a.hp)-loss;
+        a.hp=(begins||handheld||a.c.battleEndLossIgnoresBonus?Math.min(a.hp,a.u.hp):a.hp)-loss;
         if(begins||handheld)lines.push('좀비 · 기본 HP 20 감소');
         else if(hpLoss)lines.push(a.c.name+' · 전투 종료 HP '+loss+' 감소');
       }

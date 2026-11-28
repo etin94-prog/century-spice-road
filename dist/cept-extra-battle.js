@@ -502,13 +502,16 @@ const CepterExtraBattle=(()=>{
           if(camazotz)lines.push(a.c.name+' · 상대 호부 '+loss+'개 파괴');
         }
       }
-      if(a.n==='taotieh'&&(s.edition==='3ds'?creatureEnd&&d.defeatedByOpponent:s.edition!=='saga'||d.defeatedByOpponent)){
+      const taoVictory=firstEdition?creatureEnd&&d.defeatedByOpponent&&(s.edition==='ps1'||a.defending):
+        s.edition==='3ds'?creatureEnd&&d.defeatedByOpponent:s.edition!=='saga'||d.defeatedByOpponent;
+      if(a.n==='taotieh'&&taoVictory){
         const st=fx.strength(a.u),native=s.edition==='begins',gain=native||s.edition==='3ds'?20:10;
         a.u.st=Math.max(st,Math.min(native||['saga','3ds'].includes(s.edition)?100:80,st+gain));
         if(native){
           const max=Math.min(100,fx.max(a.u)+gain);
           a.u.mhp=max;a.u.hp=Math.min(max,a.u.hp+gain);a.hp+=gain;a.heal=true;
         }else grow(a,gain);
+        if(firstEdition)lines.push(a.c.name+' · 상대 격파 후 기본 ST '+a.u.st+' · 최대 HP '+fx.max(a.u));
       }
       if(a.g==='heartfibula'||a.g==='windamulet'&&s.edition!=='dc')grow(a,a.g==='heartfibula'?20:10);
       if(s.edition==='3ds'&&a.g==='wateramulet'){
