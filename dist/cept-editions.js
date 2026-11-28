@@ -736,6 +736,8 @@ const CepterEditions=(()=>{
     terrair:{first:true,st:40,hp:30,deathStrike:{elements:[1,2],rate:1}},
     evileyeball:{deathStrike:{elements:[-1],rate:.8}},holysymbol:{deathStrike:{races:['ru'],rate:.8}},
     handcuffs:{reflectScroll:true,zeroBattleST:true},soulblast:{st:30},tigerrobe:{},
+    belloflaw:{},elvencloak:{battleRace:'rp'},queenstorch:{absorbRaces:['rh','rb']},
+    goulsclaw:{paralyzeRaces:['rh','rb','rd']},polestar:{neutralizeNormal:true,finalHP:1},
   };
   function firstEquipmentTrait(clause,category){
     const scrollPower=clause.match(/^巻物攻撃\[ST(\d+)\]$/);
@@ -1045,6 +1047,8 @@ const CepterEditions=(()=>{
       }
       if(first&&kind==='item'){
         if(Object.hasOwn(firstBattleGear,slug))Object.assign(c,{st:0,hp:0,catalogOnly:false},firstBattleGear[slug]);
+        if(slug==='ripperknife')Object.assign(c,{catalogOnly:false,st:40,recoilPercent:edition==='ps1'?30:25});
+        if(slug==='bloodspoil')Object.assign(c,{catalogOnly:false,st:0,scrollPoisonRaces:edition==='ps1'?['rh','rb','rd']:['rh','rb']});
         if(slug==='magicbelt')Object.assign(c,{catalogOnly:false,st:40,permanentSTLoss:edition==='ps1'?20:10});
         if(slug==='lightningbolt')Object.assign(c,{catalogOnly:false,st:0,
           deathStrike:{races:edition==='ps1'?['rh','rb','rd']:['rh','rb'],rate:edition==='ps1'?.6:.75}});

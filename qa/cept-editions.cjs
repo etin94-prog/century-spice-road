@@ -8419,3 +8419,51 @@ console.log('PS1 Sneff dual-area ownership, old saves, summon/invasion/exchange,
   assert.ok(!ps2.choices(prior).some(([kind,,n])=>kind==='buySymbol'&&n>50));
 }
 console.log('PS1 Kelder north charms, repeat 100-card trades, legacy map and Talio lap scaling checked.');
+
+for(const edition of ['ps1','saturn']){
+  const C=ps2.createEdition(edition),id=n=>C.cards.findIndex(c=>!c.catalogOnly&&!c.unlisted&&C.combo.key(c)===n);
+  const run=({attacker='fighter',guard='fighter',weapon,armor,life,terrain=0,level=1,hand=[]}={})=>{
+    const s=C.start(2,2,7000,edition+'-original-marsh-paths'),at=s.tiles.findIndex(t=>C.territoryType(t.type));
+    const tile=s.tiles[at],inv=id(attacker),def=id(guard);
+    assert.ok(inv>=0&&def>=0);
+    Object.assign(tile,{owner:1,type:terrain,level,unit:{id:def,hp:life??C.cards[def].hp}});
+    s.phase='attack';s.battle={at,inv,atkItem:null,defItem:null};
+    s.players.forEach(p=>{p.cash=1000;p.hand=[];p.book=[];});
+    if(weapon)s.players[0].hand=[id(weapon)];
+    s.players[1].hand=[...(armor?[id(armor)]:[]),...hand.map(id)];
+    assert.ok(C.play(s,weapon?['equip',0]:['bare']));
+    assert.ok(C.play(s,armor?['equip',0]:['bare']));
+    return {s,tile,b:s.battle};
+  };
+  const bell=run({attacker:'goblin',weapon:'belloflaw',hand:['goblin','holygrail']});
+  assert.deepEqual(bell.s.players[1].hand,[id('goblin')]);
+  assert.ok(!bell.s.players[0].book.includes(id('belloflaw')));
+  const torch=run({attacker:'goblin',armor:'queenstorch',life:20});
+  assert.equal(torch.b.strikes[0].effect,'heal');
+  assert.equal(torch.tile.unit.hp,40);
+  assert.equal(run({attacker:'goblin',weapon:'elvencloak',armor:'queenstorch'}).b.strikes[0].effect,'hit');
+  assert.equal(run({attacker:'skeleton',armor:'queenstorch'}).b.strikes[0].effect,'hit');
+  const claw=run({attacker:'goblin',weapon:'goulsclaw'});
+  assert.equal(claw.tile.unit.enchant,'paralysis');
+  assert.equal(claw.b.strikes.length,1);
+  assert.equal(run({attacker:'goblin',weapon:'goulsclaw',armor:'elvencloak'}).tile.unit.enchant,undefined);
+  const pole=run({armor:'polestar'});
+  assert.equal(pole.b.strikes[0].effect,'block');
+  assert.equal(pole.tile.unit.hp,1);
+  const scroll=run({weapon:'firebolt',armor:'polestar'});
+  assert.equal(scroll.b.strikes[0].effect,'hit');
+  assert.equal(scroll.tile.unit.hp,1);
+  const recoil=run({weapon:'ripperknife',guard:'wallofice',terrain:1,level:5});
+  assert.equal(recoil.b.attackST,80);
+  assert.equal(recoil.b.strikes[0].hp[0],edition==='ps1'?16:20);
+  assert.equal(run({weapon:'ripperknife',armor:'polestar'}).b.strikes[0].hp[0],40);
+  const toxin=run({weapon:'bloodspoil'});
+  assert.ok(toxin.tile.unit.poisoned);
+  assert.equal(toxin.tile.unit.hp,20);
+  assert.ok(!run({weapon:'bloodspoil',armor:'elvencloak'}).tile.unit.poisoned);
+  assert.equal(run({weapon:'bloodspoil',armor:'magicshield'}).b.strikes[0].effect,'block');
+  assert.equal(run({weapon:'bloodspoil',armor:'handcuffs'}).b.finalHP[0],20);
+  const dragon=run({weapon:'bloodspoil',guard:'dragon',terrain:0,level:2});
+  assert.equal(!!dragon.tile.unit.poisoned,edition==='ps1');
+}
+console.log('PS1 and Saturn race changes, absorption, paralysis, poison, recoil and post-battle gear checked.');

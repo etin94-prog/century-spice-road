@@ -167,6 +167,12 @@ const describeCepterItem=(()=>{
     if(card.pierceElements?.length)pieces.push(list(card.pierceElements)+' 상대의 지형 HP 보너스를 관통합니다.');
     if(card.reflectElements?.length)pieces.push(list(card.reflectElements)+' 상대의 일반 공격을 반사합니다.');
     if(card.neutralizes?.length)pieces.push(list(card.neutralizes)+' 상대의 일반 공격을 무효화합니다.');
+    if(card.battleRace)pieces.push('장착한 크리처는 전투 중 '+raceNames[card.battleRace]+' 종족으로 취급됩니다.');
+    if(card.absorbRaces)pieces.push(card.absorbRaces.map(r=>raceNames[r]).join('·')+' 종족의 일반 공격 피해를 흡수합니다.');
+    if(card.paralyzeRaces)pieces.push(card.paralyzeRaces.map(r=>raceNames[r]).join('·')+' 종족에게 일반 공격이 명중하면 마비를 부여합니다.');
+    if(card.scrollPoisonRaces)pieces.push('두루마리로 '+card.scrollPoisonRaces.map(r=>raceNames[r]).join('·')+' 종족에게 독을 부여합니다.');
+    if(card.finalHP!=null)pieces.push('생존하면 전투가 끝날 때 HP가 '+card.finalHP+'이 됩니다.');
+    if(card.recoilPercent)pieces.push('일반 공격으로 준 피해의 '+card.recoilPercent+'%를 반동 피해로 받습니다.');
     if(card.permanentSTLoss)pieces.push('생존하면 전투 후 기본 ST가 '+card.permanentSTLoss+' 감소합니다.');
     if(card.deathStrike){
       const {elements,races,rate}=card.deathStrike;
@@ -188,6 +194,7 @@ const describeCepterItem=(()=>{
     else if(C.edition==='begins'&&name==='eternalmail')pieces.push('장착한 크리처가 생존하면 이 장비를 북에 넣고 남은 카드를 섞습니다.');
     else if(['begins','3ds'].includes(C.edition)&&name==='phoenixamulet')pieces.push('장착한 크리처가 전투에서 격파되면 손패로 돌아오고, 그 카드의 소환 비용만큼 마력을 얻습니다.');
     else if(C.edition==='3ds'&&name==='chameleonarmor')pieces.push('교전 영지 레벨에 1을 더해 10을 곱한 만큼 전투 HP가 오릅니다.');
+    else if(firstEdition&&name==='belloflaw')pieces.push('상대 손패에서 마력 비용이 가장 높은 카드 한 장을 파괴합니다.');
     else if(firstEdition&&name==='neutralamulet')pieces.push('장착한 크리처가 전투 중 무속성이 됩니다.');
     else if(firstEdition&&name==='ringofthesuccubus')pieces.push('일반 공격이 명중하면 상대의 기본 ST를 절반으로 줄입니다.');
     else if(firstEdition&&name==='offeringdoll')pieces.push('전투에서 이기면 교전 지역에서 장착 크리처와 같은 속성의 호부 가치가 20% 오릅니다.');

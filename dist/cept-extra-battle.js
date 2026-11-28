@@ -297,6 +297,9 @@ const CepterExtraBattle=(()=>{
         d.hp+=damage;d.absorbed=true;lines.push('화속성 피해 흡수');return 'heal';
       }
       if(orb)return;
+      if(d.gear?.absorbRaces?.includes(a.c.catalog?.race)){
+        d.hp+=damage;d.absorbed=true;lines.push(d.gear.name+' · 피해 흡수');return 'heal';
+      }
       const rate=d.g==='holygrail'?(['3ds','begins'].includes(s.edition)?3:2):d.n==='charon'?2:d.u.enchant==='simulacrum'?3:0;
       if(rate){
         const cost=damage*rate;

@@ -1080,6 +1080,7 @@ function createCepter(edition="ps2"){
       if(revolt&&!muted&&a.n==='coatlicue'&&owner.book.length>other.book.length){a.st+=20;a.hp+=20;}
       if(a.g==='changingsalve')[a.st,a.hp]=[a.hp,a.st];
       if(a.g==='neutralamulet'||!revolt&&a.g==='neutralcloak'){a.element=-1;a.elements=null;}
+      if(a.gear?.battleRace)a.c={...a.c,catalog:{...a.c.catalog,race:a.gear.battleRace}};
       if(!muted){
         extra.baseStats(a,d);
         if(a.c.evoBattle){
@@ -1175,11 +1176,15 @@ function createCepter(edition="ps2"){
         if(target.hp<=0)lines.push('블래스터 레이 · 빈 영지가 없어 격파');
         return reflected?'reflect':'hit';
       }
-      if(a.g==='sleep'||a.g==='death'||scroll&&weapon?.deathStrike){
+      if(a.g==='sleep'||a.g==='death'||scroll&&(weapon?.deathStrike||weapon?.scrollPoisonRaces)){
         const target=reflected?a:d;
         if(a.g==='sleep'){combo.clear(target.u);target.u.enchant='sleep';lines.push('수면 · 통행료 없음');}
         else if(weapon?.deathStrike)extra.gearDeath(a,target);
-        else if(!s.predict&&Math.random()<.6)target.hp=0;
+        else if(weapon?.scrollPoisonRaces){
+          if(weapon.scrollPoisonRaces.includes(target.c.catalog?.race)){
+            combo.clear(target.u);target.u.poisoned=true;lines.push(a.gear.name+' · 독 부여');
+          }
+        }else if(!s.predict&&Math.random()<.6)target.hp=0;
         return reflected?'reflect':'hit';
       }
       if(reflected){
@@ -1220,6 +1225,10 @@ function createCepter(edition="ps2"){
         if(!scroll)d.hitByOpponent=true;
       }
       trackDamage(d,damage,!scroll);
+      if(!scroll&&weapon?.recoilPercent&&damage>0){
+        const recoil=Math.floor(damage*weapon.recoilPercent/100);
+        a.hp-=recoil;lines.push(a.gear.name+' · 반동 '+recoil+' 피해');
+      }
       if((handheld||firstEdition)&&a.g==='soulblast'&&damage>0){
         const amount=firstEdition?damage:(s.players[a.seat].lap+1)*40;
         s.players[a.seat].cash+=amount;s.players[d.seat].cash-=amount;
@@ -1273,7 +1282,7 @@ function createCepter(edition="ps2"){
             lines.push(a.c.name+' · '+amount+'G 탈취');
           }
         }
-        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||edition==='dc'&&a.g==='goulsclaw'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
+        if(creatureEffects&&(a.c.poison||a.c.confuse||a.c.paralyze)&&(!a.c.statusRaces||a.c.statusRaces.includes(d.c.catalog?.race))||attacker==='nike'||a.g==='clawoftheghoul'||weapon?.paralyzeRaces?.includes(d.c.catalog?.race)||edition==='dc'&&a.g==='goulsclaw'||(revolt||begins||handheld)&&a.g==='bindingwhip'){
           combo.clear(d.u);if(creatureEffects&&a.c.poison)d.u.poisoned=true;else if(creatureEffects&&a.c.confuse)d.u.confused=true;else d.u.enchant='paralysis';
         }
         if(weapon?.deathStrike)extra.gearDeath(a,d);
@@ -1735,6 +1744,9 @@ function createCepter(edition="ps2"){
         const symbols=s.players[a.seat].symbols,most=Math.max(...symbols),gain=Math.floor(most*.1);
         if(gain>0){symbols[symbols.indexOf(most)]+=gain;lines.push(a.gear.name+' · 호부 '+gain+'개 증가');}
       }
+    }
+    if(itemEnd)for(const a of sides)if(a.hp>0&&a.gear?.finalHP!=null){
+      a.hp=a.gear.finalHP;lines.push(a.gear.name+' · 전투 종료 HP '+a.hp);
     }
     const onLand=a=>a.hp>0&&a.away==null&&!a.stolen&&!a.returned;
     const won=!onLand(D)&&onLand(A),empty=!onLand(D)&&!onLand(A);
