@@ -312,6 +312,12 @@ const describeCepterSpell=(()=>{
     }
     if(edition==='3ds'&&['antielement','drought','fog','heal','weakness'].includes(e))return text[e]+' 카드 한 장을 뽑습니다.';
     if(edition==='3ds'&&['camouflage','dispelmagic','removecurse'].includes(e))return text[e]+' 사용한 주문은 북으로 돌아갑니다.';
+    if(['ps1','saturn'].includes(edition)&&e==='acidrain')return '모든 식물 종족 크리처에게 20 피해를 줍니다.';
+    if(['ps1','saturn'].includes(edition)&&e==='slow')return '고른 셉터가 3라운드 동안 굴리는 주사위 눈을 1~3으로 제한합니다.';
+    if(e==='firstPressure')return '고른 지역의 모든 호부 가격을 20% 내립니다.';
+    if(e==='firstGrace')return '내가 가진 호부 총가치의 10%만큼 마력을 얻습니다.';
+    const firstStorm={firstIceStorm:'화',firstFireExplosion:'수',firstThunderstorm:'지',firstDeathCloud:'풍'}[e];
+    if(firstStorm)return '고른 지역의 모든 '+firstStorm+' 속성 크리처에게 각자 최대 HP의 30%에 해당하는 피해를 줍니다.';
     if(edition==='3ds'&&e==='aetherflash')return '6라운드 동안 모든 셉터의 크리처 소환 비용을 90G로 고정하고 영지 및 제물 조건을 무시합니다.';
     if(edition==='3ds'&&e==='pilgrim')return '신전이 있는 지도에서는 즉시 호부를 한 번 거래합니다. 신전이 없으면 카드 한 장을 뽑습니다.';
     if(edition==='3ds'&&e==='bind')return '고른 셉터를 한 라운드 동안 행동할 수 없게 하고 그 셉터에게 150G를 줍니다.';

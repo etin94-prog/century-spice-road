@@ -238,7 +238,7 @@ const CepterCombos = (() => {
         if(['silence','haste','despair','slow'].includes(e)){
           q.status=e;
           if(s.edition==='ps2')q.enchantDeadline=(s.round+1)*s.players.length+s.turn;
-          else if(['ps1','saturn'].includes(s.edition)&&e==='haste')q.enchantDeadline=(s.round+2)*s.players.length+s.turn;
+          else if(['ps1','saturn'].includes(s.edition)&&['haste','slow'].includes(e))q.enchantDeadline=(s.round+2)*s.players.length+s.turn;
           else if(s.edition==='revolt'&&e==='haste')q.hasteRolls=2;
           else if(s.edition==='begins'){
             if(e==='haste'||e==='slow')q.diceLimitRolls=2;

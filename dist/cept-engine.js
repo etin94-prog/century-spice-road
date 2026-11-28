@@ -2057,6 +2057,7 @@ function createCepter(edition="ps2"){
         const tile=s.tiles[x],unit=tile?.unit,prior=unit?.hp;
         if(extraTypes?.[s.spellEffect]){
           const effect=s.spellEffect,tradeFrom=s.tradeFrom;
+          const areaHP=k==='comboArea'&&extraSpells.damageSpells.has(effect)?s.tiles.map(t=>t.unit?.hp):[];
           s.phase=extra.apply(s,effect,x);
           if(effect==='revoltTemptation'&&fx.secretTargets(s,x,true)[0]?.[0]==='secretSelf'){castSecret(x,x);break;}
           if(effect==='trade'){
@@ -2064,7 +2065,12 @@ function createCepter(edition="ps2"){
             break;
           }
           if(k==='comboArea'){
-            mapEffect('cast',cards.find(c=>c.effect===effect)?.name||effect,s.tiles.findIndex(t=>t.area===x));break;
+            const hits=areaHP.flatMap((hp,at)=>{
+              const damage=hp-(s.tiles[at].unit?.hp??0);
+              return damage>0?[{at,damage,defeated:!s.tiles[at].unit}]:[];
+            });
+            const title=cards.find(c=>c.effect===effect)?.name||effect;
+            mapEffect('cast',title,hits[0]?.at??s.tiles.findIndex(t=>t.area===x),hits.length?{hits,title}:{});break;
           }
           const damage=prior-(tile.unit?.hp??0),showDamage=extraSpells.landDamage[effect];
           const label=effect==='magicalleap'?'매지컬 리프':effect==='shadowleap'?'섀도 리프':revivalLabel(unit,tile.unit)??(damage>0?'−'+damage+' HP'+(showDamage&&!tile.unit?' · 격파':''):showDamage?'피해 없음':effect);

@@ -7,6 +7,7 @@ const CepterExtraSpells=(()=>{
     global:'acidrain aports avalanche darkcraft elementalrage energyflash erasure escape find foresight forestleap incineration lakeleap lifestream lightcraft massgrowth mistletoe mountainleap plainleap prophecy rayoflaw reincarnation revelation selenear soltis soulsteal spartoi telegnosis teleport triumph'
   };
   const ps2Type=Object.fromEntries(Object.entries(groups).flatMap(([phase,names])=>names.split(' ').map(n=>[n,phase])));
+  const firstStorms={firstIceStorm:0,firstFireExplosion:1,firstThunderstorm:2,firstDeathCloud:3};
   const shifts={fireshift:0,watershift:1,earthshift:2,airshift:3};
   const hybridShifts={magmashift:{0:2,2:0},stormshift:{1:3,3:1}};
   const type={...ps2Type,holyword8:'player',landdrain:'player',chargingstep:'player',
@@ -28,11 +29,12 @@ const CepterExtraSpells=(()=>{
     bountyhunt:'land',release:'global',homeground:'global',senseofwild:'global',uniformity:'player',clusterburst:'global',subsidenceMass:'global',
     fluxion:'player',thunderclap:'land',suddenimpact:'land',quietude:'global',rayofpurge:'global',formportal:'global',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
-    aetherflash:'global',pilgrim:'global',
+    aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',
+    ...Object.fromEntries(Object.keys(firstStorms).map(e=>[e,'area'])),
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
   const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30,thunderclap:30};
-  const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','clusterburst','deathmiasma','sagaselection','sagadisaster','armageddon','beginstempest']);
+  const damageSpells=new Set([...Object.keys(firstStorms),'acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','clusterburst','deathmiasma','sagaselection','sagadisaster','armageddon','beginstempest']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
@@ -240,7 +242,7 @@ const CepterExtraSpells=(()=>{
       if(type[e]==='player'){
         if(e!=='dispelmagic'&&category==='sflash'&&fx.idol(s,'graniteidol'))return [];
         return s.players.flatMap((q,i)=>{
-          const enemyRequired=enemyOnly.has(e)&&!(e==='bind'&&['dc','3ds'].includes(s.edition));
+          const enemyRequired=enemyOnly.has(e)&&!(e==='bind'&&['dc','3ds','ps1','saturn'].includes(s.edition));
           if(e!=='dispelmagic'&&q.status==='barrier'||enemyRequired&&!enemy(s,i))return [];
           if(e==='unholygrasp'&&!symbolCount(q)||e==='forfeit'&&!forfeitSymbols(s,i).length||['fear','revoltFear'].includes(e)&&!fearTarget(s,i))return [];
           if(e==='fluxion'&&s.players[s.turn].cash>=q.cash)return [];
@@ -338,7 +340,8 @@ const CepterExtraSpells=(()=>{
         case 'energyflash':return t.level===1?t.unit.hp:0;
         case 'armageddon':return fx.max(t.unit)>=40?30:0;
         case 'beginstempest':return fx.strength(t.unit)<=40?20:0;
-        case 'acidrain':return fx.isDefensive(t.unit)?30:0;
+        case 'acidrain':
+          return ['ps1','saturn'].includes(s.edition)?card.catalog?.race==='rp'?20:0:fx.isDefensive(t.unit)?30:0;
         case 'avalanche':return t.level===5?30:0;
         case 'elementalrage':return matchesLand(cards[t.unit.id],t.type)?0:Math.ceil(t.unit.hp/2);
         case 'burninghail':return combo.hasElement(card,1)||combo.hasElement(card,3)?20:0;
@@ -365,6 +368,17 @@ const CepterExtraSpells=(()=>{
     function tideTargets(s,area){return s.tiles.filter(t=>t.area===area&&t.unit&&!fx.immuneHP(t));}
     function apply(s,e,x,synthesis=false){
       const p=s.players[s.turn],q=s.players[x],t=s.tiles[x],u=t?.unit;
+      if(Object.hasOwn(firstStorms,e)){
+        for(const tile of s.tiles)if(tile.area===x&&tile.unit&&combo.hasElement(cards[tile.unit.id],firstStorms[e])){
+          const damage=Math.floor(fx.max(tile.unit)*.3);
+          if(damage)fx.spellHarm(s,tile,damage);
+        }
+        return 'roll';
+      }
+      if(e==='firstPressure'){
+        s.prices=s.prices.map((price,index)=>Math.floor(index/4)===x?Math.max(1,Math.floor(price*.8)):price);
+        return 'roll';
+      }
       if(e==='sagatimetide'){
         for(const tile of tideTargets(s,x)){
           delete tile.unit.st;delete tile.unit.mhp;tile.unit.hp=cards[tile.unit.id].hp;
@@ -523,6 +537,7 @@ const CepterExtraSpells=(()=>{
         if(Object.hasOwn(leap,e))return warp(s,nearest(s,p,t=>t.type===leap[e]));
         const land=s.tiles.filter(t=>t.unit);
         switch(e){
+          case 'firstGrace':p.cash+=Math.floor(p.symbols.reduce((sum,count,index)=>sum+count*s.prices[index],0)/10);break;
           case 'aetherflash':
             for(const q of s.players)setStatus(s,q,e,6);
             break;
@@ -837,6 +852,12 @@ const CepterExtraSpells=(()=>{
       return 'roll';
     }
     function scoreTarget(s,e,x){
+      if(Object.hasOwn(firstStorms,e))return s.tiles.reduce((sum,t)=>{
+        if(t.area!==x||!t.unit||!combo.hasElement(cards[t.unit.id],firstStorms[e]))return sum;
+        const loss=fx.damageAmount(s,t,Math.floor(fx.max(t.unit)*.3));
+        return sum+(enemy(s,t.owner)?1:-1)*(loss/8+(loss===t.unit.hp?3*t.level:0));
+      },0);
+      if(e==='firstPressure')return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?1:-1)*q.symbols.slice(x*4,x*4+4).reduce((loss,count,k)=>loss+count*(s.prices[x*4+k]-Math.max(1,Math.floor(s.prices[x*4+k]*.8))),0),0)/20;
       if(e==='trade')return s.tradeFrom!=null?tradeScore(s,s.tradeFrom,x):
         Math.max(-40,...tradeTargets(s,x).map(([,to])=>tradeScore(s,x,to)));
       const p=s.players[s.turn],t=s.tiles[x],q=s.players[x];
@@ -982,6 +1003,7 @@ const CepterExtraSpells=(()=>{
         const amount=massDamage(s,e,v);
         return sum+(!amount||e!=='energyflash'&&fx.immuneHP(v)?0:(enemy(s,v.owner)?1:-1)*(amount/8+(amount>=v.unit.hp?4*v.level:0)));
       },0);
+      if(e==='firstGrace')return p.symbols.reduce((sum,count,index)=>sum+count*s.prices[index],0)/100;
       if(e==='aetherflash'){
         return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*q.hand.reduce((benefit,id)=>{
           const card=cards[id];

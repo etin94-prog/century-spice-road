@@ -6744,6 +6744,28 @@ for(const edition of ['dc','ps1','saturn']){
     cast(phantasm,'targetLand',1);
     assert.equal(phantasm.tiles[1].unit.hp,30);
     console.log('Dreamcast native Bind, Rust and Phantasm checks passed');
+  }else{
+    const rain=open('acidrain'),[plant,rock]=land(rain);
+    rain.tiles[plant].owner=0;rain.tiles[plant].unit={id:id('woodfolk'),hp:30};
+    rain.tiles[rock].owner=1;rain.tiles[rock].unit={id:id('wallofstone'),hp:60};
+    cast(rain);assert.deepEqual([rain.tiles[plant].unit.hp,rain.tiles[rock].unit.hp],[10,60]);
+
+    const storm=open('icestorm'),[inside,outside,wrongElement]=land(storm);
+    for(const at of [inside,outside,wrongElement])place(storm,at,1);
+    for(const at of [inside,outside])storm.tiles[at].unit={id:id('minotaur'),hp:40,mhp:60};
+    storm.tiles[outside].area=1;storm.prices=Array(8).fill(10);
+    cast(storm,'comboArea',0);
+    assert.deepEqual([inside,outside,wrongElement].map(at=>storm.tiles[at].unit.hp),[22,40,30]);
+    assert.deepEqual(storm.mapEffect.hits,[{at:inside,damage:18,defeated:false}]);
+
+    const pressure=open('pressure');pressure.tiles[rock].area=1;pressure.prices=Array(8).fill(25);
+    cast(pressure,'comboArea',0);
+    assert.deepEqual(pressure.prices,[20,20,20,20,25,25,25,25]);
+    const grace=open('grace');grace.players[0].symbols[0]=12;grace.prices[0]=10;
+    cast(grace);assert.equal(grace.players[0].cash,402);
+    const slow=open('slow');cast(slow,'targetPlayer',1);
+    assert.equal(slow.players[1].enchantDeadline,6);
+    console.log(edition,'native plant damage, elemental area damage, symbol area and timed dice checked');
   }
   console.log(edition,'native barrier, Chariot, healing, draw and economy effects passed');
 }

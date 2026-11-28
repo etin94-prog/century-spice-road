@@ -100,7 +100,11 @@ const CepterEditions=(()=>{
   const firstSpellEffects={
     backward:'backward',camouflage:'camouflage',chariot:'chariot',dispelmagic:'dispelmagic',drought:'drought',
     growthbody:'growthbody',haste:'haste',holyword0:'holyword0',holyword2:'holyword2',holyword3:'holyword3',
-    holywordx:'holywordx',landtransfer:'landtransfer',lifestream:'lifestream',removecurse:'removecurse',barrier:'barrier'
+    holywordx:'holywordx',landtransfer:'landtransfer',lifestream:'lifestream',removecurse:'removecurse',barrier:'barrier',
+    acidrain:'acidrain',aports:'aports',bind:'bind',bindingmist:'bindingmist',grace:'firstGrace',locust:'locust',
+    phantasm:'phantasm',soulsteal:'soulsteal',slow:'slow',teleport:'teleport',pressure:'firstPressure',
+    forestleap:'forestleap',lakeleap:'lakeleap',mountainleap:'mountainleap',plainleap:'plainleap',
+    icestorm:'firstIceStorm',fireexplosion:'firstFireExplosion',thunderstorm:'firstThunderstorm',deathcloud:'firstDeathCloud'
   };
   const legacySpellEffects={
     dc:{
