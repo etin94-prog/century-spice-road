@@ -536,6 +536,7 @@ const CepterCreatureText=(()=>{
       const chance=card.instantKill.rate===1?'':Math.round(card.instantKill.rate*100)+'% 확률로 ';
       pieces.push('일반 공격으로 피해를 준 '+target+' 상대를 '+chance+'즉사시킵니다.');
     }
+    if(C.edition==='3ds'&&key==='paladin')pieces.push('전투에서 살아남으면 HP를 최대치까지 회복합니다.');
     if(card.selfDestructAfterBattle)pieces.push('전투가 끝날 때 자괴합니다.');
     if(card.battleRecoilPercent)pieces.push('일반 공격으로 준 피해의 '+card.battleRecoilPercent+'%만큼 반동 피해를 받습니다.');
     if(card.battleEndHPLoss)pieces.push('전투 종료 시 HP가 '+card.battleEndHPLoss+' 감소합니다.');
@@ -608,6 +609,17 @@ const CepterCreatureText=(()=>{
       C.edition==='revolt'&&key==='mycoron'?'생존하면 HP를 회복합니다. 상대가 피해를 주었다면 무작위 빈 영지에 마이코론을 배치합니다.':
       C.edition==='revolt'&&key==='coatlicue'?'내 북의 남은 카드가 상대보다 많으면 전투 ST와 HP가 20씩 오릅니다.':
       ['begins','revolt','3ds'].includes(C.edition)&&key==='yowie'?'무속성 상대에게 강타합니다. 이 영지의 통행료는 지불할 때 기본값의 0.5~2.5배로 정해집니다.':
+      C.edition==='3ds'&&key==='deathgaze'?'적을 격파하면 80% 확률로 같은 카드를 상대의 손패와 북에서 모두 제거합니다.':
+      C.edition==='3ds'&&key==='taotieh'?'적을 격파하고 생존하면 기본 ST·최대 HP가 20씩 오릅니다. 상한은 100입니다.':
+      C.edition==='3ds'&&key==='igneousfatui'?'일반 공격으로 피해를 준 상대를 70% 확률로 즉사시킵니다.':
+      C.edition==='3ds'&&key==='nightfiend'?'전투 기본 ST는 교전 영지 레벨 × 20입니다.':
+      C.edition==='3ds'&&key==='sphinx'?'지도에 배치되어 교전에 참여하지 않으면 모든 지 속성 크리처의 전투 HP를 10 낮춥니다.':
+      C.edition==='3ds'&&key==='wendigo'?'일반 공격으로 피해를 준 상대의 영지 통행료를 절반으로 낮추는 인챈트를 부여합니다.':
+      C.edition==='3ds'&&key==='redcap'?'전투 ST와 HP는 배치된 고블린 수 × 20입니다. 지도에 배치되어 교전에 참여하지 않으면 고블린의 전투 ST를 20 올립니다.':
+      C.edition==='3ds'&&key==='avenger'?'내 총마력 순위 × 10만큼 전투 ST와 HP가 오릅니다.':
+      C.edition==='3ds'&&key==='gildedraptor'?'장비를 쓴 일반 공격으로 피해를 주면 카드 한 장을 뽑습니다. 전투에서 격파되면 100G를 얻습니다.':
+      C.edition==='3ds'&&key==='mothman'?'지도에 배치된 무속성 크리처 한 마리당 전투 ST가 5 오릅니다.':
+      C.edition==='3ds'&&key==='ouroboros'?'전투에서 격파됐을 때 내 영지가 4개 이하라면 우로보로스로 부활합니다.':
       C.edition==='3ds'&&key==='bloodypudding'?'전투 시작 시 지원 크리처의 HP만큼 최대 HP를 올립니다. 최대 HP 상한은 100입니다.':
       C.edition==='3ds'&&key==='chonchon'?'일반 공격으로 피해를 준 상대에게 지형 효과 무효를 부여합니다.':
       C.edition==='3ds'&&key==='rustcrawler'?'장비를 사용하지 않고 싸우면 전투 시작 시 상대의 장비를 파괴합니다.':

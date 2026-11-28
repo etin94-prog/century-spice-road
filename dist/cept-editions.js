@@ -645,6 +645,11 @@ const CepterEditions=(()=>{
         watershield:3,magicshield:2,magussmirror:1,spikedshield:2,countershield:2,powercrown:1,holygrail:1,
         manna:3,windofhope:3,sink:2,relief:2,lifestream:2,peace:1,barrier:2,landdrain:1
       },
+      handheldSwarm:{
+        goblin:4,redcap:3,mothman:3,dragonoid:3,nightfiend:2,paladin:2,harpy:2,sandman:2,cerberus:2,gildedraptor:2,
+        chainmail:2,countershield:1,vorpalsword:2,magicshield:2,scalearmor:2,
+        goblinslair:3,manna:3,windofhope:3,holyword6:2,barrier:2,relief:2,turntothewall:1
+      },
       handheldFusion:{
         battlegearalpha:3,battlegearbeta:3,carbuncle:3,dragonfly:3,trojanhorse:2,bloodypudding:3,gelatinouswall:3,woodfolk:2,werewolf:2,
         countershield:2,chainmail:2,gremlinamulet:2,vorpalsword:2,magicshield:2,
@@ -919,6 +924,9 @@ const CepterEditions=(()=>{
   };
   const handheldFusionNames={battlegearalpha:'배틀 기어 α',battlegearbeta:'배틀 기어 β',bundlegear:'번들 기어',carbunfly:'카번플라이'};
   const handheldSpecial={
+    cerberus:{doubleAttack:true},cockatrice:{},deathgaze:{neutralizeScroll:true},taotieh:{},igneousfatui:{last:true},nightfiend:{first:true},
+    paladin:{regenerate:true,basicBattle:true,instantKill:{elements:[-1],rate:1}},sphinx:{confuse:true},wendigo:{},dragonoid:{support:true,scrollCritical:true},
+    redcap:{},avenger:{},sandman:{spellWard:true,immutableHP:true},gildedraptor:{},mothman:{first:true},ouroboros:{},
     battlegearalpha:{support:true,spellWard:true},battlegearbeta:{support:true,neutralizeScroll:true},
     bundlegear:{spellWard:true,neutralizeScroll:true,generatedOnly:true},carbunfly:{first:true,generatedOnly:true},
     trojanhorse:{pierceAll:true,support:true},bloodypudding:{support:true},gelatinouswall:{stationary:true},zombie:{},

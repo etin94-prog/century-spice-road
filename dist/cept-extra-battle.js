@@ -209,7 +209,7 @@ const CepterExtraBattle=(()=>{
         if(a.n==='magmaavatar'||a.n==='stormavatar')a.st=a.hp=owned*15;
       }
       switch(a.n){
-        case 'mothman':if(s.edition==='begins')a.st+=5*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],-1)).length;break;
+        case 'mothman':if(['begins','3ds'].includes(s.edition))a.st+=5*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],-1)).length;break;
         case 'astralqueen':a.hp+=5*s.tiles.filter(v=>v.unit&&cards[v.unit.id].element===-1).length;break;
         case 'leoknight':a.st=10*s.tiles.filter(v=>v.owner===d.seat).length;a.hp=10*lands.length;break;
         case 'pyrallis':a.st+=10*lands.filter(v=>v.type===0).length;if(lands.some(v=>v.type===1))a.hp-=20;break;
@@ -233,6 +233,10 @@ const CepterExtraBattle=(()=>{
         if(a.n==='paleglobster'){a.st+=t.level*10;a.hp+=t.level*10;}
         if(a.n==='redcap')a.st=a.hp=20*s.tiles.filter(v=>fx.name(v.unit)==='goblin').length;
         if(a.n==='goblin'&&boost('redcap',a))a.st+=20;
+      }
+      if(s.edition==='3ds'){
+        if(a.n==='redcap')a.st=a.hp=20*s.tiles.filter(v=>fx.name(v.unit)==='goblin').length;
+        if(fx.name(a.u)==='goblin'&&boost('redcap',a))a.st+=20;
       }
       if(a.element>=0&&boost(lord[a.element],a)){
         if(firstEdition||s.edition==='begins'&&a.element>=2)a.st+=10;
@@ -350,8 +354,9 @@ const CepterExtraBattle=(()=>{
         if(alteredForm)transform(d,ids.get(alteredForm));
       }else{
         if(n==='werewolf'&&(s.edition==='3ds'||chance(.6)))convert(d,'wolf');
-        if(s.edition==='3ds'&&n==='chonchon'){
-          combo.clear(d.u);d.u.enchant='antielement';lines.push(a.c.name+' · 상대 지형 효과 무효');
+        if(s.edition==='3ds'&&['chonchon','wendigo'].includes(n)){
+          combo.clear(d.u);d.u.enchant=n==='chonchon'?'antielement':'fog';
+          lines.push(a.c.name+(n==='chonchon'?' · 상대 지형 효과 무효':' · 상대 통행료 절반'));
         }
         if(n==='medusa')convert(d,'statue');
         if(n==='cockatrice'){
@@ -371,7 +376,7 @@ const CepterExtraBattle=(()=>{
       if(n==='barrowwight'){combo.clear(d.u);d.u.enchant='sleep';}
       if(['ghoul','hugespider','livingclaw'].includes(n)||s.edition==='saga'&&a.g==='livingclaw'){combo.clear(d.u);d.u.enchant='paralysis';}
       if(n==='hunbaba'){combo.clear(d.u);d.u.poisoned=true;}
-      if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(.8)||
+      if(a.g==='batteringram'&&fx.isDefensive(d.u)||n==='vodyanoi'&&a.defending&&chance(.8)||n==='igneousfatui'&&chance(s.edition==='3ds'?.7:.8)||
         s.edition==='begins'&&n==='juggernaut'&&fx.isDefensive(d.u)||n==='angostura'&&fx.max(d.u)<=30&&chance(.8)||n==='basilisk'&&chance(['begins','3ds'].includes(s.edition)?.4:.5)||
         n==='yeti'&&combo.hasElement(d,0)&&chance(.6)||n==='dhampir'&&combo.hasElement(d,2)&&chance(.6)||
         s.edition==='saga'&&(n==='saint'&&combo.hasElement(d,-1)&&chance(.8)||n==='nil'&&chance(.5)||n==='unnameable'&&chance(.7))){
@@ -482,9 +487,9 @@ const CepterExtraBattle=(()=>{
           if(camazotz)lines.push(a.c.name+' · 상대 호부 '+loss+'개 파괴');
         }
       }
-      if(a.n==='taotieh'&&(s.edition!=='saga'||d.defeatedByOpponent)){
-        const st=fx.strength(a.u),native=s.edition==='begins',gain=native?20:10;
-        a.u.st=Math.max(st,Math.min(native||s.edition==='saga'?100:80,st+gain));
+      if(a.n==='taotieh'&&(s.edition==='3ds'?creatureEnd&&d.defeatedByOpponent:s.edition!=='saga'||d.defeatedByOpponent)){
+        const st=fx.strength(a.u),native=s.edition==='begins',gain=native||s.edition==='3ds'?20:10;
+        a.u.st=Math.max(st,Math.min(native||['saga','3ds'].includes(s.edition)?100:80,st+gain));
         if(native){
           const max=Math.min(100,fx.max(a.u)+gain);
           a.u.mhp=max;a.u.hp=Math.min(max,a.u.hp+gain);a.hp+=gain;a.heal=true;

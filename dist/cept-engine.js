@@ -1042,7 +1042,7 @@ function createCepter(edition="ps2"){
       if(edition==='ps2'&&a.g==='belloflaw')destroyHighestCostHandCard(other);
       if((handheld||begins)&&a.g==='powerbracelet'){a.st=baseStrength[a===A?0:1]*2;a.hp=fx.max(a.u)*2;}
       if((handheld||begins)&&a.n==='camazotz')a.st+=baseStrength[a===A?1:0];
-      if((begins||edition==='saga')&&a.n==='avenger'){
+      if((begins||handheld||edition==='saga')&&a.n==='avenger'){
         const wealth=personalTotal(s,a.seat);
         const amount=10*(1+s.players.filter((_,seat)=>personalTotal(s,seat)>wealth).length);
         a.st+=amount;a.hp+=amount;
@@ -1086,7 +1086,7 @@ function createCepter(edition="ps2"){
       if(a.n==='gouda')a.st=a.hp=s.tiles.filter(v=>cards[v.unit?.id]?.element===3).length*10;
       if(a.n==='spectre'||(revolt||begins||edition==='saga')&&a.u.enchant==='liquidform'){a.st=randomStat();a.hp=randomStat();}
       if((revolt||edition==='saga')&&a.g==='spectresrobe'){a.st+=randomStat();a.hp+=randomStat();}
-      if(a.n==='nightfiend')a.st+=t.level*20;
+      if(a.n==='nightfiend')a.st=(handheld?0:a.st)+t.level*20;
       if(a.n==='peri'){
         if(handheld)a.st=a.hp=owner.book.length+10;
         else if(other.book.length-owner.book.length>=3){a.st+=20;a.hp+=20;}
@@ -1271,6 +1271,11 @@ function createCepter(edition="ps2"){
           d.hp=0;lines.push(a.c.name+' · 즉사');
         }
         if(revolt&&attacker==='nebiros')drawUntil(s.players[a.seat],5);
+        if(handheld&&attacker==='gildedraptor'&&a.gear?.kind==='item'){
+          const p=s.players[a.seat],before=p.hand.length;
+          if(!s.predict)draw(p,s);
+          if(p.hand.length>before)lines.push(a.c.name+' · 카드 1장 뽑기');
+        }
         if(revolt&&attacker==='shocker')d.u.fatigued=true;
         if(revolt&&d.hp>0&&!s.predict&&(attacker==='chironex'&&a.defending&&Math.random()<.8||
           attacker==='sigurd'&&fx.strength(d.u)>=50&&Math.random()<.6||attacker==='unnameable'&&Math.random()<.7)){
@@ -1558,7 +1563,8 @@ function createCepter(edition="ps2"){
       const scarab=a.g==='necroscarab'&&(edition!=='saga'||itemEnd&&a.defeatedByOpponent);
       const kudz=begins&&a.n==='kudzufolk'&&s.tiles.filter(v=>v.owner===a.seat).length<=4?'greenmold':null;
       const fossil=edition==='saga'&&['greatfossil','littlefossil'].includes(a.n);
-      const creatureForm=creatureEnd&&(!fossil||a.defeatedByOpponent)&&(kudz||a.c.reviveForm||({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld||begins?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]);
+      const ouroboros=handheld&&a.n==='ouroboros'&&s.tiles.filter(v=>v.owner===a.seat).length<=4?'ouroboros':null;
+      const creatureForm=creatureEnd&&(!fossil||a.defeatedByOpponent)&&(kudz||ouroboros||a.c.reviveForm||({carbunfly:'carbuncle',mermecoleo:'dragonfly',...(handheld||begins?{greatfossil:'tyrannosaurus'}:revolt?{hellgrammite:'serpentfly'}:{})})[a.n]);
       const itemForm=scarab?(edition==='saga'||revolt?'skeleton':'zombie'):null;
       const opponent=a===A?D:A;
       const amulet=revolt&&(creatureEnd&&a.n==='livingamulet'||itemEnd&&a.g==='livingamulet')&&opponent.gear?.category!=='weapon';
@@ -1600,6 +1606,10 @@ function createCepter(edition="ps2"){
       if(revolt&&revive(a))continue;
       const p=s.players[a.seat];
       if(creatureEnd&&a.n==='cornfolk')p.cash+=200;
+      if(handheld&&creatureEnd&&a.n==='gildedraptor'){
+        p.cash+=100;lines.push(a.c.name+' · 마력 유산 100G');
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[+a.defending]-=100;}
+      }
       if(creatureEnd&&a.n==='mummy')p.cash+=(revolt||handheld?40:50)*(p.lap+1);
       if(revolt&&creatureEnd&&a.n==='creepingcoin')p.cash+=100;
       if(revolt&&creatureEnd&&a.n==='chironex'&&a.defeatedByOpponent){p.cash-=100;lines.push(a.c.name+' · 격파 후 −100G');}
@@ -1639,9 +1649,13 @@ function createCepter(edition="ps2"){
         }
       }
       const victor=a===A?D:A;
-      if(victor.hp>0&&victor.n==='deathgaze'&&!s.predict&&Math.random()<(firstEdition ? .6 : .8)){
+      if(victor.hp>0&&victor.n==='deathgaze'&&(!handheld||creatureEnd&&a.defeatedByOpponent)&&!s.predict&&Math.random()<(firstEdition ? .6 : .8)){
         const enemy=s.players[a.seat],id=a.u.id;
         enemy.book=enemy.book.filter(card=>card!==id);
+        if(handheld){
+          enemy.hand=enemy.hand.filter(card=>card!==id);
+          lines.push(victor.c.name+' · '+cards[id].name+'을 상대 손패와 북에서 제거');
+        }
         if(edition==='ps2')enemy.bannedCards=[...new Set([...(enemy.bannedCards||[]),id])];
         for(const player of s.players)if(player.peek?.seat===a.seat)delete player.peek;
       }
@@ -1664,7 +1678,7 @@ function createCepter(edition="ps2"){
     }
     if(D.hp>0)for(const a of sides){
       if(a.hp<=0||muted)continue;
-      const enchant=creatureEnd?(a.n==='suiko'?'vitality':!a.gear?({wendigo:begins?null:'fog',chonchon:handheld?null:'antielement',giantrattler:'disease'})[a.n]:null):null;
+      const enchant=creatureEnd?(a.n==='suiko'?'vitality':!a.gear?({wendigo:begins||handheld?null:'fog',chonchon:handheld?null:'antielement',giantrattler:'disease'})[a.n]:null):null;
       if(enchant){combo.clear(D.u);D.u.enchant=enchant;lines.push('방어 영지 · '+enchant);}
       if(a.g==='talisman'){combo.clear(D.u);D.u.enchant='landprotection';}
     }

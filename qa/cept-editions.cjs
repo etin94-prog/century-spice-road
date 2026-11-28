@@ -8934,3 +8934,80 @@ console.log('2012 3DS Soltis ownership and four elements, five wall forms, rando
   assert.deepEqual([leo.b.defendST,leo.b.startHP[1]],[0,20]);
 }
 console.log('2012 3DS support, fusion, generated forms, enchant inheritance, damage and equipment effects checked.');
+
+{
+  const C=ps2.createEdition('3ds'),map='3ds-original-bend';
+  const id=n=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===n);
+  const start=()=>C.start(2,2,7000,map,C.presets.handheldSwarm,C.presets.handheldSwarm,2);
+  const place=(s,at,owner,key,options={})=>Object.assign(s.tiles[at],{owner,unit:{id:id(key),hp:C.cards[id(key)].hp,...options}});
+  assert.ok(C.validBook(C.presets.handheldSwarm));
+  for(const n of ['redcap','mothman','dragonoid','paladin','goblinslair'])assert.ok(C.presets.handheldSwarm.includes(id(n)));
+  function fight(a,d,{atkGear,defGear,type=2,level=1,guard={},invHP,extras=[],hands=[[],[]],books=[[],[]],seed=.5}={}){
+    const s=start(),at=s.tiles.findIndex(t=>C.territoryType(t.type)),tile=s.tiles[at];
+    Object.assign(tile,{type,level});place(s,at,1,d,guard);
+    const sites=s.tiles.flatMap((t,i)=>i!==at&&!C.board(s).links[at].includes(i)&&C.territoryType(t.type)?[i]:[]);
+    extras.forEach(([owner,key],i)=>place(s,sites[i],owner,key));
+    s.players.forEach((p,i)=>{
+      const gear=[atkGear,defGear][i];p.hand=(gear?[gear,...hands[i]]:hands[i]).map(id);p.book=books[i].map(id);p.cash=i===0?900:1000;
+    });
+    s.phase='attack';s.battle={at,inv:id(a),invHP,atkItem:null,defItem:null};
+    const rand=Math.random;
+    try{
+      Math.random=()=>seed;
+      assert.ok(C.play(s,atkGear?['equip',0]:['bare']));
+      assert.ok(C.play(s,defGear?['equip',0]:['bare']));
+    }finally{Math.random=rand;}
+    return {s,at,tile,b:s.battle};
+  }
+  const twice=fight('cerberus','wallofstone',{type:2,level:3});
+  assert.deepEqual(twice.b.strikes.slice(0,2).map(x=>x.side),[0,0]);
+  assert.equal(fight('cockatrice','dwarf',{type:2,level:3}).tile.unit.id,id('wallofstone'));
+  const erase=fight('deathgaze','goblin',{seed:.799,hands:[[],['goblin','fighter']],books:[[],['goblin','goblin','dwarf']]});
+  assert.deepEqual(erase.s.players[1].hand,[id('fighter')]);assert.deepEqual(erase.s.players[1].book,[id('dwarf')]);
+  const keep=fight('deathgaze','goblin',{seed:.8,hands:[[],['goblin']],books:[[],['goblin']]});
+  assert.deepEqual(keep.s.players[1].hand,[id('goblin')]);assert.deepEqual(keep.s.players[1].book,[id('goblin')]);
+  const self=fight('deathgaze','sludgetitan',{seed:0,guard:{hp:50},hands:[[],['sludgetitan']],books:[[],['sludgetitan']]});
+  assert.deepEqual(self.s.players[1].book,[id('sludgetitan')]);
+  assert.equal(fight('fighter','deathgaze',{atkGear:'nuclearfusion'}).b.strikes[0].effect,'block');
+  const triumph=fight('taotieh','goblin');
+  assert.deepEqual([triumph.tile.unit.st,triumph.tile.unit.mhp],[60,60]);
+  assert.equal(fight('taotieh','sludgetitan',{guard:{hp:59}}).tile.unit.st,undefined);
+  for(const [seed,wins] of [[.699,true],[.7,false]]){
+    const instant=fight('igneousfatui','goblin',{seed,invHP:50});
+    assert.equal(instant.b.strikes[0].side,1);
+    assert.equal(instant.b.lines.some(line=>line.includes('즉사')),wins);
+  }
+  const fiend=fight('goblin','nightfiend',{type:3,level:3,guard:{st:22}});
+  assert.equal(fiend.b.defendST,60);assert.equal(fiend.b.strikes[0].side,1);
+  const paladin=fight('paladin','fighter',{invHP:30,guard:{hp:100,mhp:100}});
+  assert.match(paladin.b.lines.join(' '),/즉사/);assert.equal(paladin.tile.unit.hp,50);
+  assert.equal(fight('wendigo','fighter',{atkGear:'mace',guard:{hp:85,mhp:85}}).tile.unit.enchant,'fog');
+  assert.ok(fight('sphinx','dwarf',{type:2,level:3}).tile.unit.confused);
+  const earth=fight('fighter','dwarf',{extras:[[1,'sphinx']]});
+  assert.equal(earth.b.startHP[1],C.cards[id('dwarf')].hp+earth.b.landHP-10);
+  assert.match(fight('dragonoid','wallofstone',{atkGear:'nuclearfusion'}).b.strikes[0].notes.join(' '),/75 피해/);
+  const swarm=fight('redcap','dwarf',{type:2,level:3,extras:[[0,'goblin'],[1,'goblin']]});
+  assert.deepEqual([swarm.b.attackST,swarm.b.startHP[0]],[40,40]);
+  const recruit=fight('goblin','dwarf',{extras:[[1,'redcap']]});
+  assert.equal(recruit.b.attackST,40);
+  const moth=fight('mothman','goblin',{extras:[[0,'goblin'],[1,'fighter']]});
+  assert.equal(moth.b.attackST,45);assert.equal(moth.b.strikes[0].side,0);
+  const second=fight('avenger','goblin');
+  assert.deepEqual([second.b.attackST,second.b.startHP[0]],[50,50]);
+  const drawn=fight('gildedraptor','goblin',{atkGear:'mace',books:[['fighter'],[]]});
+  assert.deepEqual(drawn.s.players[0].hand,[id('fighter')]);
+  assert.deepEqual(fight('gildedraptor','goblin',{books:[['fighter'],[]]}).s.players[0].hand,[]);
+  assert.equal(fight('fighter','gildedraptor').s.players[1].cash,1100);
+  const holdings=n=>Array.from({length:n},()=>[1,'goblin']);
+  const returns=fight('fighter','ouroboros',{extras:holdings(3)});
+  assert.equal(returns.tile.unit.id,id('ouroboros'));assert.equal(returns.tile.unit.hp,20);
+  assert.equal(fight('fighter','ouroboros',{extras:holdings(4)}).tile.unit.id,id('fighter'));
+  const spell=start(),site=spell.tiles.findIndex(t=>C.territoryType(t.type));
+  const sand=place(spell,site,1,'sandman',{hp:20}),other=spell.tiles.findIndex((t,i)=>i!==site&&C.territoryType(t.type));
+  const goblin=place(spell,other,1,'goblin');
+  spell.players[0].hand=[id('tempest'),id('goblin')];spell.players[0].cash=1000;spell.phase='spell';
+  assert.ok(C.play(spell,['cast',0]));
+  if(spell.phase==='sacrifice')assert.ok(C.play(spell,['sacrifice',1]));
+  assert.equal(sand.unit.hp,20);assert.ok(goblin.unit.hp<30);
+}
+console.log('3DS swarm, neutral wards, scrolls, last strike, obliteration, rank, resurrection and legacy effects checked.');
