@@ -93,7 +93,7 @@ const ids = process.argv.slice(2).length
                 n = Number(score()[0]) || 1;
               tap(...goals[n - 1]);
             }
-            if (id === 33) tap(540, 180);
+            if (id === 33) tap(300, 158); // Head pin in the lane camera.
             if (id === 32 || id === 35) {
               window.advanceFrames(2);
               const carrom = id === 35,
@@ -174,7 +174,7 @@ const ids = process.argv.slice(2).length
               buttons[0].click();
             }
             if ([36, 37, 41].includes(id)) tap(35, 28);
-            if (id === 38) tap(465, 180);
+            if (id === 38) tap(300, 78); // Button in the projected house.
             if (id === 39) buttons[i % 2].click();
             if (id === 40) {
               buttons[0].click();
@@ -195,6 +195,7 @@ const ids = process.argv.slice(2).length
           return [!stop.hidden, stop.textContent, score(), i];
         }, id);
         assert(result[0], JSON.stringify(result));
+        if (id === 33) assert.match(result[1], /10프레임 · [1-9]\d*점/, 'A centered roll must score');
         console.log(id, result[1], result[3]);
       } catch (e) {
         console.error(id, e.message);

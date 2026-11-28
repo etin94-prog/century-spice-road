@@ -1,0 +1,92 @@
+/* Keep the geometry of the board in the same plane as its touch targets.
+   Relief comes from the thickness of the rim, contact shadows and light on the material. */
+html[data-table="world"] body:is([data-game="1"],[data-game="2"],[data-game="3"],[data-game="4"],[data-game="5"],[data-game="6"],[data-game="7"],[data-game="8"],[data-game="9"],[data-game="10"],[data-game="11"],[data-game="12"],[data-game="13"],[data-game="14"],[data-game="15"],[data-game="16"],[data-game="17"],[data-game="18"]) .desk {
+  background: linear-gradient(105deg,#49351f8a,#241719bb),var(--walnut) center / cover;
+}
+html[data-table="world"] .board-grid .zoom-hold { outline:3px solid #ffcf70;outline-offset:-3px; }
+body:is([data-game="8"],[data-game="10"],[data-game="15"],[data-game="16"],[data-game="17"],[data-game="18"]) #surface > .board-grid {
+  box-shadow:inset 0 1px 2px #fff3cf,0 1px #e5bd7e,0 4px #99653d,0 7px #593b29,2px 8px 8px #180e0bae;
+}
+body[data-game="2"] .dots.tiles {
+  background:repeating-linear-gradient(0deg,transparent 0 13px,#60889f25 13px 14px),
+    repeating-linear-gradient(90deg,transparent 0 13px,#60889f24 13px 14px),#f6e9d1;
+  box-shadow:0 1px #d0bea0,0 3px #ebe0c8,0 5px #aa9277,2px 7px 9px #20170fc2;
+}
+body[data-game="3"] #surface .dice-tray {
+  background:#692c37 url('art/worldwide/table/review-velvet.webp') center / 100% 100%;
+  border:1px solid #c19960;box-shadow:0 3px #4e3327,2px 5px 7px #24140b88;
+}
+body[data-game="3"] #surface .die { box-shadow:inset 1px 2px 2px #fff6d7,inset -2px -3px 3px #997a55,1px 3px #70543e,2px 5px 4px #130e0e99; }
+body[data-game="4"] .board-grid.drop {background:linear-gradient(105deg,#21425a,#46798a 33%,#28485a 80%);box-shadow:inset 1px 2px 2px #bed7d0,0 4px #182b3c,2px 7px 7px #20160ead;}
+body[data-game="6"] .board-grid.mill, body[data-game="9"] .board-grid.hound {background-color:#aab18c;background-blend-mode:multiply;box-shadow:inset 0 0 0 3px #bda479,0 4px #65523a,1px 8px 8px #251b10aa;}
+body[data-game="12"] #surface:has(> .star) {background:radial-gradient(circle closest-side at 50% 50%,#553021 70%,#925a37 92%,#d4a876 95%,#663922 97%,transparent 100%);}
+body[data-game="19"] .desk {background:linear-gradient(110deg,#632e39e8,#392229e8),var(--felt) center/cover;}
+body[data-game="20"] .mj-concealed {display:flex;gap:1px;height:8px;max-width:100%;justify-content:center;overflow:hidden;pointer-events:none;}
+.mj-concealed i {width:7px;min-width:2px;height:6px;border-radius:1px;background:linear-gradient(#e9c887,#ab833b);box-shadow:0 2px #f0dfb4;}
+body:is([data-game="21"],[data-game="24"],[data-game="25"],[data-game="26"],[data-game="27"],[data-game="28"],[data-game="29"],[data-game="30"],[data-game="49"],[data-game="50"],[data-game="51"]) .desk {
+  background: radial-gradient(ellipse at 43% 39%,#44714e61,#0a3426c4 85%),var(--felt) center / cover;
+  box-shadow:inset 0 0 0 2px #957043,inset 0 0 0 4px #443528,inset 0 3px 12px #162b22,0 3px 6px #1119;
+}
+html[data-table="world"] .sevens-run {display:flex;align-items:center;justify-content:center;max-width:100%;width:100%;min-height:36px;}
+.sevens-run .run-card {display:grid;align-content:center;justify-items:center;flex:0 1 36px;min-width:0;height:36px;
+  font:700 clamp(11px,1.8vw,16px)/1 Georgia,serif;color:#262324;
+  border:1px solid #bca682;border-radius:4px;background:linear-gradient(120deg,#fff9e8,#e7dabc);
+  box-shadow:0 2px 0 #7f7059,1px 3px 3px #0d1c1b99;}
+.sevens-run .run-card::after {content:attr(data-suit);font-size:.82em;}
+.sevens-run .run-card.red {color:#ae302f;}
+.sevens-run .run-card.recent {outline:2px solid #ffcd61;z-index:1;}
+.sevens-run .run-empty {border:1px dashed #dcc7a088;color:#f1dfb9;border-radius:5px;padding:5px 8px;}
+html[data-table="world"] .sevens-table .lane-cards {width:100%;min-width:0;}
+html[data-table="world"] .ring-draw, .sixball-precise :is(select,button) {
+  min-height:44px;border:1px solid #c79f64;border-radius:8px;color:#301f17;background:linear-gradient(#fae8c4,#d7b27c);font:bold 14px/1.1 system-ui;
+}
+body[data-game="47"] .desk {background:radial-gradient(ellipse at 44% 36%,#334860,#141e30 76%);}
+body[data-game="47"] #surface .ballwell, body[data-game="47"] #surface .mini-well {background:linear-gradient(130deg,#395064,#1e293a);box-shadow:inset 0 0 0 3px #708798,inset 1px 3px 6px #111923,0 3px #182231,1px 6px 9px #121820;}
+.sixball-precise {display:grid;gap:3px;width:max-content;max-width:100%;margin:5px auto 0;}
+.sixball-precise :is(select,button) {width:100%;min-width:0;padding-inline:5px;}
+body[data-game="48"] .pipe-board {box-shadow:inset 1px 3px 5px #27160c,0 4px #65412c,1px 7px 8px #151b17aa;}
+body[data-game="49"] #surface .mahjong-stack .piece {filter:drop-shadow(1px 2px 1px #19262075);}
+@container phone-table (min-aspect-ratio:1/1) and (max-height:560px) {
+  html[data-table="world"] .seat-strip .mini-fan {display:inline-flex;padding-left:3px;}
+  html[data-table="world"] .seat-strip .mini-fan i {width:7px;height:11px;margin-left:-3px;}
+  html[data-table="world"] .sevens-table .suit-lanes {grid-template-columns:1fr;gap:3px;width:100%;}
+  html[data-table="world"] .sevens-table .suit-lane {display:grid;grid-template-columns:minmax(0,1fr) 40px;align-items:center;}
+  html[data-table="world"] .sevens-table .lane-range {font-size:12px;}
+  html[data-table="world"] body[data-game="27"] #surface > .memory-grid {
+    grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));
+    height:min(100%,calc(var(--play-height) - 20px));width:min(100%,max(232px,calc(var(--play-height)*.93)));min-height:0;gap:3px;
+  }
+  html[data-table="world"] body[data-game="27"] #surface > .memory-grid > .piece {height:100%;min-height:0;width:100%;max-width:100%;aspect-ratio:auto;}
+  html[data-table="world"] body[data-game="30"] #surface > .ring-cards.tiles {
+    position:relative;display:block;height:var(--play-height);container-type:inline-size;
+    background:radial-gradient(ellipse at center,#29593c55 47%,#94b28855 48%,transparent 49%);}
+  html[data-table="world"] body[data-game="30"] .ring-cards > .card-back {
+    display:grid;place-items:center;position:absolute;left:var(--oval-x);top:var(--oval-y);
+    width:3.55%;height:22%;translate:-50% -50%;transform:rotate(var(--tangent));border-radius:4px;}
+  html[data-table="world"] body[data-game="30"] .ring-cards > .card-back::before {
+    width:164%;height:100%;max-width:none;justify-self:center;pointer-events:none;
+    box-shadow:1px 1px #f1dfba,2px 2px 3px #17261f;}
+  html[data-table="world"] body[data-game="30"] .ring-cards > .ring-center,
+  html[data-table="world"] body[data-game="30"] .ring-cards > .ring-pen-strip {
+    position:absolute;top:29%;height:42%;padding:1px;justify-content:center;z-index:1;
+  }
+  html[data-table="world"] body[data-game="30"] .ring-cards > .ring-center {left:18%;width:37%;}
+  html[data-table="world"] body[data-game="30"] .ring-cards > .ring-pen-strip {left:56%;width:25%;}
+  html[data-table="world"] body[data-game="30"] .ring-draw {padding:3px 6px;min-width:68px;}
+}
+@media (orientation:portrait) {
+ html:not(.card-landscape) .sixball-precise {display:none;}
+}
+html[data-table="blackjack"] .felt,body.poker .felt {
+  background:radial-gradient(ellipse at 45% 38%,#36779280,#153c58db 72%),url('art/worldwide/table/felt.webp') center / cover;
+  box-shadow:inset 0 0 0 2px #ba9565,inset 0 0 0 5px #433a35,inset 0 3px 20px #102d3f,0 3px 7px #1119;
+}
+
+html[data-table="world"] .ring-info .ring-draw {pointer-events:auto;}
+@container phone-table (min-aspect-ratio:1/1) and (max-height:560px) {
+  html[data-table="world"] body[data-game="27"] #surface {min-height:0;}
+  html[data-table="world"] body[data-game="27"] #surface > .memory-grid {margin:0 auto;flex:1 1 0;max-height:calc(var(--play-height) - 20px);}
+  html[data-table="world"] body[data-game="27"] .memory-grid .illustrated .card {
+    width:100%;height:100%;max-width:100%;max-height:100%;margin:auto;
+  }
+}

@@ -173,6 +173,7 @@ export function runTable(def, signal) {
   }
   if (zoom) {
     zoom.hidden = true;
+    zoom.title = '판 확대 · 작은 칸을 길게 눌러 그 위치 확대';
     zoom.setAttribute('aria-pressed', 'false');
     zoom.onclick = () => {
       magnified = !magnified;
@@ -185,6 +186,52 @@ export function runTable(def, signal) {
       } else wrapBoard();
     };
   }
+  // A long press on a dense board opens the existing pan-and-zoom view at that cell.
+  // Wait for release before reparenting the board, so pointer capture still refers to
+  // the piece the player first touched. A tap and a scrolling gesture retain their meanings.
+  let hold = null, swallow = null;
+  function cancelHold() {
+    clearTimeout(hold?.timer);
+    hold?.cell.classList.remove('zoom-hold');
+    hold = null;
+  }
+  board.addEventListener('pointerdown', e => {
+    cancelHold();
+    const cell = e.target.closest?.('.board-grid .cell');
+    if (e.pointerType !== 'touch' || !e.isPrimary || magnified || zoom?.hidden || !zoom || !cell) return;
+    const rect = cell.getBoundingClientRect();
+    if (Math.min(rect.width, rect.height) >= 44) return;
+    hold = { cell, id:e.pointerId, x:e.clientX, y:e.clientY, ready:false };
+    hold.timer = setTimeout(() => {
+      if (cell.isConnected && hold?.cell === cell) {hold.ready=true;cell.classList.add('zoom-hold');}
+    }, 390);
+  }, {signal,passive:true});
+  board.addEventListener('pointermove', e => {
+    if (hold?.id === e.pointerId && Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>8) cancelHold();
+  }, {signal,passive:true});
+  board.addEventListener('pointercancel', cancelHold,{signal});
+  board.addEventListener('pointerup', e => {
+    if (!hold || hold.id !== e.pointerId) return;
+    const {cell, ready}=hold;
+    cancelHold();
+    if (!ready || !cell.isConnected) return;
+    swallow = {time:performance.now(), x:e.clientX, y:e.clientY};
+    zoom.click();
+    const frame = board.querySelector('.zoom-frame');
+    if (!frame) return;
+    const r=cell.getBoundingClientRect(), f=frame.getBoundingClientRect();
+    const dx=r.left+r.width/2-f.left-f.width/2, dy=r.top+r.height/2-f.top-f.height/2;
+    const rotated=document.documentElement.classList.contains('card-landscape') && matchMedia('(orientation:portrait)').matches;
+    frame.scrollBy(rotated ? dy : dx, rotated ? -dx : dy);
+  },{signal});
+  board.addEventListener('click',e=>{
+    if (swallow && e.isTrusted && performance.now()-swallow.time<550 &&
+        Math.hypot(e.clientX-swallow.x,e.clientY-swallow.y)<12) {
+      e.preventDefault(); e.stopImmediatePropagation();
+    }
+    swallow=null;
+  },{capture:true,signal});
+  signal.addEventListener('abort',cancelHold,{once:true});
   function later(fn, ms) {
     clearTimeout(pending);
     pending = setTimeout(() => {

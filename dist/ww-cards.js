@@ -537,15 +537,19 @@ register(
         field.append(lane);
         const stack = element('div', 'lane-cards');
         lane.append(stack);
-        if (lo > hi) ui.why(ui.button(stack, suits[s], null, 'foundation' + (s % 2 ? ' red' : '')), suits[s] + ' 줄은 7부터 시작해요.');
-        else {
-          card(ui, stack, s * 13 + lo - 1);
-          if (hi > lo) card(ui, stack, s * 13 + hi - 1);
-          for (const el of stack.children) {
-            if (lastCard !== null && el.getAttribute('aria-label') === face(lastCard)) el.classList.add('last-move');
-            ui.why(el, '바닥의 줄이에요. 손패에서 이어질 카드를 고르세요.');
+        const row = element('div','sevens-run');
+        row.setAttribute('aria-label',suits[s]+' '+(lo>hi?'아직 비어 있음':names[lo-1]+'부터 '+names[hi-1]+'까지'));
+        if (lo>hi) {
+          const empty=element('span','run-empty',suits[s]+' 7');
+          row.append(empty);
+        } else {
+          for(let r=lo;r<=hi;r++) {
+            const id=s*13+r-1;
+            const exposed=element('span','run-card'+(s%2?' red':'')+(id===lastCard?' recent':''),names[r-1]);
+            exposed.dataset.suit=suits[s];row.append(exposed);
           }
         }
+        stack.append(row);
         lane.append(
           element(
             'span',
@@ -989,6 +993,23 @@ function ringSpots(w, h) {
 }
 // Portrait phones lay the ring out 7×10, landscape and wide screens 12×5; both leave a hole
 // in the middle for the pile and the penalty cards.
+// Distribute the backs by distance around the oval so the ends offer the same
+// finger spacing as the long sides. In upright portrait the roomy grid remains available.
+function ovalSpots(count) {
+  const points = [], samples = 520;
+  let length=0, previous;
+  for (let i=0;i<=samples;i++) {
+    const a=2*Math.PI*i/samples-Math.PI/2, x=.44*Math.cos(a), y=.37*Math.sin(a);
+    if(previous) length+=Math.hypot(x-previous.x,(y-previous.y)/2.45);
+    points.push({x,y,length,a});previous=points[i];
+  }
+  return range(count).map(i=>{
+    const p=points.find(point=>point.length>=length*i/count);
+    return {x:(.5+p.x)*100,y:(.5+p.y)*100,
+      angle:Math.atan2(.37*Math.cos(p.a)/2.45,-.44*Math.sin(p.a))*180/Math.PI};
+  });
+}
+const ovalRing = ovalSpots(52);
 const tallRing = ringSpots(7, 10),
   wideRing = ringSpots(12, 5);
 register(
@@ -1030,6 +1051,14 @@ register(
       info.append(element('b', '', '가운데 ' + pile.length + '장'));
       if (pile.length) info.append(element('span', 'ring-warn', '같은 무늬 ' + suits[suit(pile.at(-1))] + ' 주의'));
       if (lastNote) info.append(element('span', 'last-note', lastNote));
+      const remaining = range(ring.length).filter(i => ring[i] !== null);
+      if (!p && !ui.ended && remaining.length) {
+        const pick=ui.button(info,'한 장 뽑기',()=>{
+          const index=remaining[random(remaining.length)], value=ring[index];
+          ring[index]=null; put(value);
+        },'ring-draw');
+        pick.setAttribute('aria-label','남은 뒷면 카드 중 한 장 뽑기');
+      }
       ring.forEach((c, i) => {
         if (c === null) return;
         const el = card(
@@ -1045,6 +1074,10 @@ register(
         );
         const [px, py] = tallRing[i],
           [lx, ly] = wideRing[i];
+        const spot = ovalRing[i];
+        el.style.setProperty('--oval-x',spot.x+'%');
+        el.style.setProperty('--oval-y',spot.y+'%');
+        el.style.setProperty('--tangent',spot.angle+'deg');
         el.style.setProperty('--px', px + 1);
         el.style.setProperty('--py', py + 1);
         el.style.setProperty('--lx', lx + 1);

@@ -387,6 +387,26 @@ function reticle(g, x, y, color = gold) {
   line(g, x, y - 16, x, y - 6, color, 2);
   line(g, x, y + 6, x, y + 16, color, 2);
 }
+// Render the actual pixels around the finger, after painting the table. Board physics
+// and the touch map remain in table space even when the precision view is turned.
+function aimLens(g, a, v) {
+  if (!v.pressing || v.ended) return;
+  const canvas = a.canvas;
+  const transform = g.getTransform();
+  const sx=transform.a*a.aim.x + transform.c*a.aim.y + transform.e;
+  const sy=transform.b*a.aim.x + transform.d*a.aim.y + transform.f;
+  const pixelRatio=canvas.width/Math.max(1,canvas.clientWidth);
+  const radius=Math.min(42*pixelRatio,canvas.width*.15,canvas.height*.19);
+  const x=sx>canvas.width/2 ? radius+9 : canvas.width-radius-9, y=radius+9;
+  g.save();
+  g.setTransform(1,0,0,1,0,0);
+  g.beginPath();g.arc(x,y,radius,0,Math.PI*2);g.clip();
+  g.drawImage(canvas,sx-radius/2,sy-radius/2,radius,radius,x-radius,y-radius,2*radius,2*radius);
+  line(g,x-7,y,x+7,y,'#ffe6a9',2);
+  line(g,x,y-7,x,y+7,'#ffe6a9',2);
+  g.restore();
+  g.save();g.setTransform(1,0,0,1,0,0);ring(g,x,y,radius,'#f2d69a',3);g.restore();
+}
 function flash(g, a, v) {
   const f = v.flash;
   if (!f) return;
@@ -1035,16 +1055,38 @@ for (const id of [32, 35])
               ring(g, b.x, b.y, b.r + 2.5, '#fff2c48c', 1.2);
           guide(g);
           if (!scratch) orb(g, v, cue);
+          aimLens(g,a,v);
           flash(g, a, v);
         },
       };
     },
   );
+// Physical tables run along world X. One camera maps both the painted pieces and touch input.
+function laneCamera(front, back, width, perspective) {
+  function project(x, y) {
+    const depth = x / 600;
+    const scale = width / (1 + perspective * depth);
+    return { x: 300 + (y - 180) * scale,
+      y: front - (front - back) * depth * (1 + perspective) / (1 + perspective * depth), scale };
+  }
+  function unproject(pt) {
+    const t = clamp((front - pt.y) / (front - back), 0, 1);
+    const depth = t / (1 + perspective - perspective * t);
+    return { x: 600 * depth, y: 180 + (pt.x-300) * (1+perspective*depth)/width };
+  }
+  function segment(g, x, y, xx, yy, color, weight) {
+    const a = project(x,y), b = project(xx,yy);
+    line(g,a.x,a.y,b.x,b.y,color,weight);
+  }
+  return { project, unproject, segment };
+}
+
 sport(
   33,
   '레인에서 공을 보낼 지점을 누르세요. 프레임마다 두 번 굴리고 스트라이크·스페어에는 다음 투구 점수가 더해집니다. 열 번째 프레임의 보너스 투구까지 진행합니다.',
   (a) => {
-    const v = table(a, 'turn', (pt) => hit(pt), {
+    const camera = laneCamera(357,140,2.1,1.85);
+    const v = table(a, null, (pt) => hit(camera.unproject(pt)), {
       aimed: '방향을 정했어요 · 굴리기로 굴려요',
       rolling: '공이 레인을 굴러가는 중…',
       wait: () => (flight ? '공이 굴러가는 중이에요' : ''),
@@ -1057,16 +1099,11 @@ sport(
       flight = false,
       b,
       pins;
-    const spots = range(10).map((i) => {
-      const row = Math.floor((Math.sqrt(8 * i + 1) - 1) / 2),
-        col = i - (row * (row + 1)) / 2;
-      return { x: 455 + row * 20, y: 180 + (col - row / 2) * 26 };
-    });
     function rack() {
-      pins = range(10).map((i) => {
-        const row = Math.floor((Math.sqrt(8 * i + 1) - 1) / 2),
-          col = i - (row * (row + 1)) / 2;
-        return ball(455 + row * 20, 180 + (col - row / 2) * 26, 9, cream, { live: true });
+      pins = range(10).map(i => {
+        const row = Math.floor((Math.sqrt(8*i+1)-1)/2), col=i-row*(row+1)/2;
+        const x=455+row*20,y=180+(col-row/2)*26;
+        return ball(x,y,9,cream,{live:true,homeX:x,homeY:y});
       });
     }
     function total() {
@@ -1090,7 +1127,7 @@ sport(
     }
     rack();
     reset();
-    a.aim = { x: 540, y: 180 };
+    a.aim = camera.project(480,180);
     a.force();
     meter(a);
     // score: frame, pins of the open frame, and the running total of finished frames
@@ -1180,42 +1217,26 @@ sport(
       },
       draw(g) {
         v.begin(g);
-        surface(g, '#664831', '#322b2d');
-        g.fillStyle = '#d9aa70';
-        g.fillRect(12, 52, 576, 256);
-        material(g, 'maple', 0.76, 12, 52, 576, 256);
-        for (const y of [38, 308]) {
-          const gutter = g.createLinearGradient(0, y, 0, y + 14);
-          gutter.addColorStop(0, '#bb8d5b');
-          gutter.addColorStop(0.42, '#38271f');
-          gutter.addColorStop(1, '#956b49');
-          g.fillStyle = gutter;
-          g.fillRect(12, y, 576, 14);
+        surface(g, '#b99365', '#684534');
+        material(g, 'review-lane', 1);
+        const start = camera.project(b.x,b.y);
+        if (!flight && !v.ended) {
+          dash(g,start.x,start.y,a.aim.x,a.aim.y,'#fff5d9dc',2,[4,6]);
+          reticle(g,a.aim.x,a.aim.y);
         }
-        for (let y = 60; y < 308; y += 13) line(g, 12, y, 588, y, '#995d303d');
-        // foul line, approach dots, pin deck
-        line(g, 104, 52, 104, 308, '#5b2f1d', 2.5);
-        for (const y of [96, 128, 154, 180, 206, 232, 264]) circle(g, 92, y, 2, '#805c3f');
-        g.fillStyle = '#f0c99022';
-        g.fillRect(432, 56, 150, 248);
-        for (let i = 0; i < 7; i++)
-          label(g, '▸', 260 + Math.abs(i - 3) * 8, 112 + i * 24, 14, '#805c3f');
-        wash(g, a);
-        for (const s of spots) circle(g, s.x, s.y, 3.2, '#8a5d3a66');
-        if (!flight && !v.ended && a.aim.x > b.x) {
-          const dir = heading(b, a.aim),
-            ky = dir.y > 0 ? (308 - b.y) / dir.y : dir.y < 0 ? (52 - b.y) / dir.y : Infinity,
-            reach = Math.min((588 - b.x) / dir.x, ky);
-          dash(g, b.x, b.y, b.x + dir.x * reach, b.y + dir.y * reach, '#fff7dfc0', 2, [5, 7]);
-          reticle(g, a.aim.x, a.aim.y);
+        for (const pin of pins.filter(p=>p.live).sort((p,q)=>q.x-p.x)) {
+          const s=camera.project(pin.x,pin.y);
+          g.save(); g.translate(s.x,s.y);
+          contact(g,v,0,0,8*s.scale);
+          g.rotate(pin.hit ? Math.min(1.36,Math.hypot(pin.x-pin.homeX,pin.y-pin.homeY)/25) : 0);
+          if (!miniature(g,'pin',0,-20*s.scale,23*s.scale,42*s.scale)) orb(g,v,{...pin,x:0,y:-8,r:7});
+          g.restore();
         }
-        const standing = pins.filter((v) => v.live);
-        for (const p of standing) contact(g, v, p.x, p.y, 7, 0.38);
-        for (const p of standing)
-          if (!sprite(g, v, 'pin', p.x - v.below[0] * 4, p.y - v.below[1] * 4, 17, 27)) orb(g, v, p);
-        contact(g, v, b.x, b.y, b.r);
-        if (!sprite(g, v, 'bowling-ball', b.x, b.y, b.r * 2, b.r * 2)) orb(g, v, b);
-        flash(g, a, v);
+        contact(g,v,start.x,start.y,b.r*start.scale);
+        const diameter=b.r*2*start.scale;
+        if (!miniature(g,'bowling-ball',start.x,start.y-diameter*.36,diameter,diameter))
+          orb(g,v,{...b,x:start.x,y:start.y-diameter*.36,r:diameter/2});
+        flash(g,a,v);
       },
     };
   },
@@ -1345,6 +1366,11 @@ sport(
       draw(g) {
         v.begin(g);
         surface(g, '#493b3a', '#24282b', true);
+        for(const x of [65,535]) {
+          const halo=g.createRadialGradient(x,85,5,x,95,145);
+          halo.addColorStop(0,'#efd0a248');halo.addColorStop(1,'#45285700');
+          g.fillStyle=halo;g.fillRect(x-145,0,290,250);
+        }
         wash(g, a);
         // cork surround with a soft cast shadow below-right
         g.save();
@@ -1413,6 +1439,7 @@ sport(
           g.fill();
           label(g, preview.tag, a.aim.x, a.aim.y - 18.5, 12, gold);
         }
+        aimLens(g,a,v);
         flash(g, a, v);
       },
     };
@@ -1422,7 +1449,8 @@ sport(
   38,
   '번갈아 스톤 네 개씩 던집니다. 버튼에 가까운 팀의 스톤 중 상대 최선의 스톤보다 안쪽에 있는 개수만큼 득점합니다.',
   (a) => {
-    const v = table(a, 'turn', (pt) => hit(pt), {
+    const camera = laneCamera(341,39,1.55,.98);
+    const v = table(a, null, (pt) => hit(camera.unproject(pt)), {
       aimed: '방향을 정했어요 · 던지기로 던져요',
       rolling: '스톤이 미끄러지는 중…',
       wait: () => (turn ? '상대가 던지는 중이에요' : busy ? '스톤이 멈추면 던질 수 있어요' : ''),
@@ -1433,7 +1461,7 @@ sport(
       busy = false,
       leader = null;
     const team = [red, blue];
-    a.aim = { ...target };
+    a.aim = camera.project(target.x,target.y);
     function launch(pt, power) {
       const b = ball(65, 180, 12, team[turn], { p: turn });
       shoot(b, pt, 100 + power * 650);
@@ -1511,43 +1539,40 @@ sport(
       },
       draw(g) {
         v.begin(g);
-        surface(g, '#d3e8e5', '#8fb8c6');
-        // sheet markings: hog line, centre line, tee line and back line
-        line(g, 200, 0, 200, 360, red, 3);
-        line(g, 0, 180, 600, 180, '#6d9399');
-        line(g, target.x, 70, target.x, 290, '#6d9399', 1.5);
-        line(g, target.x + 86, 60, target.x + 86, 300, '#6d9399', 1.5);
-        for (const [r, c] of [
-          [78, blue],
-          [54, cream],
-          [30, red],
-          [10, cream],
-        ]) {
-          circle(g, target.x, target.y, r, c);
-          ring(g, target.x, target.y, r, '#24414a40', 1);
+        surface(g,'#875c39','#472f21');
+        material(g,'walnut',.88);
+        const corners=[[0,4],[600,4],[600,356],[0,356]].map(([x,y])=>camera.project(x,y));
+        g.beginPath();corners.forEach((p,i)=>i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y));g.closePath();
+        g.save();g.shadowColor='#24190bcc';g.shadowBlur=8;g.shadowOffsetY=5;
+        g.fillStyle='#bedbdf';g.fill();g.restore();
+        g.strokeStyle='#5f4442';g.lineWidth=8;g.stroke();
+        g.save();g.clip(); material(g,'ice',.65);
+        for(const x of [140,380,565]) camera.segment(g,x,0,x,360,'#b0524c',2);
+        camera.segment(g,0,180,600,180,'#718e9566',1.2);
+        for(const [r,c] of [[86,'#426c97'],[63,'#e9eff0'],[43,'#b5574d'],[19,'#e5e4cf']]){
+          g.beginPath();
+          for(let j=0;j<=64;j++){
+            const angle=j*Math.PI/32, p=camera.project(target.x+r*Math.cos(angle),target.y+r*Math.sin(angle));
+            if(!j)g.moveTo(p.x,p.y);else g.lineTo(p.x,p.y);
+          }
+          g.closePath();g.fillStyle=c;g.fill();
         }
-        wash(g, a);
-        const ready = !busy && !turn && !v.ended;
-        if (ready && dist(a.aim, { x: 65, y: 180 }) > 1) {
-          dash(g, 65, 180, a.aim.x, a.aim.y, '#173b4acc', 2, [5, 7]);
-          reticle(g, a.aim.x, a.aim.y, '#c2412d');
+        if(!turn && !busy && !v.ended) {
+          const from=camera.project(65,180);
+          dash(g,from.x,from.y,a.aim.x,a.aim.y,'#344c60cc',1.8,[4,5]);
+          reticle(g,a.aim.x,a.aim.y);
         }
-        if (ready && !stones.some((b) => b.x < 85 && Math.abs(b.y - 180) < 25)) {
-          contact(g, v, 65, 180, 12);
-          sprite(g, v, 'red-curling', 65, 180, 26, 26);
+        const shown=[...stones];
+        if(!turn && !busy && !v.ended) shown.push({x:65,y:180,p:0});
+        for(const stone of shown.sort((p,q)=>q.x-p.x)){
+          const p=camera.project(stone.x,stone.y), size=31*p.scale;
+          contact(g,v,p.x,p.y,size*.46);
+          if(stone===leader) ring(g,p.x,p.y,size*.56,gold,2);
+          if(!miniature(g,stone.p?'blue-curling':'red-curling',p.x,p.y-size*.2,size,size))
+            orb(g,v,{x:p.x,y:p.y,r:size*.45,color:team[stone.p]});
         }
-        stones.forEach((b) => contact(g, v, b.x, b.y, 12));
-        stones.forEach((b) => {
-          if (!sprite(g, v, b.p ? 'blue-curling' : 'red-curling', b.x, b.y, 26, 26)) orb(g, v, b);
-        });
-        // the shot rock of the last settled position stays marked, faded while stones slide
-        if (leader) {
-          g.save();
-          if (busy) g.globalAlpha = 0.45;
-          ring(g, leader.x, leader.y, 17, gold, 2.5, [4, 3]);
-          g.restore();
-        }
-        flash(g, a, v);
+        g.restore();
+        flash(g,a,v);
       },
     };
   },

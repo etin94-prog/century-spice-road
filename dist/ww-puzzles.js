@@ -128,6 +128,7 @@ register(
       return [remove.length, attack];
     }
     // Opponent cells that filled since the last change, so their incoming balls stay visible.
+    let preferredGap = 2;
     let miniSnap = null,
       miniMarks = [];
     return () => {
@@ -212,6 +213,7 @@ register(
           ghosts.push([el, 'gem' + v]);
         });
       };
+      const placements = [];
       let possible = 0;
       for (const x of range(w - 1)) {
         const left = slot(b, x),
@@ -257,10 +259,22 @@ register(
             [right, balls[1]],
             [double - w, balls[2]],
           ];
+          placements.push({x,drop,land});
           drop.addEventListener('pointerdown', () => ghost(land));
           drop.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && ghost(land));
           for (const type of ['pointerup', 'pointercancel', 'pointerleave']) drop.addEventListener(type, unghost);
         }
+      }
+      if (!p && placements.length && !ui.ended) {
+        const controls=element('div','sixball-precise');
+        const select=element('select','');select.setAttribute('aria-label','구슬을 떨어뜨릴 열');
+        for(const {x} of placements) select.add(new Option((x+1)+'·'+(x+2)+'열',String(x)));
+        const selected=placements.find(it=>it.x===preferredGap)||placements[0];
+        select.value=String(selected.x);
+        const current=()=>placements.find(it=>it.x===Number(select.value));
+        select.onchange=()=>{preferredGap=Number(select.value);ghost(current().land);};
+        const place=element('button','','이 열에 놓기');place.onclick=()=>current().drop.click();
+        controls.append(select,place);opp.append(controls);
       }
       if (!possible) ui.victor(1 - p);
     };

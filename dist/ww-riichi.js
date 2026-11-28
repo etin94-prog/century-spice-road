@@ -214,6 +214,16 @@ register(
           head.append(element('span', 'mj-delta ' + (delta > 0 ? 'up' : 'down'), signed(delta)));
         if (final && rank) head.append(element('span', 'mj-rank', rank[id] + '위'));
         block.append(head);
+        if (rel && m.shoupai[l]) {
+          // The model uses "_" for concealed tiles; render only anonymous backs.
+          const counts=m.shoupai[l]._bingpai;
+          const held=(counts._ || 0) + [...'mpsz'].reduce((sum,suit) =>
+            sum + counts[suit].slice(1).reduce((a,b)=>a+b,0),0);
+          const backs=element('div','mj-concealed');
+          backs.setAttribute('aria-label','상대 손패 '+held+'장');
+          for(let i=0;i<Math.min(14,held);i++) backs.append(element('i',''));
+          block.append(backs);
+        }
         const pond = element('div', 'mj-river');
         const shown = river.slice(-18);
         if (river.length > shown.length) pond.append(element('span', 'mj-more', '+' + (river.length - shown.length)));

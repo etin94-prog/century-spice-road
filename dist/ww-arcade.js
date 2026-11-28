@@ -1017,14 +1017,22 @@ arcade(
       },
       draw(g) {
         surface(g, '#4b9796', '#214c60');
-        material(g, 'pond', 1);
+        material(g, 'review-harbor', 1);
         for (const i of range(22)) {
           const x = ((i * 83 + a.time * 8) % 660) - 30,
             y = 30 + ((i * 53) % 300);
           line(g, x, y, x + 20, y, '#c3e7d32e');
         }
         if (phase !== 'idle') {
+          // The approaching silhouette gives the bite a visible source.
           const biting = phase === 'bite';
+          const approach = biting ? 1 : clamp(1 - (bite - a.time)/1.5,0,1);
+          if (approach>0) {
+            g.save();g.globalAlpha=.32+.2*approach;
+            const sign=at.x>300 ? -1 : 1;
+            g.translate(at.x+sign*(1-approach)*74,at.y+12+8*(1-approach));
+            g.scale(-sign,1);miniature(g,'trout',0,0,48,19);g.restore();
+          }
           for (let i = 0; i < 3; i++) {
             g.beginPath();
             g.ellipse(
@@ -1097,7 +1105,7 @@ for (const [id, team] of [
         units.push({ x: 80, y: 285, p: 0, angle: 0 }, { x: 480, y: 75, p: 1, angle: Math.PI });
       const shots = [],
         scores = [0, 0],
-        blocks = [
+        blocks = team ? [{x:180,y:102,r:28},{x:388,y:95,r:28},{x:215,y:256,r:32},{x:420,y:254,r:29}] : [
           { x: 220, y: 110, r: 32 },
           { x: 390, y: 250, r: 35 },
         ],
@@ -1194,6 +1202,7 @@ for (const [id, team] of [
         },
         draw(g) {
           surface(g, '#adb493', '#777e69', true);
+          material(g,team ? 'review-teams' : 'review-arena',1);
           // Paint splats stay on the ground where tanks were hit.
           for (const sp of splats) {
             g.save();
@@ -1255,7 +1264,7 @@ for (const [id, team] of [
             g.save();
             g.translate(u.x, u.y);
             g.rotate(u.angle);
-            if (!miniature(g, u.p ? 'red-tank' : 'teal-tank', 0, 0, 46, 33)) {
+            if (!miniature(g, u.p ? 'red-tank' : 'teal-tank', 0, 0, 61, 46)) {
               g.fillStyle = '#454d4a';
               g.fillRect(-17, -14, 34, 28);
               g.fillStyle = u.p ? red : blue;
@@ -1337,7 +1346,7 @@ arcade(
       tap: fire,
       draw(g) {
         surface(g, '#504337', '#2e353c', true);
-        material(g, 'gallery', 1);
+        material(g, 'review-range', 1);
         for (const t of targets()) {
           line(g, t.x, t.y + 15, t.x, 316, '#aa8a64', 5);
           if (miniature(g, 'gallery-target', t.x, t.y, 60, 60)) continue;
