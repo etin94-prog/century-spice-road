@@ -82,8 +82,8 @@ const CepterCombos = (() => {
         if(reward)note(s,cards[u.id].name+' · +'+reward+'G');
       }
       death(s,u.id,s.edition!=='saga'||caster!=null);
-      if(['begins','3ds'].includes(s.edition)&&fromSpell&&name(u)==='jackalope'){
-        t.unit=morph(u,'humbaba');
+      if(['begins','3ds','revolt'].includes(s.edition)&&fromSpell&&name(u)==='jackalope'){
+        t.unit=morph(u,s.edition==='revolt'?'greattusker':'humbaba');
         note(s,cards[u.id].name+' · '+cards[t.unit.id].name+'로 부활');
       }else vacate(t);
     }

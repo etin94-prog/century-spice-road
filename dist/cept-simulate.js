@@ -1,4 +1,4 @@
-if(new URLSearchParams(location.search).get('edition')==='revolt')importScripts('cept-evo.js');
+if(new URLSearchParams(location.search).get('edition')==='revolt')importScripts('cept-evo.js','cept-revolt-book-archive.js');
 if(new URLSearchParams(location.search).get('edition')==='3ds')importScripts('cept-edition-data-2012.js','cept-2012-player-books.js');
 if(new URLSearchParams(location.search).get('edition')==='begins')importScripts('cept-begins-shrines.js','cept-begins-player-books.js');
 if(new URLSearchParams(location.search).get('edition')==='saga')importScripts('cept-saga-player-books.js');

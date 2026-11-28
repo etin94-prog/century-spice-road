@@ -324,6 +324,29 @@ const CepterCreatureText=(()=>{
   const elements=['화','수','지','풍'],races={rh:'인간형',rb:'야수형',rd:'용형',ru:'불사형'};
   const targets=ids=>ids.map(i=>elements[i]||'무').join('·')+' 속성';
   const revoltBattle={
+    valkyria:'상대를 격파해 승리하면 기본 ST가 10 오릅니다. 최대 100입니다.',
+    seabonze:'전투 시작 시 양쪽 크리처와 장비의 능력을 무효화합니다.',
+    leshy:'전투에서 생존하면 교전 영지 레벨이 1 오릅니다.',
+    nike:'일반 공격이 명중하면 상대 크리처를 마비시킵니다.',
+    groundgear:'스카이 기어를 지원에 쓰면 안드로기어로 합체합니다.',
+    skygear:'그라운드 기어를 지원에 쓰면 안드로기어로 합체합니다.',
+    androgear:'비스트 기어를 지원에 쓰면 기어리온으로 합체합니다.',
+    ogrelord:'레드·옐로 오거가 배치돼 있으면 전투 ST +20, 블루·그린 오거가 배치돼 있으면 전투 HP +20.',
+    redcap:'배치된 고블린 한 마리당 전투 ST와 HP가 20이 됩니다. 교전에 참여하지 않고 배치돼 있으면 고블린의 전투 ST +20.',
+    ghostship:'풍 크리처가 배치돼 있으면 전투 HP +30. 기본 ST 40 이하인 상대의 일반 공격을 무효화합니다.',
+    rahab:'기본 ST 50 이상인 상대의 일반 공격을 무효화합니다. 교전에 참여하지 않고 배치돼 있으면 수·풍 크리처의 전투 HP +10.',
+    tiamat:'상대를 격파해 승리하면 교전 영지를 화 속성으로 바꿉니다.',
+    bahamut:'상대를 격파해 승리하면 교전 영지를 수 속성으로 바꿉니다.',
+    jormungandr:'상대를 격파해 승리하면 교전 영지를 지 속성으로 바꿉니다.',
+    typhon:'상대를 격파해 승리하면 교전 영지를 풍 속성으로 바꿉니다.',
+    generalguan:'배치된 최대 HP 50 이상 크리처 한 마리당 전투 ST +5.',
+    garuda:'배치된 풍 크리처 한 마리당 전투 ST와 HP가 10씩 됩니다.',
+    brontides:'교전에 참여하지 않고 배치돼 있으면 화·지 크리처의 전투 HP +10.',
+    mormo:'화 크리처가 지도에 배치돼 있으면 전투 ST +30.',
+    cusith:'수 크리처가 지도에 배치돼 있으면 전투 ST +10, HP +20.',
+    python:'기본 ST 40 이상 상대의 지형 효과를 관통합니다. 침략 전투에서 생존하면 100G를 얻습니다.',
+    treasureraider:'침략 전투에서 생존하면 100G를 얻습니다.',
+    jackalope:'주문으로 파괴되면 그레이트 터스커로 변해 영지를 지킵니다.',
     hellpyron:'전투에 참여하지 않은 헬 파이론이 지도에 있으면 화·지 크리처의 전투 ST +10.',
     pyromancer:'장비 없이 두루마리로 30 피해를 줍니다. 상대 일반 공격에 맞고 생존하면 기본 ST 20, 최대 HP 30으로 바뀝니다.',
     knighterrant:'지 속성 크리처를 제물로 버리면 아머드 팔라딘으로 변합니다. 일반 공격 피해의 절반을 반사하고 자신은 피해를 받지 않습니다.',
@@ -485,7 +508,7 @@ const CepterCreatureText=(()=>{
       C.edition==='begins'&&key==='fate'?'전투에서 격파되면 카드 한 장을 뽑습니다.':
       C.edition==='begins'&&key==='darkmaster'?'지도에 배치되어 전투에 참여하지 않으면 지 크리처의 전투 ST를 10 올립니다. 자신이 전투에 생존하면 100G를 지불합니다.':
       C.edition==='begins'&&key==='beelzebub'?'지도에 배치되어 전투에 참여하지 않으면 풍 크리처의 전투 ST를 10 올립니다. 자신이 전투에 생존하면 100G를 지불합니다.':
-      ['begins','saga'].includes(C.edition)&&key==='bloodypudding'?'지원 크리처를 쓰면 그 카드의 HP만큼 자신의 최대 HP가 오릅니다. 최대 HP는 100까지 오릅니다.':
+      ['begins','saga','revolt'].includes(C.edition)&&key==='bloodypudding'?'지원 크리처를 쓰면 그 카드의 HP만큼 자신의 최대 HP가 오릅니다. 최대 HP는 100까지 오릅니다.':
       C.edition==='revolt'&&key==='fate'?'전투에서 격파됐을 때 손패가 10장 미만이면 카드 한 장을 뽑습니다.':
       C.edition==='revolt'&&key==='hellgrammite'?'전투에서 격파되면 서펀트 플라이로 변해 살아납니다.':
       C.edition==='revolt'&&key==='serpentfly'?'수 영지에서도 지형 HP 보너스를 받습니다.':

@@ -21,17 +21,18 @@ const CepterExtraSpells=(()=>{
     mesozoicsong:'player',sinkingsong:'player',bravesong:'player',toughsong:'player',hunterssong:'player',trespass:'global',zeromn:'global',capture:'player',theft:'player',refuge:'global',
     comet:'land',crusherstorm:'global',desolation:'global',elevation:'land',erosion:'global',fame:'global',
     frostneedle:'land',venomousboil:'land',shininggeyser:'land',shininggeyserstrong:'land',blazesplash:'land',dreadblast:'land',
+    fluxion:'player',thunderclap:'land',suddenimpact:'land',quietude:'global',rayofpurge:'global',formportal:'global',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
-  const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30};
+  const landDamage={shininggeyser:30,shininggeyserstrong:40,blazesplash:30,dreadblast:30,thunderclap:30};
   const damageSpells=new Set(['acidrain','avalanche','elementalrage','energyflash','burninghail','freezecyclone','globalinsectswarm','fatigueddisaster','elementalwrath','stoneblast','deathmiasma','sagaselection','sagadisaster','armageddon','beginstempest']);
   const terrain={upheaval:0,sink:1,wildgrowth:2,weathering:3,quintessence:'복합',...shifts};
   const leap={mountainleap:0,lakeleap:1,forestleap:2,plainleap:3};
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
   const wallForms={[-1]:'wonderwall',0:'creepingflame',1:'wallofice',2:'wallofstone',3:'tornado'};
   const stolenKind={capture:'item',theft:'spell'};
-  const enemyOnly=new Set(['capture','theft','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind']);
+  const enemyOnly=new Set(['capture','theft','fluxion','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind']);
   const duration={mesozoicsong:3,sinkingsong:3,bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,holdcurse:8,sagaStrut:3,sagaMagicEra:3,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
   const soltis={
     goodluck:'행운 · 2라운드 통행료 면제',purify:'정화 · 모든 영지의 인챈트 해제',affection:'은총 · 순위 × 200G',
@@ -204,6 +205,7 @@ const CepterExtraSpells=(()=>{
         return s.players.flatMap((q,i)=>{
           if(e!=='dispelmagic'&&q.status==='barrier'||enemyOnly.has(e)&&!enemy(s,i))return [];
           if(e==='unholygrasp'&&!symbolCount(q)||e==='forfeit'&&!forfeitSymbols(s,i).length||e==='fear'&&!fearTarget(s,i))return [];
+          if(e==='fluxion'&&s.players[s.turn].cash>=q.cash)return [];
           if(e==='blacksmith'&&!q.hand.length||e==='reform'&&!q.hand.some(id=>cards[id].kind!=='creature')||e==='beginspoisonmind'&&!(q.book?.length??q.bookCount))return [];
           if(stolenKind[e]&&!q.hand.some(id=>cards[id].kind===stolenKind[e]))return [];
           if(e==='mesmerize'&&!q.hand.some(id=>cards[id].kind==='spell'&&combo.key(cards[id])!=='mesmerize'))return [];
@@ -221,8 +223,9 @@ const CepterExtraSpells=(()=>{
         if(e==='temptation'&&!fx.territoryTargets(s,i,true).length)return [];
         if(secretSigils.has(e)&&(t.owner!==s.turn||fx.secretArt(cards[t.unit.id])||t.unit.enchant===e))return [];
         if((hasTerrain||e==='influence')&&(fx.terrainLocked(s,t)||fx.idol(s,'jadeidol')||combo.activeWorld(s)==='solidworld'))return [];
-        if(['meteor','locust','comet','sagaterrair','elevation'].includes(e)&&fx.blockedLevel(s,t,e!=='elevation'))return [];
-        if(e==='comet'&&(!enemy(s,t.owner)||t.level<2)||e==='elevation'&&t.level!==1)return [];
+        if(['meteor','locust','comet','sagaterrair','elevation','suddenimpact'].includes(e)&&fx.blockedLevel(s,t,e!=='elevation'))return [];
+        if(e==='comet'&&(!enemy(s,t.owner)||t.level<2)||e==='elevation'&&t.level!==1||e==='suddenimpact'&&t.level!==4)return [];
+        if(e==='thunderclap'&&!cards[t.unit.id].catalog?.additionalCost)return [];
         if(e==='frostneedle'&&![0,2].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='venomousboil'&&![1,3].some(element=>combo.hasElement(cards[t.unit.id],element)))return [];
         if(e==='chariot'&&(t.owner!==s.turn||!chariotExits(s,i).length))return [];
@@ -354,7 +357,7 @@ const CepterExtraSpells=(()=>{
             if(!['ps1','saturn'].includes(s.edition))returnToBook(s,s.turn,ids.get(e));
             return 'teleMove';
           case 'influence':t.type=influence(s,t);break;
-          case 'locust':t.level=Math.max(1,t.level-1);break;
+          case 'locust':case 'suddenimpact':t.level=Math.max(1,t.level-1);break;
           case 'meteor':t.level=s.edition==='begins'&&chain(s,t)>1?Math.max(1,t.level-2):1;break;
           case 'sagapolymorph':case 'beginspolymorph':case 'polymorph':{
             const id=sample(s.edition==='saga'?fx.sagaFormChoices(u.id):
@@ -417,6 +420,10 @@ const CepterExtraSpells=(()=>{
             note(s,q.name+' · '+cards[id].name+' 철수');
             break;
           }
+          case 'fluxion':{
+            const amount=Math.floor(q.cash*.3);
+            p.cash+=amount;q.cash-=amount;break;
+          }
           case 'forfeit':s.spellTarget=x;return 'forfeitSymbol';
           case 'corruption':q.cash-=(['dc','ps1'].includes(s.edition)?5:10)*symbolCount(q);break;
           case 'sagagift':q.cash+=100;draw(q,s);break;
@@ -457,6 +464,14 @@ const CepterExtraSpells=(()=>{
         const land=s.tiles.filter(t=>t.unit);
         switch(e){
           case 'escape':return warp(s,nearest(s,p,t=>territoryType(t.type)&&!t.unit));
+          case 'formportal':{
+            const gates=board(s).gates;
+            return warp(s,nearest(s,p,t=>gates[s.tiles.indexOf(t)]!=null));
+          }
+          case 'quietude':for(const player of s.players)setStatus(s,player,e,1);break;
+          case 'rayofpurge':
+            for(const player of s.players)player.hand=player.hand.filter(id=>!cards[id].catalog?.category?.endsWith('enchant'));
+            break;
           case 'castlerecall':return warp(s,board(s).castles?.[0]??0);
           case 'teleport':return warp(s,nearest(s,p,t=>!territoryType(t.type)));
           case 'aports':
@@ -720,6 +735,7 @@ const CepterExtraSpells=(()=>{
           case 'rust':return -sign*count('item')*9;
           case 'ruin':return -sign*count('spell')*7-p.hand.filter(id=>cards[id].kind==='spell'&&combo.key(cards[id])!==e).length*5;
           case 'mesmerize':return -sign*Math.max(0,...q.hand.filter(id=>cards[id].kind==='spell').map(id=>cards[id].cost/9));
+          case 'fluxion':return (q.cash*.3)/9;
           case 'fear':return -sign*(value(s,fearTarget(s,x))/10+Number(q.hand.length>=6)*15);
           case 'forfeit':return Math.max(-20,...forfeitSymbols(s,x).map(([,id])=>forfeitValue(s,x,id)));
           case 'corruption':return -sign*symbolCount(q)/2;
@@ -787,6 +803,7 @@ const CepterExtraSpells=(()=>{
         case 'sagabistair':return affinity(s,0,2)>=5?-sign*fx.damageAmount(s,t,40)/3:-30;
         case 'sagaterrair':return affinity(s,1,3)>=5?-sign*(t.level-1)*12:-30;
         case 'comet':return -sign*Math.min(2,t.level-1)*10;
+        case 'suddenimpact':return -sign*22;
         case 'elevation':return sign*10;
         case 'holybanishment':return -sign*(5+weight+t.unit.hp/8);
         case 'sagaliquidform':case 'liquidform':return sign*(40-t.unit.hp)/7;
@@ -825,6 +842,12 @@ const CepterExtraSpells=(()=>{
         const amount=massDamage(s,e,v);
         return sum+(!amount||e!=='energyflash'&&fx.immuneHP(v)?0:(enemy(s,v.owner)?1:-1)*(amount/8+(amount>=v.unit.hp?4*v.level:0)));
       },0);
+      if(e==='formportal'){
+        const from=p.pos,gates=board(s).gates,at=nearest(s,p,t=>gates[s.tiles.indexOf(t)]!=null);
+        return at!==from&&!p.flags.includes(gates[at])?13:-10;
+      }
+      if(e==='quietude')return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?1:-1)*q.hand.filter(id=>cards[id].kind==='spell').length*4,0);
+      if(e==='rayofpurge')return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?1:-1)*q.hand.filter(id=>cards[id].catalog?.category?.endsWith('enchant')).length*8,0);
       if(e==='conspiracy'){
         if(p.status===e)return -15;
         const highest=Math.max(0,...land.map(t=>cards[t.unit.id].cost));

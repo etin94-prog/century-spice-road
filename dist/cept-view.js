@@ -55,6 +55,10 @@ const modernBookNames=C.edition==='3ds'?
     sagaBorivalFire:'보리발 · 화염',sagaZenethDragon:'제네스 · 용의 눈',
     sagaTicomunKill:'티코문 · 처단',sagaTicomunChallenge:'티코문 · 결투',sagaRilaraExploit:'리라라 · 강탈',sagaBorivalHellFire:'보리발 · 지옥불',sagaRilaraConspire:'리라라 · 모략',sagaRilaraFierce:'리라라 · 맹공',sagaKoenigStar:'쾨니히 · STAR',sagaTraderMoney:'상인 · MONEY!',sagaGuilderTwins:'길더와 루블 · 쌍둥이',sagaImmediate:'즉시·연속 주문 북',sagaAffinity:'화·지 조건 주문 북',
     ...Object.fromEntries(CepterSagaPlayerBooks.map(([author,name,source,,variant])=>['saga-'+source+variant,author+' · '+name]))}:{})};
+if(C.edition==='revolt')for(const [character,name,source] of CepterRevoltBookArchive){
+  const id='revolt-'+source;
+  if(C.presets[id])modernBookNames[id]=character+' · '+name;
+}
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){

@@ -1902,11 +1902,101 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
       return Array(n).fill(bySlug.get(slug));
     });
     if(original.length!==50)uneven.push(original.length);
-    if(revoltCatalog.validBook(original))ready.push(character+' · '+name);
+    if(revoltCatalog.validBook(original)){
+      ready.push(character+' · '+name);
+      const sorted=original.slice().sort((a,b)=>a-b).join(',');
+      assert.ok(Object.values(revoltCatalog.presets).some(deck=>deck.slice().sort((a,b)=>a-b).join(',')===sorted),source);
+    }
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,24);
+  assert.equal(ready.length,29);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
+  {
+    const shot=mode=>revolt('battleaxe',null,'goblin',mode).s.battle.strikes[0].effect;
+    assert.equal(shot('ghostship'),'block');
+    assert.equal(shot('rahab'),'hit');
+    assert.equal(revolt(null,null,'tiamat','rahab').s.battle.strikes[0].effect,'block');
+    for(const [dragon,element] of [['tiamat',0],['bahamut',1],['jormungandr',2],['typhon',3]]){
+      const battle=revolt(null,null,dragon,'goblin').s;
+      assert.equal(battle.tiles[1].type,element,dragon);
+      assert.equal(battle.tiles[1].unit.id,bySlug.get(dragon));
+    }
+    for(const [attacker,material,form] of [['groundgear','skygear','androgear'],['skygear','groundgear','androgear'],['androgear','beastgear','gearion']]){
+      const fusion=revolt(material,null,attacker,'goblin').s;
+      assert.equal(fusion.tiles[1].unit.id,bySlug.get(form));
+      assert.ok(!revoltCatalog.validBook([...revoltCatalog.presets.intro.slice(1),bySlug.get(form)]));
+    }
+    const boosted=revolt(null,null,'redogre','goblin',(s,id)=>{
+      Object.assign(s.tiles[8],{owner:1,type:2,unit:{id:id('brontides'),hp:60}});
+      Object.assign(s.tiles[9],{owner:1,type:0,unit:{id:id('redcap'),hp:40}});
+    }).s.battle;
+    assert.deepEqual([boosted.startHP[0],boosted.defendST],[CForRevolt('redogre').hp+10,CForRevolt('goblin').st+20]);
+    function CForRevolt(name){return revoltCatalog.cards[bySlug.get(name)];}
+    const shield=revolt('battleaxe',null,'fighter','goblin',s=>{s.tiles[1].unit.enchant='metalform';}).s.battle;
+    assert.equal(shield.strikes[0].effect,'block');
+    const muted=revolt('battleaxe',null,'fighter','seabonze').s.battle;
+    assert.equal(muted.attackST,CForRevolt('fighter').st);
+    const python=revolt(null,null,'python','goblin',(s)=>{s.players[0].cash=900;s.tiles[1].unit.st=40;s.tiles[1].unit.hp=15;}).s;
+    assert.ok(python.battle.lines.some(line=>line.includes('침략 보너스 100G')));
+    const raging=revolt('battleaxe',null,'valkyria','goblin').s;
+    assert.equal(raging.tiles[1].unit.st,CForRevolt('valkyria').st+10);
+    const R=revoltCatalog;
+    function revoltUnit(s,at,name,owner,type=2,level=1,hp=CForRevolt(name).hp){
+      Object.assign(s.tiles[at],{owner,type,level,unit:{id:bySlug.get(name),hp}});
+    }
+    function revoltCast(spell,setup){
+      const s=R.start(2,2,5000,'revolt-original-watchpost'),p=s.players[0];
+      Object.assign(p,{cash:600,hand:[bySlug.get(spell),bySlug.get('redogre')]});
+      if(setup)setup(s);
+      assert.ok(R.play(s,['cast',0]),spell);
+      if(s.phase==='sacrifice')assert.ok(R.play(s,R.choices(s)[0]),spell);
+      return s;
+    }
+    const portal=revoltCast('formportal',s=>{s.players[0].pos=1;});
+    assert.deepEqual([portal.players[0].pos,portal.phase],[0,'land']);
+    const lair=revoltCast('goblinslair',s=>{s.players[0].pos=1;});
+    assert.equal(lair.tiles[1].unit.id,bySlug.get('goblin'));
+    assert.deepEqual(lair.players[0].hand,[bySlug.get('goblinslair')]);
+    const discord=revoltCast('discord',s=>{
+      revoltUnit(s,1,'greenogre',0);revoltUnit(s,2,'greenogre',1);revoltUnit(s,3,'redogre',1);
+    });
+    assert.deepEqual([1,2,3].map(at=>discord.tiles[at].unit.id),['goblin','goblin','redogre'].map(n=>bySlug.get(n)));
+    const flux=revoltCast('fluxion',s=>{s.players[1].cash=900;});
+    const postCast=flux.players[0].cash;
+    assert.ok(R.play(flux,['targetPlayer',1]));
+    assert.deepEqual([flux.players[0].cash,flux.players[1].cash],[postCast+270,630]);
+    const impact=revoltCast('suddenimpact',s=>{
+      revoltUnit(s,1,'goblin',1,2,4);revoltUnit(s,2,'goblin',1,3,5);
+    });
+    assert.deepEqual(R.choices(impact),[['targetLand',1]]);
+    assert.ok(R.play(impact,['targetLand',1]));
+    assert.deepEqual([impact.tiles[1].level,impact.tiles[2].level],[3,5]);
+    const thunder=revoltCast('thunderclap',s=>{
+      revoltUnit(s,1,'gargoyle',1);revoltUnit(s,2,'goblin',1);
+    });
+    assert.deepEqual(R.choices(thunder),[['targetLand',1]]);
+    assert.ok(R.play(thunder,['targetLand',1]));
+    assert.equal(thunder.tiles[1].unit.hp,20);
+    const quiet=revoltCast('quietude',s=>{s.players[1].hand=[bySlug.get('magicbolt')];});
+    assert.ok(quiet.players.every(p=>p.status==='quietude'));
+    quiet.phase='land';quiet.players[0].pos=0;
+    assert.ok(R.play(quiet,['pass']));
+    assert.deepEqual(R.choices(quiet),[['roll']]);
+    const purge=revoltCast('rayofpurge',s=>{
+      s.players[1].hand=['vitality','plague','magicbolt'].map(n=>bySlug.get(n));
+    });
+    assert.deepEqual(purge.players[1].hand,[bySlug.get('magicbolt')]);
+    const immobilize=revoltCast('immobilize',s=>{revoltUnit(s,1,'goblin',0);s.players[0].pos=1;});
+    assert.equal(immobilize.tiles[1].unit.enchant,'immobilize');
+    immobilize.phase='land';
+    assert.ok(!R.choices(immobilize).some(([action,at])=>action==='transfer'&&at===1));
+    const steal=revoltCast('theft',s=>{s.players[1].hand=[bySlug.get('manna'),bySlug.get('goblin')];});
+    assert.ok(R.play(steal,['targetPlayer',1]));
+    assert.deepEqual(R.choices(steal),[['stealCard',0,bySlug.get('manna')]]);
+    assert.ok(R.play(steal,R.choices(steal)[0]));
+    assert.deepEqual(steal.players[1].hand,[bySlug.get('goblin')]);
+    console.log('Revolt book archive unlocked five decks, gear fusion, dragon land shifts, neutralization thresholds and eleven spells checked');
+  }
   const helmet=revolt('livinghelmet','livingarmor','fighter','fighter').s.battle;
   assert.deepEqual([helmet.attackST,helmet.startHP[0],helmet.startHP[1]],[60,70,80]);
   const living=revolt(null,null,'livingarmor','fighter').s.battle;
@@ -2399,7 +2489,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.ok(items.every(c=>!c.catalogOnly));
   }finally{Math.random=random;}
   console.log('Revolt all 75 items enabled, including four dragons, recycling, independent robe rolls and Warlock Disk');
-  console.log('Revolt twenty-four exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
+  console.log('Revolt exact AI books, terrain defenses, metamorphosis, item effects and Yeti threshold OK');
   const begins=(w,a,attacker='fighter',defender='goblin',prepare)=>fight('begins',attacker,defender,w,a,prepare);
   const lv3=type=>state=>Object.assign(state.tiles[1],{type,level:3});
   const leveller=begins(null,'chainmail','leveller','fighter',lv3(2)).s;

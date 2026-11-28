@@ -87,7 +87,7 @@ function createCepter(edition="ps2"){
     [...'RBGY'].every((v,e)=>s.tiles.filter(t=>(handheld?allied(s,i,t.owner):t.owner===i)&&t.type===e).length>=(c.catalog?.additionalCost||'').split(',').filter(k=>k===v).length));
   const sacrificeRequired=(s,c)=>c.catalog?.additionalCost?.includes('+[]')&&!(c.kind==='creature'&&(combo.activeWorld(s)==='brightworld'||fx.idol(s,'goldidol')));
   const canEquip=(unit,gear,active)=>gear.kind==='item'?!unit.ban?.includes(gear.category||(gear.st?'weapon':'armor'))&&
-    !(begins&&active?.enchant==='metalform'&&gear.category==='armor'):
+    !((begins||revolt)&&active?.enchant==='metalform'&&gear.category==='armor'):
     gear.kind==='creature'&&(gear.itemCreature||unit.support&&(!unit.supportElements||unit.supportElements.some(e=>combo.hasElement(gear,e)))||['livingshield','livingspear','livingsword'].includes(key(gear)));
   const presets={intro:starter,fire:fireBook};
   const bookSize=edition==='begins'?40:50;
@@ -739,7 +739,7 @@ function createCepter(edition="ps2"){
   }
   function territoryDestinations(s,from){
     const {unit,area,owner}=s.tiles[from],name=fx.name(unit),links=board(s).links;
-    if(begins&&unit.enchant==='immobilize')return [];
+    if((begins||revolt)&&unit.enchant==='immobilize')return [];
     const {remoteVacant,remoteVacantElements}=cards[unit.id];
     const nearby=name==='roadrunner'?[...(begins?links[from]:[]),...links[from].flatMap(j=>links[j]).filter(j=>j!==from)]:links[from];
     const remote=s.tiles.flatMap((tile,j)=>{
@@ -776,7 +776,7 @@ function createCepter(edition="ps2"){
     switch(s.phase){
       case 'shrineChoice':return s.shrineChoices.map(event=>['shrineChoice',event]);
       case 'spell':
-        if(p.status!=='lifeforce'&&p.status!=='bind'){
+        if(!['lifeforce','bind','quietude'].includes(p.status)){
           hand('spell','cast');
           if(revolt)for(const at of territory(s))if(fx.secretTargets(s,at).length)options.push(['secretArt',at]);
         }
@@ -948,7 +948,7 @@ function createCepter(edition="ps2"){
       if(!begins&&a.n==='sonascetic'&&a.gear?.kind==='creature')a.n=a.g;
       const count=(e)=>s.tiles.filter(v=>v.owner===a.seat&&v.type===e).length;
       if(a.n==='bloodypudding'&&a.gear?.kind==='creature'){
-        const max=fx.max(a.u),gain=Math.max(0,Math.min(begins||edition==='saga'?100:80,max+a.gear.hp)-max);
+        const max=fx.max(a.u),gain=Math.max(0,Math.min(begins||revolt||edition==='saga'?100:80,max+a.gear.hp)-max);
         a.u.mhp=max+gain;a.u.hp+=gain;
       }
       if(!s.predict&&a.g==='belloflaw'&&other.hand.length){const costs=other.hand.map(id=>cards[id].cost);other.hand.splice(costs.indexOf(Math.max(...costs)),1);}
@@ -1061,13 +1061,13 @@ function createCepter(edition="ps2"){
     function reflectNormal(a,damage){
       a.hp-=damage;
       trackDamage(a,damage,edition==='saga');
-      if(edition==='saga'&&a.hp<=0)a.defeatedByOpponent=true;
+      if((edition==='saga'||revolt)&&a.hp<=0)a.defeatedByOpponent=true;
     }
     function hit(a,d){
       const scroll=a.gear?.category==='scroll'||a.gear?.scrollAsItem||!muted&&!a.gear&&(a.c.innateScroll||!firstEdition&&a.n==='sorcerer'),orb=a.gear?.effect==='orb'||a.suppressPhysicalWard;
       const weapon=a.gear?.kind==='item'?a.gear:null,guard=d.gear?.kind==='item'?d.gear:null;
       const has=combo.hasElement,matches=(elements,side)=>elements?.some(e=>has(side,e));
-      const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||weapon?.pierceAll||matches(weapon?.pierceElements,d));
+      const pierce=!scroll&&!muted&&(matches(a.c.pierceElements,d)||a.c.pierceAll||a.c.pierceBaseSTAtLeast&&fx.strength(d.u)>=a.c.pierceBaseSTAtLeast||weapon?.pierceAll||matches(weapon?.pierceElements,d));
       const beastCritical=revolt&&a.n==='lonebeast'&&board(s).links[b.at].some(at=>at!==b.from&&s.tiles[at].owner===a.seat);
       const elementalCritical=!scroll&&!muted&&(beastCritical||matches(a.c.criticalElements,d)||matches(weapon?.criticalElements,d)||matches(weapon?.criticalOwnElements,a)||weapon?.criticalRarity&&a.c.catalog?.rarity===weapon.criticalRarity);
       const penetrates=pierce||['drool','nightmare','trojanhorse'].includes(a.n)||a.n==='trenchworm'&&d.element===3||a.n==='lavaworm'&&d.element===1||a.g==='rubyring'&&d.element===0||a.g==='amberring'&&d.element===3||a.g==='sapphirering'&&d.element===1||a.gear?.effect==='pierceEarth'&&d.element===2;
@@ -1104,11 +1104,12 @@ function createCepter(edition="ps2"){
         if(a.n==='hellhound'&&d.element===1)damage=Math.floor(damage/2);
         const reflects=d.c.reflectNormal||matches(d.c.reflectElements,a)||guard?.reflectNormal||matches(guard?.reflectElements,a)||
           d.gear?.effect==='reflect'||d.u.enchant==='reflection'||d.n==='decoy'||revolt&&d.g==='mirrorhoplon'&&!a.gear;
-        const blocks=revolt&&d.u.enchant==='energyfield'||begins&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
+        const blocks=revolt&&d.u.enchant==='energyfield'||(begins||revolt)&&d.u.enchant==='metalform'||d.c.neutralizeNormal||guard?.neutralizeNormal||matches(guard?.neutralizes,a)||
           d.gear?.effect==='nullify'||d.g==='buckler'&&fx.strength(a.u)<=30||d.g==='watershield'&&(d.element===1||a.element===1)||
           revolt&&(d.g==='stormshield'&&[1,3].includes(d.element)||d.g==='magmashield'&&[0,2].includes(d.element))||
           d.g==='earthshield'&&(d.element===2||a.element===2)||d.g==='windshield'&&(d.element===3||a.element===3)||d.g==='dragonhelm'&&[1,2].includes(a.element)||
-          matches(d.c.neutralizes,a)||d.c.blocksLarge&&fx.max(a.u)>=(edition==='saga'&&d.n==='rahab'?50:40)||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
+          matches(d.c.neutralizes,a)||d.c.blocksBaseSTAtMost!=null&&fx.strength(a.u)<=d.c.blocksBaseSTAtMost||
+          d.c.blocksBaseSTAtLeast!=null&&fx.strength(a.u)>=d.c.blocksBaseSTAtLeast||d.c.blocksLarge&&fx.max(a.u)>=(edition==='saga'&&d.n==='rahab'?50:40)||d.c.blocksSmall&&fx.max(a.u)<=30||d.c.blocksFirst&&a.c.first||
           d.n==='caitsith'&&fx.strength(a.u)>=40||(revolt||begins)&&d.n==='apsaras'&&t.level>=3||d.n==='undine'&&a.element===1||d.n==='migoal'&&[0,3].includes(a.element);
         if(!orb&&reflects&&!(revolt&&blocks)){reflectNormal(a,damage);lines.push('반사 '+damage);return 'reflect';}
         if(!orb&&blocks){lines.push('공격 무효');return 'block';}
@@ -1253,7 +1254,7 @@ function createCepter(edition="ps2"){
         const start=lines.length;
         if(!muted&&a.u.enchant==='paralysis'){lines.push('마비 · 공격 불가');break;}
         const effect=hit(a,d)||'hit';
-        if(edition==='saga'||handheld){
+        if(edition==='saga'||handheld||revolt){
           if(d.hp<=0)d.defeatedByOpponent=true;
           if(effect==='reflect'&&a.hp<=0)a.defeatedByOpponent=true;
         }
@@ -1572,9 +1573,14 @@ function createCepter(edition="ps2"){
         a.u.mhp=max+gain;a.u.hp+=gain;a.hp+=gain;
         lines.push(a.c.name+' · 승리 후 기본 ST '+a.u.st+' · 최대 HP '+a.u.mhp);
       }
-      if((a.n==='valkyria'||begins&&a.n==='valkyrie'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0){
+      if(revolt&&creatureEnd&&a.hp>0&&!a.defending&&['python','treasureraider'].includes(a.n)){
+        s.players[a.seat].cash+=100;
+        if(s.predict){b.magicLoss??=[0,0];b.magicLoss[0]-=100;}
+        lines.push(a.c.name+' · 침략 보너스 100G');
+      }
+      if((a.n==='valkyria'||begins&&a.n==='valkyrie'||handheld&&a.n==='ixtol')&&a.hp>0&&opponent.hp<=0&&(!revolt||opponent.defeatedByOpponent)){
         const st=fx.strength(a.u);
-        a.u.st=Math.max(st,Math.min(begins||a.n==='ixtol'?100:80,st+10));
+        a.u.st=Math.max(st,Math.min(begins||revolt||a.n==='ixtol'?100:80,st+10));
         lines.push(a.c.name+' · 승리 후 ST '+a.u.st);
       }
     }

@@ -6,6 +6,7 @@ const CepterEditions=(()=>{
   const handheld=typeof module==='undefined'?(typeof CepterEdition2012==='undefined'?null:CepterEdition2012):require('./cept-edition-data-2012');
   if(handheld)data.cards['3ds']=handheld.cards;
   const handheldPlayerBooks=typeof module==='undefined'?(typeof Cepter2012PlayerBooks==='undefined'?[]:Cepter2012PlayerBooks):require('./cept-2012-player-books');
+  const revoltBookArchive=typeof module==='undefined'?(typeof CepterRevoltBookArchive==='undefined'?[]:CepterRevoltBookArchive):require('./cept-revolt-book-archive');
   const sagaPlayerBooks=typeof module==='undefined'?(typeof CepterSagaPlayerBooks==='undefined'?[]:CepterSagaPlayerBooks):require('./cept-saga-player-books');
   const beginsPlayerBooks=typeof module==='undefined'?(typeof CepterBeginsPlayerBooks==='undefined'?[]:CepterBeginsPlayerBooks):require('./cept-begins-player-books');
   const handheldRefs={
@@ -160,7 +161,9 @@ const CepterEditions=(()=>{
       spartoi:'spartoi',speedpenalty:'speedpenalty',magicalleap:'magicalleap',chariot:'chariot',
       sigiloffloat:'sigiloffloat',sigilofdrain:'sigilofdrain',poisonmind:'mindseeker',blasttrap:'blasttrap',
       chaospanic:'chaospanic',plague:'revoltPlague',philosophy:'philosophy',vortex:'vortex',energyfield:'energyfield',magicshelter:'magicshelter',sigilofshrink:'sigilofshrink',
-      debility:'debility',chargingstep:'chargingstep'},
+      debility:'debility',chargingstep:'chargingstep',goblinslair:'goblinslair',discord:'discord',theft:'theft',
+      immobilize:'immobilize',metalform:'metalform',quietude:'quietude',rayofpurge:'rayofpurge',
+      suddenimpact:'suddenimpact',thunderclap:'thunderclap',fluxion:'fluxion',formportal:'formportal'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -254,7 +257,8 @@ const CepterEditions=(()=>{
       return presets;
     }
     // Culdcept Central's Revolt AI deck records for Alicia, Gen and Yuma.
-    if(edition==='revolt')return addNamedBooks({
+    if(edition==='revolt'){
+      const books={
       revoltAliciaEntry:{
         fighter:2,goblin:4,skeleton:4,statue:4,phlogiston:4,redogre:1,aqualing:2,blueogre:1,wallofice:2,greenogre:1,
         squirrine:2,wallofstone:2,blitzraven:4,yellowogre:1,chainmail:2,mace:2,growthbody:2,holyword1:2,holyword3:2,holyword6:2,
@@ -386,7 +390,20 @@ const CepterEditions=(()=>{
         burningrod:2,diamondarmor:3,drilllance:2,magmashield:2,burninghail:1,earthshift:1,fireshift:1,
         haste:2,magicalleap:2,quintessence:1,reincarnation:1,remission:2,revival:1,squeeze:2
       }
-    });
+      };
+      const signature=recipe=>JSON.stringify(Object.entries(recipe).sort(([a],[b])=>a.localeCompare(b)));
+      const signatures=new Set(Object.values(books).map(signature));
+      for(const [,,source,recipe] of revoltBookArchive){
+        const entries=Object.entries(recipe);
+        if(entries.reduce((sum,[,count])=>sum+count,0)!==bookSize||
+          !entries.every(([slug,count])=>ids.has(slug)&&count<=copyLimit(cards[ids.get(slug)])))continue;
+        const match=signature(recipe);
+        if(signatures.has(match))continue;
+        signatures.add(match);
+        books['revolt-'+source]=recipe;
+      }
+      return addNamedBooks(books);
+    }
     if(edition!=='saga'&&edition!=='begins')return presets;
     if(edition==='begins')return addNamedBooks({
       // Forty-card recipes checked against the public in-game book codes at culdcept-db.com.
@@ -628,6 +645,18 @@ const CepterEditions=(()=>{
     return {[elementalTraits[parts[1]]]:elements};
   }
   const revoltBattleCards={
+    valkyria:{first:true,support:true,supportElements:[-1,0,2]},bloodypudding:{support:true,supportElements:[1,2,3]},
+    seabonze:{stationary:true},leshy:{stationary:true},odradek:{support:true,immutableHP:true},nike:{first:true},
+    beastgear:{spellWard:true,neutralizeScroll:true},groundgear:{support:true,neutralizeScroll:true},skygear:{first:true,support:true},
+    androgear:{first:true,neutralizeScroll:true,support:true,supportElements:[-1],generatedOnly:true},
+    gearion:{first:true,neutralizeScroll:true,spellWard:true,generatedOnly:true},
+    ogrelord:{scrollCritical:true},redcap:{},ghostship:{synergy:{element:3,st:0,hp:30},blocksBaseSTAtMost:40},rahab:{blocksBaseSTAtLeast:50},
+    tiamat:{first:true,criticalElements:[1,3],victoryTerrain:0},bahamut:{first:true,regenerate:true,victoryTerrain:1},
+    jormungandr:{first:true,regenerate:true,victoryTerrain:2},typhon:{first:true,criticalElements:[0,2],victoryTerrain:3},
+    generalguan:{first:true},garuda:{},brontides:{support:true,supportElements:[0,2]},
+    mormo:{support:true,supportElements:[-1,0,2],scrollCritical:true,synergy:{element:0,st:30}},
+    cusith:{spellWard:true,synergy:{element:1,st:10,hp:20}},
+    python:{pierceBaseSTAtLeast:40},treasureraider:{vigorous:true},jackalope:{support:true,supportElements:[0,2]},
     gascloud:{half:true},woodfolk:{support:true},bandit:{support:true},borgess:{},ninja:{first:true,scrollCritical:true},
     statue:{stationary:true},trojanhorse:{support:true},caitsith:{spellWard:true},baal:{first:true},firedrake:{},
     amphibianwarrior:{immutableHP:true},cockatrice:{},apsaras:{},lilith:{first:true},

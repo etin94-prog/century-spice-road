@@ -87,7 +87,7 @@ const CepterExtraBattle=(()=>{
         form=ids.get(pick(['volcanicdragon','deepseadragon','hardrockdragon','lightningdragon']));
         consume=true;
       }
-      if(s.edition==='saga'&&a.gear?.kind==='creature'){
+      if(['saga','revolt'].includes(s.edition)&&a.gear?.kind==='creature'){
         const pair=name==='groundgear'&&gear==='skygear'||name==='skygear'&&gear==='groundgear';
         const fusion=pair?'androgear':name==='androgear'&&gear==='beastgear'?'gearion':null;
         if(fusion){form=ids.get(fusion);consume=true;temporary=false;}
@@ -125,8 +125,21 @@ const CepterExtraBattle=(()=>{
         if(a.n==='nessie'&&t.type===1)a.hp+=t.level*10;
         if(a.n==='lonebeast')a.hp+=fx.strength(a.u);
         if(a.n==='lavakin'){a.st-=s.round;a.hp+=s.round;}
-        if([0,2].includes(a.element)&&boost('hellpyron',a))a.st+=10;
-        if([1,3].includes(a.element)&&boost('lordofbane',a))a.st+=10;
+        if([0,2].includes(a.element)){
+          if(boost('hellpyron',a))a.st+=10;
+          if(boost('brontides',a))a.hp+=10;
+        }
+        if([1,3].includes(a.element)){
+          if(boost('lordofbane',a))a.st+=10;
+          if(boost('rahab',a))a.hp+=10;
+        }
+        if(a.n==='ogrelord'){
+          if(onBoard('redogre')||onBoard('yellowogre'))a.st+=20;
+          if(onBoard('blueogre')||onBoard('greenogre'))a.hp+=20;
+        }
+        if(a.n==='redcap')a.st=a.hp=20*s.tiles.filter(v=>fx.name(v.unit)==='goblin').length;
+        if(a.n==='goblin'&&boost('redcap',a))a.st+=20;
+        if(a.n==='garuda')a.st=a.hp=10*s.tiles.filter(v=>v.unit&&combo.hasElement(cards[v.unit.id],3)).length;
         if(a.n==='hiveworker'){
           const amount=10*s.tiles.filter((v,j)=>j!==b.from&&fx.name(v.unit)==='hiveworker').length;
           a.st+=amount;a.hp+=amount;
@@ -143,7 +156,7 @@ const CepterExtraBattle=(()=>{
         }
       }
       if(['revolt','3ds'].includes(s.edition)&&a.n==='firedrake')a.st+=5*s.tiles.filter((v,i)=>i!==b.from&&v.unit&&combo.hasElement(cards[v.unit.id],0)).length;
-      if(s.edition==='3ds'&&a.n==='generalguan')a.st+=5*s.tiles.filter((v,i)=>i!==b.from&&v.unit&&fx.max(v.unit)>=50).length;
+      if(['3ds','revolt'].includes(s.edition)&&a.n==='generalguan')a.st+=5*s.tiles.filter((v,i)=>i!==b.from&&v.unit&&fx.max(v.unit)>=50).length;
       if(s.edition==='saga'){
         if(a.n==='pangolin'){
           if(s.predict)a.hp=Math.floor((a.hp+30)/2);
@@ -395,6 +408,10 @@ const CepterExtraBattle=(()=>{
       }
       if(a.n==='squonk'&&p.hand.length<6){p.hand.push(a.u.id);a.returned=true;}
       if(a.n==='leviathan'&&!onBoard('jadeidol')&&combo.activeWorld(s)!=='solidworld')t.type=1;
+      if(s.edition==='revolt'&&a.c.victoryTerrain!=null&&d.defeatedByOpponent&&combo.activeWorld(s)!=='solidworld'){
+        t.type=a.c.victoryTerrain;
+        lines.push(a.c.name+' · 교전 영지 속성 변경');
+      }
       if(a.n==='ghoul'){a.heal=true;a.hp=fx.max(a.u);}
       const camazotz=a.n==='camazotz'&&(s.edition==='begins'||d.defeatedByOpponent);
       if(s.edition!=='3ds'&&a.n==='raksas'||camazotz){
