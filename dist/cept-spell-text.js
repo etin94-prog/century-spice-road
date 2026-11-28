@@ -291,6 +291,25 @@ const describeCepterSpell=(()=>{
       if(e==='raisedead')return '가장 최근에 파괴된 크리처 카드를 손패에 넣습니다.';
       if(e==='firstBarricade')return '고른 지역에 있는 내 영지의 통행료가 3라운드 동안 30% 오릅니다.';
       if(e==='firstHolyblight')return '맵에 배치된 모든 불사족 크리처에 20 피해를 줍니다.';
+      if(e==='judgment'&&edition!=='dc'){
+        const odds=edition==='ps1'?4:6;
+        return '고른 적은 '+odds+'분의 '+(odds-1)+' 확률로, 나는 '+odds+'분의 1 확률로 현재 마력의 80%를 잃습니다.';
+      }
+      if(e==='babble'&&edition!=='dc')return '고른 적이 3라운드 동안 상점과 신전에 들어갈 수 없습니다.';
+      if(e==='firstMindseeker')return '고른 적의 북 맨 위 카드 한 장을 내 손패로 가져옵니다.';
+      if(e==='magicdie')return '고른 셉터가 3라운드 동안 이동 주사위를 굴리면 5 또는 6이 나옵니다.';
+      if(e==='mindblast')return '고른 적이 성을 지나기 전까지 차례가 시작될 때마다 5G를 잃습니다.';
+      if(e==='unsummon')return '고른 크리처를 영지에서 철수시켜 주인의 손패로 되돌립니다.';
+      if(e==='poisonmist')return '고른 크리처에게 쇠약을 부여합니다. 전투 후 최대 HP의 절반만큼 피해를 입습니다.';
+      if(e==='solitude')return '고른 크리처는 전투 중 인접 영지의 지원으로 공격력이 오르지 않습니다.';
+      if(e==='swapspell')return '고른 셉터와 내 손패를 모두 교환합니다.';
+      if(e==='snatch')return '고른 적의 손패에서 무작위 카드 한 장을 가져옵니다.';
+      if(e==='jump')return '가장 가까운 내 영지로 이동하고 이번 차례의 주사위를 건너뜁니다.';
+      if(e==='lifeforce'&&edition==='ps1')return '고른 셉터가 성을 지날 때까지 크리처 사용 마력이 절반이 되고 주문은 사용할 수 없습니다.';
+      if(e==='firstRecover')return '고른 크리처의 현재 HP를 최대 HP까지 회복합니다.';
+      if(e==='landtax')return '모든 셉터가 자신이 보유한 영지 한 곳당 20G를 잃습니다.';
+      if(e==='meteorstorm')return '무작위로 고른 땅 다섯 곳의 영지 레벨을 1로 낮춥니다.';
+      if(e==='evilblast'&&edition==='saturn')return '고른 크리처에게 30 피해를 줍니다.';
       if(e==='changeling'&&edition!=='dc')return '고른 적의 북에서 무작위로 최대 세 장을 고블린으로 바꿉니다.';
       if(e==='wizardeye'&&edition!=='dc')return '고른 셉터의 북 맨 위에서 최대 여섯 장을 엿봅니다.';
       if(e==='weakness'&&edition==='saturn')return '고른 크리처의 기본 ST를 절반으로 낮춥니다.';
@@ -301,6 +320,8 @@ const describeCepterSpell=(()=>{
       if(e==='mistletoe')return '2라운드 동안 누구든 이동 주사위로 5~7을 내면 내가 100G를 얻습니다.';
       if(e==='soulhunt')return '고른 크리처가 맵에서 파괴되면 내가 그 크리처의 최대 HP 1당 10G를 얻습니다.';
       if(e==='darkcraft')return '모든 셉터가 보유한 호부 하나당 5G를 잃습니다. 사용한 주문은 북으로 돌아갑니다.';
+      if(e==='lightcraft')return '맵의 모든 크리처에 HP 고정을 부여하고 이 주문을 북으로 돌려보냅니다.';
+      if(e==='magicfountain')return '고른 영지에 처음 멈춘 셉터가 500G를 받습니다.';
     }
     if(edition==='begins'&&e==='revoltphantasm')return '모든 크리처에 HP 고정을 부여합니다. 주문의 효과로 현재 HP와 최대 HP가 변하지 않습니다.';
     if(edition==='begins'&&e==='shrink')return '고른 적 크리처의 기본 ST, 현재 HP, 최대 HP를 각각 10 낮춥니다.';

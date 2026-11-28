@@ -126,7 +126,7 @@ const CepterCombos = (() => {
       }
       return s.tiles.flatMap((t,n)=>{
         if(!targetable(s,t,cards[ids.get(e)]?.catalog?.category))return [];
-        if(['evilblast','shrink'].includes(e)&&allied(s,i,t.owner))return [];
+        if(['evilblast','shrink'].includes(e)&&!(s.edition==='saturn'&&e==='evilblast')&&allied(s,i,t.owner))return [];
         if(e==='growthbody'&&['ps1','saturn'].includes(s.edition)&&t.owner!==i)return [];
         if(e==='telekinesis'&&!telekinesisExits(s,n).length)return [];
         if(e==='exile'&&(!enchanted(t.unit)||cards[t.unit.id].catalog?.additionalCost))return [];

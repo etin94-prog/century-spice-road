@@ -333,7 +333,8 @@ function seatSummary(seat){
   const effect=p.status?({goodluck:'솔티스 · 통행료 면제',enlightenment:'모든 내 영지에 명령 가능',bravesong:'브레이브 송 · 전투 ST +20',toughsong:'터프 송 · 전투 HP +20',sagaTollUp:'통행료 30% 증가',
     sagaTollDown:'통행료 30% 감소',sagaStrut:'제롬 · 통행료 면제',sagaMagicEra:'제롬 · 카드 사용 마력 0G',sagadrought:'드라우트 · 영지 레벨 변경 금지',sagafloat:'플로트 · 주사위 5 고정',holdcurse:'홀드 커스 · 기존 영지 인챈트 보호',
     hunterssong:'헌터스 송 · 전투 격파 +200G',trespass:'트레스패스 · 다른 셉터 완주 보너스 획득',innocence:'이노센스 · 통행료 면제 및 침략 금지',sagaDeduction:'크리처·장비 비용 감면',sagaInflation:'크리처·장비 비용 증가',
-    aetherflash:'에테르 플래시 · 크리처 소환 90G',
+    aetherflash:'에테르 플래시 · 크리처 소환 90G',magicdie:'매직 다이스 · 주사위 5~6',
+    mindblast:'마인드 블래스트 · 성 통과까지 차례마다 −5G',torture:'토처 · 성 통과까지 주문 한 장당 차례마다 −20G',
     revoltLifeForce:'라이프 포스 · 크리처와 장비 0G',uniformity:'유니포미티 · 통행료 200G',release:'릴리스 · 장비와 배치 제한 해제',
     mesozoicsong:'메소조익 송 · 전투에서 티라노사우루스로 변신',sinkingsong:'싱킹 송 · 전투 피해 절반',conspiracy:'컨스피러시 · 조건부 소환 마력 0G',
     sagaBreak:'장비 카드 사용 금지',sagaFear:'침략 금지'}[p.status]||C.cards.find(c=>C.combo.key(c)===p.status)?.name||p.status):

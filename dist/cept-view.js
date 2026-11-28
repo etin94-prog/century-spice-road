@@ -62,7 +62,7 @@ if(C.edition==='revolt')for(const [character,name,source] of CepterRevoltBookArc
 function addOpeningBookOptions(select){
   select.add(new Option('방장과 같은 북','host'));
   for(const [key,template] of Object.entries(C.presets)){
-    if(C.validBook(template))select.add(new Option(C.presets.stronghold?modernBookNames[key]:key==='intro'?'기본 북':key==='fire'?'화·지 북':key,key));
+    if(C.validBook(template))select.add(new Option(C.presets.stronghold?modernBookNames[key]:key==='intro'?'기본 북':key==='fire'?'화·지 북':key==='legacyControl'?'이동·마력 제어 북':key,key));
   }
   if(customBook)select.add(new Option('이 기기의 저장 북','custom'));
 }

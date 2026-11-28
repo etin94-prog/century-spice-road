@@ -108,6 +108,9 @@ const CepterEditions=(()=>{
     barricade:'firstBarricade',changeling:'changeling',fog:'fog',holyblight:'firstHolyblight',
     raisedead:'raisedead',reincarnation:'reincarnation',silence:'silence',sink:'sink',upheaval:'upheaval',
     waste:'waste',weakness:'weakness',weathering:'weathering',wildgrowth:'wildgrowth',wizardseye:'wizardeye',
+    babble:'babble',haunt:'haunt',judgement:'judgment',jump:'jump',magicdie:'magicdie',meteor:'meteor',
+    mindblast:'mindblast',mindseeker:'firstMindseeker',poisonmist:'poisonmist',snatch:'snatch',solitude:'solitude',
+    swapspell:'swapspell',unsummon:'unsummon',
     icestorm:'firstIceStorm',fireexplosion:'firstFireExplosion',thunderstorm:'firstThunderstorm',deathcloud:'firstDeathCloud'
   };
   const legacySpellEffects={
@@ -124,10 +127,12 @@ const CepterEditions=(()=>{
       incineration:'incineration',influence:'influence',lifeforce:'lifeforce',massgrowth:'massgrowth',meteor:'meteor',mistletoe:'mistletoe',
       pressure:'pressure',raisedead:'raisedead',reincarnation:'reincarnation',revelation:'revelation',ruin:'ruin',
       selenear:'selenear',simulacrum:'simulacrum',sink:'sink',soulhunt:'soulhunt',subsidence:'subsidence',
-      upheaval:'upheaval',weathering:'weathering',wildgrowth:'wildgrowth',wing:'wing',wizardseye:'wizardeye'
+      upheaval:'upheaval',weathering:'weathering',wildgrowth:'wildgrowth',wing:'wing',wizardseye:'wizardeye',
+      aports:'aports',babble:'babble',haunt:'haunt',judgement:'judgment',lightcraft:'lightcraft',
+      magicfountain:'magicfountain',mesmerize:'mesmerize',torture:'torture'
     },
-    ps1:{...firstSpellEffects,antielement:'antielement',corruption:'corruption',revival:'revival'},
-    saturn:firstSpellEffects
+    ps1:{...firstSpellEffects,antielement:'antielement',corruption:'corruption',lifeforce:'lifeforce',revival:'revival'},
+    saturn:{...firstSpellEffects,evilblast:'evilblast',landtax:'landtax',meteorstorm:'meteorstorm',recover:'firstRecover'}
   };
   const sharedModernSpells='foresight incineration influence landdrain prophecy rayoflaw windofhope'.split(' ');
   const modernSpellEffects={
@@ -1034,6 +1039,15 @@ const CepterEditions=(()=>{
       for(const [key,groups] of Object.entries({fire:[fire,earth,'giantrat firebolt'],intro:[water,air,'hobgoblin freeze'],fireAir:[fire,air,'giantspider windcutter'],waterEarth:[water,earth,'giantsnake stonehail']})){
         presets[key]=[...common,...groups.join(' ').split(' ')].flatMap(n=>[lookup.get(n),lookup.get(n)]).concat(lookup.get('longsword'),lookup.get('wingedboots'));
       }
+    }
+    const controlSpells={
+      dc:['grace','mistletoe','aports','judgement'],
+      ps1:['magicdie','jump','mindseeker','snatch'],
+      saturn:['magicdie','jump','mindseeker','landtax']
+    }[edition];
+    if(controlSpells){
+      const replacements=new Map(['fly','holyword1','shatter','magicbolt'].map((name,i)=>[lookup.get(name),lookup.get(controlSpells[i])]));
+      presets.legacyControl=presets.intro.map(id=>replacements.get(id)??id);
     }
     if(edition==='saturn'||edition==='ps1')for(const [name,counts] of Object.entries(data.books)){
       const ids=Object.entries(counts).flatMap(([key,n])=>Array(n).fill(lookup.get(key)));

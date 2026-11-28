@@ -7787,3 +7787,117 @@ for(const edition of ['dc','ps1','saturn']){
   }
 }
 console.log('Legacy spells honor original costs, source-edition values, land scope and book changes.');
+
+for(const edition of ['dc','ps1','saturn']){
+  const C=ps2.createEdition(edition);
+  const id=name=>C.cards.findIndex(c=>c.catalog&&!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===name);
+  const map=edition==='dc'?'dc-1':edition+'-original-marsh-paths';
+  const goblin=id('goblin'),fighter=id('fighter'),manna=id('manna');
+  function setup(name){
+    const s=C.start(4,4,8000,map,undefined,undefined,0,'teams');
+    s.players.forEach(q=>Object.assign(q,{cash:1000,hand:[],book:[fighter,goblin]}));
+    const [p,q]=s.players;p.hand=[id(name)];
+    assert.notEqual(p.hand[0],-1,edition+' '+name);
+    return {s,p,q,lands:s.tiles.flatMap((t,i)=>C.territoryType(t.type)?[i]:[])};
+  }
+  function play(s,...action){assert.ok(C.play(s,action),edition+' '+JSON.stringify(action));}
+  function place(s,at,owner,hp=C.cards[goblin].hp){
+    return Object.assign(s.tiles[at],{owner,unit:{id:goblin,hp}});
+  }
+
+  {
+    const {s,p,q}=setup('judgement');
+    play(s,'cast',0);
+    assert.deepEqual(C.choices(s),[['targetPlayer',1],['targetPlayer',3]]);
+    const originalRandom=Math.random, roll=edition==='dc'?.7:edition==='ps1'?.76:.82;
+    try{Math.random=()=>roll;play(s,'targetPlayer',1);}
+    finally{Math.random=originalRandom;}
+    if(edition==='saturn')assert.deepEqual([p.cash,q.cash],[920,200]);
+    else assert.deepEqual([p.cash,q.cash],edition==='dc'?[180,1000]:[184,1000]);
+  }
+  {
+    const {s,q}=setup('haunt');
+    play(s,'cast',0);play(s,'targetPlayer',1);
+    assert.ok(C.isComputer(s,1));assert.equal(q.enchantDeadline,8);
+  }
+
+  if(edition==='dc'){
+    {
+      const {s,p,q,lands}=setup('lightcraft');
+      const a=place(s,lands[0],0,11),b=place(s,lands[1],1,18);
+      b.unit.poisoned=true;q.hand=[fighter];
+      p.hand.push(manna);
+      play(s,'cast',0);
+      assert.deepEqual([a.unit.enchant,b.unit.enchant,b.unit.poisoned],['phantasm','phantasm',undefined]);
+      assert.deepEqual([a.unit.hp,b.unit.hp],[11,18]);
+      assert.deepEqual([p.hand,q.hand],[[manna],[fighter]]);
+      assert.ok(p.book.includes(id('lightcraft')));
+      assert.equal(C.spellHP(s,b,'bolt'),18);
+    }
+    {
+      const {s,p,q,lands}=setup('magicfountain');
+      const a=place(s,lands[0],0);
+      play(s,'cast',0);play(s,'targetLand',lands[0]);
+      assert.equal(a.unit.enchant,'magicfountain');
+      Object.assign(q,{pos:lands[0],word:0});
+      s.turn=1;play(s,'roll');
+      assert.equal(q.cash,1500);assert.equal(a.unit.enchant,undefined);
+      s.turn=0;p.pos=lands[0];p.word=0;s.phase='roll';play(s,'roll');
+      assert.equal(p.cash,980);
+    }
+    {
+      const {s,p,q}=setup('mesmerize');
+      p.hand.push(fighter);q.hand=[id('mesmerize'),manna,goblin];
+      play(s,'cast',0);play(s,'sacrifice',1);play(s,'targetPlayer',1);
+      assert.deepEqual(C.choices(s),[['mesmerCard',1,manna]]);
+      play(s,'mesmerCard',1,manna);
+      assert.deepEqual(q.hand,[id('mesmerize'),goblin]);
+      assert.equal(p.cash,950);
+    }
+    {
+      const {s,p,q,lands}=setup('aports');
+      p.pos=lands[0];q.pos=lands[1];
+      play(s,'cast',0);
+      assert.equal(s.phase,'land');
+      assert.ok(s.players.every(other=>other.pos===p.pos));
+    }
+  }else{
+    {
+      const {s,p,q}=setup('mindseeker');
+      q.book=[fighter,goblin];s.players[2].peek={seat:1,ids:[goblin,fighter]};
+      play(s,'cast',0);play(s,'targetPlayer',1);
+      assert.deepEqual([p.hand,q.book,s.players[2].peek],[[goblin],[fighter],undefined]);
+    }
+    {
+      const {s,p,q}=setup('swapspell');
+      p.hand.push(fighter);q.hand=[goblin,manna];
+      play(s,'cast',0);play(s,'targetPlayer',1);
+      assert.deepEqual([p.hand,q.hand],[[goblin,manna],[fighter]]);
+    }
+    {
+      const {s,p}=setup('magicdie');
+      play(s,'cast',0);play(s,'targetPlayer',0);
+      assert.equal(p.enchantDeadline,12);
+      play(s,'roll');assert.ok(s.die===5||s.die===6);
+    }
+    {
+      const {s,q,lands}=setup('unsummon');
+      const a=place(s,lands[0],1);
+      play(s,'cast',0);play(s,'targetLand',lands[0]);
+      assert.deepEqual([a.owner,a.unit,q.hand,s.lastDestroyed],[-1,null,[goblin],undefined]);
+    }
+    if(edition==='ps1'){
+      const {s,q}=setup('lifeforce'),item=C.cards[id('chainmail')];
+      play(s,'cast',0);play(s,'targetPlayer',1);
+      assert.equal(q.enchantDeadline,undefined);
+      assert.equal(C.price(q,item,s),item.cost);
+      assert.equal(C.price(q,C.cards[fighter],s),Math.floor(C.cards[fighter].cost/2));
+    }else{
+      const {s,lands}=setup('meteorstorm');
+      lands.forEach(at=>{place(s,at,1);s.tiles[at].level=5;});
+      play(s,'cast',0);
+      assert.equal(lands.filter(at=>s.tiles[at].level===1).length,5);
+    }
+  }
+}
+console.log('Legacy spell variants checked for odds, movement, local effects, spell copying and hidden books.');

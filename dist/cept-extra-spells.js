@@ -30,6 +30,8 @@ const CepterExtraSpells=(()=>{
     fluxion:'player',thunderclap:'land',suddenimpact:'land',quietude:'global',rayofpurge:'global',formportal:'global',
     deathmiasma:'global',penalize:'global',colorfrombeyond:'global',speedpenalty:'global',
     aetherflash:'global',pilgrim:'global',firstGrace:'global',firstPressure:'area',firstBarricade:'area',firstHolyblight:'global',
+    firstMindseeker:'player',mindblast:'player',magicdie:'player',snatch:'player',swapspell:'player',
+    solitude:'land',poisonmist:'land',unsummon:'land',firstRecover:'land',jump:'global',landtax:'global',meteorstorm:'global',
     ...Object.fromEntries(Object.keys(firstStorms).map(e=>[e,'area'])),
     ...Object.fromEntries([...Object.keys(shifts),...Object.keys(hybridShifts)].map(e=>[e,'land']))};
   const secretSigils=new Set(['sigiloffloat','sigilofdrain','sigilofshrink']);
@@ -40,8 +42,8 @@ const CepterExtraSpells=(()=>{
   const divineDraw={beginsbistair:[0,'weapon'],beginsiksear:[1,'armor'],beginsselenear:[2,'tool'],beginsterrair:[3,'scroll']};
   const wallForms={[-1]:'wonderwall',0:'creepingflame',1:'wallofice',2:'wallofstone',3:'tornado'};
   const stolenKind={capture:'item',theft:'spell',sneakhand:'item'};
-  const enemyOnly=new Set(['capture','theft','sneakhand','metamorphosis','fluxion','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind']);
-  const duration={release:4,uniformity:3,mesozoicsong:3,sinkingsong:3,bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,holdcurse:8,sagaStrut:3,sagaMagicEra:3,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,soulsteal:3,goodluck:2};
+  const enemyOnly=new Set(['capture','theft','sneakhand','metamorphosis','fluxion','babble','bind','blackout','corruption','haunt','landdrain','mesmerize','ruin','rust','subsidence','torture','reform','beginspoisonmind','firstMindseeker','mindblast','snatch']);
+  const duration={release:4,uniformity:3,mesozoicsong:3,sinkingsong:3,bravesong:4,toughsong:4,hunterssong:4,trespass:2,sagadrought:3,sagafloat:2,innocence:2,holdcurse:8,sagaStrut:3,sagaMagicEra:3,babble:3,barrier:5,bind:1,blackout:2,haunt:2,lifeforce:3,mistletoe:2,magicdie:3,soulsteal:3,goodluck:2};
   const soltis={
     goodluck:'행운 · 2라운드 통행료 면제',purify:'정화 · 모든 영지의 인챈트 해제',affection:'은총 · 순위 × 200G',
     hope:'희망 · 2장 드로우',depression:'불황 · 모든 호부 가격 20% 하락',suffocate:'질식 · 모든 크리처에 10 피해',lifeflow:'생명 · 한 지역의 내 크리처 전체 회복'
@@ -81,6 +83,7 @@ const CepterExtraSpells=(()=>{
   function clearCepter(p){
     for(const field of ['status','statusUntil','enchantDeadline','word','antiMagic','invisible','dream','reverse','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete p[field];
   }
+  const judgmentOdds={ps1:3/4,saturn:5/6};
   const time=s=>(s.round-1)*s.players.length+s.turn;
   function setStatus(s,q,name,rounds=duration[name]){
     clearCepter(q);q.status=name;
@@ -90,7 +93,8 @@ const CepterExtraSpells=(()=>{
     for(const q of s.players)if(q.enchantDeadline!=null&&q.enchantDeadline<=time(s))clearCepter(q);
     const p=s.players[s.turn];
     if(p.status==='fairylight')p.cash+=p.hand.length*10;
-    if(p.status==='torture')p.cash-=p.hand.filter(id=>cards[id].kind==='spell').length*20;
+    const loss=p.status==='torture'?p.hand.filter(id=>cards[id].kind==='spell').length*20:p.status==='mindblast'?5:0;
+    if(loss)p.cash-=loss;
   }
   function rules(cards,{fx,combo,board,draw,note,refillBook,returnToBook,vacate,territoryType,advance,arrived,total,personalTotal,value,chain,canOccupy,deployable,claim,claimFromHand,canInvade}){
     const ids=new Map(cards.flatMap((c,i)=>c.catalog?[[combo.key(c),i]]:[]));
@@ -99,6 +103,7 @@ const CepterExtraSpells=(()=>{
     const creaturePool=cards.flatMap((c,i)=>c.catalog&&c.kind==='creature'&&!c.catalogOnly?[i]:[]);
     const forgePool=cards.flatMap((c,id)=>!c.unlisted&&!c.catalogOnly&&['weapon','armor'].includes(c.category)?[id]:[]);
     const sample=a=>a.length?a[Math.floor(Math.random()*a.length)]:undefined;
+    const isMesmerSpell=id=>cards[id]?.kind==='spell'&&combo.key(cards[id])!=='mesmerize';
     const enemy=(s,i)=>!combo.allied(s,s.turn,i);
     const owning=(s,seat)=>s.tiles.filter(t=>t.owner===seat);
     const eroded=hand=>hand.filter((id,_,all)=>all.indexOf(id)===all.lastIndexOf(id));
@@ -251,7 +256,9 @@ const CepterExtraSpells=(()=>{
           if(e==='sneakhand'&&q.hand.filter(id=>cards[id].kind==='item').length<2)return [];
           if(e==='blacksmith'&&!q.hand.length||e==='reform'&&!q.hand.some(id=>cards[id].kind!=='creature')||e==='beginspoisonmind'&&!(q.book?.length??q.bookCount))return [];
           if(stolenKind[e]&&!q.hand.some(id=>cards[id].kind===stolenKind[e]))return [];
-          if(e==='mesmerize'&&!q.hand.some(id=>cards[id].kind==='spell'&&combo.key(cards[id])!=='mesmerize'))return [];
+          if(e==='judgment'&&['dc','ps1','saturn'].includes(s.edition)&&!enemy(s,i))return [];
+          if(e==='firstMindseeker'&&!(q.book?.length??q.bookCount)||e==='snatch'&&!q.hand.length||e==='swapspell'&&i===s.turn)return [];
+          if(e==='mesmerize'&&!q.hand.some(isMesmerSpell))return [];
           return [['targetPlayer',i]];
         });
       }
@@ -288,7 +295,7 @@ const CepterExtraSpells=(()=>{
         return [['targetLand',i]];
       });
     }
-    function nearest(s,p,condition){
+    function nearest(s,p,condition,acrossAreas=false){
       const links=board(s).links,area=s.tiles[p.pos].area,seen=new Set([p.pos]);
       let frontier=[p.pos];
       while(frontier.length){
@@ -297,7 +304,7 @@ const CepterExtraSpells=(()=>{
           if(seen.has(dest))continue;
           seen.add(dest);next.push(dest);
         }
-        const candidates=next.filter(i=>(s.edition==='begins'||s.tiles[i].area===area)&&condition(s.tiles[i]));
+        const candidates=next.filter(i=>(acrossAreas||s.edition==='begins'||s.tiles[i].area===area)&&condition(s.tiles[i]));
         if(candidates.length)return sample(candidates);
         frontier=next;
       }
@@ -416,6 +423,9 @@ const CepterExtraSpells=(()=>{
           case 'restore':delete u.fatigued;if(!fx.immuneHP(t))u.hp=fx.max(u);break;
           case 'revoltlandtransfer':p.cash+=Math.floor(value(s,t)*(s.edition==='begins'?.8:.7));vacate(t,true);break;
           case 'banishingray':fx.spellDestroy(s,t);break;
+          case 'unsummon':s.players[t.owner].hand.push(u.id);vacate(t);break;
+          case 'poisonmist':combo.clear(u);u.poisoned=true;break;
+          case 'firstRecover':if(!fx.immuneHP(t))u.hp=fx.max(u);break;
           case 'bistair':fx.spellHarm(s,t,10*owning(s,s.turn).filter(v=>v.type===0).length);break;
           case 'sagabistair':if(affinity(s,0,2)>=5)fx.spellHarm(s,t,40);break;
           case 'sagaterrair':if(affinity(s,1,3)>=5)t.level=1;break;
@@ -503,7 +513,14 @@ const CepterExtraSpells=(()=>{
           case 'corruption':q.cash-=(['dc','ps1'].includes(s.edition)?5:10)*symbolCount(q);break;
           case 'sagagift':q.cash+=100;draw(q,s);break;
           case 'landdrain':{const amount=owning(s,x).length*landDrainRate(s);p.cash+=amount;q.cash-=amount;break;}
-          case 'judgment':{const victim=Math.random()<2/3?q:p;victim.cash-=Math.floor(Math.max(0,victim.cash)*.8);break;}
+          case 'judgment':{
+            const victim=Math.random()<(judgmentOdds[s.edition]??2/3)?q:p;
+            victim.cash-=Math.floor(Math.max(0,victim.cash)*.8);
+            break;
+          }
+          case 'firstMindseeker':p.hand.push(q.book.pop());forgetPeek(s,x);break;
+          case 'snatch':p.hand.push(q.hand.splice(Math.floor(Math.random()*q.hand.length),1)[0]);break;
+          case 'swapspell':[p.hand,q.hand]=[q.hand,p.hand];break;
           case 'eclipse':q.cash+=10*mostSymbols(q,20);break;
           case 'unholygrasp':{
             const {index,count,magic}=unholyGraspQuote(s,q);
@@ -539,7 +556,13 @@ const CepterExtraSpells=(()=>{
           case 'bind':setStatus(s,q,e);if(s.edition==='3ds')q.cash+=150;break;
           case 'chargingstep':setStatus(s,q,e);q.hasteRolls=2;break;
           case 'subsidence':lowerHighest(s,x);break;
-          default:setStatus(s,q,e);if(e==='babble')p.book.unshift(ids.get(e));
+          case 'lifeforce':setStatus(s,q,e,s.edition==='ps1'?0:duration.lifeforce);break;
+          default:
+            setStatus(s,q,e);
+            if(e==='babble'){
+              if(s.edition==='dc')returnToBook(s,s.turn,ids.get(e));
+              else if(!['ps1','saturn'].includes(s.edition))p.book.unshift(ids.get(e));
+            }
         }
       }else{
         if(Object.hasOwn(leap,e))return warp(s,nearest(s,p,t=>t.type===leap[e]));
@@ -616,6 +639,7 @@ const CepterExtraSpells=(()=>{
           case 'rayofpurge':
             for(const player of s.players)player.hand=player.hand.filter(id=>!cards[id].catalog?.category?.endsWith('enchant'));
             break;
+          case 'jump':return warp(s,nearest(s,p,t=>t.owner===s.turn,true));
           case 'castlerecall':return warp(s,board(s).castles?.[0]??0);
           case 'teleport':return warp(s,nearest(s,p,t=>!territoryType(t.type)));
           case 'aports':
@@ -758,7 +782,21 @@ const CepterExtraSpells=(()=>{
           case 'incineration':p.cash+=20*(s.destroyedCount||0);s.destroyedCount=0;break;
           case 'magicbooster':case 'conspiracy':case 'release':setStatus(s,p,e);break;
           case 'lifestream':for(const v of owning(s,s.turn))if(!fx.immuneHP(v))v.unit.hp=fx.max(v.unit);break;
-          case 'lightcraft':s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});break;
+          case 'lightcraft':
+            if(s.edition==='dc'){
+              for(const tile of land){combo.clear(tile.unit);tile.unit.enchant='phantasm';}
+              returnToBook(s,s.turn,ids.get(e));
+            }else s.players.forEach((other,j)=>{resetBook(s,j,true);other.hand=[];for(let n=0;n<5;n++)draw(other,s);});
+            break;
+          case 'landtax':for(const [seat,player] of s.players.entries())player.cash-=owning(s,seat).length*20;break;
+          case 'meteorstorm':{
+            const lands=s.tiles.filter(t=>territoryType(t.type));
+            for(let n=0;n<5&&lands.length;n++){
+              const [tile]=lands.splice(Math.floor(Math.random()*lands.length),1);
+              if(!fx.blockedLevel(s,tile)&&!fx.terrainLocked(s,tile,true))tile.level=1;
+            }
+            break;
+          }
           case 'massgrowth':{
             const cap=['saga','revolt','begins','3ds'].includes(s.edition)?100:80;
             for(const v of land){
@@ -809,7 +847,7 @@ const CepterExtraSpells=(()=>{
         case 'forgeCard':return (s.players[s.spellTarget]?.hand||[]).map((id,j)=>['forgeCard',j,id]);
         case 'metamorphCard':case 'reformCard':return (s.players[s.spellTarget]?.hand||[]).flatMap((id,j)=>cards[id].kind!=='creature'?[[s.phase,j,id]]:[]);
         case 'poisonBookCard':return (s.players[s.spellTarget]?.book||[]).slice(-6).reverse().map((id,j)=>['poisonBookCard',j,id]);
-        case 'mesmerCard':return s.players[s.spellTarget].hand.flatMap((id,j)=>cards[id].kind==='spell'&&combo.key(cards[id])!=='mesmerize'?[['mesmerCard',j,id]]:[]);
+        case 'mesmerCard':return s.players[s.spellTarget].hand.flatMap((id,j)=>isMesmerSpell(id)?[['mesmerCard',j,id]]:[]);
       }
     }
     function choose(s,k,x){
@@ -930,7 +968,14 @@ const CepterExtraSpells=(()=>{
           case 'hunterssong':return sign*(q.status===e?0:4+q.hand.filter(id=>cards[id].kind==='creature'&&cards[id].st>=30).length*9);
           case 'sagagift':return sign*(10+(q.hand.length<5?8:0));
           case 'landdrain':return Math.min(owning(s,x).length*landDrainRate(s),Math.max(0,q.cash)+50)/9;
-          case 'judgment':return -sign*q.cash/30-p.cash/58;
+          case 'judgment':{
+            const odds=judgmentOdds[s.edition]??2/3;
+            return .08*(odds*(-sign)*Math.max(0,q.cash)-(1-odds)*Math.max(0,p.cash));
+          }
+          case 'firstMindseeker':case 'snatch':return -sign*13;
+          case 'swapspell':return 4*(q.hand.length-p.hand.length+1);
+          case 'mindblast':return -sign*(q.status===e?0:5);
+          case 'magicdie':return sign*(q.status===e?0:8);
           case 'eclipse':{
             const count=Math.max(...q.symbols),i=q.symbols.indexOf(count);
             return -sign*Math.min(20,count)*(s.prices[i]-10)/10;
@@ -1005,6 +1050,9 @@ const CepterExtraSpells=(()=>{
         case 'replace':case 'revoltExchange':return Math.max(0,...replacement(s,t).map(a=>sign*(cards[a[2]].hp+cards[a[2]].st-t.unit.hp-fx.strength(t.unit))/5));
         case 'chariot':return chariotExits(s,x).some(i=>s.tiles[i].owner<0&&combo.matchesTerrain(cards[t.unit.id],s.tiles[i].type))?4:1;
         case 'magicfountain':return p.pos===x?0:1;
+        case 'unsummon':return -sign*(value(s,t)/30+weight*4);
+        case 'poisonmist':case 'solitude':return -sign*(t.unit.poisoned&&e==='poisonmist'||t.unit.enchant===e?0:6+weight);
+        case 'firstRecover':return sign*(fx.immuneHP(t)?0:(fx.max(t.unit)-t.unit.hp)/3);
         case 'influence':return sign*(owning(s,t.owner).filter(v=>v.type===t.type).length<=1?5:-2);
         default:return sign*(t.unit.enchant===e?0:weight);
       }
@@ -1030,6 +1078,8 @@ const CepterExtraSpells=(()=>{
         return sum+(!amount||e!=='energyflash'&&fx.immuneHP(v)?0:(enemy(s,v.owner)?1:-1)*(amount/8+(amount>=v.unit.hp?4*v.level:0)));
       },0);
       if(e==='firstHolyblight')return s.tiles.reduce((score,t)=>score+(t.unit&&cards[t.unit.id].catalog?.race==='ru'?(enemy(s,t.owner)?1:-1)*fx.damageAmount(s,t,20)/3:0),0);
+      if(e==='landtax'||e==='meteorstorm')return land.reduce((score,t)=>score+(enemy(s,t.owner)?1:-1)*(e==='landtax'?2:(t.level-1)*3),0);
+      if(e==='jump')return mine.some(t=>t!==s.tiles[p.pos])?7:-10;
       if(e==='firstGrace')return p.symbols.reduce((sum,count,index)=>sum+count*s.prices[index],0)/100;
       if(e==='aetherflash'){
         return s.players.reduce((sum,q,i)=>sum+(enemy(s,i)?-1:1)*q.hand.reduce((benefit,id)=>{

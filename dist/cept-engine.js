@@ -448,7 +448,8 @@ function createCepter(edition="ps2"){
     if(p.status==='aetherflash'&&c.kind==='creature'&&summoning)return 90;
     if(p.status==='sagaMagicEra'||p.status==='revoltLifeForce'&&c.kind!=='spell')return 0;
     if(summoning&&s&&p.status==='conspiracy'&&c.kind==='creature'&&s.tiles.some(t=>t.unit&&cards[t.unit.id].cost>c.cost))return 0;
-    const status=c.kind==='spell'?1:({waste:2,lifeforce:.5,sagaDeduction:.3,sagaInflation:1.3}[p.status]??1);
+    const status=c.kind==='spell'||edition==='ps1'&&p.status==='lifeforce'&&c.kind==='item'?1:
+      ({waste:2,lifeforce:.5,sagaDeduction:.3,sagaInflation:1.3}[p.status]??1);
     const rarity=(combo.activeWorld(s)==='wasteworld'||s&&fx.idol(s,'ivoryidol'))?({S:1.5,R:2,E:2}[c.catalog?.rarity]||1):1;
     return Math.floor(c.cost*rarity*status);
   }
@@ -521,6 +522,7 @@ function createCepter(edition="ps2"){
       note(s,p.name+' · '+m.gateNames[id]+' +'+bonus+'G');
     }
   }
+  const shopBlocked=p=>firstEdition&&p.status==='babble';
   function arrived(s,fromTransit=false){
     const p=s.players[s.turn],tile=s.tiles[p.pos];s.phase='land';
     if(revolt&&p.status==='chargingstep'&&p.hasteRolls===0)fx.clearCepter(p);
@@ -531,8 +533,10 @@ function createCepter(edition="ps2"){
       return;
     }
     if(tile.type==='마법진'){offerCircle(s);return;}
-    if(tile.type==='보석 상점'){s.phase='gemStore';return;}
-    if(shopStock(s).length){s.phase='shop';return;}
+    if(!shopBlocked(p)){
+      if(tile.type==='보석 상점'){s.phase='gemStore';return;}
+      if(shopStock(s).length){s.phase='shop';return;}
+    }
     if(tile.unit?.enchant==='mine'){p.cash-=Math.floor(p.cash/2);combo.clear(tile.unit);}
     if((revolt||begins)&&tile.unit?.enchant==='blasttrap'){
       const loss=Math.floor(Math.max(0,p.cash)*.4),hp=tile.unit.hp;
@@ -541,7 +545,11 @@ function createCepter(edition="ps2"){
       s.shrineNotice='폭발 함정 · 마력 −'+loss+'G'+(damage?' · HP −'+damage:'');
       note(s,p.name+' · '+s.shrineNotice);
     }
-    if(tile.enchant==='magicfountain'||tile.unit?.enchant==='magicfountain'){p.cash+=400;delete tile.enchant;if(tile.unit)combo.clear(tile.unit);note(s,'매직 파운틴 · +400G');}
+    if(tile.enchant==='magicfountain'||tile.unit?.enchant==='magicfountain'){
+      const magic=edition==='dc'?500:400;
+      p.cash+=magic;delete tile.enchant;if(tile.unit)combo.clear(tile.unit);
+      note(s,'매직 파운틴 · +'+magic+'G');
+    }
     if(edition==='saga'&&tile.type==='분수'&&!fromTransit){
       const prior=p.hand.length,count=Math.min(prior,p.book.length);
       p.hand=[];
@@ -602,7 +610,7 @@ function createCepter(edition="ps2"){
         s.remaining=0;
         if(begins&&!preview)note(s,cards[t.unit.id].name+' · '+p.name+'의 이동 정지');
       }
-      if(t.type==='성'){if(!revolt&&!begins&&!handheld)delete p.dream;if(['fairylight','torture','conspiracy'].includes(p.status))extraSpells?.clearCepter(p);if(p.status==='waste')delete p.status;}
+      if(t.type==='성'){if(!revolt&&!begins&&!handheld)delete p.dream;if(['fairylight','torture','conspiracy','mindblast'].includes(p.status)||edition==='ps1'&&p.status==='lifeforce')extraSpells?.clearCepter(p);if(p.status==='waste')delete p.status;}
       if(t.owner===s.turn)s.visited.push(next);
       if(revolt){
         if(m.gates[next]!=null)passGate(s,m,next);
@@ -658,12 +666,12 @@ function createCepter(edition="ps2"){
         fromTransit=true;p.pos=dest;p.previous=next;path.push(dest);
         note(s,t.type+' · '+(next+1)+'번 → '+(dest+1)+'번');
       }
-      if(t.type==='보석 상점'){s.phase='gemStore';return;}
+      if(t.type==='보석 상점'&&!shopBlocked(p)){s.phase='gemStore';return;}
       if(t.type==='신전'&&p.status!=='babble'){s.phase='temple';return;}
       if(s.remaining){const exits=onward(s);if(exits.length!==1){s.phase='fork';return;}next=exits[0];}
     }
     if(preview){
-      s.phase=pathSwitch(s,p.pos,p.previous)?'pathSwitch':s.tiles[p.pos].type==='마법진'?'spellCircle':shopStock(s).length?'shop':'land';
+      s.phase=pathSwitch(s,p.pos,p.previous)?'pathSwitch':s.tiles[p.pos].type==='마법진'?'spellCircle':!shopBlocked(p)&&shopStock(s).length?'shop':'land';
       if(fromTransit)s.lastMove.arrivedViaTransit=true;
     }else arrived(s,fromTransit);
   }
@@ -895,8 +903,8 @@ function createCepter(edition="ps2"){
     }
     return options;
   }
-  function supportST(s,at,from,seat){
-    if(revolt)return 0;
+  function supportST(s,at,from,seat,fighter){
+    if(revolt||fighter?.enchant==='solitude')return 0;
     return 10*board(s).links[at].filter(n=>n!==from&&allied(s,s.tiles[n].owner,seat)).length;
   }
   function terrainHP(t,unit,card,name,muted){
@@ -909,7 +917,7 @@ function createCepter(edition="ps2"){
     const tile=s.tiles[b.at],guard=cards[tile.unit.id],name=key(guard);
     const muted=tile.unit.enchant==='vortex'||name==='seabonze'||key(cards[b.inv])==='seabonze';
     return {hp:terrainHP(tile,tile.unit,guard,name,muted),
-      attack:supportST(s,b.at,b.from,b.attackerSeat??s.turn),defense:supportST(s,b.at,b.from,tile.owner)};
+      attack:supportST(s,b.at,b.from,b.attackerSeat??s.turn,s.tiles[b.from]?.unit),defense:supportST(s,b.at,b.from,tile.owner,tile.unit)};
   }
   function resolve(s){
     const b=s.battle,t=s.tiles[b.at];
@@ -1051,7 +1059,7 @@ function createCepter(edition="ps2"){
       const glovePower=gloveGear||gloveCreature?5*s.tiles.filter(v=>v.unit&&!combo.hasElement(cards[v.unit.id],a.element)).length:0;
       if(gloveCreature)a.st=a.hp=glovePower;
       a.hp+=a.land+(gloveGear?glovePower:a.gear?.hp||0)+(muted?0:a.c.battleHP||0);
-      a.st+=supportST(s,b.at,b.from,a.seat)+(gloveGear?glovePower:a.gear?.st||0)+(muted?0:a.c.battleST||0);
+      a.st+=supportST(s,b.at,b.from,a.seat,a.u)+(gloveGear?glovePower:a.gear?.st||0)+(muted?0:a.c.battleST||0);
       if(!muted){
         if(!a.defending)a.st+=a.c.invadeST||0;
         if(a.u.enchant!=='paralysis'){
@@ -1701,7 +1709,7 @@ function createCepter(edition="ps2"){
       b.settled={
         forms:sides.map(a=>a.u.id),
         hp:sides.map(a=>a.hp<=0?0:returnsToHand(a)?cards[a.u.id].hp:Math.max(0,a.u.hp)),
-        st:sides.map(a=>Math.max(0,(returnsToHand(a)?cards[a.u.id].st:fx.strength(a.u))+supportST(s,b.at,b.from,a.seat)))
+        st:sides.map(a=>Math.max(0,(returnsToHand(a)?cards[a.u.id].st:fx.strength(a.u))+supportST(s,b.at,b.from,a.seat,a.u)))
       };
     }
     if(empty)vacate(t);
@@ -1759,7 +1767,7 @@ function createCepter(edition="ps2"){
       const face=2*extra.personalRank(s,s.turn);
       return {faces:s.fly?[face,face]:[face],total:face*(s.fly?2:1),sides,limited};
     }
-    const roll=()=>p.status==='haste'?(handheld||begins?5:6)+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):die();
+    const roll=()=>p.status==='haste'?(handheld||begins?5:6)+Math.floor(Math.random()*3):p.status==='slow'?1+Math.floor(Math.random()*3):p.status==='magicdie'?5+Math.floor(Math.random()*2):die();
     const faces=fixed!=null?(begins&&s.fly&&p.word!=null&&p.status!=='bind'?[fixed,fixed]:[fixed]):s.fly?[roll(),roll()]:[roll()];
     return {faces,total:faces.reduce((a,b)=>a+b,0),sides,limited};
   }

@@ -32,6 +32,11 @@ if(C.edition!=='ps2'){
     player.querySelector('[value="intro"]').textContent='수·풍 기반 북';
     player.value='fire';
   }
+  if(C.presets.legacyControl){
+    const label='이동·마력 제어 북';
+    player.insertBefore(new Option(label,'legacyControl'),player.lastElementChild);
+    ai.add(new Option(label,'legacyControl'));
+  }
   if(modernSeries)$('ps2Library').hidden=true;
   if(firstSeries){
     for(const [key,title] of [['fire','화·지 초기 북'],['intro','수·풍 초기 북']]){$('bookChoice').querySelector('[value='+key+']').textContent=title;$('aiChoice').add(new Option(title,key));}
@@ -44,7 +49,7 @@ if(C.edition!=='ps2'){
   else if(!modernSeries)$('ps2Library').querySelector('summary').textContent='세컨드 공통 자료실 · PS2/DC';
 }
 function sourceBook(select){const value=select.value;
-  if((firstSeries||modernSeries)&&select.id==='aiChoice'&&C.presets[value])return {name:select.selectedOptions[0].text,deck:C.presets[value],practice:true};if(value.startsWith('combo-'))return practiceBooks[Number(value.slice(6))];return value.startsWith('source-')?adaptedBooks[Number(value.slice(7))]:null;}
+  if((firstSeries||modernSeries||value==='legacyControl')&&select.id==='aiChoice'&&C.presets[value])return {name:select.selectedOptions[0].text,deck:C.presets[value],practice:true};if(value.startsWith('combo-'))return practiceBooks[Number(value.slice(6))];return value.startsWith('source-')?adaptedBooks[Number(value.slice(7))]:null;}
 let matchupWorker=null;
 function refreshMatchup(){
   matchupWorker?.terminate();matchupWorker=null;
