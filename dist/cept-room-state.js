@@ -14,6 +14,7 @@ const CepterRoomState = (() => {
       const choosingCard=state.turn===seat&&state.spellTarget===i&&['shatter','suppression','squeeze','bookWorm'].includes(state.phase);
       if(!choosingCard)player.hand=[];
     }
+    if(seat!==state.turn)delete state.clairvoyance;
     if(state.phase==='defend'&&seat!==(state.battle.attackerSeat??state.turn))state.battle.atkItem=null;
     return {game:state,choices:engine.actor(game)===seat?engine.choices(game):[]};
   }

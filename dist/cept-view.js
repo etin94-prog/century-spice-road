@@ -321,6 +321,7 @@ function opts(a,p){const [k,x,y]=a,c=C.cards[p.hand[x]];
     case 'zeromnPower':return C.zeromnOptions[x];
     case 'intrusionCard':return C.cards[y].name;
     case 'foresightCard':case 'replaceCard':case 'mesmerCard':case 'stealCard':case 'forgeCard':case 'reformCard':case 'poisonBookCard':return C.cards[y].name;
+    case 'clairvoyanceDone':case 'metamorphCard':return C.cards[y].name;
     case 'forfeitSymbol':{
       const qty=s.players[s.spellTarget].symbols[x];
       return symbolLabel(x)+' · '+qty+'장 → '+qty*s.prices[x]+'G';
@@ -456,6 +457,8 @@ function selectingSpellMapTarget(){
   if(C.edition==='begins'&&s?.spellEffect==='telekinesis'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(['dc','ps1','saturn','revolt','3ds'].includes(C.edition)&&s?.spellEffect==='chariot'&&['spellTarget','teleMove'].includes(s.phase))return true;
   if(C.edition==='saga'&&s?.phase==='spellTarget'&&['trade','intrusion','reflection','replace','holyasylum','lunaticlight','sagapolymorph','sagaliquidform','walltransform'].includes(s.spellEffect))return true;
+  if(C.edition==='revolt'&&['outrage','thrustblow'].includes(s?.spellEffect)&&['spellTarget','teleMove'].includes(s.phase))return true;
+  if(C.edition==='revolt'&&s?.phase==='spellTarget'&&['asteroid','asteroidStrong','diselement','dominantgrowth','hyperactive','bountyhunt','revoltExchange','revoltTemptation'].includes(s.spellEffect))return true;
   if(C.edition==='3ds'&&s?.phase==='spellTarget'&&
     ['heal','weakness','exile','camouflage','removecurse','quintessence','landtransfer','mutation'].includes(s.spellEffect))return true;
   return s?.phase==='spellTarget'&&['remission','magicalleap','shadowleap','sigiloffloat','sigilofdrain','sigilofshrink','blasttrap','energyfield','magicshelter','debility','debilitystrong','metalform','temptation','beginspolymorph'].includes(s.spellEffect);

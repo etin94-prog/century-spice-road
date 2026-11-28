@@ -163,7 +163,14 @@ const CepterEditions=(()=>{
       chaospanic:'chaospanic',plague:'revoltPlague',philosophy:'philosophy',vortex:'vortex',energyfield:'energyfield',magicshelter:'magicshelter',sigilofshrink:'sigilofshrink',
       debility:'debility',chargingstep:'chargingstep',goblinslair:'goblinslair',discord:'discord',theft:'theft',
       immobilize:'immobilize',metalform:'metalform',quietude:'quietude',rayofpurge:'rayofpurge',
-      suddenimpact:'suddenimpact',thunderclap:'thunderclap',fluxion:'fluxion',formportal:'formportal'},
+      suddenimpact:'suddenimpact',thunderclap:'thunderclap',fluxion:'fluxion',formportal:'formportal',
+      asteroid:'asteroid',diselement:'diselement',dominantgrowth:'dominantgrowth',erosion:'revoltErosion',
+      assemblecards:'assemblecards',flatland:'flatland',longline:'longline',tinyarmy:'tinyarmy',tyranny:'tyranny',
+      metamorphosis:'metamorphosis',sneakhand:'sneakhand',exchange:'revoltExchange',
+      lifeforce:'revoltLifeForce',homeground:'homeground',senseofwild:'senseofwild',uniformity:'uniformity',
+      hyperactive:'hyperactive',fear:'revoltFear',clusterburst:'clusterburst',subsidence:'subsidence',
+      bountyhunt:'bountyhunt',release:'release',clairvoyance:'clairvoyance',outrage:'outrage',
+      thrustblow:'thrustblow',temptation:'revoltTemptation'},
     begins:{magicbolt:'bolt',manna:'manna',holyword1:'word1',holyword3:'holyword3',holyword6:'word6',holyword8:'holyword8',
       shatter:'shatter',fly:'fly',drainmagic:'drainmagic',barrier:'barrier',bindingmist:'bindingmist',blackout:'blackout',
       fireshift:'fireshift',watershift:'watershift',earthshift:'earthshift',airshift:'airshift',
@@ -871,6 +878,10 @@ const CepterEditions=(()=>{
           c.effect=effect;c.catalogOnly=false;
           if(edition==='saga'&&clauses.includes('Doublecast'))c.doublecast=true;
           if(edition==='revolt'&&slug==='massgrowth')c.synthesis='item';
+          if(edition==='revolt'&&slug==='asteroid')Object.assign(c,{synthesis:'asteroid',synthesizedEffect:'asteroidStrong'});
+          if(edition==='revolt'&&slug==='diselement')Object.assign(c,{synthesis:'creature',synthesizedEffect:'diselementMass'});
+          if(edition==='revolt'&&slug==='subsidence')Object.assign(c,{synthesis:'subsidence',synthesizedEffect:'subsidenceMass'});
+          if(edition==='revolt'&&slug==='erosion')Object.assign(c,{synthesis:'spell',synthesizedEffect:'revoltMassErosion'});
           if(edition==='revolt'&&slug==='debility'){
             c.synthesis='spell';c.synthesizedEffect='debilitystrong';
           }

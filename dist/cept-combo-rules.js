@@ -35,7 +35,7 @@ const CepterCombos = (() => {
   const matchesTerrain=(card,type)=>typeof type==='number'?hasElement(card,type):type==='복합'&&(!!card.elements||card.element>=0);
   const enchanted=u=>!!(u?.enchant||u?.poisoned||u?.confused);
   const levelLocked=t=>['drought','desertstorm'].includes(t.unit?.enchant);
-  function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.caster;}
+  function clear(u){delete u.enchant;delete u.poisoned;delete u.confused;delete u.expires;delete u.enchantDeadline;delete u.caster;}
   const allied=(s,a,b)=>a>=0&&b>=0&&(a===b||!!s?.teams&&s.teams[a]===s.teams[b]);
   function rules(cards,{board,draw,value,vacate,note,claim,canInvade,canOccupy,hasHandSpace=p=>p.hand.length<6,returnToBook}){
     const names=cards.map(key);
@@ -575,10 +575,10 @@ const CepterCombos = (() => {
     const secretArt=(card,unit)=>arts[secretKey(card,unit)];
     const vacantLand=t=>!t.unit&&territoryType(t.type);
     const vacantNeighbors=(s,from)=>board(s).links[from].filter(at=>vacantLand(s.tiles[at]));
-    function secretTargets(s,from){
+    function secretTargets(s,from,borrowed=false){
       const src=s.tiles[from];
       const key=secretKey(cards[src?.unit?.id],src?.unit),p=s.players[s.turn],art=arts[key];
-      if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost)return [];
+      if(s.edition!=='revolt'||!art||activeWorld(s)==='naturalworld'||src.unit.enchant==='paralysis'||!borrowed&&(src.unit.fatigued||!allied(s,src.owner,s.turn)||p.cash<art.cost))return [];
       if(art.player)return activeWorld(s)==='mistyworld'?[]:s.players.flatMap((q,i)=>
         (!art.enemy||!allied(s,i,s.turn))&&q.status!=='barrier'&&(!art.chooseDirection||!q.chooseDirection)?[['secretPlayer',i]]:[]);
       if(key==='drawItem')return p.book.some(id=>cards[id].kind==='item')?[['secretSelf',from]]:[];
@@ -608,10 +608,10 @@ const CepterCombos = (() => {
         return [];
       });
     }
-    function applySecret(s,from,at){
+    function applySecret(s,from,at,borrowed=false){
       const p=s.players[s.turn],target=s.tiles[at],src=s.tiles[from];
       const card=cards[src.unit.id],key=secretKey(card,src.unit),art=arts[key];
-      p.cash-=art.cost;
+      if(!borrowed)p.cash-=art.cost;
       if(art.player){
         const q=s.players[at];
         if(q.antiMagic){
@@ -682,7 +682,7 @@ const CepterCombos = (() => {
       note(s,p.name+' · '+card.name+' 비술 · '+art.label);
       return art.label;
     }
-    function secretValue(s,from,at){
+    function secretValue(s,from,at,borrowed=false){
       const source=s.tiles[from].unit,t=s.tiles[at],p=s.players[s.turn],card=cards[source.id];
       const art=secretKey(card,source),spec=arts[art];
       if(spec.player){
@@ -691,7 +691,7 @@ const CepterCombos = (() => {
         if(spec.word||spec.chooseDirection)return allied(s,at,s.turn)&&q.word==null?5:-20;
         const value=art==='drainSigil'?Math.floor(Math.max(0,q.cash)*.1)/5:
           q.hand.filter(id=>cards[id]?.kind==='spell').length*9;
-        return value-spec.cost*.25-(card.vigorous?0:4);
+        return value-(borrowed?0:spec.cost*.25+(card.vigorous?0:4));
       }
       const friendly=allied(s,s.turn,t.owner);
       let utility=0;
@@ -736,7 +736,7 @@ const CepterCombos = (() => {
       if(spec.setFatigue!=null)utility=18+t.level*3;
       if(spec.strength<0)utility=(friendly?-1:1)*Math.min(-spec.strength,strength(t.unit));
       if(spec.damage)utility=(friendly?-1:1)*(t.unit.hp<=spec.damage?50+(t.level-1)*10:spec.damage);
-      return utility-spec.cost*.25-(card.vigorous?0:4);
+      return utility-(borrowed?0:spec.cost*.25+(card.vigorous?0:4));
     }
     function clearCepter(q){
       for(const field of ['word','status','statusUntil','enchantDeadline','antiMagic','reverse','dream','invisible','chooseDirection','hasteRolls','diceLimitRolls','sagaClemency','sagaService','sagaFeast'])delete q[field];

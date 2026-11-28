@@ -1909,7 +1909,7 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     }
   }
   assert.deepEqual(uneven.sort(),[48,49,49,49,51,51,52]);
-  assert.equal(ready.length,29);
+  assert.equal(ready.length,32);
   assert.equal(archive.filter(([, , ,recipe])=>recipe.livinghelmet).length,3);
   {
     const shot=mode=>revolt('battleaxe',null,'goblin',mode).s.battle.strikes[0].effect;
@@ -1995,6 +1995,180 @@ for(const [edition,count,mapCount] of [['dc',459,39],['ps1',361,36],['saturn',36
     assert.deepEqual(R.choices(steal),[['stealCard',0,bySlug.get('manna')]]);
     assert.ok(R.play(steal,R.choices(steal)[0]));
     assert.deepEqual(steal.players[1].hand,[bySlug.get('goblin')]);
+    function castSynthesis(spell,catalyst,setup){
+      return revoltCast(spell,s=>{
+        s.players[0].hand=[bySlug.get(spell),bySlug.get(catalyst)];
+        setup(s);
+      });
+    }
+    for(const [catalyst,level] of [['redogre',4],['asteroid',1]]){
+      const asteroid=castSynthesis('asteroid',catalyst,s=>revoltUnit(s,1,'goblin',1,0,5));
+      assert.ok(R.play(asteroid,['targetLand',1]));
+      assert.equal(asteroid.tiles[1].level,level);
+    }
+    const dis=castSynthesis('diselement','redogre',s=>{
+      revoltUnit(s,1,'redogre',0,0);
+      revoltUnit(s,2,'greenogre',1,2);s.tiles[2].unit.fatigued=true;
+      s.players[0].book=[bySlug.get('manna')];
+    });
+    assert.deepEqual([dis.tiles[1].unit.enchant,dis.tiles[2].unit.enchant,dis.players[0].hand],
+      [undefined,'antielement',[bySlug.get('manna')]]);
+    const growth=revoltCast('dominantgrowth',s=>revoltUnit(s,1,'goblin',0,0,1,22));
+    assert.ok(R.play(growth,['targetLand',1]));
+    growth.players[0].pos=1;growth.phase='land';
+    assert.ok(R.play(growth,['level',1,2]));
+    assert.deepEqual([growth.tiles[1].unit.hp,growth.tiles[1].unit.mhp],[42,50]);
+    const erosion=castSynthesis('erosion','manna',s=>{
+      const q=s.players[1];q.hand=['goblin','goblin','redogre'].map(n=>bySlug.get(n));
+    });
+    assert.deepEqual(erosion.players[1].hand,[bySlug.get('redogre')]);
+    const growthIds=[1,2,3,6,7];
+    const fixed=revoltCast('flatland',s=>{for(const at of growthIds)revoltUnit(s,at,'goblin',0,0,2);});
+    assert.ok(growthIds.every(at=>fixed.tiles[at].level===3));
+    const recycled=revoltCast('flatland');
+    assert.ok(recycled.players[0].book.includes(bySlug.get('flatland')));
+    const assembled=revoltCast('assemblecards',s=>{
+      s.players[0].hand=['assemblecards','redogre','blueogre','greenogre','yellowogre'].map(n=>bySlug.get(n));
+    });
+    assert.equal(assembled.players[0].cash,1100-CForRevolt('assemblecards').cost);
+    const line=revoltCast('longline',s=>{for(const at of [1,2,3,4])revoltUnit(s,at,'goblin',0);});
+    assert.equal(line.players[0].cash,1100-CForRevolt('longline').cost);
+    const army=revoltCast('tinyarmy',s=>{for(const at of growthIds)revoltUnit(s,at,'goblin',0);});
+    assert.ok(growthIds.every(at=>army.tiles[at].unit.mhp===40&&army.tiles[at].unit.hp===40));
+    assert.equal(army.players[0].cash,1100-CForRevolt('tinyarmy').cost);
+    const tyranny=revoltCast('tyranny',s=>{revoltUnit(s,1,'goblin',0);revoltUnit(s,2,'gargoyle',1);});
+    assert.deepEqual([tyranny.tiles[1].unit.enchant,tyranny.tiles[2].unit.enchant],['paralysis',undefined]);
+    const morph=revoltCast('metamorphosis',s=>{
+      const gear=bySlug.get('mace');
+      s.players[0].book=[gear];s.players[1].hand=[bySlug.get('goblin'),gear];s.players[1].book=[gear,gear];
+    });
+    assert.ok(R.play(morph,['targetPlayer',1]));
+    assert.deepEqual(R.choices(morph),[['metamorphCard',1,bySlug.get('mace')]]);
+    assert.ok(R.play(morph,R.choices(morph)[0]));
+    const word=bySlug.get('holyword6');
+    assert.deepEqual([morph.players[0].book,morph.players[1].book,morph.players[1].hand],[[word],[word,word],[bySlug.get('goblin'),word]]);
+    const sneak=revoltCast('sneakhand',s=>{s.players[1].hand=['mace','chainmail'].map(n=>bySlug.get(n));});
+    assert.ok(R.play(sneak,['targetPlayer',1])&&R.play(sneak,R.choices(sneak)[0]));
+    assert.deepEqual(sneak.players[1].hand,[bySlug.get('chainmail')]);
+    const exchange=revoltCast('exchange',s=>{revoltUnit(s,1,'goblin',0,0,3);revoltUnit(s,2,'goblin',1);});
+    assert.deepEqual(R.choices(exchange),[['targetLand',1]]);
+    assert.ok(R.play(exchange,['targetLand',1])&&R.play(exchange,R.choices(exchange)[0]));
+    assert.deepEqual([exchange.tiles[1].unit.id,exchange.tiles[1].level,exchange.players[0].hand],[bySlug.get('redogre'),3,[bySlug.get('goblin')]]);
+    console.log('Revolt synthesis, growth, three hidden rewards, recycling, private selection and owned exchange checked');
+    const force=revoltCast('lifeforce',s=>{s.players[0].book=[bySlug.get('goblin')];});
+    assert.ok(R.play(force,['targetPlayer',0]));
+    const empowered=force.players[0],beforeMagic=empowered.cash;
+    for(const name of ['redogre','mace'])assert.equal(R.price(empowered,CForRevolt(name),force),0);
+    force.phase='spell';empowered.hand=[bySlug.get('manna')];
+    assert.ok(R.play(force,['cast',0]));
+    assert.deepEqual([empowered.cash,empowered.status,empowered.hand],[beforeMagic,undefined,[]]);
+    const vigorous=revoltCast('hyperactive',s=>{
+      revoltUnit(s,1,'goblin',0,0);s.tiles[1].unit.fatigued=true;s.players[0].pos=1;
+    });
+    assert.ok(R.play(vigorous,['targetLand',1]));
+    assert.equal(vigorous.tiles[1].unit.enchantDeadline,10);
+    vigorous.phase='land';
+    assert.ok(R.play(vigorous,['level',1,2]));
+    assert.equal(vigorous.tiles[1].unit.fatigued,undefined);
+    for(let tick=2;tick<=10;tick++){
+      vigorous.phase='land';vigorous.players[vigorous.turn].pos=0;
+      assert.ok(R.play(vigorous,['pass']));
+      while(vigorous.phase==='discard')assert.ok(R.play(vigorous,['discard',0]));
+      assert.equal(vigorous.tiles[1].unit.enchant,tick<10?'hyperactive':undefined);
+    }
+    const uniform=revoltCast('uniformity',s=>{
+      revoltUnit(s,1,'goblin',1,0);
+      revoltUnit(s,2,'goblin',1,1,5);
+    });
+    assert.ok(R.play(uniform,['targetPlayer',1]));
+    assert.deepEqual([1,2].map(at=>R.owedToll(uniform,uniform.tiles[at],0)),[200,200]);
+    uniform.tiles[1].unit.enchant='peace';
+    assert.equal(R.owedToll(uniform,uniform.tiles[1],0),0);
+    const ground=revoltCast('homeground',s=>{
+      for(const [at,name,type] of [[1,'redogre',1],[2,'blueogre',2],[3,'greenogre',3],[6,'yellowogre',0]])revoltUnit(s,at,name,0,type);
+      revoltUnit(s,7,'blueogre',1,0);
+    });
+    assert.deepEqual([1,2,3,6,7].map(at=>ground.tiles[at].type),[0,1,2,3,0]);
+    for(const full of [false,true]){
+      const wild=revoltCast('senseofwild',s=>{
+        s.players[0].book=[bySlug.get('redogre')];
+        if(full)for(const [at,tile] of s.tiles.entries())if(R.territoryType(tile.type))revoltUnit(s,at,'goblin',1,tile.type);
+      });
+      assert.equal(wild.players[0].hand.filter(id=>id===bySlug.get('redogre')).length,full?2:1);
+      assert.equal(wild.tiles.filter(t=>t.owner===0&&t.unit.id===bySlug.get('redogre')).length,full?0:1);
+    }
+    const cluster=revoltCast('clusterburst',s=>{
+      revoltUnit(s,1,'goblin',1,0);revoltUnit(s,2,'goblin',0,1);revoltUnit(s,3,'blueogre',1,1);
+    });
+    assert.deepEqual([1,2,3].map(at=>cluster.tiles[at].unit.hp),[10,10,CForRevolt('blueogre').hp]);
+    const retreat=revoltCast('fear',s=>{
+      revoltUnit(s,1,'goblin',1,0);revoltUnit(s,2,'blueogre',1,1);
+      s.players[1].hand=Array(10).fill(bySlug.get('manna'));
+    });
+    assert.ok(R.play(retreat,['targetPlayer',1]));
+    assert.deepEqual([retreat.tiles[1].unit,retreat.players[1].hand.length,retreat.lastDestroyed],[null,10,bySlug.get('goblin')]);
+    const subsidence=castSynthesis('subsidence','subsidence',s=>{
+      revoltUnit(s,1,'goblin',0,0,4);revoltUnit(s,2,'goblin',0,0,2);
+      revoltUnit(s,3,'goblin',1,1,3);
+    });
+    assert.deepEqual([1,2,3].map(at=>subsidence.tiles[at].level),[3,2,2]);
+    console.log('Revolt Life Force consumption, timed vigor, fixed tolls, layout conversion, wild draw, plurality, Fear and Subsidence checked');
+    const bounty=revoltCast('bountyhunt',s=>{revoltUnit(s,1,'goblin',0);s.players[0].pos=1;});
+    assert.ok(R.play(bounty,['targetLand',1]));
+    bounty.phase='land';
+    assert.ok(!R.choices(bounty).some(([kind,at])=>at===1&&['transfer','exchange'].includes(kind)));
+    const claimBounty=revolt('mace',null,'redogre','goblin',s=>{s.tiles[1].unit.enchant='bountyhunt';}).s.battle;
+    const withoutWeapon=revolt(null,null,'redogre','goblin',s=>{s.tiles[1].unit.enchant='bountyhunt';}).s.battle;
+    assert.ok(claimBounty.lines.some(line=>line.includes('현상 수배 · 300G')));
+    assert.ok(!withoutWeapon.lines.some(line=>line.includes('현상 수배')));
+    const unlock=revoltCast('release');
+    assert.equal(unlock.players[0].enchantDeadline,8);
+    revoltUnit(unlock,1,'oldwillow',0,0);
+    unlock.players[0].hand=[bySlug.get('mace')];
+    unlock.phase='defend';unlock.turn=1;unlock.battle={at:1,inv:bySlug.get('goblin'),atkItem:null,defItem:null};
+    assert.ok(R.choices(unlock).some(([kind])=>kind==='equip'));
+    delete unlock.players[0].status;
+    assert.deepEqual(R.choices(unlock),[['bare']]);
+    const reveal=revoltCast('clairvoyance',s=>{
+      s.players[1].hand=['thunderclap','redogre','windofhope'].map(n=>bySlug.get(n));
+    });
+    const beforeReveal=reveal.players[0].cash,drawing=reveal.players[1].hand.slice();
+    assert.ok(R.play(reveal,['targetPlayer',1]));
+    const engineRoom=require('../dist/cept-room-state');
+    assert.deepEqual(engineRoom.view(R,reveal,0).game.clairvoyance.cards,drawing);
+    assert.equal(engineRoom.view(R,reveal,1).game.clairvoyance,undefined);
+    assert.deepEqual(engineRoom.view(R,reveal,1).choices,[]);
+    assert.equal(reveal.players[0].cash,beforeReveal+Math.floor((CForRevolt('thunderclap').cost+CForRevolt('windofhope').cost)/2));
+    assert.ok(R.play(reveal,R.choices(reveal)[0]));
+    assert.equal(reveal.clairvoyance,undefined);
+    const thrust=revoltCast('thrustblow',s=>{revoltUnit(s,1,'goblin',1);revoltUnit(s,16,'goblin',0);});
+    assert.ok(R.play(thrust,['targetLand',1]));
+    assert.deepEqual(R.choices(thrust),[['teleTo',2]]);
+    assert.ok(R.play(thrust,['teleTo',2]));
+    assert.deepEqual([thrust.phase,thrust.tiles[1].unit,thrust.tiles[2].owner],[ 'roll',null,1 ]);
+    const outrage=revoltCast('outrage',s=>{
+      revoltUnit(s,1,'redogre',1,0);revoltUnit(s,2,'goblin',0,0,1,5);revoltUnit(s,16,'goblin',1);
+    });
+    assert.ok(R.play(outrage,['targetLand',1]));
+    assert.deepEqual(R.choices(outrage),[['teleTo',2]]);
+    assert.ok(R.play(outrage,['teleTo',2]));
+    assert.equal(R.actor(outrage),1);
+    assert.ok(R.play(outrage,['bare']));
+    assert.equal(R.actor(outrage),0);
+    assert.ok(R.play(outrage,['bare'])&&R.play(outrage,['continue']));
+    assert.deepEqual([outrage.phase,outrage.turn,outrage.tiles[2].owner],['roll',0,1]);
+    const temptation=revoltCast('temptation',s=>{
+      revoltUnit(s,1,'fate',1,1);
+      s.tiles[1].unit.fatigued=true;s.players[0].book=[bySlug.get('manna')];
+    });
+    const afterPrice=temptation.players[0].cash;
+    assert.ok(R.play(temptation,['targetLand',1]));
+    assert.deepEqual([temptation.phase,temptation.players[0].cash,temptation.players[0].hand.at(-1),temptation.tiles[1].unit.fatigued],
+      ['roll',afterPrice,bySlug.get('manna'),true]);
+    assert.equal(R.cards.filter(card=>!card.unlisted&&card.kind==='spell'&&card.catalogOnly).length,0);
+    console.log('All 133 Revolt spells have engine effects, including Bounty, Release, selective private reveals and forced transfers');
+
+
     console.log('Revolt book archive unlocked five decks, gear fusion, dragon land shifts, neutralization thresholds and eleven spells checked');
   }
   const helmet=revolt('livinghelmet','livingarmor','fighter','fighter').s.battle;
