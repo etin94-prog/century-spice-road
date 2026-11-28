@@ -547,6 +547,7 @@ const CepterCreatureText=(()=>{
     if(C.edition==='3ds'&&key==='paladin')pieces.push('전투에서 살아남으면 HP를 최대치까지 회복합니다.');
     if(card.selfDestructAfterBattle)pieces.push('전투가 끝날 때 자괴합니다.');
     if(card.battleRecoilPercent)pieces.push('일반 공격으로 준 피해의 '+card.battleRecoilPercent+'%만큼 반동 피해를 받습니다.');
+    if(card.hitReturnChance)pieces.push('일반 공격으로 피해를 준 상대가 생존하면 '+Math.round(card.hitReturnChance*100)+'% 확률로 상대의 손패로 돌려보냅니다. 손패가 가득 차면 격파합니다.');
     if(card.landLevelLossRate)pieces.push('전투에서 생존하면 '+(card.landLevelLossRate===1?'':Math.round(card.landLevelLossRate*100)+'% 확률로 ')+'교전 영지의 레벨을 1 낮춥니다.');
     if(card.battleEndHPLoss)pieces.push('전투 종료 시 HP가 '+card.battleEndHPLoss+' 감소합니다.');
     if(card.terrainLevelHP)pieces.push(targets([card.terrainLevelHP.element])+' 영지에서 싸우면 영지 레벨 × '+card.terrainLevelHP.perLevel+'만큼 전투 HP가 오릅니다.');

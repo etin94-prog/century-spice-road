@@ -9732,3 +9732,61 @@ for(const edition of ['ps1','saturn']){
   assert.ok(!C.choices(restricted).some(([move])=>move==='equip'));
 }
 console.log('PS1 and Saturn Deadly Thorn: true scroll effect, permanent form, battle bonuses, wards, reflection, equipment legality and AI checked.');
+
+{
+  const C=ps2.createEdition('saturn'),book=C.presets.legacyFireTribute;
+  const id=key=>C.cards.findIndex(c=>!c.unlisted&&!c.catalogOnly&&C.combo.key(c)===key);
+  const bander=id('bandersnatch'),filler=id('manna');
+  assert.ok(book.includes(bander)&&C.validBook(book));
+  assert.match(creatureText.describe(C,C.cards[bander]),/30%.*손패.*격파/);
+  assert.ok(ps2.createEdition('ps1').cards.every(c=>c.catalogOnly||!c.hitReturnChance));
+  function setup(attacker,guard,{handSize=0,defHP,armor,atkFrom,type=2,level=3}={}){
+    const s=C.start(2,0,7000,'saturn-original-marsh-paths',book,book,3),at=3;
+    Object.assign(s.players[0],{pos:at,hand:[],cash:1000});
+    Object.assign(s.players[1],{hand:Array(handSize).fill(filler),cash:1000});
+    if(armor)s.players[1].hand[0]=id(armor);
+    const def=id(guard);
+    Object.assign(s.tiles[at],{type,owner:1,level,unit:{id:def,hp:defHP??C.cards[def].hp}});
+    if(atkFrom!=null)Object.assign(s.tiles[atkFrom],{type:2,owner:0,unit:{id:id(attacker),hp:C.cards[id(attacker)].hp}});
+    s.phase='attack';s.battle={at,from:atkFrom,inv:id(attacker),atkItem:null,defItem:null};
+    return s;
+  }
+  function fight(attacker,guard,{random=.299,armor,...options}={}){
+    const s=setup(attacker,guard,{armor,...options}),prior=Math.random;
+    try{
+      Math.random=()=>random;
+      assert.ok(C.play(s,['bare'])&&C.play(s,armor?['equip',0]:['bare']));
+    }finally{Math.random=prior;}
+    return s;
+  }
+  const recovered=fight('bandersnatch','wallofstone',{handSize:5});
+  assert.equal(recovered.battle.won,true);
+  assert.equal(recovered.battle.strikes.length,1);
+  assert.equal(recovered.tiles[3].unit.id,bander);
+  assert.equal(recovered.players[1].hand.at(-1),id('wallofstone'));
+  assert.equal(recovered.players[1].hand.length,6);
+  assert.match(recovered.battle.lines.join(' '),/손패로 돌려보냄/);
+  const defeated=fight('bandersnatch','wallofstone',{handSize:6});
+  assert.deepEqual(defeated.players[1].hand,Array(6).fill(filler));
+  assert.equal(defeated.battle.finalHP[1],0);
+  assert.match(defeated.battle.lines.join(' '),/손패가 가득 차 크리처 격파/);
+  assert.equal(defeated.battle.won,true);
+  assert.equal(fight('bandersnatch','wallofstone',{random:.3}).tiles[3].unit.id,id('wallofstone'));
+  assert.equal(fight('bandersnatch','dwarf',{handSize:6,armor:'leatherarmor'}).players[1].hand.at(-1),id('dwarf'));
+  assert.doesNotMatch(fight('bandersnatch','unseenstalker').battle.lines.join(' '),/손패/);
+  assert.doesNotMatch(fight('bandersnatch','dwarf',{defHP:5,level:1}).battle.lines.join(' '),/손패/);
+  const defender=fight('dwarf','bandersnatch',{type:0,atkFrom:2});
+  assert.equal(defender.battle.won,false);
+  assert.equal(defender.tiles[2].owner,-1);
+  assert.deepEqual(defender.players[0].hand,[id('dwarf')]);
+  assert.equal(defender.tiles[3].unit.id,bander);
+
+  const tactical=setup('bandersnatch','wallofstone',{level:5});
+  tactical.phase='land';tactical.battle=null;tactical.players[0].hand=[bander,filler];
+  Object.assign(tactical.tiles[1],{type:0,owner:0,unit:{id:id('kobold'),hp:30}});
+  assert.ok(C.choices(tactical).some(([move])=>move==='invade'));
+  assert.deepEqual(C.ai(tactical),['invade',0]);
+  tactical.tiles[3].unit={id:id('unseenstalker'),hp:20};
+  assert.deepEqual(C.ai(tactical),['pay']);
+}
+console.log('Saturn Bandersnatch: exact odds, current hand limit, attack and defense return, neutralization, native book and AI checked.');

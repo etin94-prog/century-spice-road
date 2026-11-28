@@ -375,7 +375,9 @@ const CepterExtraBattle=(()=>{
       if(n==='nymph'&&fx.max(d.u)<=30&&s.players[a.seat].hand.length<6&&chance(.4)){
         d.stolen=true;s.players[a.seat].hand.push(d.u.id);lines.push('상대 크리처를 손패로 획득');
       }
-      if(s.edition==='saga'&&n==='cherub'&&fx.max(d.u)>=50&&chance(.6)){
+      const forcedReturn=!blocked&&a.c.hitReturnChance&&(s.predict?
+        (s.combatOddsMask&(a.defending?2:1))!==0:chance(a.c.hitReturnChance));
+      if(forcedReturn||s.edition==='saga'&&n==='cherub'&&fx.max(d.u)>=50&&chance(.6)){
         const hand=s.players[d.seat].hand;
         if(hand.length<6){hand.push(d.u.id);d.returned=true;lines.push('상대 크리처를 손패로 돌려보냄');}
         else{d.hp=0;lines.push('상대 손패가 가득 차 크리처 격파');}

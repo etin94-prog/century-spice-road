@@ -1185,6 +1185,7 @@ const CepterEditions=(()=>{
         }
       }
       if(edition==='ps1'&&slug==='werewolf')Object.assign(c,{catalogOnly:false,basicBattle:false});
+      if(edition==='saturn'&&slug==='bandersnatch')Object.assign(c,{catalogOnly:false,basicBattle:true,hitReturnChance:.3});
       if(edition==='ps1'&&slug==='ashura')Object.assign(c,{catalogOnly:false,basicBattle:true,battleCepterCurse:'reverse'});
       if(first&&['knight','darkelf','elf'].includes(slug))c.criticalRace={knight:'rd',darkelf:'rh',elf:'ru'}[slug];
       if(first&&['pan','hornet'].includes(slug))c.statusRaces=['rh','rb','rd'];
@@ -1281,6 +1282,7 @@ const CepterEditions=(()=>{
       for(const [from,to] of [['fighter','bistair'],['kobold','willothewisp'],['minotaur','efreet']]){
         tribute[tribute.indexOf(lookup.get(from))]=lookup.get(to);
       }
+      if(edition==='saturn')tribute[tribute.indexOf(lookup.get('fighter'))]=lookup.get('bandersnatch');
       presets.legacyFireTribute=tribute;
       const earth=presets.legacyGuard.slice();
       for(const [from,to] of [['paladin','taotieh'],['ooze','ormechead'],['fighter','hoodlum'],['gargoyle','deedum']]){
