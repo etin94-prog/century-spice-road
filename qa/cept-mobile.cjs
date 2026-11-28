@@ -538,6 +538,12 @@ const {chromium}=require('playwright');
       await fourAreas.selectOption('#mapChoice','saga-original-four-beacons');
       assert.match(await fourAreas.locator('#stagePreview figcaption').innerText(),/56칸 · 4지역 · 요새 4곳/);
       await fourAreas.locator('#config .match-start .primary').tap();
+      await fourAreas.evaluate(()=>{
+        const spell=C.cards.findIndex(c=>!c.unlisted&&c.effect==='manna');
+        s.players[0].hand=[spell];
+        render();
+      });
+      await fourAreas.locator('#matchActionsToggle[aria-expanded=false]').waitFor();
       await fourAreas.locator('#mapViews summary').tap();
       await fourAreas.locator('#mapViews [data-zoom="1"]').tap();
       await fourAreas.getByRole('button',{name:/^11번 전송진/}).tap();

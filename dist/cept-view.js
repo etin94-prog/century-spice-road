@@ -446,10 +446,10 @@ function placeMapRoll(root,x,y,zoom){
   const away=cameraTile!==s.players[s.turn].pos||routeOnMap||!!tile.querySelector('.time-bomb-mark'),wideView=width>height*1.1;
   const side=away?0:right+stackWidth+4<=width?1:before>=4?-1:0;
   const tools=$('mapViews'),toolsHeight=tools.querySelector('summary').offsetHeight;
-  const overviewRoll=rollShown&&!menuShown&&!viewport.classList.contains('pannable');
+  const overviewControls=rollShown&&actionToggle.getAttribute('aria-expanded')!=='true'&&!viewport.classList.contains('pannable');
   const boardRight=x+root.clientWidth*zoom,boardBottom=y+root.clientHeight*zoom;
-  const rightGutter=boardRight+8,leftGutter=x-rollWidth-8;
-  const gutter=!overviewRoll?null:rightGutter+rollWidth<=width-4?rightGutter:leftGutter>=4?leftGutter:null;
+  const rightGutter=boardRight+8,leftGutter=x-stackWidth-8;
+  const gutter=!overviewControls?null:rightGutter+stackWidth<=width-4?rightGutter:leftGutter>=4?leftGutter:null;
   const anchor=away?(wideView?tools.offsetLeft-stackWidth-6:(width-stackWidth)/2):side>0?right:side<0?before:(groupStart+groupEnd-stackWidth)/2;
   const left=Math.max(4,Math.min(width-stackWidth-4,gutter??anchor));
   const status=$('center'),underStatus=status.offsetHeight&&left<status.offsetLeft+status.offsetWidth+4?status.offsetTop+status.offsetHeight+4:0;
@@ -462,9 +462,9 @@ function placeMapRoll(root,x,y,zoom){
   let top=away?(wideView||routeOnMap?minTop:maxTop):side?body-(menuShown?stackHeight:rollHeight)/2:feetY+10;
   // Under the feet is full: use the space over the heads when the stack fits there.
   if(!away&&!side&&top>maxTop&&feetY-pawnHeight-8-stackHeight>=minTop)top=feetY-pawnHeight-8-stackHeight;
-  if(overviewRoll&&gutter==null){
+  if(overviewControls&&gutter==null){
     if(boardBottom+8<=maxTop)top=boardBottom+8;
-    else if(y-rollHeight-8>=minTop)top=y-rollHeight-8;
+    else if(y-stackHeight-8>=minTop)top=y-stackHeight-8;
   }
   top=Math.max(minTop,Math.min(maxTop,top));
   const align=size=>left+(side>0?0:side<0?stackWidth-size:(stackWidth-size)/2);
